@@ -1,0 +1,25 @@
+---
+title: Headers
+description: HTTP header fields for requests and responses.
+category: HTTP
+weight: 50
+interactive: false
+---
+
+# Headers
+
+**HTTP header fields** are `Name: value` pairs that carry metadata about the request or response: the resource type and length, caching directives, authentication credentials, cookies, and more.
+
+Headers are case-insensitive by convention. Multiple headers can share a name, and several headers may be combined into one `Name: value, value` line.
+
+## Header index
+
+- [Content-Type](/http/headers/content-type) — declares the media type of the body.
+- [Content-Length](/http/headers/content-length) — the body size in bytes.
+- [Authorization](/http/headers/authorization) — credentials for authentication.
+- [Accept](/http/headers/accept) — what response types the client can handle.
+- [Cache-Control](/http/headers/cache-control) — caching directives.
+
+## Request vs response
+
+Some headers apply to requests, some to responses, and some to both. A given header name may appear in either a request or a response, but its meaning is scoped to that message.

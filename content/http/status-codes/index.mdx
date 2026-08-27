@@ -1,0 +1,32 @@
+---
+title: Status Codes
+description: HTTP response status codes, grouped by class.
+category: HTTP
+weight: 40
+interactive: true
+interactiveType: status-explorer
+---
+
+# Status Codes
+
+A **status code** is a three-digit number returned by the server in the response status line. It tells the client whether the request succeeded, and if not, why. The first digit defines the class:
+
+<StatusCodeExplorer defaultCode={200} />
+
+## Classes
+
+| Class | Range | Meaning |
+|---|---|---|
+| 1xx | `100–199` | Informational |
+| 2xx | `200–299` | Success ✅ |
+| 3xx | `300–399` | Redirection 🔀 |
+| 4xx | `400–499` | Client error ⚠️ |
+| 5xx | `500–599` | Server error ❌ |
+
+## Pick a code
+
+Click any code in the explorer above to see the live response returned by `nullbase`.
+
+- [200 OK](/http/status-codes/200)
+- [404 Not Found](/http/status-codes/404)
+- [500 Internal Server Error](/http/status-codes/500)

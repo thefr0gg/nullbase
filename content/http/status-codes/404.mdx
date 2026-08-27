@@ -1,0 +1,29 @@
+---
+title: "404 Not Found"
+description: The server did not find a current representation for the target resource.
+category: HTTP
+weight: 45
+interactive: true
+interactiveType: status-explorer
+---
+
+# 404 Not Found
+
+The `404 Not Found` response status code indicates that **the server did not find a current representation** for the target resource or, if the server does not wish to make this information available, the server would not have sent this status code.
+
+<StatusCodeExplorer defaultCode={404} />
+
+## Details
+
+- **Class:** 4xx (Client error)
+- **When to use:** the URL is not known to the server, or the resource has been intentionally removed.
+- **SEO note:** a soft `404` (returning `200` with "not found" content) harms search indexing — always return the real `404`.
+
+## Example
+
+```http
+HTTP/1.1 404 Not Found
+Content-Type: text/html
+
+<h1>404 Not Found</h1>
+<p>The requested resource does not exist.</p>

@@ -1,0 +1,28 @@
+---
+title: HTTP
+description: Hypertext Transfer Protocol (HTTP/1.1) reference.
+category: HTTP
+weight: 0
+interactive: false
+---
+
+# HTTP
+
+**Hypertext Transfer Protocol (HTTP)** is the foundation of data communication on the Web. It is a **stateless**, **request–response** protocol used by browsers, clients, and APIs to exchange representations of resources.
+
+An HTTP transaction is always **client → server → client**: a client sends a *request*, and the server returns a *response* containing a **status code** and (usually) a representation of the resource.
+
+<StatusCodeExplorer defaultCode={200} />
+
+## On this reference
+
+- **[Request–Response Model](/http/request-response)** — how a transaction flows, end to end.
+- **[HTTP Messages](/http/messages)** — request lines, headers, and bodies.
+- **[Methods](/http/methods/get)** — `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, `OPTIONS`.
+- **[Status Codes](/http/status-codes/200)** — every class and code, with a live explorer.
+- **[Headers](/http/headers/content-type)** — `Content-Type`, `Authorization`, `Cache-Control`, and more.
+
+## See also
+
+- [MDN: HTTP](https://developer.mozilla.org/en-US/docs/Web/HTTP)
+- [RFC 9110 — HTTP Semantics](https://www.rfc-editor.org/rfc/rfc9110)

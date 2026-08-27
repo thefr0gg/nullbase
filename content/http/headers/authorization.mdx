@@ -1,0 +1,36 @@
+---
+title: Authorization
+description: The Authorization header contains credentials for HTTP authentication.
+category: HTTP
+weight: 53
+interactive: true
+interactiveType: http-request
+---
+
+# Authorization
+
+The `Authorization` request header contains the **credentials** for HTTP authentication. The server validates these credentials and either serves the resource or responds with `401 Unauthorized`.
+
+<HttpRequest
+  defaultMethod="GET"
+  defaultPath="/api/http/echo"
+  defaultHeaders="Accept: application/json
+Authorization: Bearer nullbase-demo-token"
+/>
+
+## Common schemes
+
+| Scheme | Usage |
+|---|---|
+| `Basic` | `Authorization: Basic <base64(user:pass)>` |
+| `Bearer` | `Authorization: Bearer <token>` (OAuth, JWT, etc.) |
+| `Digest` | Challenge-response with a server nonce |
+
+## Example
+
+```http
+GET /api/http/echo HTTP/1.1
+Authorization: Bearer nullbase-demo-token
+```
+
+The value is sent over the network, so **always use HTTPS** when transmitting credentials — never in cleartext HTTP.

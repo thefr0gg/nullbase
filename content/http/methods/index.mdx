@@ -1,0 +1,30 @@
+---
+title: Methods
+description: HTTP request methods and their safety vs. idempotence properties.
+category: HTTP
+weight: 30
+interactive: false
+---
+
+# Methods
+
+An HTTP **method** tells the server what you want to do with a resource. Methods are case-sensitive and conventionally written in uppercase.
+
+<HttpRequest defaultMethod="GET" defaultPath="/api/http/echo" />
+
+## Safety and idempotence
+
+| Method | Safe? | Idempotent? | Purpose |
+|---|---|---|---|
+| `GET` | ✅ Yes | ✅ Yes | Retrieve a representation |
+| `HEAD` | ✅ Yes | ✅ Yes | Like `GET` but headers only (no body) |
+| `OPTIONS` | ✅ Yes | ✅ Yes | Discover supported methods |
+| `POST` | ❌ No | ❌ No | Create or process a sub-resource |
+| `PUT` | ❌ No | ✅ Yes | Replace a resource entirely |
+| `PATCH` | ❌ No | ❌ No | Apply partial modifications |
+| `DELETE` | ❌ No | ✅ Yes | Remove a resource |
+
+## Learn by doing
+
+- [GET](/http/methods/get) — retrieve a representation.
+- [POST](/http/methods/post) — submit data to be processed.
