@@ -39,7 +39,7 @@ export function ThemeToggle() {
       onClick={toggle}
       aria-label={theme === "light" ? "Enable dark mode" : "Enable light mode"}
       title={theme === "light" ? "Enable dark mode" : "Enable light mode"}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-text-secondary transition-colors hover:bg-electric-blue/10 hover:text-electric-blue"
+      className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg bg-surface text-text-secondary transition-colors hover:bg-electric-blue/10 hover:text-electric-blue"
     >
       {theme === "light" ? (
         <Moon className="h-4 w-4" />
