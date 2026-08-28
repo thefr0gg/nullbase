@@ -16,7 +16,7 @@ export interface Services {
 export function createServices(db: Database, tokenSecret: string): Services {
   return {
     admin: new AdminService(new AdminUserRepository(db), tokenSecret),
-    feedback: new FeedbackService(new FeedbackRepository(db)),
+    feedback: new FeedbackService(new FeedbackRepository(db), tokenSecret),
     likes: new LikesService(new LikesRepository(db), tokenSecret),
   };
 }

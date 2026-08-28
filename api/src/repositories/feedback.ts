@@ -18,6 +18,8 @@ export interface FeedbackInput {
   rating?: number;
   comment?: string;
   email?: string;
+  visitorHash: string;
+  ipHash: string;
 }
 
 export class FeedbackRepository {
@@ -26,14 +28,16 @@ export class FeedbackRepository {
   async insert(input: FeedbackInput): Promise<FeedbackRow> {
     await this.db
       .prepare(
-        `INSERT INTO feedback (page_path, rating, comment, email, created_at)
-         VALUES (?, ?, ?, ?, ?)`,
+        `INSERT INTO feedback (page_path, rating, comment, email, visitor_hash, ip_hash, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
       )
       .bind(
         input.pagePath,
         input.rating ?? null,
         input.comment ?? null,
         input.email ?? null,
+        input.visitorHash,
+        input.ipHash,
         now(),
       )
       .run();
@@ -41,6 +45,25 @@ export class FeedbackRepository {
       .prepare("SELECT * FROM feedback WHERE rowid = last_insert_rowid()")
       .first<FeedbackRow>();
     return row!;
+  }
+
+  /** Rate-limit inputs: submissions by a visitor/network identity in a window. */
+  async countRecentByVisitor(visitorHash: string, since: string): Promise<number> {
+    const row = await this.db
+      .prepare(
+        "SELECT COUNT(*) AS n FROM feedback WHERE visitor_hash = ? AND created_at > ?",
+      )
+      .bind(visitorHash, since)
+      .first<{ n: number }>();
+    return row?.n ?? 0;
+  }
+
+  async countRecentByIp(ipHash: string, since: string): Promise<number> {
+    const row = await this.db
+      .prepare("SELECT COUNT(*) AS n FROM feedback WHERE ip_hash = ? AND created_at > ?")
+      .bind(ipHash, since)
+      .first<{ n: number }>();
+    return row?.n ?? 0;
   }
 
   async list(options: {

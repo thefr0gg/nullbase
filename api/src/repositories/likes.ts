@@ -26,19 +26,40 @@ export class LikesRepository {
     return row !== null;
   }
 
+  /** Rate-limit inputs: events by a visitor/network identity inside a window. */
+  async countRecentByVisitor(visitorHash: string, since: string): Promise<number> {
+    const row = await this.db
+      .prepare(
+        "SELECT COUNT(*) AS n FROM page_like_events WHERE visitor_hash = ? AND created_at > ?",
+      )
+      .bind(visitorHash, since)
+      .first<{ n: number }>();
+    return row?.n ?? 0;
+  }
+
+  async countRecentByIp(ipHash: string, since: string): Promise<number> {
+    const row = await this.db
+      .prepare(
+        "SELECT COUNT(*) AS n FROM page_like_events WHERE ip_hash = ? AND created_at > ?",
+      )
+      .bind(ipHash, since)
+      .first<{ n: number }>();
+    return row?.n ?? 0;
+  }
+
   /**
    * Records a like. Returns false if this visitor already liked the page
    * (unique (page_path, visitor_hash) constraint — the INSERT throws on
    * duplicates for both drivers). The aggregate count is then incremented
    * atomically by SQLite itself.
    */
-  async like(pagePath: string, visitorHash: string): Promise<boolean> {
+  async like(pagePath: string, visitorHash: string, ipHash: string): Promise<boolean> {
     try {
       await this.db
         .prepare(
-          "INSERT INTO page_like_events (page_path, visitor_hash, created_at) VALUES (?, ?, ?)",
+          "INSERT INTO page_like_events (page_path, visitor_hash, ip_hash, created_at) VALUES (?, ?, ?, ?)",
         )
-        .bind(pagePath, visitorHash, now())
+        .bind(pagePath, visitorHash, ipHash, now())
         .run();
     } catch {
       return false; // duplicate like from this visitor

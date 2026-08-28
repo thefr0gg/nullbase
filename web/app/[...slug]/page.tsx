@@ -57,15 +57,17 @@ export default async function SlugPage({
   if (!page) notFound();
 
   const next = getNextPage(page.slug);
-  return <ContentRenderer page={page} next={next} />;
+  return <ContentRenderer page={page} next={next} pagePath={slugToHref(page.slug)} />;
 }
 
 async function ContentRenderer({
   page,
   next,
+  pagePath,
 }: {
   page: CollectedPage;
   next: ReturnType<typeof getNextPage>;
+  pagePath: string;
 }) {
   // Dynamic import of the compiled `.mdx` (resolved by @next/mdx's loader).
   const mod = (await import(`../../content/${page.fileRel}.mdx`)) as {
@@ -78,7 +80,7 @@ async function ContentRenderer({
       {/* Single non-intrusive ad per content page — sits after the body, above
           the next-page footer, so it never interrupts reading. */}
       <AdUnit />
-      <PageFooter next={next} />
+      <PageFooter next={next} page={pagePath} />
     </article>
   );
 }

@@ -122,13 +122,22 @@ export async function verifyToken(
 }
 
 // ---------------------------------------------------------------------------
-// One-way visitor hashing (page like dedupe — no raw IPs stored)
+// One-way identity hashing (likes/feedback anti-spam — no raw data stored)
 // ---------------------------------------------------------------------------
 
-export async function visitorHash(parts: (string | null)[], secret: string): Promise<string> {
+/**
+ * Salted SHA-256 over the given request attributes + the server secret.
+ * Used for both the visitor identity (visitorId | ip | ua) and the network
+ * identity (ip). Clients cannot precompute these without the secret.
+ */
+export async function hashWithSecret(
+  parts: (string | null | undefined)[],
+  secret: string,
+): Promise<string> {
+  const joined = parts.map((p) => p ?? "").join("|");
   const digest = await crypto.subtle.digest(
     "SHA-256",
-    encoder.encode(`${parts.join("|")}|${secret}`),
+    encoder.encode(`${joined}|${secret}`),
   );
   return toBase64Url(digest);
 }

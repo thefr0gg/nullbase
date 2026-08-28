@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { z } from "zod";
+import { readIdentity } from "../lib/identity";
 import type { Services } from "../services";
 import type { AppEnv } from "../types";
 
@@ -15,8 +16,9 @@ export function likesRoutes(services: Services): Hono<AppEnv> {
     return c.json({ page, count: await services.likes.count(page) });
   });
 
-  // POST /v1/likes { "page": "/http" } — like a page (deduped per visitor
-  // via a salted hash of ip + user-agent; no raw request data is stored).
+  // POST /v1/likes { "page": "/http" } — like a page. Identity (visitor UUID,
+  // IP, user agent) is hashed server-side for dedupe + rate limiting; no raw
+  // request data is stored.
   routes.post("/", async (c) => {
     const parsed = z
       .object({ page: z.string().startsWith("/").max(500) })
@@ -24,10 +26,7 @@ export function likesRoutes(services: Services): Hono<AppEnv> {
     if (!parsed.success) {
       return c.json({ error: "Invalid request body." }, 400);
     }
-    const result = await services.likes.like(parsed.data.page, [
-      c.req.header("cf-connecting-ip") ?? c.req.header("x-forwarded-for") ?? null,
-      c.req.header("user-agent") ?? null,
-    ]);
+    const result = await services.likes.like(parsed.data.page, readIdentity(c));
     return c.json({ page: parsed.data.page, liked: result.liked, count: result.count });
   });
 

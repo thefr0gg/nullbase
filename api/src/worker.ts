@@ -17,7 +17,11 @@ interface Env {
   ADMIN_TOKEN_SECRET?: string;
 }
 
-const DEFAULT_ALLOWED_ORIGINS = "https://nullbase.wiki,https://admin.nullbase.wiki";
+const DEFAULT_ALLOWED_ORIGINS = [
+  "https://nullbase.wiki",
+  "https://www.nullbase.wiki",
+  "https://admin.nullbase.wiki",
+].join(",");
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
