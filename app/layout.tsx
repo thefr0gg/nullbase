@@ -8,6 +8,7 @@ import { MobileNav } from "@/app/_components/mobile-nav";
 import { SearchBar } from "@/app/_components/search-bar";
 import { getSidebarTree } from "@/lib/content/meta";
 import { getSearchIndex } from "@/lib/content/loader";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -18,7 +19,15 @@ export const metadata: Metadata = {
     template: "%s · nullbase",
   },
   description: "A fast, interactive reference for developers.",
+  // Hardcoded canonical domain: relative metadata URLs (canonical links,
+  // Open Graph `url`, etc.) are resolved against this base, so they always
+  // point at https://nullbase.wiki instead of the request host.
+  metadataBase: new URL(SITE_URL),
   icons: [{ rel: "icon", url: "/favicon.ico" }],
+  openGraph: {
+    siteName: SITE_NAME,
+    type: "website",
+  },
 };
 
 export const viewport: Viewport = {

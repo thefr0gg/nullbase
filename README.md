@@ -20,6 +20,21 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Deployment
+
+This site is a fully static export — no server required:
+
+```bash
+npm run build
+```
+
+The build emits plain HTML/CSS/JS into `out/`. Upload that folder to any
+static host (GitHub Pages, Netlify, Cloudflare Pages, S3, ...). Every route
+is emitted as `<route>/index.html`, and the interactive HTTP playgrounds
+simulate their responses in the browser, so no backend is needed.
+
+Note: `next start` / `npm start` no longer applies — there is no server.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

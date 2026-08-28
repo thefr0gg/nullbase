@@ -7,9 +7,10 @@ const METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"];
 type Method = (typeof METHODS)[number];
 
 /**
- * Live HTTP request builder. Hits the local `/api/http/*` echo/simulator so
- * authors can demonstrate real request–response behavior without any external
- * dependency or unsafe sandbox. Only relative `/api/*` paths are permitted.
+ * Live HTTP request playground. The "server" is simulated entirely in the
+ * browser: the request the learner composes is echoed back as a JSON
+ * response, so the demo works on a fully static deployment with no backend
+ * and no external dependency.
  */
 export default function HttpRequest({
   defaultMethod = "GET",
@@ -30,13 +31,13 @@ export default function HttpRequest({
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  function parseHeaders(text: string): HeadersInit {
-    const out: Record<string, string> = {};
+  function parseHeaders(text: string): [string, string][] {
+    const out: [string, string][] = [];
     for (const line of text.split("\n")) {
       const [k, ...rest] = line.trim().split(":");
       if (!k) continue;
       const v = rest.join(":").trim();
-      if (v) out[k.trim()] = v;
+      if (k.trim() && v) out.push([k.trim(), v]);
     }
     return out;
   }
@@ -47,19 +48,39 @@ export default function HttpRequest({
     setResult(null);
     try {
       const safePath = path.startsWith("/") ? path : "/" + path;
-      if (!safePath.startsWith("/api/"))
-        throw new Error("For safety, only relative /api/* paths are allowed.");
-      const res = await fetch(safePath, {
+      const headers = parseHeaders(headersText);
+      const isBodyless = method === "GET" || method === "HEAD";
+      // Brief pause so the pending state mirrors a real request round trip.
+      await new Promise((resolve) => setTimeout(resolve, 250));
+
+      // Resolve the request line exactly like a server would see it.
+      const url = new URL(safePath, window.location.origin);
+      const echoHeaders: [string, string][] = [
+        ...headers,
+        ["host", window.location.host],
+        ["user-agent", navigator.userAgent],
+        ["accept-language", navigator.language || "*"],
+      ];
+      const payload = {
         method,
-        headers: parseHeaders(headersText),
-        body: method === "GET" || method === "HEAD" ? undefined : bodyText,
-      });
-      const text = await res.text();
+        url: url.toString(),
+        path: url.pathname,
+        search: url.search,
+        headers: Object.fromEntries(echoHeaders),
+        body: isBodyless ? undefined : bodyText || undefined,
+        receivedAt: new Date().toISOString(),
+      };
+
+      // A static site has no server, so any path is "echoed" with a 200 —
+      // this is a browser simulation, not a real network round trip.
       setResult({
-        status: res.status,
-        statusText: res.statusText,
-        headers: Array.from(res.headers.entries()),
-        body: text,
+        status: 200,
+        statusText: "OK",
+        headers: [
+          ["content-type", "application/json"],
+          ["x-simulated-by", "nullbase in-browser echo"],
+        ],
+        body: JSON.stringify(payload, null, 2),
       });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong.");

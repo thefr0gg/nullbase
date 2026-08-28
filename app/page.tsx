@@ -1,5 +1,20 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Badge, Card } from "@/app/_components/ui";
+import { SITE_NAME } from "@/lib/site";
+
+export const metadata: Metadata = {
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "nullbase — developer reference",
+    description: "A fast, interactive reference for developers.",
+    url: "/", // resolved against `metadataBase` -> https://nullbase.wiki/
+    siteName: SITE_NAME,
+    type: "website",
+  },
+};
 
 export default function HomePage() {
   return (

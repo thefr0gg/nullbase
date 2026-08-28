@@ -6,32 +6,34 @@ import { Badge, Button } from "@/app/_components/ui";
 interface CodeDef {
   code: number;
   label: string;
+  reason: string;
   color: "green" | "blue" | "orange" | "red";
 }
 
 const CODES: CodeDef[] = [
-  { code: 200, label: "200 OK", color: "green" },
-  { code: 201, label: "201 Created", color: "green" },
-  { code: 204, label: "204 No Content", color: "green" },
-  { code: 301, label: "301 Moved Permanently", color: "blue" },
-  { code: 302, label: "302 Found", color: "blue" },
-  { code: 304, label: "304 Not Modified", color: "blue" },
-  { code: 400, label: "400 Bad Request", color: "orange" },
-  { code: 401, label: "401 Unauthorized", color: "orange" },
-  { code: 403, label: "403 Forbidden", color: "orange" },
-  { code: 404, label: "404 Not Found", color: "red" },
-  { code: 405, label: "405 Method Not Allowed", color: "red" },
-  { code: 409, label: "409 Conflict", color: "red" },
-  { code: 429, label: "429 Too Many Requests", color: "orange" },
-  { code: 500, label: "500 Internal Server Error", color: "red" },
-  { code: 502, label: "502 Bad Gateway", color: "red" },
-  { code: 503, label: "503 Service Unavailable", color: "red" },
-  { code: 504, label: "504 Gateway Timeout", color: "red" },
+  { code: 200, label: "200 OK", reason: "OK", color: "green" },
+  { code: 201, label: "201 Created", reason: "Created", color: "green" },
+  { code: 204, label: "204 No Content", reason: "No Content", color: "green" },
+  { code: 301, label: "301 Moved Permanently", reason: "Moved Permanently", color: "blue" },
+  { code: 302, label: "302 Found", reason: "Found", color: "blue" },
+  { code: 304, label: "304 Not Modified", reason: "Not Modified", color: "blue" },
+  { code: 400, label: "400 Bad Request", reason: "Bad Request", color: "orange" },
+  { code: 401, label: "401 Unauthorized", reason: "Unauthorized", color: "orange" },
+  { code: 403, label: "403 Forbidden", reason: "Forbidden", color: "orange" },
+  { code: 404, label: "404 Not Found", reason: "Not Found", color: "red" },
+  { code: 405, label: "405 Method Not Allowed", reason: "Method Not Allowed", color: "red" },
+  { code: 409, label: "409 Conflict", reason: "Conflict", color: "red" },
+  { code: 429, label: "429 Too Many Requests", reason: "Too Many Requests", color: "orange" },
+  { code: 500, label: "500 Internal Server Error", reason: "Internal Server Error", color: "red" },
+  { code: 502, label: "502 Bad Gateway", reason: "Bad Gateway", color: "red" },
+  { code: 503, label: "503 Service Unavailable", reason: "Service Unavailable", color: "red" },
+  { code: 504, label: "504 Gateway Timeout", reason: "Gateway Timeout", color: "red" },
 ];
 
 /**
- * Interactive status-code explorer. Clicking a code issues a real request to
- * `/api/http/status/<code>` and renders the live response.
+ * Interactive status-code explorer. Clicking a code renders a simulated HTTP
+ * response carrying that status, generated entirely in the browser so the
+ * demo works on a fully static deployment (no backend required).
  */
 export default function StatusCodeExplorer({
   defaultCode = 200,
@@ -44,25 +46,24 @@ export default function StatusCodeExplorer({
     setActive(code);
     setLoading(true);
     setResp(null);
-    try {
-      const r = await fetch(`/api/http/status/${code}`);
-      const body = await r.text();
-      let payload: { status?: number; reason?: string; message?: string } = {};
-      try {
-        payload = JSON.parse(body);
-      } catch {
-        /* non-JSON body */
-      }
-      setResp({
-        status: payload.status ?? r.status,
-        reason: payload.reason ?? r.statusText,
-        body,
-      });
-    } catch (e) {
-      setResp({ status: code, reason: "Error", body: "Could not reach the server." });
-    } finally {
-      setLoading(false);
-    }
+    // Brief pause so the pending state mirrors a real request round trip.
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    const def = CODES.find((c) => c.code === code);
+    const reason = def?.reason ?? "Unknown";
+    setResp({
+      status: code,
+      reason,
+      body: JSON.stringify(
+        {
+          status: code,
+          reason,
+          message: `This is a simulated ${code} response from nullbase.`,
+        },
+        null,
+        2,
+      ),
+    });
+    setLoading(false);
   }
 
   const activeDef = CODES.find((c) => c.code === active);

@@ -1,14 +1,15 @@
 import { notFound } from "next/navigation";
 import type { ComponentType } from "react";
 import { getPage, getAllSlugs, type CollectedPage } from "@/lib/content/loader";
-import { getNextPage } from "@/lib/content/meta";
+import { getNextPage, slugToHref } from "@/lib/content/meta";
+import { SITE_NAME } from "@/lib/site";
 import { PageFooter } from "@/app/_components/page-footer";
 import { AdUnit } from "@/components/ads/AdUnit";
 
 // `dynamicParams = false` means only slugs returned by generateStaticParams
 // are rendered — unknown paths fall through to a 404. Fast and cacheable.
+// With `output: "export"` everything below runs once, at build time.
 export const dynamicParams = false;
-export const runtime = "nodejs";
 
 /**
  * Every content page is statically generated from the `/content` tree.
@@ -28,12 +29,20 @@ export async function generateMetadata({
   const { slug } = await params;
   const page = getPage(slug);
   if (!page) return { title: "Not found" };
+  const href = slugToHref(slug);
   return {
     title: page.frontmatter.title,
     description: page.frontmatter.description,
+    alternates: {
+      // Relative path — resolved against `metadataBase` (https://nullbase.wiki).
+      canonical: href,
+    },
     openGraph: {
       title: `${page.frontmatter.title} · nullbase`,
       description: page.frontmatter.description,
+      url: href,
+      siteName: SITE_NAME,
+      type: "website",
     },
   };
 }
