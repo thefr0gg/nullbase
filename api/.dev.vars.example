@@ -1,0 +1,5 @@
+# Copy to .dev.vars for local `wrangler dev` (gitignored — never commit secrets).
+# The plain-Node dev server (npm run dev) reads the same names from process.env
+# with these defaults baked in, so this file is only needed for wrangler dev.
+ADMIN_TOKEN_SECRET=dev-only-secret-change-me
+ALLOWED_ORIGINS=http://localhost:3000

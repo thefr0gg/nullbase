@@ -1,5 +1,4 @@
 import { getAllPages } from "./loader";
-import type { CollectedPage } from "./loader";
 
 /** A node in the document sidebar, derived purely from the content tree. */
 export interface SidebarNode {

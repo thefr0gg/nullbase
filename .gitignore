@@ -1,7 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-/node_modules
+node_modules/
 /.pnp
 .pnp.*
 .yarn/*
@@ -14,8 +14,8 @@
 /coverage
 
 # next.js
-/.next/
-/out/
+web/.next/
+web/out/
 
 # production
 /build
@@ -39,3 +39,16 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# api: local sqlite database + cloudflare/wrangler artifacts
+api/data/
+.dev.vars
+.wrangler/
+.open-next/
+
+# commit non-secret frontend env files despite .env* above
+!web/.env.development
+!web/.env.production
+
+# logs
+*.log

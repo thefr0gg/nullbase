@@ -90,7 +90,10 @@ export const components = {
     <hr {...props} className="my-6 border-0 border-border" />
   ),
   img: (props: ComponentProps<"img">) => (
+    // Plain <img> on purpose: content images are static files inside the
+    // export; next/image's optimization server does not exist on a static host.
     <img
+      alt={props.alt ?? ""}
       {...props}
       className="my-4 max-w-full rounded-xl border border-border"
     />

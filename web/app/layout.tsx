@@ -1,5 +1,6 @@
 import "./globals.css";
 import { Geist, Geist_Mono } from "next/font/google";
+import Link from "next/link";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { ThemeToggle } from "@/app/_components/theme-toggle";
@@ -50,7 +51,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           avoid a flash of the wrong color scheme.
         */}
         <script
-          // eslint-disable-next-line react/no-danger
           dangerouslySetInnerHTML={{
             __html:
               "(function(){try{var t=localStorage.getItem('theme');var m=window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.setAttribute('data-theme',t||(m?'dark':'light'));}catch(e){document.documentElement.setAttribute('data-theme','light');}})();",
@@ -74,12 +74,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                 {/* Logo flush left, aligned with the sidebar edge */}
                 <div className="flex shrink-0 items-center gap-2">
                   <MobileNav tree={tree} />
-                  <a
+                  <Link
                     href="/"
                     className="font-mono text-base font-semibold text-text-primary"
                   >
                     nullbase
-                  </a>
+                  </Link>
                 </div>
                 {/* Search centered in the remaining space */}
                 <div className="flex flex-1 justify-center px-2">

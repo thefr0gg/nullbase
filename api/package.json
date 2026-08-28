@@ -1,0 +1,30 @@
+{
+  "name": "nullbase-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/dev-server.ts",
+    "typecheck": "tsc --noEmit",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "db:migrate:remote": "wrangler d1 migrations apply nullbase-db --remote",
+    "db:seed": "tsx scripts/seed.ts",
+    "db:seed:remote": "wrangler d1 execute nullbase-db --remote --file migrations/seed.sql",
+    "db:reset": "node -e \"require('node:fs').rmSync('data', { recursive: true, force: true })\" && npm run db:migrate && npm run db:seed",
+    "db:admin": "tsx scripts/create-admin.ts",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.14.0",
+    "better-sqlite3": "^12.0.0",
+    "hono": "^4.9.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^24",
+    "tsx": "^4.20.0",
+    "typescript": "^5",
+    "wrangler": "^4.127.0"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  // Static-assets-only Worker: serves the `out/` folder produced by
+  // `next build` (output: "export"). No server code, no OpenNext.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "nullbase",
+  "compatibility_date": "2026-08-28",
+  "assets": {
+    "directory": "./out",
+    // Serve out/404.html (the app's custom "4xx Client error" page) for
+    // unknown paths. html_handling defaults add index.html resolution, so
+    // /http -> /http/index.html works without rewrite rules.
+    "not_found_handling": "404-page"
+  }
+}
