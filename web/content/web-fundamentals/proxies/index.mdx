@@ -1,0 +1,47 @@
+---
+title: Proxies
+description: The difference between a forward proxy and a reverse proxy, and how a reverse proxy routes a request.
+category: Web Fundamentals
+weight: 7
+interactive: true
+interactiveType: ["ItemExplorer", "StepFlow"]
+---
+
+import { proxyComparisonItems } from "./comparison";
+import { reverseProxySteps } from "./reverse-proxy-steps";
+
+# Proxies
+
+A **proxy** is a server that sits between a client and the server it's actually trying to reach, forwarding traffic on someone's behalf. Which side it represents is the whole distinction:
+
+<ItemExplorer
+  title="Forward vs Reverse Proxy"
+  layout="table"
+  tableColumns={[
+    { key: "sits", label: "Sits" },
+    { key: "hides", label: "Hides" },
+    { key: "knows", label: "Who's aware of it" },
+    { key: "examples", label: "Examples" },
+  ]}
+  items={proxyComparisonItems}
+/>
+
+- A **forward proxy** acts on behalf of the *client* — it's why your company's IT department can block certain sites, or a VPN can make your traffic look like it's coming from somewhere else.
+- A **reverse proxy** acts on behalf of the *server* — it's why nullbase.wiki can be backed by any number of actual servers without you ever knowing.
+
+## How a reverse proxy routes a request
+
+<StepFlow title="Request Through a Reverse Proxy" steps={reverseProxySteps} />
+
+## Why use one
+
+- **Routing** — one hostname, many backend services, split by path or subdomain.
+- **Load balancing** — spread requests across multiple identical backend instances.
+- **TLS termination** — the proxy handles HTTPS, so backend services only need to speak plain HTTP internally.
+- **Caching** — serve repeat requests from the proxy without hitting the backend at all.
+- **Security** — the real backend servers are never directly reachable from the internet.
+
+## See Also
+
+- **[CDNs](/web-fundamentals/cdns)** — a reverse proxy's caching taken to a global, distributed scale.
+- **[TLS & HTTPS](/web-fundamentals/tls)** — commonly terminated at the reverse proxy rather than the backend.

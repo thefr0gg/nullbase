@@ -1,0 +1,36 @@
+---
+title: TCP/IP
+description: The layered model underneath every internet connection, and how TCP turns an unreliable network into a reliable one.
+category: Web Fundamentals
+weight: 5
+interactive: true
+interactiveType: ["ItemExplorer", "StepFlow"]
+---
+
+import { tcpIpLayerItems } from "./layers";
+import { tcpLifecycleSteps } from "./handshake-steps";
+
+# TCP/IP
+
+**TCP/IP** is the layered set of protocols the internet actually runs on. Each layer solves one problem and hands the result to the layer above it — your browser never has to think about Ethernet frames, and Ethernet never has to think about HTTP.
+
+## The four layers
+
+<ItemExplorer title="TCP/IP Model" layout="grid" items={tcpIpLayerItems} />
+
+Data flowing down through these layers gets wrapped at each step — an HTTP request becomes the payload of a TCP segment, which becomes the payload of an IP packet, which becomes the payload of an Ethernet frame. The receiving end unwraps it in reverse.
+
+## What TCP actually adds
+
+IP alone is "best effort" — packets can arrive out of order, get duplicated, or simply vanish, and IP itself does nothing about it. **TCP** sits on top of IP and turns that into a reliable, ordered, connection-oriented stream: every byte is numbered, acknowledged, and retransmitted if it doesn't arrive.
+
+<StepFlow title="TCP Connection Lifecycle" steps={tcpLifecycleSteps} />
+
+## TCP vs UDP, in one line
+
+TCP guarantees delivery and order at the cost of latency and overhead (acknowledgments, retransmission, the handshake above). **UDP** skips all of that — no handshake, no guarantees, just send the packet — which is why it's used where speed matters more than reliability: DNS lookups, video calls, online games.
+
+## See Also
+
+- **[Ports & Sockets](/web-fundamentals/ports-sockets)** — how TCP and UDP let multiple applications share one IP address.
+- **[HTTP](/web-fundamentals/http)** — the application-layer protocol usually riding on top of a TCP connection.
