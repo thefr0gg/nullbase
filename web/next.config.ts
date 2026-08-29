@@ -19,7 +19,26 @@ const withMDX = createMDX({
   options: {
     // String-form plugin names are safe for both the Webpack and Turbopack
     // build engines (Turbopack cannot accept JS-function plugin options).
-    remarkPlugins: ["remark-frontmatter"],
+    // remark-gfm adds GitHub-Flavored Markdown (tables, strikethrough, task
+    // lists, autolinks) — without it, table syntax in content is left as
+    // literal pipe-delimited text instead of being parsed into `<table>`.
+    remarkPlugins: ["remark-frontmatter", "remark-gfm"],
+    rehypePlugins: [
+      // Adds stable `id` attributes to every heading (deep links + the on-page
+      // permalink anchors rendered by the MDX heading components). String-form,
+      // safe for both the Webpack and Turbopack build engines.
+      "rehype-slug",
+      [
+        "rehype-pretty-code",
+        {
+          theme: {
+            light: "github-light",
+            dark: "github-dark",
+          },
+          keepBackground: false,
+        },
+      ],
+    ],
   },
 });
 
