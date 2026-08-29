@@ -20,9 +20,10 @@ const dbFile = process.env.SQLITE_PATH ?? path.resolve(here, "../data/nullbase.d
 
 const config: AppConfig = {
   db: new SqliteDatabase(dbFile),
-  allowedOrigins: (process.env.ALLOWED_ORIGINS ?? "http://localhost:3000")
+  allowedOrigins: (process.env.ALLOWED_ORIGINS ?? "http://localhost:3000,http://127.0.0.1:3000")
     .split(",")
-    .map((s) => s.trim()),
+    .map((s) => s.trim())
+    .filter(Boolean),
   // Dev-only default; production uses `wrangler secret put ADMIN_TOKEN_SECRET`.
   tokenSecret: process.env.ADMIN_TOKEN_SECRET ?? "dev-only-secret-change-me",
 };

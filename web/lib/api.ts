@@ -9,7 +9,7 @@ import { getVisitorId } from "./visitor";
  *   production:  https://api.nullbase.wiki (set as a Cloudflare build env var
  *                or via web/.env.production — static export inlines the value
  *                into the bundle, there is no runtime env on a static host).
- */
+ */ 
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8787";
 

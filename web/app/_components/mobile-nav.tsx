@@ -37,16 +37,21 @@ export function MobileNav({ tree }: Props) {
             onClick={() => setOpen(false)}
             aria-hidden="true"
           />
-          <div className="absolute inset-y-0 left-0 w-72 max-w-[80vw] overflow-y-auto border-r border-border bg-surface shadow-card">
+          <div className="absolute inset-y-0 left-0 w-72 max-w-[80vw] overflow-y-auto border-r border-border bg-surface/95 shadow-card backdrop-blur-md">
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
-              <span className="font-mono text-base font-semibold text-text-primary">
-                nullbase
-              </span>
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-electric-blue/12 text-sm font-bold text-electric-blue">
+                  n
+                </div>
+                <span className="font-mono text-base font-semibold text-text-primary">
+                  nullbase
+                </span>
+              </div>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label="Close navigation"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-text-secondary hover:bg-surface hover:text-text-primary"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-text-secondary hover:bg-background hover:text-text-primary"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -91,10 +96,10 @@ function SidebarItem({
           href={node.href}
           onClick={onNavigate}
           className={clsx(
-            "block w-full rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors",
+            "block w-full rounded-xl px-2.5 py-2 text-sm font-medium transition-all duration-150",
             active
-              ? "bg-electric-blue/12 text-electric-blue"
-              : "text-text-secondary hover:bg-surface hover:text-text-primary",
+              ? "bg-electric-blue/12 text-electric-blue shadow-[inset_0_0_0_1px_rgba(59,130,246,0.12)]"
+              : "text-text-secondary hover:bg-background hover:text-text-primary",
           )}
         >
           {node.title}
@@ -104,7 +109,10 @@ function SidebarItem({
             type="button"
             onClick={() => setOpen(!open)}
             aria-label={open ? "Collapse section" : "Expand section"}
-            className="rounded-md p-1 text-text-secondary hover:text-text-primary"
+            className={clsx(
+              "rounded-lg p-1.5 transition-colors",
+              active ? "text-electric-blue" : "text-text-secondary hover:text-text-primary",
+            )}
           >
             {open ? (
               <ChevronDown className="h-4 w-4" />
@@ -115,7 +123,7 @@ function SidebarItem({
         )}
       </div>
       {hasChildren && open && (
-        <ul className="mt-1 ml-4 space-y-1 border-l border-border pl-3">
+        <ul className="mt-2 ml-4 space-y-1 border-l border-border pl-3">
           {node.children.map((child) => (
             <SidebarItem
               key={child.href}

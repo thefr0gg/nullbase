@@ -1,5 +1,6 @@
 import "./globals.css";
-import { Geist, Geist_Mono } from "next/font/google";
+import "./mdx.css";
+import { Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import Link from "next/link";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
@@ -11,7 +12,11 @@ import { getSidebarTree } from "@/lib/content/meta";
 import { getSearchIndex } from "@/lib/content/loader";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
+  subsets: ["latin"],
+  display: "swap",
+});
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -43,7 +48,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html
       lang="en"
       data-theme="light"
-      className={`${geistSans.variable} ${geistMono.variable} font-sans`}
+      className={`${jakarta.variable} ${geistMono.variable} font-sans`}
     >
       <head>
         {/*
@@ -71,15 +76,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <div className="flex min-w-0 flex-1 flex-col">
             <header className="sticky top-0 z-10 border-b border-border bg-surface/70 backdrop-blur">
               <div className="flex h-14 items-center gap-3 px-4 sm:px-6">
-                {/* Logo flush left, aligned with the sidebar edge */}
                 <div className="flex shrink-0 items-center gap-2">
                   <MobileNav tree={tree} />
-                  <Link
-                    href="/"
-                    className="font-mono text-base font-semibold text-text-primary"
-                  >
-                    nullbase
-                  </Link>
                 </div>
                 {/* Search centered in the remaining space */}
                 <div className="flex flex-1 justify-center px-2">

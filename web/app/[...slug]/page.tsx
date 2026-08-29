@@ -75,7 +75,7 @@ async function ContentRenderer({
   };
   const MDX = mod.default;
   return (
-    <article className="w-full max-w-none break-words">
+    <article className="mdx-prose w-full max-w-none break-words">
       <MDX />
       {/* Single non-intrusive ad per content page — sits after the body, above
           the next-page footer, so it never interrupts reading. */}

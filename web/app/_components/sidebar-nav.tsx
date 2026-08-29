@@ -24,8 +24,27 @@ export function SidebarNav({ tree }: Props) {
   const visible = topic ? filterToTopic(tree, topic) : tree;
 
   return (
-    <nav className="sticky top-0 hidden h-screen w-64 shrink-0 overflow-y-auto border-r border-border bg-surface/80 md:block">
-      <ul className="space-y-1 px-3 py-10 text-sm">
+    <nav className="sticky top-0 hidden h-screen w-72 shrink-0 overflow-y-auto border-r border-border bg-surface/90 backdrop-blur-md md:block">
+      <div className="px-4 pb-3 pt-6">
+        <Link href="/" className="block rounded-xl p-2 transition-colors hover:bg-background/80">
+          <div className="flex items-center gap-3">
+            <img
+              src="/nullbase-logo-dark.svg"
+              alt="nullbase logo"
+              className="h-9 w-9"
+            />
+            <div className="min-w-0">
+              <div className="font-mono text-lg font-semibold text-text-primary">
+                nullbase
+              </div>
+              <div className="text-[0.68rem] uppercase tracking-[0.16em] text-text-secondary">
+                developer reference
+              </div>
+            </div>
+          </div>
+        </Link>
+      </div>
+      <ul className="space-y-1 px-3 pb-10 pt-2 text-sm">
         {visible.map((node) => (
           <SidebarItem key={node.href} node={node} pathname={pathname} />
         ))}
@@ -60,10 +79,10 @@ function SidebarItem({
         <Link
           href={node.href}
           className={clsx(
-            "block w-full rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors",
+            "block w-full rounded-xl px-2.5 py-2 text-sm font-medium transition-all duration-150",
             active
-              ? "bg-electric-blue/12 text-electric-blue"
-              : "text-text-secondary hover:bg-surface hover:text-text-primary",
+              ? "bg-electric-blue/12 text-electric-blue shadow-[inset_0_0_0_1px_rgba(59,130,246,0.12)]"
+              : "text-text-secondary hover:bg-background hover:text-text-primary",
           )}
         >
           {node.title}
@@ -73,7 +92,10 @@ function SidebarItem({
             type="button"
             onClick={() => setOpen(!open)}
             aria-label={open ? "Collapse section" : "Expand section"}
-            className="rounded-md p-1 text-text-secondary hover:text-text-primary"
+            className={clsx(
+              "rounded-lg p-1.5 transition-colors",
+              active ? "text-electric-blue" : "text-text-secondary hover:text-text-primary",
+            )}
           >
             {open ? (
               <ChevronDown className="h-4 w-4" />
@@ -84,7 +106,7 @@ function SidebarItem({
         )}
       </div>
       {hasChildren && open && (
-        <ul className="mt-1 ml-4 space-y-1 border-l border-border pl-3">
+        <ul className="mt-2 ml-4 space-y-1 border-l border-border pl-3">
           {node.children.map((child) => (
             <SidebarItem key={child.href} node={child} pathname={pathname} />
           ))}

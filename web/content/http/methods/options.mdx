@@ -1,0 +1,119 @@
+---
+title: OPTIONS
+description: Describe communication options for a resource or server. Used for CORS preflight.
+category: HTTP
+weight: 7
+---
+
+# OPTIONS
+
+**OPTIONS** asks a server: "What methods and headers are allowed for this resource?"
+
+It's often used as a **CORS preflight request** (when the browser checks if a cross-origin request is allowed before sending the actual request).
+
+## When the Browser Sends OPTIONS
+
+When you make a request from a web page to a different domain, and that request is "complex" (not a simple GET or POST), the browser first sends OPTIONS to check if it's allowed:
+
+```
+OPTIONS /api/users HTTP/1.1
+Host: api.example.com
+Origin: https://example.com
+Access-Control-Request-Method: POST
+Access-Control-Request-Headers: Content-Type
+```
+
+The server responds:
+
+```
+HTTP/1.1 200 OK
+Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
+Access-Control-Allow-Headers: Content-Type, Authorization
+Access-Control-Max-Age: 86400
+```
+
+If the server says "yes, POST is allowed", the browser sends the actual POST request. If it says "no", the browser blocks it.
+
+---
+
+## Manual OPTIONS Request
+
+You can also manually ask what methods are allowed:
+
+```
+OPTIONS /api/users HTTP/1.1
+Host: api.example.com
+```
+
+Server response:
+
+```
+HTTP/1.1 200 OK
+Allow: GET, POST, OPTIONS
+```
+
+Or with more detail:
+
+```
+HTTP/1.1 200 OK
+Allow: GET, POST, OPTIONS
+Content-Type: text/plain
+
+This resource supports:
+- GET: Retrieve the user list
+- POST: Create a new user
+- OPTIONS: Describe these options
+```
+
+---
+
+## Response Headers for CORS
+
+When responding to a CORS preflight OPTIONS request, include:
+
+| Header | Purpose | Example |
+|--------|---------|---------|
+| `Access-Control-Allow-Methods` | Which methods are allowed | `GET, POST, PUT, OPTIONS` |
+| `Access-Control-Allow-Headers` | Which headers can be sent | `Content-Type, Authorization` |
+| `Access-Control-Allow-Origin` | Which origins are allowed | `https://example.com` or `*` |
+| `Access-Control-Max-Age` | Cache this answer for (seconds) | `86400` |
+
+---
+
+## Properties
+
+- **Safe:** Yes — doesn't change server state
+- **Idempotent:** Yes — calling multiple times has the same effect
+- **Cacheable:** Sort of — the preflight response can be cached via Access-Control-Max-Age
+- **Has Body?** Usually no, but servers can include descriptive text
+
+---
+
+## Simple vs Preflight Requests
+
+**Simple Request** (browser sends it directly, no preflight):
+- Method: GET, POST, HEAD
+- No custom headers
+- Content-Type is text/plain, application/x-www-form-urlencoded, or multipart/form-data
+
+**Complex Request** (browser sends OPTIONS first):
+- Method: PUT, PATCH, DELETE
+- Custom headers like Authorization
+- Content-Type: application/json
+
+---
+
+## Common Mistakes
+
+❌ **Forgetting to handle OPTIONS requests** — If you only implement GET and POST, returning a 405 Method Not Allowed for OPTIONS breaks CORS.
+
+❌ **Not including Access-Control-Allow-Headers** — If the browser sends a custom header and the server doesn't list it in the response, the request fails.
+
+❌ **Using Access-Control-Allow-Origin: \*** with credentials** — You can't allow all origins if cookies/auth are involved. Be specific.
+
+---
+
+## See Also
+
+- **[CORS](/http/cors)** — Cross-Origin Resource Sharing: the full story.
+- **[Methods Reference](/http/methods)** — All HTTP methods.

@@ -13,10 +13,31 @@ import { cors } from "hono/cors";
  * (worker.ts parses ALLOWED_ORIGINS / .dev.vars, dev-server.ts reads the env).
  */
 export function corsMiddleware(allowedOrigins: string[]) {
-  return cors({
-    origin: allowedOrigins,
-    allowMethods: ["GET", "POST", "PATCH", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization"],
+  const safeAllowedOrigins = allowedOrigins
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  const corsHandler = cors({
+    origin: safeAllowedOrigins,
+    allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowHeaders: [
+      "Content-Type",
+      "Authorization",
+      "Accept",
+      "X-Visitor-Id",
+      "X-Requested-With",
+    ],
+    exposeHeaders: ["Retry-After"],
     maxAge: 86_400,
   });
+
+  return async (c: Parameters<typeof corsHandler>[0], next: () => Promise<void>) => {
+    const origin = c.req.header("Origin");
+    if (origin && !safeAllowedOrigins.includes(origin)) {
+      console.warn(
+        `[api] rejected CORS origin: ${origin} (allowed: ${safeAllowedOrigins.join(", ") || "<none>"})`,
+      );
+    }
+    return corsHandler(c, next);
+  };
 }

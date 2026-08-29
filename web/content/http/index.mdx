@@ -1,28 +1,170 @@
 ---
 title: HTTP
-description: Hypertext Transfer Protocol (HTTP/1.1) reference.
+description: Complete, interactive HTTP reference. Learn through live request builders, status code explorers, and real-world examples.
 category: HTTP
 weight: 0
-interactive: false
+interactive: true
 ---
 
 # HTTP
 
-**Hypertext Transfer Protocol (HTTP)** is the foundation of data communication on the Web. It is a **stateless**, **request–response** protocol used by browsers, clients, and APIs to exchange representations of resources.
+**Hypertext Transfer Protocol (HTTP)** is the foundation of web communication. Every request from your browser, every API call, every interaction with a server flows through HTTP.
 
-An HTTP transaction is always **client → server → client**: a client sends a *request*, and the server returns a *response* containing a **status code** and (usually) a representation of the resource.
+This reference teaches HTTP not through isolated facts, but through **interactive tools** — compose real requests, explore status codes, inspect headers, and understand why HTTP behaves the way it does.
+
+---
+
+## Start Here
+
+- **[Fundamentals](/http/fundamentals)** — What is HTTP, how it works, versions at a glance.
+- **[Request–Response Model](/http/request-response)** — The complete flow from client to server and back.
+- **[HTTP Messages](/http/messages)** — The anatomy of requests and responses.
+
+**[→ Try the Interactive Request Builder](#tools)** — Compose real HTTP requests and see responses live.
+
+---
+
+## Core Concepts
+
+### Methods (Verbs)
+Every request uses a method. Here are the most important:
+
+- **[GET](/http/methods/get)** — Retrieve a resource.
+- **[POST](/http/methods/post)** — Submit data, create resources, trigger actions.
+- **[PUT](/http/methods/put)** — Replace or create a resource entirely.
+- **[PATCH](/http/methods/patch)** — Partial updates.
+- **[DELETE](/http/methods/delete)** — Remove a resource.
+- **[HEAD](/http/methods/head)** — Like GET, but headers only (no body).
+- **[OPTIONS](/http/methods/options)** — Describe communication options for a resource.
+- **[All Methods Reference](/http/methods)** — Safe, idempotent, cacheable properties.
+
+### Status Codes
+Every response begins with a code. Master them all:
+
+- **[2xx Success](/http/status-codes/2xx)** — 200 OK, 201 Created, 204 No Content, etc.
+- **[3xx Redirection](/http/status-codes/3xx)** — 301 Moved, 302 Found, 304 Not Modified, etc.
+- **[4xx Client Error](/http/status-codes/4xx)** — 400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found, etc.
+- **[5xx Server Error](/http/status-codes/5xx)** — 500 Internal Server Error, 502 Bad Gateway, 503 Service Unavailable, etc.
+
+**[Live Status Code Explorer](/http/status-codes)** — See what each code means and when servers use it.
+
+### Headers
+Metadata that controls behavior. The essentials:
+
+**Request Headers:**
+- **[Authorization](/http/headers/authorization)** — Prove who you are (Basic, Bearer, API keys).
+- **[Content-Type](/http/headers/content-type)** — Format of the request body (application/json, form-data, etc.).
+- **[Accept](/http/headers/accept)** — What response formats you can understand.
+- **[User-Agent](/http/headers/user-agent)** — Identify the client.
+
+**Response Headers:**
+- **[Content-Type](/http/headers/content-type)** — Format of the response body.
+- **[Cache-Control](/http/headers/cache-control)** — How long to cache this response.
+- **[Set-Cookie](/http/headers/set-cookie)** — Store data on the client.
+- **[Location](/http/headers/location)** — Where to redirect (3xx responses).
+
+**[All Headers Reference](/http/headers)** — 50+ headers with examples and use cases.
+
+### URLs & Resources
+- **[URLs & URIs](/http/urls)** — How resources are identified and requested.
+- **[Query Strings](/http/urls)** — Parameters in the URL.
+- **[URL Encoding](/http/urls)** — Special characters and encoding.
+
+---
+
+## Request & Response Bodies
+
+- **[Bodies & Content](/http/body)** — Text, JSON, form data, binary.
+- **[Content Negotiation](/http/content-negotiation)** — Accept, Content-Type: how clients and servers agree on formats.
+- **[Compression](/http/compression)** — gzip, brotli, deflate: make responses smaller and faster.
+- **[Multipart Data](/http/body)** — File uploads and form submissions with boundaries.
+
+---
+
+## State & Identity
+
+- **[Cookies](/http/cookies)** — Stateful HTTP with Set-Cookie and Cookie headers.
+- **[Authentication & Authorization](/http/auth)** — Basic Auth, Bearer tokens, API keys, OAuth basics.
+- **[CORS](/http/cors)** — Cross-Origin Resource Sharing: why and how it works.
+
+---
+
+## Performance & Optimization
+
+- **[Caching](/http/caching)** — Cache-Control, ETag, Last-Modified, expires: reduce requests and server load.
+- **[Conditional Requests](/http/conditional)** — If-Match, If-None-Match, If-Modified-Since: only send what changed.
+- **[Range Requests](/http/ranges)** — Resume downloads, stream specific byte ranges.
+- **[Connection Management](/http/connections)** — Keep-Alive, pipelining, connection pooling.
+
+---
+
+## Network & Intermediaries
+
+- **[Proxies & Gateways](/http/proxies)** — Forward proxies, reverse proxies, load balancers.
+- **[Redirects](/http/redirects)** — 301, 302, 307, 308: permanent and temporary.
+
+---
+
+## Protocol Versions
+
+Understanding the evolution matters — features changed, performance improved.
+
+- **[HTTP/1.0](/http/http1-0)** — The original (1991). Stateless, simple.
+- **[HTTP/1.1](/http/http1-1)** — The standard (1997–today). Keep-Alive, pipelining, caching.
+- **[HTTP/2](/http/http2)** — Multiplexing and server push (2015). Faster with a single connection.
+- **[HTTP/3](/http/http3)** — QUIC-based, even faster (2022).
+
+---
+
+## Security
+
+- **[HTTPS & TLS](/http/https)** — Encrypted communication.
+- **[Security Headers](/http/security-headers)** — CSP, X-Frame-Options, HSTS, and friends.
+- **[Cookie Security](/http/cookies)** — Secure, HttpOnly, SameSite flags.
+
+---
+
+## Real-World Behavior
+
+- **[Browser Behavior](/http/browser)** — Why browsers do what they do: same-origin policy, preflight requests, redirect limits.
+- **[Server Best Practices](/http/server)** — Status codes, error handling, performance, reliability.
+- **[Practical Examples](/http/examples)** — Form submissions, file uploads, API patterns, authentication flows.
+
+---
+
+<h2 id="tools">Interactive Tools</h2>
+
+### Send a Real HTTP Request
+
+Try it: Change the method, URL, headers, or body. See the full response.
+
+<HttpRequest 
+  defaultMethod="GET" 
+  defaultPath="/api/data"
+  defaultHeaders="Accept: application/json"
+/>
+
+### Explore All Status Codes
+
+What does 418 mean? When do servers return 307 vs 302? Use the explorer.
 
 <StatusCodeExplorer defaultCode={200} />
 
-## On this reference
+---
 
-- **[Request–Response Model](/http/request-response)** — how a transaction flows, end to end.
-- **[HTTP Messages](/http/messages)** — request lines, headers, and bodies.
-- **[Methods](/http/methods/get)** — `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, `OPTIONS`.
-- **[Status Codes](/http/status-codes/200)** — every class and code, with a live explorer.
-- **[Headers](/http/headers/content-type)** — `Content-Type`, `Authorization`, `Cache-Control`, and more.
+## Why This Reference?
 
-## See also
+Most HTTP docs are scattered or incomplete. **Nullbase is different:**
 
-- [MDN: HTTP](https://developer.mozilla.org/en-US/docs/Web/HTTP)
-- [RFC 9110 — HTTP Semantics](https://www.rfc-editor.org/rfc/rfc9110)
+- **Interactive first** — Don't just read about HTTP. Compose requests, see responses, experiment.
+- **Complete** — All 29 topics from fundamentals to security to real-world patterns.
+- **Practical** — Code examples you can modify. Patterns you can use tomorrow.
+- **Honest** — Explains not just what, but why, when, and common mistakes.
+
+---
+
+## Standards & Further Reading
+
+- [RFC 9110 — HTTP Semantics](https://www.rfc-editor.org/rfc/rfc9110) — The official spec.
+- [MDN: HTTP](https://developer.mozilla.org/en-US/docs/Web/HTTP) — Excellent Mozilla reference.
+- [httpwg.org](https://httpwg.org/) — The HTTP Working Group.

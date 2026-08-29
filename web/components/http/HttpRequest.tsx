@@ -92,57 +92,90 @@ export default function HttpRequest({
   const isBodyless = method === "GET" || method === "HEAD";
 
   return (
-    <div className="my-6 grid gap-3">
-      <div className="flex flex-wrap items-end gap-3">
-        <label className="text-xs text-text-secondary">Method</label>
-        <select
-          value={method}
-          onChange={(e) => setMethod(e.target.value as Method)}
-          className="rounded-lg border border-border bg-surface px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-electric-blue"
-        >
-          {METHODS.map((m) => (
-            <option key={m} value={m}>
-              {m}
-            </option>
-          ))}
-        </select>
+    <div className="my-8 overflow-hidden rounded-3xl border border-border bg-surface shadow-card hover:translate-y-0 hover:shadow-card">
+      <div className="border-b border-border bg-background/60 p-4 sm:p-5">
+        <div className="flex flex-col gap-4">
+          <div>
+            <p className="mb-2 text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-text-secondary">
+              Request line
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              {METHODS.map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setMethod(m)}
+                  className={[
+                    "rounded-full border px-3 py-1.5 text-sm font-semibold transition-colors duration-150 hover:translate-y-0 hover:shadow-none",
+                    method === m
+                      ? "border-border bg-background text-text-primary"
+                      : "border-border bg-surface text-text-primary hover:border-border hover:bg-background/80",
+                  ].join(" ")}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+          </div>
 
-        <label className="text-xs text-text-secondary">Path</label>
-        <input
-          value={path}
-          onChange={(e) => setPath(e.target.value)}
-          className="w-52 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-electric-blue"
-        />
-        <Button onClick={send} disabled={loading} variant="primary">
-          {loading ? "Sending…" : "Send"}
-        </Button>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div className="min-w-0 flex-1">
+              <label className="mb-1.5 block text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-text-secondary">
+                Target
+              </label>
+              <input
+                value={path}
+                onChange={(e) => setPath(e.target.value)}
+                className="w-full min-w-0 rounded-xl border border-border bg-background px-3.5 py-2.5 font-mono text-sm text-text-primary outline-none transition focus:border-electric-blue focus:ring-3 focus:ring-electric-blue/15"
+              />
+            </div>
+            <Button
+              onClick={send}
+              disabled={loading}
+              variant="primary"
+              className="h-[52px] w-full min-w-0 rounded-xl px-4 text-sm sm:w-auto sm:min-w-[120px]"
+            >
+              {loading ? "Sending…" : "Send request"}
+            </Button>
+          </div>
+        </div>
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-2">
-        <textarea
-          value={headersText}
-          onChange={(e) => setHeadersText(e.target.value)}
-          placeholder="Headers — one per line as `Name: value`"
-          className="h-28 w-full rounded-xl border border-border bg-surface p-3 font-mono text-xs text-text-primary focus:outline-none focus:ring-2 focus:ring-electric-blue"
-        />
-        <textarea
-          value={bodyText}
-          onChange={(e) => setBodyText(e.target.value)}
-          placeholder="Request body"
-          className="h-28 w-full rounded-xl border border-border bg-surface p-3 font-mono text-xs text-text-primary focus:outline-none focus:ring-2 focus:ring-electric-blue"
-          disabled={isBodyless}
-        />
+      <div className="grid gap-4 p-4 sm:grid-cols-2 sm:p-5">
+        <div className="space-y-2">
+          <label className="block text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-text-secondary">
+            Headers
+          </label>
+          <textarea
+            value={headersText}
+            onChange={(e) => setHeadersText(e.target.value)}
+            placeholder="Headers — one per line as `Name: value`"
+            className="h-32 max-h-80 w-full max-w-full rounded-2xl border border-border bg-background p-3 font-mono text-xs text-text-primary outline-none transition focus:border-electric-blue focus:ring-3 focus:ring-electric-blue/15 resize-y"
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="block text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-text-secondary">
+            Body
+          </label>
+          <textarea
+            value={bodyText}
+            onChange={(e) => setBodyText(e.target.value)}
+            placeholder="Request body"
+            className="h-32 max-h-80 w-full max-w-full rounded-2xl border border-border bg-background p-3 font-mono text-xs text-text-primary outline-none transition focus:border-electric-blue focus:ring-3 focus:ring-electric-blue/15 resize-y disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={isBodyless}
+          />
+        </div>
       </div>
 
       {error && (
-        <code className="block rounded-md bg-danger/10 p-2 text-sm text-danger">
-          {error}
-        </code>
+        <div className="px-4 pb-4 sm:px-5">
+          <code className="block rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+            {error}
+          </code>
+        </div>
       )}
 
-      {result && (
-        <ResponsePanel result={result} />
-      )}
+      {result && <ResponsePanel result={result} />}
     </div>
   );
 }
@@ -162,19 +195,29 @@ function ResponsePanel({ result }: { result: RequestResult }) {
         ? "red"
         : "blue";
   return (
-    <div className="rounded-2xl border border-border bg-surface p-4 shadow-[0_12px_24px_-8px_rgba(59,130,246,0.12)]">
-      <Badge color={level}>
-        {result.status} {result.statusText}
-      </Badge>
-      <div className="mt-3 grid gap-3 sm:grid-cols-2">
-        <pre className="overflow-auto rounded-xl bg-background p-3 text-xs">
+    <div className="border-t border-border bg-background/60 p-4 sm:p-5">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <p className="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-text-secondary">
+          Response
+        </p>
+        <Badge color={level} className="rounded-full px-2.5 py-1">
+          {result.status} {result.statusText}
+        </Badge>
+      </div>
+      <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+        <pre className="overflow-auto rounded-2xl border border-border bg-surface p-3 font-mono text-[11px] leading-6 text-text-primary">
           {result.body}
         </pre>
-        <ul className="space-y-1">
+        <ul className="overflow-hidden rounded-2xl border border-border bg-surface">
           {result.headers.map(([k, v]) => (
-            <li key={k} className="font-mono text-xs">
-              <span className="text-text-secondary">{k}:</span>{" "}
-              <span className="text-text-primary">{v}</span>
+            <li
+              key={k}
+              className="flex items-start justify-between gap-2 border-b border-border px-3 py-2 last:border-b-0"
+            >
+              <span className="font-mono text-[11px] text-text-secondary">{k}</span>
+              <span className="break-all text-right font-mono text-[11px] text-text-primary">
+                {v}
+              </span>
             </li>
           ))}
         </ul>

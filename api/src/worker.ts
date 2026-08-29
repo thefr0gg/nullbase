@@ -21,6 +21,8 @@ const DEFAULT_ALLOWED_ORIGINS = [
   "https://nullbase.wiki",
   "https://www.nullbase.wiki",
   "https://admin.nullbase.wiki",
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
 ].join(",");
 
 export default {

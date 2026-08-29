@@ -1,0 +1,192 @@
+---
+title: Fundamentals
+description: What HTTP is, how it works, and why it matters. The foundation for everything else.
+category: HTTP
+weight: 1
+---
+
+# HTTP Fundamentals
+
+**Hypertext Transfer Protocol (HTTP)** is the protocol used to transfer data across the World Wide Web. It's how your browser fetches web pages, how your phone sends data to servers, how APIs communicate.
+
+## What Makes HTTP Special
+
+### Stateless
+Every request is independent. The server doesn't remember previous requests unless you explicitly tell it to (via cookies, sessions, etc.). This keeps the server simple and scalable.
+
+### Request–Response
+Communication is always initiated by the **client**. The server never sends data unless asked. The pattern is:
+
+1. Client sends a request
+2. Server processes it
+3. Server sends a response
+4. Connection may close or stay open for reuse
+
+### Text-Based (for the most part)
+HTTP messages are mostly readable text (unlike binary protocols). This makes it debuggable and inspectable.
+
+```
+GET /api/users HTTP/1.1
+Host: example.com
+Content-Type: application/json
+
+```
+
+---
+
+## The Basic Flow
+
+```
+Client                                    Server
+  |                                         |
+  |------- HTTP Request (GET, POST...) ---->|
+  |                                         |
+  |                                      Process
+  |                                      request
+  |                                         |
+  |<----- HTTP Response (200, 404...) -------|
+  |                                         |
+```
+
+Every request has:
+- **Method** (GET, POST, PUT, DELETE, etc.)
+- **URL** (what resource)
+- **Headers** (metadata)
+- **Body** (optional, data being sent)
+
+Every response has:
+- **Status code** (200, 404, 500, etc.)
+- **Headers** (metadata about the response)
+- **Body** (the actual content)
+
+---
+
+## URLs
+
+A URL identifies the resource you want:
+
+```
+https://api.example.com/v1/users/42?sort=name#details
+```
+
+- **https** — protocol (scheme)
+- **api.example.com** — host
+- **/v1/users/42** — path (the resource)
+- **?sort=name** — query string (parameters)
+- **#details** — fragment (client-side only)
+
+---
+
+## Methods
+
+The **method** tells the server what you want to do:
+
+| Method | Purpose | Has Body? | Idempotent? |
+|--------|---------|-----------|------------|
+| GET | Retrieve a resource | No | Yes |
+| POST | Create a resource or trigger an action | Yes | No |
+| PUT | Replace a resource | Yes | Yes |
+| PATCH | Partially update a resource | Yes | No |
+| DELETE | Remove a resource | No | Yes |
+| HEAD | Like GET, but headers only | No | Yes |
+| OPTIONS | Describe communication options | No | Yes |
+
+**Idempotent** means calling it multiple times has the same effect as calling it once. Safe for retries.
+
+---
+
+## Status Codes
+
+The server responds with a 3-digit code that tells you what happened:
+
+| Range | Meaning | Examples |
+|-------|---------|----------|
+| 1xx | Informational | 100 Continue |
+| 2xx | Success | 200 OK, 201 Created, 204 No Content |
+| 3xx | Redirection | 301 Moved, 302 Found, 304 Not Modified |
+| 4xx | Client Error | 400 Bad Request, 401 Unauthorized, 404 Not Found |
+| 5xx | Server Error | 500 Internal Server Error, 502 Bad Gateway |
+
+---
+
+## Headers
+
+Headers are key–value pairs that carry metadata about the request or response.
+
+**Common Request Headers:**
+- `Authorization` — who you are (username, API key, token)
+- `Content-Type` — format of the body (application/json, form-data, etc.)
+- `Accept` — what formats you can understand
+- `User-Agent` — what client is making the request
+
+**Common Response Headers:**
+- `Content-Type` — format of the response body
+- `Cache-Control` — how long to cache this
+- `Set-Cookie` — store data on the client
+- `Location` — redirect to here (for 3xx responses)
+
+---
+
+## Bodies
+
+The **body** is the actual data being transferred. Requests can have bodies (usually POST, PUT, PATCH). Responses almost always do.
+
+**Example Request with Body:**
+```json
+POST /api/users HTTP/1.1
+Host: api.example.com
+Content-Type: application/json
+
+{
+  "name": "Alice",
+  "email": "alice@example.com"
+}
+```
+
+**Example Response with Body:**
+```json
+HTTP/1.1 201 Created
+Content-Type: application/json
+
+{
+  "id": 42,
+  "name": "Alice",
+  "email": "alice@example.com"
+}
+```
+
+---
+
+## Versions
+
+HTTP has evolved. The differences matter:
+
+- **HTTP/1.0** (1991) — Simple, one request per connection.
+- **HTTP/1.1** (1997–present) — Keep-Alive, pipelining, chunked encoding.
+- **HTTP/2** (2015) — Multiplexing, server push, binary framing.
+- **HTTP/3** (2022) — Built on QUIC for speed and reliability.
+
+Most modern browsers and servers use HTTP/1.1 or HTTP/2. HTTP/3 is growing.
+
+---
+
+## Common Mistakes
+
+❌ **Thinking GET requests can have bodies** — Some servers accept them, but it's not standard. Use POST instead.
+
+❌ **Using GET for sensitive data** — Query parameters are visible in URLs. Use POST with a body and HTTPS.
+
+❌ **Not reading the status code** — A 200 means success, but 201, 202, 204 also mean success (different meanings).
+
+❌ **Forgetting Content-Type** — Some servers won't parse your body without it.
+
+❌ **Not handling 3xx redirects** — Your client needs to follow redirects automatically (most do).
+
+---
+
+## Next Steps
+
+- **[Request–Response Model](/http/request-response)** — See a complete flow visualized.
+- **[Methods](/http/methods)** — Deep dive into GET, POST, PUT, PATCH, DELETE.
+- **[Status Codes](/http/status-codes)** — All 60+ codes and when to use them.
+- **[Headers](/http/headers)** — The headers that power HTTP.

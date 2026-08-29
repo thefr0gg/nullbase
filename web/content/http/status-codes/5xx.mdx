@@ -1,0 +1,160 @@
+---
+title: 5xx Server Error Codes
+description: Status codes 500–599. The server failed to process the request.
+category: HTTP
+weight: 4
+---
+
+# 5xx Server Error Status Codes
+
+Something went wrong on the server side. The client sent a valid request, but the server couldn't process it.
+
+## Most Common 5xx Codes
+
+| Code | Name | Meaning |
+|------|------|---------|
+| 500 | Internal Server Error | Generic server error (something broke). |
+| 502 | Bad Gateway | The server is acting as a proxy and got an invalid response. |
+| 503 | Service Unavailable | The server is temporarily down (maintenance, overload). |
+| 504 | Gateway Timeout | The server is acting as a proxy and didn't get a response in time. |
+
+---
+
+## Detailed Breakdown
+
+### 500 Internal Server Error
+A generic server error. Something broke, and the server doesn't want to say what.
+
+```
+POST /api/users HTTP/1.1
+Content-Type: application/json
+
+{
+  "name": "Alice",
+  "email": "alice@example.com"
+}
+
+HTTP/1.1 500 Internal Server Error
+{
+  "error": "Internal server error"
+}
+```
+
+**Use:** When:
+- An unexpected exception was thrown
+- A database query failed
+- The code has a bug
+- An external service failed
+
+**Good practice:** Don't expose internal details in 500 responses (no stack traces to clients). Log them on the server for debugging.
+
+---
+
+### 502 Bad Gateway
+The server is acting as a proxy (or load balancer) and got an invalid response from the backend server.
+
+```
+GET /api/data HTTP/1.1
+
+HTTP/1.1 502 Bad Gateway
+{
+  "error": "Bad gateway"
+}
+```
+
+**Use:** When:
+- A reverse proxy can't connect to the backend
+- The backend sends malformed HTTP
+- The backend server crashed
+
+---
+
+### 503 Service Unavailable
+The server is temporarily unable to handle the request. It's usually temporary (maintenance, overload, restart).
+
+```
+GET /api/data HTTP/1.1
+
+HTTP/1.1 503 Service Unavailable
+Retry-After: 120
+{
+  "error": "Service temporarily unavailable"
+}
+```
+
+**Use:** When:
+- The server is under maintenance
+- The database is down
+- The server is overloaded
+- The server is restarting
+
+**Good practice:** Include a `Retry-After` header so the client knows when to retry.
+
+---
+
+### 504 Gateway Timeout
+The server is acting as a proxy and the backend took too long to respond.
+
+```
+GET /api/expensive-query HTTP/1.1
+
+HTTP/1.1 504 Gateway Timeout
+{
+  "error": "Gateway timeout"
+}
+```
+
+**Use:** When:
+- A reverse proxy waits too long for the backend
+- A backend API call takes too long
+- A database query takes too long
+
+---
+
+## Other 5xx Codes
+
+- **501 Not Implemented** — The method or feature isn't implemented yet.
+- **505 HTTP Version Not Supported** — The server doesn't support the HTTP version.
+
+---
+
+## When to Use 5xx vs 4xx
+
+| Scenario | Code |
+|----------|------|
+| The client sent invalid JSON | 400 |
+| The database failed to save the data | 500 |
+| The client isn't logged in | 401 |
+| The server crashed | 500 |
+| The resource doesn't exist | 404 |
+| The server is down for maintenance | 503 |
+
+---
+
+## How Clients Should Handle 5xx Errors
+
+- **Retry with backoff** — Wait and try again (use `Retry-After` if provided).
+- **Don't retry 500 immediately** — Exponential backoff (1s, 2s, 4s, 8s...).
+- **Retry 503 after the time specified** — The server told you when to try again.
+- **Don't retry 501** — The feature isn't implemented; try a different approach.
+
+---
+
+## Common Mistakes
+
+❌ **Returning 500 for client errors** — Use 4xx for client errors (400, 401, 403, 404, etc.).
+
+❌ **Exposing stack traces to clients** — Log errors on the server, but send generic messages to clients.
+
+❌ **Not including Retry-After on 503** — Tell the client when to retry.
+
+❌ **Not logging 5xx errors** — These are bugs. Log them so you can fix them.
+
+---
+
+## See Also
+
+- **[Status Codes Reference](/http/status-codes)** — All codes at a glance.
+- **[2xx Success](/http/status-codes/2xx)** — Request succeeded.
+- **[3xx Redirection](/http/status-codes/3xx)** — Client needs to do something.
+- **[4xx Client Errors](/http/status-codes/4xx)** — Client did something wrong.

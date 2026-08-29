@@ -165,6 +165,8 @@ function FeedbackCard({ page }: { page: string }) {
   const [state, setState] = useState<FeedbackState>("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  const commentWordCount = comment.trim() ? comment.trim().split(/\s+/).filter(Boolean).length : 0;
+
   useEffect(() => {
     setAlreadySent(readFlag(`nullbase:sent-feedback:${page}`));
   }, [page]);
@@ -175,6 +177,11 @@ function FeedbackCard({ page }: { page: string }) {
       if (rating == null && comment.trim() === "") {
         setState("error");
         setErrorMsg("Add a rating or a short comment first.");
+        return;
+      }
+      if (commentWordCount > 1000) {
+        setState("error");
+        setErrorMsg("Keep your feedback under 1000 words.");
         return;
       }
       setState("sending");
@@ -255,12 +262,21 @@ function FeedbackCard({ page }: { page: string }) {
         </div>
         <textarea
           value={comment}
-          onChange={(e) => setComment(e.target.value)}
+          onChange={(e) => {
+            const nextValue = e.target.value;
+            if (nextValue.trim().split(/\s+/).filter(Boolean).length <= 1000) {
+              setComment(nextValue);
+            }
+          }}
+          rows={4}
           maxLength={2000}
-          rows={3}
           placeholder="What did you think of this page? (optional)"
-          className="w-full rounded-xl border border-border bg-background p-3 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-electric-blue"
+          className="max-h-80 w-full max-w-full resize-y rounded-xl border border-border bg-background p-3 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-electric-blue"
         />
+        <div className="flex items-center justify-between text-[11px] text-text-secondary">
+          <span>Feedback</span>
+          <span>{commentWordCount}/1000 words</span>
+        </div>
         <input
           type="email"
           value={email}
