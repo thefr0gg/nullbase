@@ -4,7 +4,6 @@ import { getPage, getAllSlugs, type CollectedPage } from "@/lib/content/loader";
 import { getNextPage, slugToHref } from "@/lib/content/meta";
 import { SITE_NAME } from "@/lib/site";
 import { PageFooter } from "@/app/_components/page-footer";
-import { AdUnit } from "@/components/ads/AdUnit";
 
 // `dynamicParams = false` means only slugs returned by generateStaticParams
 // are rendered — unknown paths fall through to a 404. Fast and cacheable.
@@ -77,9 +76,6 @@ async function ContentRenderer({
   return (
     <article className="mdx-prose w-full max-w-none break-words">
       <MDX />
-      {/* Single non-intrusive ad per content page — sits after the body, above
-          the next-page footer, so it never interrupts reading. */}
-      <AdUnit />
       <PageFooter next={next} page={pagePath} />
     </article>
   );

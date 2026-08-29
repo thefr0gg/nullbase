@@ -61,8 +61,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               "(function(){try{var t=localStorage.getItem('theme');var m=window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.setAttribute('data-theme',t||(m?'dark':'light'));}catch(e){document.documentElement.setAttribute('data-theme','light');}})();",
           }}
         />
-        {/* Google AdSense site verification + loader. `AdUnit` (rendered once per
-            content page) supplies the per-unit slot. */}
+        {/* Google AdSense site verification + loader, kept for the pending
+            approval review. No ad units are rendered anywhere yet. */}
         <meta name="google-adsense-account" content="ca-pub-2968783374193615" />
         <script
           async
