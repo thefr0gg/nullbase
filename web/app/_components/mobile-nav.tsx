@@ -1,22 +1,50 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
-import { ChevronDown, ChevronRight, Menu, X } from "lucide-react";
-import clsx from "clsx";
+import { Menu, X } from "lucide-react";
 import type { SidebarNode } from "@/lib/content/meta";
+import { SidebarTree } from "./sidebar-tree";
 
 interface Props {
   tree: SidebarNode[];
 }
 
+const noopSubscribe = () => () => {};
+
+/** True only once the client has hydrated — portals need a real DOM node,
+ *  which doesn't exist during SSR/the hydration render itself. This is the
+ *  React-recommended replacement for the old `useEffect(() =>
+ *  setMounted(true), [])` idiom (which trips the "no setState synchronously
+ *  in an effect" lint rule despite being the correct pattern here). */
+function useHasMounted(): boolean {
+  return useSyncExternalStore(
+    noopSubscribe,
+    () => true,
+    () => false,
+  );
+}
+
 /**
  * Mobile navigation (<md): a hamburger button (rendered in the header) that
  * opens a slide-in drawer with the full sidebar tree. Hidden on md+.
+ *
+ * Shares <SidebarTree> with the desktop sidebar so both stay behaviorally
+ * identical (same active-branch auto-expand, same "every category always
+ * visible" fix) instead of drifting apart as two hand-copied trees.
+ *
+ * The drawer is rendered via a portal to `document.body`. The header this
+ * button lives in uses `backdrop-blur`, and `backdrop-filter` — like
+ * `filter`/`transform` — makes an element establish a new containing block
+ * for `position: fixed` descendants (CSS spec, not a Tailwind quirk). Left
+ * un-portaled, the "fixed inset-0" overlay resolves against the 56px-tall
+ * header instead of the viewport, so the drawer only ever occupies the top
+ * sliver of the screen instead of the full height.
  */
 export function MobileNav({ tree }: Props) {
   const [open, setOpen] = useState(false);
+  const mounted = useHasMounted();
   const pathname = usePathname();
 
   return (
@@ -30,110 +58,41 @@ export function MobileNav({ tree }: Props) {
         <Menu className="h-4 w-4" />
       </button>
 
-      {open && (
-        <div className="fixed inset-0 z-40 md:hidden">
-          <div
-            className="absolute inset-0 bg-black/40"
-            onClick={() => setOpen(false)}
-            aria-hidden="true"
-          />
-          <div className="absolute inset-y-0 left-0 w-72 max-w-[80vw] overflow-y-auto border-r border-border bg-surface/95 shadow-card backdrop-blur-md">
-            <div className="flex items-center justify-between border-b border-border px-4 py-3">
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-electric-blue/12 text-sm font-bold text-electric-blue">
-                  n
-                </div>
-                <span className="font-mono text-base font-semibold text-text-primary">
-                  nullbase
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                aria-label="Close navigation"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-text-secondary hover:bg-background hover:text-text-primary"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <ul className="space-y-1 px-3 py-4 text-sm">
-              {tree.map((node) => (
-                <SidebarItem
-                  key={node.href}
-                  node={node}
-                  pathname={pathname}
-                  onNavigate={() => setOpen(false)}
-                />
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
-
-function SidebarItem({
-  node,
-  pathname,
-  onNavigate,
-}: {
-  node: SidebarNode;
-  pathname: string;
-  onNavigate?: () => void;
-}) {
-  const active =
-    pathname === node.href ||
-    pathname.startsWith(node.href.replace(/\/$/, "") + "/");
-
-  const hasChildren = !!node.children?.length;
-  const [open, setOpen] = useState(false);
-
-  return (
-    <li>
-      <div className="flex items-center justify-between gap-2">
-        <Link
-          href={node.href}
-          onClick={onNavigate}
-          className={clsx(
-            "block w-full rounded-xl px-2.5 py-2 text-sm font-medium transition-all duration-150",
-            active
-              ? "bg-electric-blue/12 text-electric-blue shadow-[inset_0_0_0_1px_rgba(59,130,246,0.12)]"
-              : "text-text-secondary hover:bg-background hover:text-text-primary",
-          )}
-        >
-          {node.title}
-        </Link>
-        {hasChildren && (
-          <button
-            type="button"
-            onClick={() => setOpen(!open)}
-            aria-label={open ? "Collapse section" : "Expand section"}
-            className={clsx(
-              "rounded-lg p-1.5 transition-colors",
-              active ? "text-electric-blue" : "text-text-secondary hover:text-text-primary",
-            )}
-          >
-            {open ? (
-              <ChevronDown className="h-4 w-4" />
-            ) : (
-              <ChevronRight className="h-4 w-4" />
-            )}
-          </button>
-        )}
-      </div>
-      {hasChildren && open && (
-        <ul className="mt-2 ml-4 space-y-1 border-l border-border pl-3">
-          {node.children.map((child) => (
-            <SidebarItem
-              key={child.href}
-              node={child}
-              pathname={pathname}
-              onNavigate={onNavigate}
+      {open &&
+        mounted &&
+        createPortal(
+          <div className="fixed inset-0 z-40 md:hidden">
+            <div
+              className="absolute inset-0 bg-black/40"
+              onClick={() => setOpen(false)}
+              aria-hidden="true"
             />
-          ))}
-        </ul>
-      )}
-    </li>
+            <div className="absolute inset-y-0 left-0 flex w-72 max-w-[80vw] flex-col border-r border-border bg-surface/95 shadow-card backdrop-blur-md">
+              <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-electric-blue/12 text-sm font-bold text-electric-blue">
+                    n
+                  </div>
+                  <span className="font-mono text-base font-semibold text-text-primary">
+                    nullbase
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  aria-label="Close navigation"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-text-secondary hover:bg-background hover:text-text-primary"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
+                <SidebarTree tree={tree} pathname={pathname} onNavigate={() => setOpen(false)} />
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
+    </>
   );
 }

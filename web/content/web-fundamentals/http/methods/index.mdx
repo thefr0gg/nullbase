@@ -53,7 +53,7 @@ Can the response be **cached** by the browser or by intermediary caches?
 
 ## Most Common Methods
 
-### [GET](/http/methods/get)
+### [GET](/web-fundamentals/http/methods/get)
 Retrieve a resource. This is the default method your browser uses.
 
 ```
@@ -61,7 +61,7 @@ GET /api/users/42 HTTP/1.1
 Host: api.example.com
 ```
 
-### [POST](/http/methods/post)
+### [POST](/web-fundamentals/http/methods/post)
 Create a resource or trigger an action. Requires a body.
 
 ```
@@ -75,7 +75,7 @@ Content-Type: application/json
 }
 ```
 
-### [PUT](/http/methods/put)
+### [PUT](/web-fundamentals/http/methods/put)
 Replace a resource entirely. Requires the full resource in the body.
 
 ```
@@ -90,7 +90,7 @@ Content-Type: application/json
 }
 ```
 
-### [DELETE](/http/methods/delete)
+### [DELETE](/web-fundamentals/http/methods/delete)
 Remove a resource.
 
 ```
@@ -98,7 +98,7 @@ DELETE /api/users/42 HTTP/1.1
 Host: api.example.com
 ```
 
-### [PATCH](/http/methods/patch)
+### [PATCH](/web-fundamentals/http/methods/patch)
 Partially update a resource (only send the fields you're changing).
 
 ```
@@ -115,16 +115,16 @@ Content-Type: application/json
 
 ## Less Common Methods
 
-### [HEAD](/http/methods/head)
+### [HEAD](/web-fundamentals/http/methods/head)
 Like GET, but the server doesn't send the response body. Useful for checking if a resource exists or its size without downloading it.
 
-### [OPTIONS](/http/methods/options)
+### [OPTIONS](/web-fundamentals/http/methods/options)
 Asks the server what methods are allowed. Used for CORS preflight checks (when your browser checks if a cross-origin request is allowed).
 
-### [CONNECT](/http/methods/connect)
+### [CONNECT](/web-fundamentals/http/methods/connect)
 Establishes a tunnel through a proxy. Used for HTTPS over proxies. You rarely use this directly.
 
-### [TRACE](/http/methods/trace)
+### [TRACE](/web-fundamentals/http/methods/trace)
 Echoes the request back to you (for debugging). Most servers disable this for security reasons.
 
 ---
@@ -177,5 +177,5 @@ Echoes the request back to you (for debugging). Most servers disable this for se
 
 ## See Also
 
-- **[Fundamentals](/http/fundamentals)** — Intro to HTTP.
-- **[Status Codes](/http/status-codes)** — What the server responds with.
+- **[Fundamentals](/web-fundamentals/http/fundamentals)** — Intro to HTTP.
+- **[Status Codes](/web-fundamentals/http/status-codes)** — What the server responds with.

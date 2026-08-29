@@ -67,7 +67,7 @@ export default function NotFound() {
           Back to home
         </Link>
         <Link
-          href="/http"
+          href="/web-fundamentals/http"
           className="inline-flex items-center gap-2 rounded-xl border border-border bg-surface px-4 py-2 text-sm font-medium text-text-primary shadow-[0_4px_0_0_rgba(23,23,26,0.08)] transition-all duration-150 hover:translate-y-[-1px] hover:bg-border hover:shadow-[0_6px_0_0_rgba(23,23,26,0.08)] active:translate-y-[1px] active:shadow-[0_2px_0_0_rgba(23,23,26,0.08)] focus-visible:ring-2 focus-visible:ring-electric-blue/40"
         >
           <Compass className="h-4 w-4" />

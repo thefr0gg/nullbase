@@ -29,7 +29,7 @@ export default function HomePage() {
       </header>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Link href="/http" className="group block">
+        <Link href="/web-fundamentals/http" className="group block">
           <Card className="h-full p-6 transition-transform duration-200 group-hover:-translate-y-1">
             <Badge color="blue">HTTP</Badge>
             <h3 className="mt-3 text-xl font-medium text-text-primary">

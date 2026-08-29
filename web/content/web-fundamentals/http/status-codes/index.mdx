@@ -23,10 +23,10 @@ Try clicking on any code to see what it means and when servers use it.
 | Class | Range | Meaning | Link |
 |-------|-------|---------|------|
 | 1xx | 100–199 | Informational (continue processing) | — |
-| 2xx | 200–299 | Success (request received, understood, accepted) | [→ Explore](/http/status-codes/2xx) |
-| 3xx | 300–399 | Redirection (further action needed) | [→ Explore](/http/status-codes/3xx) |
-| 4xx | 400–499 | Client Error (client did something wrong) | [→ Explore](/http/status-codes/4xx) |
-| 5xx | 500–599 | Server Error (server failed) | [→ Explore](/http/status-codes/5xx) |
+| 2xx | 200–299 | Success (request received, understood, accepted) | [→ Explore](/web-fundamentals/http/status-codes/2xx) |
+| 3xx | 300–399 | Redirection (further action needed) | [→ Explore](/web-fundamentals/http/status-codes/3xx) |
+| 4xx | 400–499 | Client Error (client did something wrong) | [→ Explore](/web-fundamentals/http/status-codes/4xx) |
+| 5xx | 500–599 | Server Error (server failed) | [→ Explore](/web-fundamentals/http/status-codes/5xx) |
 
 ---
 
@@ -41,7 +41,7 @@ Request succeeded. The resource was retrieved, created, updated, or deleted.
 | **202** | Accepted | Request accepted but processing is async. |
 | **204** | No Content | Success with no body (DELETE, PATCH). |
 
-[→ Full 2xx Reference](/http/status-codes/2xx)
+[→ Full 2xx Reference](/web-fundamentals/http/status-codes/2xx)
 
 ---
 
@@ -57,7 +57,7 @@ The resource has moved, or the client needs to do something more.
 | **307** | Temporary Redirect | Temporary move, preserve the HTTP method. |
 | **308** | Permanent Redirect | Permanent move, preserve the HTTP method. |
 
-[→ Full 3xx Reference](/http/status-codes/3xx)
+[→ Full 3xx Reference](/web-fundamentals/http/status-codes/3xx)
 
 ---
 
@@ -75,7 +75,7 @@ The client's request had a problem. Fix the request and try again.
 | **422** | Unprocessable Entity | Format is valid but data is rejected. |
 | **429** | Too Many Requests | Rate limited. You're making requests too fast. |
 
-[→ Full 4xx Reference](/http/status-codes/4xx)
+[→ Full 4xx Reference](/web-fundamentals/http/status-codes/4xx)
 
 ---
 
@@ -90,7 +90,7 @@ The server failed. It's not the client's fault.
 | **503** | Service Unavailable | Server is down or overloaded. Retry later. |
 | **504** | Gateway Timeout | Backend took too long to respond. |
 
-[→ Full 5xx Reference](/http/status-codes/5xx)
+[→ Full 5xx Reference](/web-fundamentals/http/status-codes/5xx)
 
 ---
 
@@ -170,9 +170,9 @@ HTTP/1.1 500 Internal Server Error
 
 ## See Also
 
-- **[Fundamentals](/http/fundamentals)** — What is HTTP?
-- **[Methods](/http/methods)** — GET, POST, PUT, PATCH, DELETE.
-- **[Headers](/http/headers)** — Metadata that controls behavior.
+- **[Fundamentals](/web-fundamentals/http/fundamentals)** — What is HTTP?
+- **[Methods](/web-fundamentals/http/methods)** — GET, POST, PUT, PATCH, DELETE.
+- **[Headers](/web-fundamentals/http/headers)** — Metadata that controls behavior.
 
-- [404 Not Found](/http/status-codes/404)
-- [500 Internal Server Error](/http/status-codes/500)
+- [404 Not Found](/web-fundamentals/http/status-codes/404)
+- [500 Internal Server Error](/web-fundamentals/http/status-codes/500)
