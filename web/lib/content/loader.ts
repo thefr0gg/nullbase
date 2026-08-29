@@ -88,8 +88,38 @@ export interface SearchEntry {
   slug: string[];
   title: string;
   description?: string;
-  /** Raw MDX body (frontmatter stripped) — searched for content matches. */
+  /**
+   * Searchable prose extracted from the MDX body — fenced code blocks, JSX
+   * component invocations (`<HttpRequest .../>`), and Markdown punctuation
+   * are stripped, and whitespace is collapsed. This runs once at build time
+   * so matching/highlighting on the client never has to re-clean or re-scan
+   * raw MDX syntax, and so the JSON shipped to the browser is smaller.
+   */
   content: string;
+}
+
+/**
+ * Strip fenced code blocks, JSX/HTML tags, and Markdown punctuation from raw
+ * MDX prose, leaving plain searchable text. Code fences are removed whole
+ * (their contents are wire-format examples/ASCII diagrams, not prose worth
+ * matching against a plain-English query); tags are stripped but the text
+ * between an opening/closing pair (e.g. inside a raw `<h2>...</h2>`) is kept.
+ */
+function cleanForSearch(raw: string): string {
+  return raw
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/<[^>]*>/g, " ")
+    // List-item bullet markers ("- " / "* " at the start of a line) — strip
+    // before newlines collapse below, or they'd survive as a stray " - "
+    // wherever a list item happened to fall inside a preview snippet.
+    .replace(/^[-*]\s+/gm, "")
+    .replace(/[`*_#|[\]()>]/g, " ")
+    // Table separator rows (`|---|:--|`) and `---` hr rules survive the
+    // punctuation strip above as bare runs of dashes — drop those too so a
+    // preview snippet never reads as a wall of "----------".
+    .replace(/-{2,}/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 /**
@@ -108,7 +138,7 @@ export function getSearchIndex(): SearchEntry[] {
       slug: fileToSlug(file),
       title: parsed.success ? parsed.data.title : fileToSlug(file).join("/"),
       description: parsed.success ? parsed.data.description : undefined,
-      content,
+      content: cleanForSearch(content),
     };
   });
 }
