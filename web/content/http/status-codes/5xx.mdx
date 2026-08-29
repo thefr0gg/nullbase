@@ -142,13 +142,13 @@ HTTP/1.1 504 Gateway Timeout
 
 ## Common Mistakes
 
-❌ **Returning 500 for client errors** — Use 4xx for client errors (400, 401, 403, 404, etc.).
+**Avoid:** Returning 500 for client errors — Use 4xx for client errors (400, 401, 403, 404, etc.).
 
-❌ **Exposing stack traces to clients** — Log errors on the server, but send generic messages to clients.
+**Avoid:** Exposing stack traces to clients — Log errors on the server, but send generic messages to clients.
 
-❌ **Not including Retry-After on 503** — Tell the client when to retry.
+**Avoid:** Not including Retry-After on 503 — Tell the client when to retry.
 
-❌ **Not logging 5xx errors** — These are bugs. Log them so you can fix them.
+**Avoid:** Not logging 5xx errors — These are bugs. Log them so you can fix them.
 
 ---
 

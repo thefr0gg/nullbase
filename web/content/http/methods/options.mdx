@@ -105,11 +105,11 @@ When responding to a CORS preflight OPTIONS request, include:
 
 ## Common Mistakes
 
-❌ **Forgetting to handle OPTIONS requests** — If you only implement GET and POST, returning a 405 Method Not Allowed for OPTIONS breaks CORS.
+**Avoid:** Forgetting to handle OPTIONS requests — If you only implement GET and POST, returning a 405 Method Not Allowed for OPTIONS breaks CORS.
 
-❌ **Not including Access-Control-Allow-Headers** — If the browser sends a custom header and the server doesn't list it in the response, the request fails.
+**Avoid:** Not including Access-Control-Allow-Headers — If the browser sends a custom header and the server doesn't list it in the response, the request fails.
 
-❌ **Using Access-Control-Allow-Origin: \*** with credentials** — You can't allow all origins if cookies/auth are involved. Be specific.
+**Avoid:** Using `Access-Control-Allow-Origin: *` with credentials — You can't allow all origins if cookies/auth are involved. Be specific.
 
 ---
 

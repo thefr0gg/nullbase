@@ -172,15 +172,15 @@ Most modern browsers and servers use HTTP/1.1 or HTTP/2. HTTP/3 is growing.
 
 ## Common Mistakes
 
-❌ **Thinking GET requests can have bodies** — Some servers accept them, but it's not standard. Use POST instead.
+**Avoid:** Thinking GET requests can have bodies — Some servers accept them, but it's not standard. Use POST instead.
 
-❌ **Using GET for sensitive data** — Query parameters are visible in URLs. Use POST with a body and HTTPS.
+**Avoid:** Using GET for sensitive data — Query parameters are visible in URLs. Use POST with a body and HTTPS.
 
-❌ **Not reading the status code** — A 200 means success, but 201, 202, 204 also mean success (different meanings).
+**Avoid:** Not reading the status code — A 200 means success, but 201, 202, 204 also mean success (different meanings).
 
-❌ **Forgetting Content-Type** — Some servers won't parse your body without it.
+**Avoid:** Forgetting Content-Type — Some servers won't parse your body without it.
 
-❌ **Not handling 3xx redirects** — Your client needs to follow redirects automatically (most do).
+**Avoid:** Not handling 3xx redirects — Your client needs to follow redirects automatically (most do).
 
 ---
 

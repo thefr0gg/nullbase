@@ -119,11 +119,11 @@ Client              Server
 
 ## Common Mistakes
 
-❌ **Using 302 when you need 307** — 302 can change POST to GET. Use 307 if it matters.
+**Avoid:** Using 302 when you need 307 — 302 can change POST to GET. Use 307 if it matters.
 
-❌ **Using 301 for everything** — Only use 301 if the URL is gone forever. Most redirects are 302 or 307.
+**Avoid:** Using 301 for everything — Only use 301 if the URL is gone forever. Most redirects are 302 or 307.
 
-❌ **Not including Location header** — 3xx responses MUST have a Location header.
+**Avoid:** Not including Location header — 3xx responses MUST have a Location header.
 
 ---
 

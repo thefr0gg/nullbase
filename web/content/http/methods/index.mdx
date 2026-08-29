@@ -121,10 +121,10 @@ Like GET, but the server doesn't send the response body. Useful for checking if 
 ### [OPTIONS](/http/methods/options)
 Asks the server what methods are allowed. Used for CORS preflight checks (when your browser checks if a cross-origin request is allowed).
 
-### CONNECT
+### [CONNECT](/http/methods/connect)
 Establishes a tunnel through a proxy. Used for HTTPS over proxies. You rarely use this directly.
 
-### TRACE
+### [TRACE](/http/methods/trace)
 Echoes the request back to you (for debugging). Most servers disable this for security reasons.
 
 ---
@@ -163,15 +163,15 @@ Echoes the request back to you (for debugging). Most servers disable this for se
 
 ## Common Mistakes
 
-❌ **Using GET for sensitive data** — Query parameters are visible in URLs. Use POST.
+**Avoid:** Using GET for sensitive data — Query parameters are visible in URLs. Use POST.
 
-❌ **Thinking GET can have a body** — Most servers ignore it. Use POST instead.
+**Avoid:** Thinking GET can have a body — Most servers ignore it. Use POST instead.
 
-❌ **Using POST for everything** — POST isn't idempotent. Use GET when just fetching, PUT/PATCH for updates, DELETE for removal.
+**Avoid:** Using POST for everything — POST isn't idempotent. Use GET when just fetching, PUT/PATCH for updates, DELETE for removal.
 
-❌ **Not checking if a method is idempotent** — Before retrying a request, check if the method is safe for retries.
+**Avoid:** Not checking if a method is idempotent — Before retrying a request, check if the method is safe for retries.
 
-❌ **PUT vs PATCH confusion** — PUT replaces the whole thing, PATCH updates only what you send.
+**Avoid:** PUT vs PATCH confusion — PUT replaces the whole thing, PATCH updates only what you send.
 
 ---
 

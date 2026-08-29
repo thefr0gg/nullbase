@@ -97,13 +97,13 @@ Content-Type: application/json-patch+json
 
 ## Common Mistakes
 
-❌ **PATCH vs PUT confusion** — PATCH is for partial updates, PUT is full replacement.
+**Avoid:** PATCH vs PUT confusion — PATCH is for partial updates, PUT is full replacement.
 
-❌ **Not sending Content-Type** — Always specify the format of your patch.
+**Avoid:** Not sending Content-Type — Always specify the format of your patch.
 
-❌ **Assuming PATCH is idempotent** — It usually isn't. Calling PATCH twice might produce different results than calling it once.
+**Avoid:** Assuming PATCH is idempotent — It usually isn't. Calling PATCH twice might produce different results than calling it once.
 
-❌ **PATCH without checking response status** — Always check if the patch succeeded.
+**Avoid:** PATCH without checking response status — Always check if the patch succeeded.
 
 ---
 

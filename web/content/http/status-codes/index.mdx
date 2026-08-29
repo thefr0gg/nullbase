@@ -23,7 +23,7 @@ Try clicking on any code to see what it means and when servers use it.
 | Class | Range | Meaning | Link |
 |-------|-------|---------|------|
 | 1xx | 100–199 | Informational (continue processing) | — |
-| 2xx | 200–299 | Success ✅ | [→ Explore](/http/status-codes/2xx) |
+| 2xx | 200–299 | Success (request received, understood, accepted) | [→ Explore](/http/status-codes/2xx) |
 | 3xx | 300–399 | Redirection (further action needed) | [→ Explore](/http/status-codes/3xx) |
 | 4xx | 400–499 | Client Error (client did something wrong) | [→ Explore](/http/status-codes/4xx) |
 | 5xx | 500–599 | Server Error (server failed) | [→ Explore](/http/status-codes/5xx) |
@@ -156,15 +156,15 @@ HTTP/1.1 500 Internal Server Error
 
 ## Common Mistakes
 
-❌ **Returning 404 for permission issues** — Use 403, not 404.
+**Avoid:** Returning 404 for permission issues — Use 403, not 404.
 
-❌ **Confusing 401 and 403** — 401 = log in, 403 = no permission.
+**Avoid:** Confusing 401 and 403 — 401 = log in, 403 = no permission.
 
-❌ **Returning 500 for client errors** — Use 4xx for client issues, 5xx for server issues.
+**Avoid:** Returning 500 for client errors — Use 4xx for client issues, 5xx for server issues.
 
-❌ **Not including Location header on 201** — 201 Created should include where the new resource is.
+**Avoid:** Not including Location header on 201 — 201 Created should include where the new resource is.
 
-❌ **Not including Retry-After on 429/503** — Tell the client when to retry.
+**Avoid:** Not including Retry-After on 429/503 — Tell the client when to retry.
 
 ---
 

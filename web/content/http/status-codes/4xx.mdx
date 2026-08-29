@@ -180,13 +180,13 @@ Retry-After: 60
 
 ## Common Mistakes
 
-❌ **Using 404 for permission issues** — Use 403, not 404. Don't hide that the resource exists.
+**Avoid:** Using 404 for permission issues — Use 403, not 404. Don't hide that the resource exists.
 
-❌ **Using 400 for all client errors** — Use more specific codes: 401, 403, 404, 409, 422.
+**Avoid:** Using 400 for all client errors — Use more specific codes: 401, 403, 404, 409, 422.
 
-❌ **Not including `Retry-After` on 429** — Tell the client how long to wait before retrying.
+**Avoid:** Not including `Retry-After` on 429 — Tell the client how long to wait before retrying.
 
-❌ **Using 401 when you mean 403** — 401 means "log in", 403 means "no permission".
+**Avoid:** Using 401 when you mean 403 — 401 means "log in", 403 means "no permission".
 
 ---
 

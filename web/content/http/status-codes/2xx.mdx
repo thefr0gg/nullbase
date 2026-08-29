@@ -100,11 +100,11 @@ HTTP/1.1 204 No Content
 
 ## Common Mistakes
 
-❌ **Using 200 when you should use 201** — POST that creates a resource should return 201, not 200.
+**Avoid:** Using 200 when you should use 201 — POST that creates a resource should return 201, not 200.
 
-❌ **Using 204 but still sending a body** — If you send 204, don't include a body.
+**Avoid:** Using 204 but still sending a body — If you send 204, don't include a body.
 
-❌ **Forgetting Location header on 201** — Include where the new resource can be accessed.
+**Avoid:** Forgetting Location header on 201 — Include where the new resource can be accessed.
 
 ---
 

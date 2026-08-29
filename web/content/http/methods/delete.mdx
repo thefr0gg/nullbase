@@ -69,11 +69,11 @@ The server might return 200 with `{ deleted: true, id: 42 }` instead of actually
 
 ## Common Mistakes
 
-❌ **Assuming DELETE is always instant** — It might be queued (202 Accepted).
+**Avoid:** Assuming DELETE is always instant — It might be queued (202 Accepted).
 
-❌ **Not using 404 for missing resources** — If the resource is already gone, return 404.
+**Avoid:** Not using 404 for missing resources — If the resource is already gone, return 404.
 
-❌ **DELETE with a body** — Delete usually has no body. Include conditions in the URL or headers if needed.
+**Avoid:** DELETE with a body — Delete usually has no body. Include conditions in the URL or headers if needed.
 
 ---
 
