@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import clsx from "clsx";
-import { Badge, Button } from "@/app/_components/ui";
+import { Badge } from "@/app/_components/ui";
 import type { BadgeColor } from "@/app/_components/ui";
 import { DetailPanel, EyebrowLabel, SimulatedTag } from "./_shared";
 
@@ -64,7 +64,7 @@ function PillsLayout({
   title?: string;
 }) {
   const initialId = defaultId ?? items[0]?.id;
-  const [activeId, setActiveId] = useState(initialId);
+  const [activeId, setActiveId] = useState<string | undefined>(initialId);
   const [loading, setLoading] = useState(false);
   // Pre-populated (not undefined) so the detail panel is already visible on
   // load — otherwise one pill shows as "selected" yet nothing is displayed,
@@ -72,6 +72,13 @@ function PillsLayout({
   const [shownId, setShownId] = useState<string | undefined>(initialId);
 
   async function pick(id: string) {
+    // Clicking the pill that's already open closes it instead of re-running
+    // the reveal — otherwise there was no way to close one at all.
+    if (activeId === id && shownId === id) {
+      setActiveId(undefined);
+      setShownId(undefined);
+      return;
+    }
     setActiveId(id);
     setLoading(true);
     setShownId(undefined);
@@ -83,7 +90,6 @@ function PillsLayout({
   }
 
   const active = items.find((i) => i.id === activeId);
-  const shown = items.find((i) => i.id === shownId);
 
   return (
     <div className="my-6 grid grid-cols-1 gap-4">
@@ -96,27 +102,58 @@ function PillsLayout({
         </div>
       )}
       <div className="flex min-w-0 flex-wrap gap-2">
-        {items.map((item) => (
-          <Button
-            key={item.id}
-            onClick={() => pick(item.id)}
-            disabled={loading}
-            variant={activeId === item.id ? "primary" : "ghost"}
-            className="text-xs"
-          >
-            {item.label}
-            {item.detail && (
-              <ChevronDown className={clsx("h-3 w-3", activeId === item.id ? "text-white" : "text-text-secondary")} />
-            )}
-          </Button>
-        ))}
+        {items.map((item) => {
+          const isActive = activeId === item.id;
+          const isShown = shownId === item.id;
+          return (
+            <div
+              key={item.id}
+              className={clsx(
+                "rounded-2xl transition-all duration-150",
+                // `overflow-hidden` must stay off the collapsed state: per spec
+                // a flex item's automatic min-width (which is what lets it sit
+                // at its natural content width despite `basis-0`) only applies
+                // when the item's overflow is `visible` — adding it here
+                // unconditionally shrank every collapsed pill to zero width.
+                isShown ? "basis-full overflow-hidden border border-border bg-surface shadow-card" : "basis-0",
+              )}
+            >
+              <button
+                type="button"
+                onClick={() => pick(item.id)}
+                disabled={loading}
+                className={clsx(
+                  "inline-flex items-center gap-2 whitespace-nowrap text-xs font-medium transition-all duration-150 disabled:opacity-60",
+                  isShown
+                    ? "w-full justify-between px-4 py-3 text-text-primary"
+                    : isActive
+                      ? "rounded-xl bg-electric-blue px-3.5 py-1.5 text-white shadow-[0_4px_0_0_rgba(23,23,26,0.15)]"
+                      : "rounded-xl border border-border bg-surface px-3.5 py-1.5 text-text-primary shadow-[0_4px_0_0_rgba(23,23,26,0.08)] hover:bg-border",
+                )}
+              >
+                {item.label}
+                {item.detail && (
+                  <ChevronDown className={clsx("h-3 w-3 shrink-0", isActive && !isShown ? "text-white" : "text-text-secondary")} />
+                )}
+              </button>
+              {item.detail && (
+                <div
+                  className={clsx(
+                    "grid transition-[grid-template-rows] duration-300 ease-out",
+                    isShown ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+                  )}
+                >
+                  <div className="overflow-hidden">
+                    <div className="border-t border-border px-4 pb-4 pt-3 text-sm text-text-secondary">
+                      {item.detail ?? active?.detail}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
-      {shown && (
-        <DetailPanel className="p-4 shadow-card">
-          <Badge color={shown.color ?? "blue"}>{shown.label}</Badge>
-          <div className="mt-3">{shown.detail ?? active?.detail}</div>
-        </DetailPanel>
-      )}
     </div>
   );
 }
@@ -178,7 +215,6 @@ function TableLayout({
 
 function GridLayout({ items, title }: { items: ItemExplorerItem[]; title?: string }) {
   const [openId, setOpenId] = useState<string | null>(null);
-  const open = items.find((i) => i.id === openId);
 
   return (
     <div className="my-6 grid grid-cols-1 gap-4">
@@ -187,38 +223,50 @@ function GridLayout({ items, title }: { items: ItemExplorerItem[]; title?: strin
           {title}
         </EyebrowLabel>
       )}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-flow-row-dense gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((item) => {
           const active = openId === item.id;
           return (
-            <button
+            <div
               key={item.id}
-              type="button"
-              onClick={() => setOpenId(active ? null : item.id)}
-              aria-expanded={active}
               className={clsx(
-                "flex items-center justify-between gap-2 rounded-2xl border p-4 text-left shadow-card transition-all duration-150 hover:-translate-y-0.5",
-                active ? "border-electric-blue bg-electric-blue/5" : "border-border bg-surface",
+                "overflow-hidden rounded-2xl border shadow-card transition-all duration-150",
+                active ? "border-electric-blue bg-electric-blue/5 sm:col-span-2 lg:col-span-3" : "border-border bg-surface hover:-translate-y-0.5",
               )}
             >
-              <Badge color={item.color ?? "default"}>{item.label}</Badge>
+              <button
+                type="button"
+                onClick={() => setOpenId(active ? null : item.id)}
+                aria-expanded={active}
+                className="flex w-full items-center justify-between gap-2 p-4 text-left"
+              >
+                <Badge color={item.color ?? "default"}>{item.label}</Badge>
+                {item.detail && (
+                  active ? (
+                    <ChevronUp className="h-4 w-4 shrink-0 text-electric-blue" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 shrink-0 text-text-secondary" />
+                  )
+                )}
+              </button>
               {item.detail && (
-                active ? (
-                  <ChevronUp className="h-4 w-4 shrink-0 text-electric-blue" />
-                ) : (
-                  <ChevronDown className="h-4 w-4 shrink-0 text-text-secondary" />
-                )
+                <div
+                  className={clsx(
+                    "grid transition-[grid-template-rows] duration-300 ease-out",
+                    active ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+                  )}
+                >
+                  <div className="overflow-hidden">
+                    <div className="border-t border-border px-4 pb-4 pt-3 text-sm text-text-secondary">
+                      {item.detail}
+                    </div>
+                  </div>
+                </div>
               )}
-            </button>
+            </div>
           );
         })}
       </div>
-      {open?.detail && (
-        <DetailPanel className="p-4">
-          <Badge color={open.color ?? "default"}>{open.label}</Badge>
-          <div className="mt-3 text-sm text-text-secondary">{open.detail}</div>
-        </DetailPanel>
-      )}
     </div>
   );
 }

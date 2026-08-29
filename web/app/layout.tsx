@@ -29,7 +29,10 @@ export const metadata: Metadata = {
   // Open Graph `url`, etc.) are resolved against this base, so they always
   // point at https://nullbase.wiki instead of the request host.
   metadataBase: new URL(SITE_URL),
-  icons: [{ rel: "icon", url: "/favicon.ico" }],
+  // No manual `icons` entry: `app/favicon.ico` is Next's file-based
+  // convention and already auto-injects a cache-busted <link rel="icon">.
+  // A second, non-versioned one pointing at the same /favicon.ico URL is
+  // exactly the kind of link browsers cache indefinitely across updates.
   openGraph: {
     siteName: SITE_NAME,
     type: "website",
@@ -93,7 +96,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             </main>
             <footer className="flex flex-col items-center gap-2 border-t border-border py-8 text-center text-sm text-text-secondary">
               <span>nullbase — building the developer reference, one spec at a time.</span>
-              <Link href="/privacy" className="hover:text-text-primary hover:underline">
+              <Link href="/privacy" className="underline underline-offset-2 hover:text-text-primary">
                 Privacy
               </Link>
             </footer>
