@@ -63,9 +63,13 @@ function PillsLayout({
   defaultId?: string;
   title?: string;
 }) {
-  const [activeId, setActiveId] = useState(defaultId ?? items[0]?.id);
+  const initialId = defaultId ?? items[0]?.id;
+  const [activeId, setActiveId] = useState(initialId);
   const [loading, setLoading] = useState(false);
-  const [shownId, setShownId] = useState<string | undefined>(undefined);
+  // Pre-populated (not undefined) so the detail panel is already visible on
+  // load — otherwise one pill shows as "selected" yet nothing is displayed,
+  // which reads as broken rather than as an invitation to click the others.
+  const [shownId, setShownId] = useState<string | undefined>(initialId);
 
   async function pick(id: string) {
     setActiveId(id);
@@ -82,7 +86,7 @@ function PillsLayout({
   const shown = items.find((i) => i.id === shownId);
 
   return (
-    <div className="my-6 grid gap-4">
+    <div className="my-6 grid grid-cols-1 gap-4">
       {title && (
         <div className="flex items-center justify-between gap-2">
           <EyebrowLabel as="span" className="mb-0">
@@ -91,7 +95,7 @@ function PillsLayout({
           <SimulatedTag />
         </div>
       )}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex min-w-0 flex-wrap gap-2">
         {items.map((item) => (
           <Button
             key={item.id}
@@ -101,6 +105,9 @@ function PillsLayout({
             className="text-xs"
           >
             {item.label}
+            {item.detail && (
+              <ChevronDown className={clsx("h-3 w-3", activeId === item.id ? "text-white" : "text-text-secondary")} />
+            )}
           </Button>
         ))}
       </div>
@@ -174,7 +181,7 @@ function GridLayout({ items, title }: { items: ItemExplorerItem[]; title?: strin
   const open = items.find((i) => i.id === openId);
 
   return (
-    <div className="my-6 grid gap-4">
+    <div className="my-6 grid grid-cols-1 gap-4">
       {title && (
         <EyebrowLabel as="span" className="mb-0">
           {title}
