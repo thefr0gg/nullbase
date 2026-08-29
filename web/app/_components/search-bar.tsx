@@ -93,6 +93,9 @@ export function SearchBar({ index }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const topic = pathname.split("/").filter(Boolean)[0] ?? null;
+  // The privacy page isn't part of the searchable content tree — searching
+  // from it wouldn't scope to anything meaningful, so it's disabled there.
+  const disabled = topic === "privacy";
 
   // Lowercased once per index load, not per keystroke — typing only ever
   // does cheap `.includes()` calls against already-normalized strings.
@@ -120,7 +123,7 @@ export function SearchBar({ index }: Props) {
       .map((r) => r.e);
   }, [query, indexed, topic]);
 
-  const showDropdown = focused && query.trim() !== "";
+  const showDropdown = !disabled && focused && query.trim() !== "";
   // Defensive clamp: `results` can shrink (e.g. topic changes) without a
   // fresh keystroke resetting `activeIndex` for us.
   const safeActiveIndex = Math.min(activeIndex, Math.max(0, results.length - 1));
@@ -167,7 +170,8 @@ export function SearchBar({ index }: Props) {
           onFocus={() => setFocused(true)}
           onBlur={() => setTimeout(() => setFocused(false), 150)}
           onKeyDown={onKeyDown}
-          placeholder={topic ? `Search ${topic}…` : "Search topics…"}
+          disabled={disabled}
+          placeholder={disabled ? "Search unavailable on this page" : topic ? `Search ${topic}…` : "Search topics…"}
           role="combobox"
           aria-expanded={showDropdown}
           aria-controls="search-results"
@@ -175,7 +179,7 @@ export function SearchBar({ index }: Props) {
           aria-activedescendant={
             showDropdown && results[safeActiveIndex] ? `search-result-${safeActiveIndex}` : undefined
           }
-          className="w-full rounded-full border border-border bg-background/80 py-2.5 pl-9 pr-3 text-sm text-text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] transition-colors placeholder:text-text-secondary focus:border-electric-blue/60 focus:bg-surface focus:outline-none focus:ring-3 focus:ring-electric-blue/12"
+          className="w-full rounded-full border border-border bg-background/80 py-2.5 pl-9 pr-3 text-sm text-text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] transition-colors placeholder:text-text-secondary focus:border-electric-blue/60 focus:bg-surface focus:outline-none focus:ring-3 focus:ring-electric-blue/12 disabled:cursor-not-allowed disabled:opacity-50"
         />
       </div>
 
