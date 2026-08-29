@@ -77,14 +77,11 @@ export default function HomePage() {
   return (
     <div className="flex flex-col gap-16">
       <header className="flex flex-col gap-5">
-        <span className="inline-flex w-fit items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-text-secondary">
-          Developer Reference
-        </span>
         <h1 className="max-w-2xl text-4xl font-semibold tracking-tight text-text-primary sm:text-5xl">
           Look it up. See it{" "}
-          <span className="bg-gradient-to-r from-electric-blue via-violet to-tangerine bg-clip-text text-transparent">
-            work.
-          </span>
+          <code className="rounded-md bg-[color-mix(in_oklch,var(--color-electric-blue)_14%,var(--surface))] px-2 py-0.5 font-mono text-electric-blue">
+            work()
+          </code>
         </h1>
         <p className="max-w-xl text-lg text-text-secondary">
           Every entry pairs a plain-language explanation with something you
