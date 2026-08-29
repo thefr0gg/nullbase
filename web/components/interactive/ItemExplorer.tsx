@@ -108,14 +108,19 @@ function PillsLayout({
           return (
             <div
               key={item.id}
+              // No `basis-0`/animated width here: a flex-wrap row never needs
+              // an item to shrink below its content (items that don't fit
+              // just wrap), so the collapsed state needs no explicit sizing
+              // at all — it's just its natural button width. That in turn
+              // means `overflow-hidden` can stay on unconditionally (nothing
+              // to fight with the automatic-min-width heuristic), avoiding
+              // the two-competing-transitions glitch a `basis-0 -> basis-full`
+              // animation caused: closing pills briefly left an empty
+              // full-width box hanging where the content had already
+              // collapsed but the wrapper hadn't caught up yet.
               className={clsx(
-                "rounded-2xl transition-all duration-150",
-                // `overflow-hidden` must stay off the collapsed state: per spec
-                // a flex item's automatic min-width (which is what lets it sit
-                // at its natural content width despite `basis-0`) only applies
-                // when the item's overflow is `visible` — adding it here
-                // unconditionally shrank every collapsed pill to zero width.
-                isShown ? "basis-full overflow-hidden border border-border bg-surface shadow-card" : "basis-0",
+                "overflow-hidden rounded-2xl",
+                isShown && "basis-full border border-border bg-surface shadow-card",
               )}
             >
               <button
@@ -139,11 +144,23 @@ function PillsLayout({
               {item.detail && (
                 <div
                   className={clsx(
-                    "grid transition-[grid-template-rows] duration-300 ease-out",
-                    isShown ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+                    // `grid-template-columns` (even `minmax(0,1fr)`) only
+                    // constrains width once the box has a *definite*
+                    // available width — during the intrinsic/max-content
+                    // measurement a flex item with `flex-basis:auto` needs
+                    // (to size itself to its button when collapsed), 1fr
+                    // tracks behave like `auto` and still take on the full
+                    // unwrapped content width. `max-w-0` when collapsed is
+                    // what actually zeroes its contribution to that
+                    // measurement — without it, a wide-but-invisible detail
+                    // block was stretching the whole pill open, forcing
+                    // one-per-row wrapping even while every pill but the
+                    // active one had nothing visible expanded.
+                    "grid grid-cols-1 overflow-hidden transition-[grid-template-rows] duration-300 ease-out",
+                    isShown ? "grid-rows-[1fr]" : "grid-rows-[0fr] max-w-0",
                   )}
                 >
-                  <div className="overflow-hidden">
+                  <div className="min-w-0 overflow-hidden">
                     <div className="border-t border-border px-4 pb-4 pt-3 text-sm text-text-secondary">
                       {item.detail ?? active?.detail}
                     </div>
@@ -252,11 +269,11 @@ function GridLayout({ items, title }: { items: ItemExplorerItem[]; title?: strin
               {item.detail && (
                 <div
                   className={clsx(
-                    "grid transition-[grid-template-rows] duration-300 ease-out",
+                    "grid grid-cols-1 transition-[grid-template-rows] duration-300 ease-out",
                     active ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
                   )}
                 >
-                  <div className="overflow-hidden">
+                  <div className="min-w-0 overflow-hidden">
                     <div className="border-t border-border px-4 pb-4 pt-3 text-sm text-text-secondary">
                       {item.detail}
                     </div>

@@ -52,19 +52,11 @@ function countPages(node: SidebarNode): number {
   return 1 + node.children.reduce((sum, child) => sum + countPages(child), 0);
 }
 
-// First couple of levels of quick links under a category — enough to show
-// what's inside without trying to render the whole subtree on the homepage.
+// Direct subtopics only (e.g. HTTP, DNS, TLS under Web Fundamentals) — not a
+// walk into their own children, which would surface a subtopic's internal
+// pages (Fundamentals, Methods, Headers...) instead of sibling subtopics.
 function quickLinks(node: SidebarNode, limit = 5): SidebarNode[] {
-  const flat: SidebarNode[] = [];
-  const walk = (n: SidebarNode) => {
-    for (const child of n.children) {
-      flat.push(child);
-      if (flat.length >= limit) return;
-      walk(child);
-    }
-  };
-  walk(node);
-  return flat.slice(0, limit);
+  return node.children.slice(0, limit);
 }
 
 export default function HomePage() {

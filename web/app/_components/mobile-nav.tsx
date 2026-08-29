@@ -1,30 +1,16 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import type { SidebarNode } from "@/lib/content/meta";
+import { useHasMounted } from "@/lib/use-has-mounted";
 import { SidebarTree } from "./sidebar-tree";
 import { LogoMark } from "./logo-mark";
 
 interface Props {
   tree: SidebarNode[];
-}
-
-const noopSubscribe = () => () => {};
-
-/** True only once the client has hydrated — portals need a real DOM node,
- *  which doesn't exist during SSR/the hydration render itself. This is the
- *  React-recommended replacement for the old `useEffect(() =>
- *  setMounted(true), [])` idiom (which trips the "no setState synchronously
- *  in an effect" lint rule despite being the correct pattern here). */
-function useHasMounted(): boolean {
-  return useSyncExternalStore(
-    noopSubscribe,
-    () => true,
-    () => false,
-  );
 }
 
 /**

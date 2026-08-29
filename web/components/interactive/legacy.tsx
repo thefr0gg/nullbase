@@ -1,6 +1,7 @@
 import RequestPlayground, { type HttpMethod } from "./RequestPlayground";
 import ItemExplorer, { type ItemExplorerItem } from "./ItemExplorer";
 import type { ExamplePath } from "./mock-api";
+import { JsonBlock } from "./_shared";
 
 /**
  * Backward-compatible wrappers for the two original MDX tag names
@@ -77,7 +78,7 @@ const STATUS_ITEMS: ItemExplorerItem[] = STATUS_CODES.map((def) => ({
   id: String(def.code),
   label: def.label,
   color: def.color,
-  detail: <pre className="overflow-x-auto rounded-xl bg-background p-3 text-xs">{statusResponseBody(def)}</pre>,
+  detail: <JsonBlock text={statusResponseBody(def)} className="rounded-xl bg-background p-3" />,
 }));
 
 export function LegacyStatusCodeExplorer({ defaultCode = 200 }: { defaultCode?: number }) {

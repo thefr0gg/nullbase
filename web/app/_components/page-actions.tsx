@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { MessageSquare, Star, ThumbsUp } from "lucide-react";
+import { createPortal } from "react-dom";
+import { MessageSquare, Star, ThumbsUp, X } from "lucide-react";
 import { ApiError, getPageLikes, likePage, submitFeedback } from "@/lib/api";
+import { useHasMounted } from "@/lib/use-has-mounted";
 import { Button, Card } from "./ui";
 
 /**
@@ -246,6 +248,8 @@ function FeedbackCard({ page }: { page: string }) {
     [page, rating, comment, email, commentWordCount, cooldown],
   );
 
+  const mounted = useHasMounted();
+
   if (state === "sent" || alreadySent) {
     return (
       <Card className="flex flex-col items-center justify-center gap-2 p-6 text-center">
@@ -257,8 +261,8 @@ function FeedbackCard({ page }: { page: string }) {
     );
   }
 
-  if (!open) {
-    return (
+  return (
+    <>
       <Card className="flex flex-col items-center justify-center gap-3 p-6 text-center">
         <Button variant="secondary" onClick={() => setOpen(true)}>
           <MessageSquare className="h-4 w-4" />
@@ -268,92 +272,117 @@ function FeedbackCard({ page }: { page: string }) {
           Spot a mistake? Tell us what to improve.
         </p>
       </Card>
-    );
-  }
 
-  return (
-    <Card className="p-6">
-      <form onSubmit={submit} className="grid gap-3 text-left">
-        <div className="flex items-center gap-1" role="radiogroup" aria-label="Page rating">
-          {[1, 2, 3, 4, 5].map((n) => (
-            <button
-              key={n}
-              type="button"
-              role="radio"
-              aria-checked={rating === n}
-              aria-label={`${n} star${n > 1 ? "s" : ""}`}
-              onClick={() => setRating(rating === n ? null : n)}
-              className="cursor-pointer rounded-md p-1 transition-colors hover:bg-electric-blue/10"
-            >
-              <Star
-                className={`h-5 w-5 ${
-                  rating != null && n <= rating
-                    ? "fill-tangerine text-tangerine"
-                    : "text-text-secondary"
-                }`}
-              />
-            </button>
-          ))}
-          <span className="ml-2 text-xs text-text-secondary">
-            {rating ? `${rating}/5` : "Rating (optional)"}
-          </span>
-        </div>
-        <textarea
-          value={comment}
-          onChange={(e) => {
-            const nextValue = e.target.value;
-            if (nextValue.trim().split(/\s+/).filter(Boolean).length <= 1000) {
-              setComment(nextValue);
-            }
-          }}
-          rows={4}
-          maxLength={2000}
-          placeholder="What did you think of this page? (optional)"
-          className="max-h-80 w-full max-w-full resize-y rounded-xl border border-border bg-background p-3 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-electric-blue"
-        />
-        <div className="flex items-center justify-between text-[11px] text-text-secondary">
-          <span>Feedback</span>
-          <span>{commentWordCount}/1000 words</span>
-        </div>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Email (optional — only if you want a reply)"
-          className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-electric-blue"
-        />
-        {errorMsg && (
-          <p className="text-xs text-danger" aria-live="polite">
-            {errorMsg}
-          </p>
+      {/* Portaled to <body> and rendered as a fixed-position overlay instead
+          of swapping the card's own content — otherwise the small button
+          card would grow into a full form in place, which on a narrow
+          mobile layout pushes everything below it down awkwardly. */}
+      {open &&
+        mounted &&
+        createPortal(
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div
+              className="absolute inset-0 bg-black/40"
+              onClick={() => setOpen(false)}
+              aria-hidden="true"
+            />
+            <Card className="relative max-h-[90vh] w-full max-w-md overflow-y-auto p-6 text-left shadow-card">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-text-primary">Feedback</h3>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  aria-label="Close"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-text-secondary hover:bg-background hover:text-text-primary"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <form onSubmit={submit} className="grid gap-3">
+                <div className="flex items-center gap-1" role="radiogroup" aria-label="Page rating">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      role="radio"
+                      aria-checked={rating === n}
+                      aria-label={`${n} star${n > 1 ? "s" : ""}`}
+                      onClick={() => setRating(rating === n ? null : n)}
+                      className="cursor-pointer rounded-md p-1 transition-colors hover:bg-electric-blue/10"
+                    >
+                      <Star
+                        className={`h-5 w-5 ${
+                          rating != null && n <= rating
+                            ? "fill-tangerine text-tangerine"
+                            : "text-text-secondary"
+                        }`}
+                      />
+                    </button>
+                  ))}
+                  <span className="ml-2 text-xs text-text-secondary">
+                    {rating ? `${rating}/5` : "Rating (optional)"}
+                  </span>
+                </div>
+                <textarea
+                  value={comment}
+                  onChange={(e) => {
+                    const nextValue = e.target.value;
+                    if (nextValue.trim().split(/\s+/).filter(Boolean).length <= 1000) {
+                      setComment(nextValue);
+                    }
+                  }}
+                  rows={4}
+                  maxLength={2000}
+                  placeholder="What did you think of this page? (optional)"
+                  className="max-h-80 w-full max-w-full resize-y rounded-xl border border-border bg-background p-3 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-electric-blue"
+                />
+                <div className="flex items-center justify-between text-[11px] text-text-secondary">
+                  <span>Feedback</span>
+                  <span>{commentWordCount}/1000 words</span>
+                </div>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Email (optional — only if you want a reply)"
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-electric-blue"
+                />
+                {errorMsg && (
+                  <p className="text-xs text-danger" aria-live="polite">
+                    {errorMsg}
+                  </p>
+                )}
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    disabled={state === "sending" || cooldown.active}
+                  >
+                    {state === "sending"
+                      ? "Sending…"
+                      : cooldown.active
+                        ? cooldownLabel(cooldown.secondsLeft)
+                        : errorMsg
+                          ? "Retry"
+                          : "Send feedback"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => {
+                      setOpen(false);
+                      setErrorMsg(null);
+                      setState("idle");
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </Card>
+          </div>,
+          document.body,
         )}
-        <div className="flex items-center gap-2">
-          <Button
-            type="submit"
-            variant="primary"
-            disabled={state === "sending" || cooldown.active}
-          >
-            {state === "sending"
-              ? "Sending…"
-              : cooldown.active
-                ? cooldownLabel(cooldown.secondsLeft)
-                : errorMsg
-                  ? "Retry"
-                  : "Send feedback"}
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => {
-              setOpen(false);
-              setErrorMsg(null);
-              setState("idle");
-            }}
-          >
-            Cancel
-          </Button>
-        </div>
-      </form>
-    </Card>
+    </>
   );
 }
