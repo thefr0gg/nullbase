@@ -26,6 +26,26 @@ export interface ItemExplorerItem {
   columns?: Record<string, ReactNode>;
 }
 
+// Tailwind needs literal class strings to scan for, not interpolated ones —
+// same lookup pattern as `ui.tsx`'s Badge and `UrlAnatomy.tsx`.
+const PILL_TINT_CLASSES: Record<BadgeColor, string> = {
+  default: "border-border bg-surface text-text-secondary hover:bg-border",
+  blue: "border-electric-blue/25 bg-electric-blue/10 text-electric-blue hover:bg-electric-blue/15",
+  green: "border-success/25 bg-success/10 text-success hover:bg-success/15",
+  red: "border-danger/25 bg-danger/10 text-danger hover:bg-danger/15",
+  orange: "border-tangerine/25 bg-tangerine/10 text-tangerine hover:bg-tangerine/15",
+  purple: "border-violet/25 bg-violet/10 text-violet hover:bg-violet/15",
+};
+
+const PILL_SOLID_CLASSES: Record<BadgeColor, string> = {
+  default: "bg-electric-blue text-white",
+  blue: "bg-electric-blue text-white",
+  green: "bg-success text-white",
+  red: "bg-danger text-white",
+  orange: "bg-tangerine text-white",
+  purple: "bg-violet text-white",
+};
+
 export interface ItemExplorerProps {
   items: ItemExplorerItem[];
   /** pills = existing status-code-style pick-one-see-detail (default);
@@ -132,11 +152,11 @@ function PillsLayout({
                   isShown
                     ? "w-full justify-between px-4 py-3 text-text-primary"
                     : isActive
-                      ? "rounded-xl bg-electric-blue px-3.5 py-1.5 text-white shadow-[0_4px_0_0_rgba(23,23,26,0.15)]"
-                      : "rounded-xl border border-border bg-surface px-3.5 py-1.5 text-text-primary shadow-[0_4px_0_0_rgba(23,23,26,0.08)] hover:bg-border",
+                      ? clsx("rounded-xl px-3.5 py-1.5 shadow-[0_4px_0_0_rgba(23,23,26,0.15)]", PILL_SOLID_CLASSES[item.color ?? "default"])
+                      : clsx("rounded-xl border px-3.5 py-1.5 shadow-[0_4px_0_0_rgba(23,23,26,0.08)]", PILL_TINT_CLASSES[item.color ?? "default"]),
                 )}
               >
-                {item.label}
+                {isShown ? <Badge color={item.color ?? "default"}>{item.label}</Badge> : item.label}
                 {item.detail && (
                   <ChevronDown className={clsx("h-3 w-3 shrink-0", isActive && !isShown ? "text-white" : "text-text-secondary")} />
                 )}
@@ -248,7 +268,9 @@ function GridLayout({ items, title }: { items: ItemExplorerItem[]; title?: strin
               key={item.id}
               className={clsx(
                 "overflow-hidden rounded-2xl border shadow-card transition-all duration-150",
-                active ? "border-electric-blue bg-electric-blue/5 sm:col-span-2 lg:col-span-3" : "border-border bg-surface hover:-translate-y-0.5",
+                active
+                  ? "border-electric-blue bg-electric-blue/5 sm:col-span-2 lg:col-span-3"
+                  : "border-border bg-surface hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)]",
               )}
             >
               <button

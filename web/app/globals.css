@@ -106,17 +106,18 @@
   }
 }
 
-/* Cartoon "elevated" shadow used on interactive surfaces.
-   Theme-aware: light mode uses a neutral Ink shadow; dark mode uses a black
-   drop shadow for depth with no glow. */
+/* Cartoon "elevated" shadow used on every card-like surface, clickable or
+   not. Theme-aware: light mode uses a neutral Ink shadow; dark mode uses a
+   black drop shadow for depth with no glow.
+   Deliberately static (no hover behavior baked in): a plain content
+   container (a modal, a static info card) shouldn't lift/bounce just
+   because the cursor passes over it. Anything that's actually clickable
+   (a link card, an open-in-place item) pairs this with its own explicit
+   `hover:-translate-y-*` / `hover:shadow-[var(--shadow-card-hover)]`. */
 @layer utilities {
   .shadow-card {
     box-shadow: var(--shadow-card);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
-  .shadow-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-card-hover);
   }
 }
 

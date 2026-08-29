@@ -24,7 +24,7 @@ export function PlaygroundShell({
   return (
     <div
       className={clsx(
-        "my-8 overflow-hidden rounded-3xl border border-border bg-surface shadow-card hover:translate-y-0 hover:shadow-card",
+        "my-8 overflow-hidden rounded-3xl border border-border bg-surface shadow-card",
         className,
       )}
     >

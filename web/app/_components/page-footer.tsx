@@ -22,7 +22,7 @@ export function PageFooter({ next, page }: Props) {
         {next && (
           <Link
             href={next.href}
-            className="group flex items-center justify-between gap-4 rounded-2xl border border-border bg-surface p-6 shadow-card transition-transform duration-200 hover:-translate-y-0.5"
+            className="group flex items-center justify-between gap-4 rounded-2xl border border-border bg-surface p-6 shadow-card transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)]"
           >
             <div>
               <span className="text-xs font-medium uppercase tracking-wide text-text-secondary">
