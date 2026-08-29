@@ -112,7 +112,7 @@ function PillsLayout({
         ))}
       </div>
       {shown && (
-        <DetailPanel className="p-4 shadow-[0_12px_24px_-8px_rgba(59,130,246,0.12)]">
+        <DetailPanel className="p-4 shadow-card">
           <Badge color={shown.color ?? "blue"}>{shown.label}</Badge>
           <div className="mt-3">{shown.detail ?? active?.detail}</div>
         </DetailPanel>

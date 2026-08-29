@@ -11,13 +11,13 @@ weight: 5
 
 ## Basic DELETE
 
-```
+```http
 DELETE /api/users/42 HTTP/1.1
 Host: api.example.com
 ```
 
 **Response:**
-```
+```http
 HTTP/1.1 204 No Content
 ```
 
@@ -37,7 +37,7 @@ HTTP/1.1 204 No Content
 
 Remove specific items or with conditions:
 
-```
+```http
 DELETE /api/sessions/current HTTP/1.1
 
 DELETE /api/files?older_than=2023-01-01 HTTP/1.1
@@ -55,12 +55,12 @@ DELETE /api/files?older_than=2023-01-01 HTTP/1.1
 ## Common Patterns
 
 **Cascade delete:**
-```
+```http
 DELETE /api/users/42?cascade=true HTTP/1.1
 ```
 
 **Soft delete (mark as deleted, don't actually remove):**
-```
+```http
 DELETE /api/users/42 HTTP/1.1
 ```
 The server might return 200 with `{ deleted: true, id: 42 }` instead of actually removing it.

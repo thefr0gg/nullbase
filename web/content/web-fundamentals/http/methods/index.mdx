@@ -56,7 +56,7 @@ Can the response be **cached** by the browser or by intermediary caches?
 ### [GET](/web-fundamentals/http/methods/get)
 Retrieve a resource. This is the default method your browser uses.
 
-```
+```http
 GET /api/users/42 HTTP/1.1
 Host: api.example.com
 ```
@@ -64,7 +64,7 @@ Host: api.example.com
 ### [POST](/web-fundamentals/http/methods/post)
 Create a resource or trigger an action. Requires a body.
 
-```
+```http
 POST /api/users HTTP/1.1
 Host: api.example.com
 Content-Type: application/json
@@ -78,7 +78,7 @@ Content-Type: application/json
 ### [PUT](/web-fundamentals/http/methods/put)
 Replace a resource entirely. Requires the full resource in the body.
 
-```
+```http
 PUT /api/users/42 HTTP/1.1
 Host: api.example.com
 Content-Type: application/json
@@ -93,7 +93,7 @@ Content-Type: application/json
 ### [DELETE](/web-fundamentals/http/methods/delete)
 Remove a resource.
 
-```
+```http
 DELETE /api/users/42 HTTP/1.1
 Host: api.example.com
 ```
@@ -101,7 +101,7 @@ Host: api.example.com
 ### [PATCH](/web-fundamentals/http/methods/patch)
 Partially update a resource (only send the fields you're changing).
 
-```
+```http
 PATCH /api/users/42 HTTP/1.1
 Host: api.example.com
 Content-Type: application/json

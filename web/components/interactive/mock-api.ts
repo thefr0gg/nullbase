@@ -58,11 +58,16 @@ function json(
   payload: unknown,
   extraHeaders: [string, string][] = [],
 ): SimulatedResult {
+  const body = JSON.stringify(payload, null, 2);
   return {
     status,
     statusText,
-    headers: [["content-type", "application/json"], ...extraHeaders],
-    body: JSON.stringify(payload, null, 2),
+    headers: [
+      ["content-type", "application/json"],
+      ["content-length", String(new TextEncoder().encode(body).length)],
+      ...extraHeaders,
+    ],
+    body,
   };
 }
 

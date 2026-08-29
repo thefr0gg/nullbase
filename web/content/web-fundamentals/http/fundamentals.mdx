@@ -3,6 +3,8 @@ title: Fundamentals
 description: What HTTP is, how it works, and why it matters. The foundation for everything else.
 category: HTTP
 weight: 1
+interactive: true
+interactiveType: ["MermaidDiagram"]
 ---
 
 # HTTP Fundamentals
@@ -25,7 +27,7 @@ Communication is always initiated by the **client**. The server never sends data
 ### Text-Based (for the most part)
 HTTP messages are mostly readable text (unlike binary protocols). This makes it debuggable and inspectable.
 
-```
+```http
 GET /api/users HTTP/1.1
 Host: example.com
 Content-Type: application/json
@@ -36,17 +38,15 @@ Content-Type: application/json
 
 ## The Basic Flow
 
-```
-Client                                    Server
-  |                                         |
-  |------- HTTP Request (GET, POST...) ---->|
-  |                                         |
-  |                                      Process
-  |                                      request
-  |                                         |
-  |<----- HTTP Response (200, 404...) -------|
-  |                                         |
-```
+<MermaidDiagram
+  title="Request / Response"
+  chart={`sequenceDiagram
+    participant Client
+    participant Server
+    Client->>Server: HTTP Request (GET, POST...)
+    Note over Server: Process request
+    Server-->>Client: HTTP Response (200, 404...)`}
+/>
 
 Every request has:
 - **Method** (GET, POST, PUT, DELETE, etc.)
@@ -65,7 +65,7 @@ Every response has:
 
 A URL identifies the resource you want:
 
-```
+```text
 https://api.example.com/v1/users/42?sort=name#details
 ```
 

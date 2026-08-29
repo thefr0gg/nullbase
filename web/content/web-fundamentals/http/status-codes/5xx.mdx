@@ -25,7 +25,7 @@ Something went wrong on the server side. The client sent a valid request, but th
 ### 500 Internal Server Error
 A generic server error. Something broke, and the server doesn't want to say what.
 
-```
+```http
 POST /api/users HTTP/1.1
 Content-Type: application/json
 
@@ -53,7 +53,7 @@ HTTP/1.1 500 Internal Server Error
 ### 502 Bad Gateway
 The server is acting as a proxy (or load balancer) and got an invalid response from the backend server.
 
-```
+```http
 GET /api/data HTTP/1.1
 
 HTTP/1.1 502 Bad Gateway
@@ -72,7 +72,7 @@ HTTP/1.1 502 Bad Gateway
 ### 503 Service Unavailable
 The server is temporarily unable to handle the request. It's usually temporary (maintenance, overload, restart).
 
-```
+```http
 GET /api/data HTTP/1.1
 
 HTTP/1.1 503 Service Unavailable
@@ -95,7 +95,7 @@ Retry-After: 120
 ### 504 Gateway Timeout
 The server is acting as a proxy and the backend took too long to respond.
 
-```
+```http
 GET /api/expensive-query HTTP/1.1
 
 HTTP/1.1 504 Gateway Timeout

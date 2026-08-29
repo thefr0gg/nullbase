@@ -25,21 +25,21 @@ Use HEAD when you want metadata about a resource without downloading the full co
 ## Common Uses
 
 **Check if a resource exists:**
-```
+```http
 HEAD /api/users/42 HTTP/1.1
 ```
 
 If it returns `200 OK`, the resource exists. If `404`, it doesn't.
 
 **Check file size before downloading:**
-```
+```http
 HEAD /downloads/large-file.zip HTTP/1.1
 ```
 
 Look at the `Content-Length` header to see how big it is, then decide whether to download.
 
 **Check if a resource was modified:**
-```
+```http
 HEAD /api/data HTTP/1.1
 ```
 
@@ -61,7 +61,7 @@ Same as GET:
 
 The same headers as GET:
 
-```
+```http
 HEAD /api/users/42 HTTP/1.1
 
 HTTP/1.1 200 OK

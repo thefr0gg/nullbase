@@ -1,6 +1,8 @@
 import StepFlow from "./StepFlow";
 import RequestPlayground from "./RequestPlayground";
 import ItemExplorer from "./ItemExplorer";
+import MermaidDiagram from "./MermaidDiagram";
+import UrlAnatomy from "./UrlAnatomy";
 import { LegacyHttpRequest, LegacyStatusCodeExplorer } from "./legacy";
 
 /**
@@ -18,6 +20,8 @@ export const interactiveComponents = {
   StepFlow,
   RequestPlayground,
   ItemExplorer,
+  MermaidDiagram,
+  UrlAnatomy,
 
   // Legacy aliases — do not remove without migrating web/content/http/**.
   HttpRequest: LegacyHttpRequest,

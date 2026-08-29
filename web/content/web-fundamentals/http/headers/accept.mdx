@@ -1,0 +1,42 @@
+---
+title: Accept
+description: The Accept header tells the server which content types the client can handle.
+category: HTTP
+weight: 54
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+# Accept
+
+The `Accept` request header tells the server which media types the client is willing to handle in the response — this is **content negotiation**. A server that can return the same resource as JSON, HTML, or XML uses `Accept` to decide which one to actually send back.
+
+<ItemExplorer
+  title="Common Accept Values"
+  layout="pills"
+  defaultId="json"
+  items={[
+    { id: "json", label: "application/json", color: "green", detail: "The default for APIs. Almost every JSON-returning endpoint treats this as its native format." },
+    { id: "html", label: "text/html", color: "blue", detail: "What a browser sends when navigating to a page — the server responds with rendered HTML instead of raw data." },
+    { id: "xml", label: "application/xml", color: "orange", detail: "Common in older/enterprise APIs (SOAP, some legacy REST services) that predate JSON's dominance." },
+    { id: "any", label: "*/*", color: "purple", detail: "\"I'll take anything.\" The default most HTTP clients send when you don't set Accept explicitly." },
+  ]}
+/>
+
+## How it's structured
+
+`Accept` can list multiple types with a `q` (quality) value indicating preference, `1` being highest:
+
+```http
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+```
+
+This says: prefer HTML, then XHTML, then plain XML at 90% preference, then anything else as a last resort.
+
+## When the server can't comply
+
+If the server genuinely cannot produce any of the types the client will accept, it should respond with `406 Not Acceptable` rather than silently sending a format the client didn't ask for.
+
+## See Also
+
+- **[Content-Type](/web-fundamentals/http/headers/content-type)** — the mirror of `Accept`: what the server *is* sending, versus what the client says it *can* receive.

@@ -3,6 +3,8 @@ title: 3xx Redirection Codes
 description: Status codes 300–399. The client needs to take further action.
 category: HTTP
 weight: 2
+interactive: true
+interactiveType: ["MermaidDiagram"]
 ---
 
 # 3xx Redirection Status Codes
@@ -26,7 +28,7 @@ The request is incomplete. The client needs to take further action (usually foll
 ### 301 Moved Permanently
 The resource has moved to a new URL **permanently**. Caches and browsers remember this.
 
-```
+```http
 HTTP/1.1 301 Moved Permanently
 Location: /new/path
 ```
@@ -38,7 +40,7 @@ Location: /new/path
 ### 302 Found
 The resource is at a different URL **right now**, but might move back later.
 
-```
+```http
 HTTP/1.1 302 Found
 Location: /temporary/path
 ```
@@ -52,7 +54,7 @@ Location: /temporary/path
 ### 307 Temporary Redirect
 Like 302, but **guaranteed** to preserve the method.
 
-```
+```http
 HTTP/1.1 307 Temporary Redirect
 Location: /temporary/path
 ```
@@ -64,7 +66,7 @@ Location: /temporary/path
 ### 308 Permanent Redirect
 Like 301, but **guaranteed** to preserve the method.
 
-```
+```http
 HTTP/1.1 308 Permanent Redirect
 Location: /new/path
 ```
@@ -77,7 +79,7 @@ Location: /new/path
 
 The resource hasn't changed since you last checked. Use your cached copy.
 
-```
+```http
 GET /api/data HTTP/1.1
 If-None-Match: "abc123"
 
@@ -95,16 +97,16 @@ HTTP/1.1 304 Not Modified
 3. Client (browser) automatically follows the redirect to the new URL
 4. Server at new URL returns the resource
 
-```
-Client              Server
-  |---GET /old----->|
-  |                 |
-  |<--301 /new-----|
-  |                 |
-  |---GET /new----->|
-  |                 |
-  |<--200 OK--------|
-```
+<MermaidDiagram
+  title="Redirect Flow"
+  chart={`sequenceDiagram
+    participant Client
+    participant Server
+    Client->>Server: GET /old
+    Server-->>Client: 301 Moved, Location: /new
+    Client->>Server: GET /new
+    Server-->>Client: 200 OK`}
+/>
 
 ---
 

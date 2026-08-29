@@ -25,7 +25,7 @@ The request succeeded. The response contains the result or confirmation.
 ### 200 OK
 The request succeeded. Include the result in the response body.
 
-```
+```http
 HTTP/1.1 200 OK
 Content-Type: application/json
 
@@ -42,7 +42,7 @@ Content-Type: application/json
 ### 201 Created
 The request succeeded and a new resource was created.
 
-```
+```http
 HTTP/1.1 201 Created
 Content-Type: application/json
 Location: /api/users/42
@@ -62,7 +62,7 @@ Location: /api/users/42
 ### 202 Accepted
 The request was accepted and is being processed, but it's not complete yet.
 
-```
+```http
 HTTP/1.1 202 Accepted
 Content-Type: application/json
 
@@ -81,7 +81,7 @@ The client should check the job status later using the job ID.
 ### 204 No Content
 The request succeeded, but there's no content to return.
 
-```
+```http
 HTTP/1.1 204 No Content
 ```
 

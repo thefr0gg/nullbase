@@ -98,7 +98,7 @@ The server failed. It's not the client's fault.
 
 ### Creating a Resource
 
-```
+```http
 POST /api/users HTTP/1.1
 Content-Type: application/json
 
@@ -110,7 +110,7 @@ Location: /api/users/42
 
 ### Resource Not Found
 
-```
+```http
 GET /api/users/999999 HTTP/1.1
 
 HTTP/1.1 404 Not Found
@@ -118,7 +118,7 @@ HTTP/1.1 404 Not Found
 
 ### Authentication Required
 
-```
+```http
 GET /api/admin HTTP/1.1
 
 HTTP/1.1 401 Unauthorized
@@ -127,7 +127,7 @@ WWW-Authenticate: Bearer realm="api"
 
 ### Server Error
 
-```
+```http
 POST /api/users HTTP/1.1
 
 HTTP/1.1 500 Internal Server Error

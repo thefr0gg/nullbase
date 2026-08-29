@@ -11,7 +11,7 @@ weight: 9
 
 ## Request and Response
 
-```
+```http
 TRACE /api/users/42 HTTP/1.1
 Host: api.example.com
 X-Custom-Header: test
@@ -19,7 +19,7 @@ X-Custom-Header: test
 
 A server that implements TRACE responds with a body of type `message/http` containing the request it received, verbatim:
 
-```
+```http
 HTTP/1.1 200 OK
 Content-Type: message/http
 

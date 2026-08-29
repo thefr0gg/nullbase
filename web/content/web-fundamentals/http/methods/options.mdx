@@ -15,7 +15,7 @@ It's often used as a **CORS preflight request** (when the browser checks if a cr
 
 When you make a request from a web page to a different domain, and that request is "complex" (not a simple GET or POST), the browser first sends OPTIONS to check if it's allowed:
 
-```
+```http
 OPTIONS /api/users HTTP/1.1
 Host: api.example.com
 Origin: https://example.com
@@ -25,7 +25,7 @@ Access-Control-Request-Headers: Content-Type
 
 The server responds:
 
-```
+```http
 HTTP/1.1 200 OK
 Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
 Access-Control-Allow-Headers: Content-Type, Authorization
@@ -40,21 +40,21 @@ If the server says "yes, POST is allowed", the browser sends the actual POST req
 
 You can also manually ask what methods are allowed:
 
-```
+```http
 OPTIONS /api/users HTTP/1.1
 Host: api.example.com
 ```
 
 Server response:
 
-```
+```http
 HTTP/1.1 200 OK
 Allow: GET, POST, OPTIONS
 ```
 
 Or with more detail:
 
-```
+```http
 HTTP/1.1 200 OK
 Allow: GET, POST, OPTIONS
 Content-Type: text/plain

@@ -4,18 +4,23 @@ description: The anatomy of a URL and how its pieces fit together.
 category: Web Fundamentals
 weight: 2
 interactive: true
-interactiveType: ["RequestPlayground", "ItemExplorer"]
+interactiveType: ["UrlAnatomy", "RequestPlayground", "ItemExplorer"]
 ---
 
 # URLs & URIs
 
 A **URL** (Uniform Resource Locator) identifies a resource and how to get it. Every part of it has a job:
 
-```
-https://api.example.com:443/v1/users?active=true#profile
-└─┬──┘   └─────┬───────┘└┬┘└─────┬─────┘└────┬────┘└──┬──┘
-scheme       host       port    path        query   fragment
-```
+<UrlAnatomy
+  parts={[
+    { text: "https://", label: "scheme", color: "blue" },
+    { text: "api.example.com", label: "host", color: "green" },
+    { text: ":443", label: "port", color: "orange" },
+    { text: "/v1/users", label: "path", color: "purple" },
+    { text: "?active=true", label: "query", color: "red" },
+    { text: "#profile", label: "fragment", color: "default" },
+  ]}
+/>
 
 - **`https`** — protocol/scheme. Tells the browser which protocol to use to talk to the host.
 - **`api.example.com`** — host. The domain (or IP) DNS resolves to find the server.
