@@ -1,0 +1,54 @@
+---
+title: URLs & URIs
+description: The anatomy of a URL and how its pieces fit together.
+category: Web Fundamentals
+weight: 2
+interactive: true
+interactiveType: ["RequestPlayground", "ItemExplorer"]
+---
+
+# URLs & URIs
+
+A **URL** (Uniform Resource Locator) identifies a resource and how to get it. Every part of it has a job:
+
+```
+https://api.example.com:443/v1/users?active=true#profile
+└─┬──┘   └─────┬───────┘└┬┘└─────┬─────┘└────┬────┘└──┬──┘
+scheme       host       port    path        query   fragment
+```
+
+- **`https`** — protocol/scheme. Tells the browser which protocol to use to talk to the host.
+- **`api.example.com`** — host. The domain (or IP) DNS resolves to find the server.
+- **`443`** — port. Usually omitted since 80 (HTTP) and 443 (HTTPS) are the defaults.
+- **`/v1/users`** — path. Which resource on the server you want.
+- **`?active=true`** — query string. Extra parameters, as key-value pairs.
+- **`#profile`** — fragment. Client-side only — never sent to the server at all.
+
+## Schemes
+
+<ItemExplorer
+  title="Common URL Schemes"
+  layout="pills"
+  defaultId="https"
+  items={[
+    { id: "https", label: "https", color: "green", detail: "HTTP over TLS — encrypted, the modern default for the web." },
+    { id: "http", label: "http", color: "orange", detail: "Plain, unencrypted HTTP — anything sent over it can be read or altered in transit." },
+    { id: "ftp", label: "ftp", color: "blue", detail: "File Transfer Protocol — largely superseded by HTTPS-based file transfer today." },
+    { id: "mailto", label: "mailto", color: "purple", detail: "Not a network request at all — opens the user's email client with a pre-filled recipient." },
+  ]}
+/>
+
+## Try it
+
+Compose a request and see exactly how its target URL gets parsed:
+
+<RequestPlayground
+  protocol="http"
+  defaultTarget="/v1/users?active=true"
+  defaultHeaders="Accept: application/json"
+/>
+
+## See Also
+
+- **[DNS](/web-fundamentals/dns)** — how the host part of a URL becomes an IP address.
+- **[HTTP](/http)** — the protocol most URLs on the web are fetched over.

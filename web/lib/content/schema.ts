@@ -16,9 +16,14 @@ export const PageFrontmatterSchema = z.object({
     .optional()
     .default(0),
   interactive: z.boolean().optional().default(false),
-  interactiveType: z
-    .enum(["http-request", "status-explorer", "headers-playground"])
-    .optional(),
+  /**
+   * Names of the interactive primitives (from
+   * web/components/interactive/registry.ts) used on this page, e.g.
+   * `["StepFlow", "Quiz"]`. Hand-written per page — not derived by scanning
+   * the .mdx body, which would be fragile. Foundation for a future
+   * "has an interactive demo" filter/badge; not consumed at render time.
+   */
+  interactiveType: z.array(z.string()).optional().default([]),
   toc: z.boolean().optional().default(true),
 });
 

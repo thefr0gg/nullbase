@@ -35,7 +35,7 @@ export function Button({
   );
 }
 
-type BadgeColor =
+export type BadgeColor =
   | "default"
   | "blue"
   | "green"

@@ -3,8 +3,7 @@ import { Children, isValidElement } from "react";
 import clsx from "clsx";
 import { ArrowUpRight, ChevronDown, CircleAlert, Info, Lightbulb, TriangleAlert } from "lucide-react";
 
-import HttpRequest from "@/components/http/HttpRequest";
-import StatusCodeExplorer from "@/components/http/StatusCodeExplorer";
+import { interactiveComponents } from "@/components/interactive/registry";
 
 /**
  * Global component map for `@next/mdx` (App Router `useMDXComponents`
@@ -224,10 +223,6 @@ function Callout({
   );
 }
 
-// Interactive playgrounds — registered here so any `.mdx` file can drop
-// `<HttpRequest />` / `<StatusCodeExplorer />` with zero imports.
-const playgrounds = { HttpRequest, StatusCodeExplorer };
-
 export function useMDXComponents() {
-  return { ...components, ...playgrounds };
+  return { ...components, ...interactiveComponents };
 }
