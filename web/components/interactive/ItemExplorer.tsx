@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import type { ReactNode } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import clsx from "clsx";
 import { Badge, Button } from "@/app/_components/ui";
 import type { BadgeColor } from "@/app/_components/ui";
 import { DetailPanel, EyebrowLabel, SimulatedTag } from "./_shared";
@@ -169,31 +171,47 @@ function TableLayout({
 
 function GridLayout({ items, title }: { items: ItemExplorerItem[]; title?: string }) {
   const [openId, setOpenId] = useState<string | null>(null);
+  const open = items.find((i) => i.id === openId);
 
   return (
-    <div className="my-6">
+    <div className="my-6 grid gap-4">
       {title && (
-        <EyebrowLabel as="span" className="mb-3">
+        <EyebrowLabel as="span" className="mb-0">
           {title}
         </EyebrowLabel>
       )}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((item) => {
-          const open = openId === item.id;
+          const active = openId === item.id;
           return (
             <button
               key={item.id}
               type="button"
-              onClick={() => setOpenId(open ? null : item.id)}
-              aria-expanded={open}
-              className="rounded-2xl border border-border bg-surface p-4 text-left shadow-card transition-transform duration-150 hover:-translate-y-0.5"
+              onClick={() => setOpenId(active ? null : item.id)}
+              aria-expanded={active}
+              className={clsx(
+                "flex items-center justify-between gap-2 rounded-2xl border p-4 text-left shadow-card transition-all duration-150 hover:-translate-y-0.5",
+                active ? "border-electric-blue bg-electric-blue/5" : "border-border bg-surface",
+              )}
             >
               <Badge color={item.color ?? "default"}>{item.label}</Badge>
-              {open && item.detail && <div className="mt-3 text-sm text-text-secondary">{item.detail}</div>}
+              {item.detail && (
+                active ? (
+                  <ChevronUp className="h-4 w-4 shrink-0 text-electric-blue" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 shrink-0 text-text-secondary" />
+                )
+              )}
             </button>
           );
         })}
       </div>
+      {open?.detail && (
+        <DetailPanel className="p-4">
+          <Badge color={open.color ?? "default"}>{open.label}</Badge>
+          <div className="mt-3 text-sm text-text-secondary">{open.detail}</div>
+        </DetailPanel>
+      )}
     </div>
   );
 }
