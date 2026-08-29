@@ -1,7 +1,6 @@
 import Link from "next/link";
-import { ArrowRight, Home } from "lucide-react";
+import { Home } from "lucide-react";
 import { Badge } from "@/app/_components/ui";
-import { getSidebarTree } from "@/lib/content/meta";
 import { EyebrowLabel, JsonBlock } from "@/components/interactive/_shared";
 
 /**
@@ -9,15 +8,12 @@ import { EyebrowLabel, JsonBlock } from "@/components/interactive/_shared";
  * page calls `notFound()`. Styled to match the site's developer-reference
  * theme: the error is presented as the HTTP `404 Not Found` status it
  * represents, using the same chrome (EyebrowLabel, Badge, JsonBlock) as
- * every interactive playground on the site, plus a live list of top-level
- * topics pulled from the real content tree instead of one hardcoded guess.
+ * every interactive playground on the site.
  *
  * `not-found` renders inside the root layout, so it inherits the sidebar,
  * header, and theming automatically.
  */
 export default function NotFound() {
-  const roots = getSidebarTree();
-
   return (
     <section className="flex flex-col items-center gap-10 py-6 text-center">
       <div className="flex flex-col items-center gap-3">
@@ -63,28 +59,6 @@ export default function NotFound() {
         <Home className="h-4 w-4" />
         Back to home
       </Link>
-
-      {roots.length > 0 && (
-        <div className="w-full max-w-2xl">
-          <EyebrowLabel as="p" className="mb-3 text-center">
-            Or browse a topic
-          </EyebrowLabel>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {roots.map((node) => (
-              <Link
-                key={node.href}
-                href={node.href}
-                className="group flex items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-4 text-left shadow-card transition-transform duration-150 hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)]"
-              >
-                <span className="font-medium text-text-primary group-hover:text-electric-blue">
-                  {node.title}
-                </span>
-                <ArrowRight className="h-4 w-4 shrink-0 text-text-secondary group-hover:text-electric-blue" />
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
     </section>
   );
 }
