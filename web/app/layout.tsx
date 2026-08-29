@@ -91,8 +91,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-8 sm:px-6 sm:py-10">
               {children}
             </main>
-            <footer className="border-t border-border py-8 text-center text-sm text-text-secondary">
-              nullbase — building the developer reference, one spec at a time.
+            <footer className="flex flex-col items-center gap-2 border-t border-border py-8 text-center text-sm text-text-secondary">
+              <span>nullbase — building the developer reference, one spec at a time.</span>
+              <Link href="/privacy" className="hover:text-text-primary hover:underline">
+                Privacy
+              </Link>
             </footer>
           </div>
         </div>
