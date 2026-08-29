@@ -112,3 +112,45 @@ export function SimulatedTag({ className }: { className?: string }) {
     </Badge>
   );
 }
+
+const JSON_TOKEN_RE =
+  /"(?:\\.|[^"\\])*"(?:\s*:)?|\btrue\b|\bfalse\b|\bnull\b|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/g;
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/**
+ * Colors a JSON string's keys/strings/numbers/booleans/null. The escape
+ * pass runs *before* the tokenizer, over the whole string — every `<`/`>`
+ * in the input (e.g. something a learner typed into a request body that
+ * got echoed back) is already a harmless entity by the time the regex
+ * looks for tokens to wrap, so the only tags this ever produces are our
+ * own static-class `<span>`s. Safe to feed directly to
+ * `dangerouslySetInnerHTML` as a result.
+ */
+function highlightJson(raw: string): string {
+  const escaped = escapeHtml(raw);
+  return escaped.replace(JSON_TOKEN_RE, (match) => {
+    if (match.startsWith('"')) {
+      return `<span class="${/:\s*$/.test(match) ? "text-electric-blue" : "text-success"}">${match}</span>`;
+    }
+    if (match === "true" || match === "false") {
+      return `<span class="text-violet">${match}</span>`;
+    }
+    if (match === "null") {
+      return `<span class="text-text-secondary">${match}</span>`;
+    }
+    return `<span class="text-tangerine">${match}</span>`;
+  });
+}
+
+/** Syntax-highlighted JSON block for simulated response bodies. */
+export function JsonBlock({ text, className }: { text: string; className?: string }) {
+  return (
+    <pre
+      className={clsx("overflow-auto font-mono text-[11px] leading-6 text-text-primary", className)}
+      dangerouslySetInnerHTML={{ __html: highlightJson(text) }}
+    />
+  );
+}

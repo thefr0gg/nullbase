@@ -1,5 +1,6 @@
 import RequestPlayground, { type HttpMethod } from "./RequestPlayground";
 import ItemExplorer, { type ItemExplorerItem } from "./ItemExplorer";
+import type { ExamplePath } from "./mock-api";
 
 /**
  * Backward-compatible wrappers for the two original MDX tag names
@@ -13,11 +14,13 @@ export function LegacyHttpRequest({
   defaultPath,
   defaultHeaders,
   defaultBody,
+  examplePaths,
 }: {
   defaultMethod?: HttpMethod;
   defaultPath?: string;
   defaultHeaders?: string;
   defaultBody?: string;
+  examplePaths?: ExamplePath[];
 }) {
   return (
     <RequestPlayground
@@ -26,6 +29,7 @@ export function LegacyHttpRequest({
       defaultTarget={defaultPath}
       defaultHeaders={defaultHeaders}
       defaultBody={defaultBody}
+      examplePaths={examplePaths}
     />
   );
 }

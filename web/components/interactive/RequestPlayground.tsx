@@ -1,8 +1,21 @@
 "use client";
 
 import { useState } from "react";
+import { Check, Copy } from "lucide-react";
+import clsx from "clsx";
 import { Badge, Button } from "@/app/_components/ui";
-import { DetailPanel, EyebrowLabel, PlaygroundSection, PlaygroundShell, SimulatedTag } from "./_shared";
+import { DetailPanel, EyebrowLabel, JsonBlock, PlaygroundSection, PlaygroundShell, SimulatedTag } from "./_shared";
+import {
+  DEFAULT_HTTP_EXAMPLES,
+  HTTP_METHODS,
+  parseHeaders,
+  simulateHttp,
+  type ExamplePath,
+  type HttpMethod,
+  type SimulatedResult,
+} from "./mock-api";
+
+export type { HttpMethod } from "./mock-api";
 
 /**
  * Generalizes the site's original `HttpRequest` playground to any
@@ -12,9 +25,6 @@ import { DetailPanel, EyebrowLabel, PlaygroundSection, PlaygroundShell, Simulate
  * whatever the learner typed in, exactly like the original HTTP-only
  * component this replaces.
  */
-
-const HTTP_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"] as const;
-export type HttpMethod = (typeof HTTP_METHODS)[number];
 
 export type Protocol = "http" | "graphql" | "websocket" | "webhook";
 
@@ -33,24 +43,33 @@ export interface RequestPlaygroundProps {
   defaultBody?: string; // http body / graphql query text / webhook payload
   defaultVariables?: string; // graphql only — JSON text
   simulatedMessages?: SimulatedMessage[]; // websocket only
+  /** Clickable "try this" chips under the target field. Defaults to
+   *  `DEFAULT_HTTP_EXAMPLES` for protocol="http"; empty for everything else. */
+  examplePaths?: ExamplePath[];
 }
 
-interface SimulatedResult {
-  status: number;
-  statusText: string;
-  headers: [string, string][];
+function buildCurl({
+  method,
+  target,
+  headers,
+  body,
+  isBodyless,
+}: {
+  method: HttpMethod;
+  target: string;
+  headers: string;
   body: string;
-}
-
-function parseHeaders(text: string): [string, string][] {
-  const out: [string, string][] = [];
-  for (const line of text.split("\n")) {
-    const [k, ...rest] = line.trim().split(":");
-    if (!k) continue;
-    const v = rest.join(":").trim();
-    if (k.trim() && v) out.push([k.trim(), v]);
+  isBodyless: boolean;
+}): string {
+  const safePath = target.startsWith("/") ? target : "/" + target;
+  const parts = [`curl -X ${method} "${safePath}"`];
+  for (const [k, v] of parseHeaders(headers)) {
+    parts.push(`-H "${k}: ${v}"`);
   }
-  return out;
+  if (!isBodyless && body.trim()) {
+    parts.push(`-d '${body.replace(/'/g, `'\\''`)}'`);
+  }
+  return parts.join(" \\\n  ");
 }
 
 /** Per-protocol simulation — small pure functions, not sub-components, so
@@ -60,34 +79,7 @@ const adapters: Record<
   Exclude<Protocol, "websocket">,
   (input: { target: string; method?: HttpMethod; headers: string; body: string; variables?: string }) => SimulatedResult
 > = {
-  http: ({ target, method = "GET", headers, body }) => {
-    const safePath = target.startsWith("/") ? target : "/" + target;
-    const isBodyless = method === "GET" || method === "HEAD";
-    const url = new URL(safePath, typeof window !== "undefined" ? window.location.origin : "http://localhost");
-    const echoHeaders: [string, string][] = [
-      ...parseHeaders(headers),
-      ["host", typeof window !== "undefined" ? window.location.host : "localhost"],
-      ["user-agent", typeof navigator !== "undefined" ? navigator.userAgent : "nullbase"],
-    ];
-    const payload = {
-      method,
-      url: url.toString(),
-      path: url.pathname,
-      search: url.search,
-      headers: Object.fromEntries(echoHeaders),
-      body: isBodyless ? undefined : body || undefined,
-      receivedAt: new Date().toISOString(),
-    };
-    return {
-      status: 200,
-      statusText: "OK",
-      headers: [
-        ["content-type", "application/json"],
-        ["x-simulated-by", "nullbase in-browser echo"],
-      ],
-      body: JSON.stringify(payload, null, 2),
-    };
-  },
+  http: ({ target, method = "GET", headers, body }) => simulateHttp({ target, method, headers, body }),
 
   graphql: ({ target, body, variables }) => {
     let parsedVariables: unknown = undefined;
@@ -153,6 +145,7 @@ export default function RequestPlayground({
   defaultBody = JSON.stringify({ hello: "world" }, null, 2),
   defaultVariables = "{}",
   simulatedMessages = [],
+  examplePaths,
 }: RequestPlaygroundProps) {
   // All hooks must run unconditionally on every render (rules-of-hooks) —
   // the websocket early return happens below, after every hook this
@@ -171,8 +164,14 @@ export default function RequestPlayground({
   }
 
   const isBodyless = protocol === "http" && (method === "GET" || method === "HEAD");
+  const chips = examplePaths ?? (protocol === "http" ? DEFAULT_HTTP_EXAMPLES : []);
 
-  async function send() {
+  // Accepts overrides so clicking an example chip can send with the chip's
+  // method/path immediately — `setMethod`/`setTarget` are async, so without
+  // this `send()` would still see the *previous* state on that same click.
+  async function send(overrides?: { method?: HttpMethod; target?: string }) {
+    const effectiveMethod = overrides?.method ?? method;
+    const effectiveTarget = overrides?.target ?? target;
     setLoading(true);
     setError(null);
     setResult(null);
@@ -184,7 +183,9 @@ export default function RequestPlayground({
       // `send` could ever be wired to a button) — TS can't see that through
       // the closure, so narrow explicitly.
       const adapter = adapters[protocol as Exclude<Protocol, "websocket">];
-      setResult(adapter({ target, method, headers: headersText, body: bodyText, variables: variablesText }));
+      setResult(
+        adapter({ target: effectiveTarget, method: effectiveMethod, headers: headersText, body: bodyText, variables: variablesText }),
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong.");
     } finally {
@@ -192,7 +193,17 @@ export default function RequestPlayground({
     }
   }
 
+  function pickExample(ex: ExamplePath) {
+    setMethod(ex.method);
+    setTarget(ex.path);
+    void send({ method: ex.method, target: ex.path });
+  }
+
   const targetLabel = protocol === "graphql" ? "Endpoint" : protocol === "webhook" ? "Webhook URL" : "Target";
+  const curlCommand =
+    protocol === "http"
+      ? buildCurl({ method, target, headers: headersText, body: bodyText, isBodyless })
+      : undefined;
 
   return (
     <PlaygroundShell>
@@ -236,7 +247,7 @@ export default function RequestPlayground({
             />
           </div>
           <Button
-            onClick={send}
+            onClick={() => send()}
             disabled={loading}
             variant="primary"
             className="h-[52px] w-full min-w-0 rounded-xl px-4 text-sm sm:w-auto sm:min-w-[120px]"
@@ -244,6 +255,22 @@ export default function RequestPlayground({
             {loading ? "Sending…" : "Send request"}
           </Button>
         </div>
+
+        {chips.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {chips.map((ex, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => pickExample(ex)}
+                disabled={loading}
+                className="rounded-full border border-border bg-background px-2.5 py-1 font-mono text-[0.7rem] text-text-secondary transition-colors hover:border-electric-blue/40 hover:text-electric-blue"
+              >
+                <span className="font-semibold text-text-primary">{ex.label ?? ex.method}</span> {ex.path}
+              </button>
+            ))}
+          </div>
+        )}
       </PlaygroundSection>
 
       <div className="grid gap-4 p-4 sm:grid-cols-2 sm:p-5">
@@ -288,17 +315,31 @@ export default function RequestPlayground({
         </div>
       )}
 
-      {result && <ResponsePanel result={result} />}
+      {result && <ResponsePanel result={result} curl={curlCommand} />}
     </PlaygroundShell>
   );
 }
 
-function ResponsePanel({ result }: { result: SimulatedResult }) {
+function ResponsePanel({ result, curl }: { result: SimulatedResult; curl?: string }) {
+  const [tab, setTab] = useState<"body" | "headers">("body");
+  const [copied, setCopied] = useState<"body" | "curl" | null>(null);
   const level: "green" | "red" | "blue" =
     result.status >= 200 && result.status < 300 ? "green" : result.status >= 400 ? "red" : "blue";
+
+  async function copy(text: string, which: "body" | "curl") {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(which);
+      setTimeout(() => setCopied((c) => (c === which ? null : c)), 1500);
+    } catch {
+      // Clipboard unavailable (permissions, insecure context) — button just
+      // never shows "Copied", nothing to recover from.
+    }
+  }
+
   return (
     <PlaygroundSection divider="top" tone="muted">
-      <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="mb-3 flex items-center justify-between gap-3">
         <EyebrowLabel as="span" className="mb-0">
           Response
         </EyebrowLabel>
@@ -306,19 +347,68 @@ function ResponsePanel({ result }: { result: SimulatedResult }) {
           {result.status} {result.statusText}
         </Badge>
       </div>
-      <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-        <pre className="overflow-auto rounded-2xl border border-border bg-surface p-3 font-mono text-[11px] leading-6 text-text-primary">
-          {result.body}
-        </pre>
-        <DetailPanel className="overflow-hidden">
-          {result.headers.map(([k, v]) => (
-            <div key={k} className="flex items-start justify-between gap-2 border-b border-border px-3 py-2 last:border-b-0">
-              <span className="font-mono text-[11px] text-text-secondary">{k}</span>
-              <span className="break-all text-right font-mono text-[11px] text-text-primary">{v}</span>
-            </div>
-          ))}
-        </DetailPanel>
+
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex gap-1 rounded-full border border-border bg-background p-0.5">
+          <button
+            type="button"
+            onClick={() => setTab("body")}
+            className={clsx(
+              "rounded-full px-3 py-1 text-xs font-semibold transition-colors",
+              tab === "body" ? "bg-surface text-text-primary shadow-card" : "text-text-secondary hover:text-text-primary",
+            )}
+          >
+            Body
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("headers")}
+            className={clsx(
+              "rounded-full px-3 py-1 text-xs font-semibold transition-colors",
+              tab === "headers" ? "bg-surface text-text-primary shadow-card" : "text-text-secondary hover:text-text-primary",
+            )}
+          >
+            Headers ({result.headers.length})
+          </button>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => copy(result.body, "body")}
+            className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-text-secondary transition-colors hover:bg-background hover:text-text-primary"
+          >
+            {copied === "body" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+            {copied === "body" ? "Copied" : "Copy"}
+          </button>
+          {curl && (
+            <button
+              type="button"
+              onClick={() => copy(curl, "curl")}
+              className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-text-secondary transition-colors hover:bg-background hover:text-text-primary"
+            >
+              {copied === "curl" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+              {copied === "curl" ? "Copied" : "Copy as cURL"}
+            </button>
+          )}
+        </div>
       </div>
+
+      {tab === "body" ? (
+        <JsonBlock text={result.body || "(empty body)"} className="rounded-2xl border border-border bg-surface p-3" />
+      ) : (
+        <DetailPanel className="overflow-hidden">
+          {result.headers.length === 0 ? (
+            <p className="px-3 py-2 text-xs text-text-secondary">No headers.</p>
+          ) : (
+            result.headers.map(([k, v]) => (
+              <div key={k} className="flex items-start justify-between gap-2 border-b border-border px-3 py-2 last:border-b-0">
+                <span className="font-mono text-[11px] text-text-secondary">{k}</span>
+                <span className="break-all text-right font-mono text-[11px] text-text-primary">{v}</span>
+              </div>
+            ))
+          )}
+        </DetailPanel>
+      )}
     </PlaygroundSection>
   );
 }
