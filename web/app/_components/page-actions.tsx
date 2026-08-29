@@ -32,6 +32,44 @@ function writeFlag(key: string, value: boolean): void {
   }
 }
 
+/**
+ * Countdown-based cooldown, started from a server `Retry-After` duration.
+ * `active` drives disabling the like/feedback controls; `secondsLeft` drives
+ * the human-readable countdown — both derived from state, never from a raw
+ * `Date.now()` read during render (which the previous implementation did,
+ * and which also let a stray "Retry" button ignore the cooldown entirely).
+ */
+function useCooldown() {
+  const [secondsLeft, setSecondsLeft] = useState(0);
+  const active = secondsLeft > 0;
+
+  useEffect(() => {
+    if (!active) return;
+    const timer = setInterval(() => {
+      setSecondsLeft((s) => Math.max(0, s - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [active]);
+
+  const start = useCallback((seconds: number) => {
+    // Cap the displayed cooldown at 1h even for the 24h daily caps — a
+    // day-long disabled button reads as broken. The server remains the
+    // source of truth: if the window hasn't actually reset, the next
+    // attempt just gets a fresh 429 and restarts the cooldown.
+    setSecondsLeft(Math.min(Math.max(1, Math.ceil(seconds)), 60 * 60));
+  }, []);
+
+  return { secondsLeft, active, start };
+}
+
+function cooldownLabel(seconds: number): string {
+  if (seconds >= 60) {
+    const m = Math.ceil(seconds / 60);
+    return `Try again in ${m}m`;
+  }
+  return `Try again in ${seconds}s`;
+}
+
 export function PageActions({ page }: { page: string }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
@@ -47,15 +85,14 @@ export function PageActions({ page }: { page: string }) {
 
 function LikeCard({ page }: { page: string }) {
   const [count, setCount] = useState<number | null>(null); // null = loading
-  const [liked, setLiked] = useState(false);
+  const [liked, setLiked] = useState(() => readFlag(`nullbase:liked:${page}`));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [cooldownUntil, setCooldownUntil] = useState(0);
-  const [, setTick] = useState(0); // re-renders once per second while cooling down
+  const cooldown = useCooldown();
 
-  // Initial load: server count + local liked flag (both fail-safe).
+  // Initial load: server count (the liked flag is read lazily above so it's
+  // correct on the very first render, per page).
   useEffect(() => {
-    setLiked(readFlag(`nullbase:liked:${page}`));
     const ac = new AbortController();
     getPageLikes(page, ac.signal)
       .then(setCount)
@@ -65,18 +102,8 @@ function LikeCard({ page }: { page: string }) {
     return () => ac.abort();
   }, [page]);
 
-  // Cooldown countdown after a 429 (button disabled until Retry-After passes).
-  useEffect(() => {
-    if (!cooldownUntil) return;
-    const timer = setInterval(() => {
-      if (Date.now() >= cooldownUntil) setCooldownUntil(0);
-      else setTick((t) => t + 1);
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [cooldownUntil]);
-
   const like = useCallback(async () => {
-    if (busy || liked) return;
+    if (busy || liked || cooldown.active) return;
     setBusy(true);
     setError(null);
     const previousCount = count;
@@ -95,16 +122,19 @@ function LikeCard({ page }: { page: string }) {
       setLiked(wasLiked);
       writeFlag(`nullbase:liked:${page}`, wasLiked);
       if (e instanceof ApiError && e.status === 429) {
-        const ms = Math.min((e.retryAfterSeconds ?? 60) * 1000, 60 * 60 * 1000);
-        setCooldownUntil(Date.now() + ms);
+        cooldown.start(e.retryAfterSeconds ?? 60);
       }
       setError(e instanceof ApiError ? e.message : "Something went wrong.");
     } finally {
       setBusy(false);
     }
-  }, [busy, liked, count, page]);
+  }, [busy, liked, count, page, cooldown]);
 
   const retry = useCallback(() => {
+    // Rate-limited failures must wait out the cooldown like any other like
+    // attempt — this used to bypass it entirely, letting a spammable
+    // "Retry" link hammer the endpoint through a 429 loop.
+    if (cooldown.active) return;
     setError(null);
     if (liked) {
       // The like itself succeeded earlier — just refresh the count.
@@ -114,36 +144,38 @@ function LikeCard({ page }: { page: string }) {
     } else {
       void like();
     }
-  }, [liked, like, page]);
+  }, [liked, like, page, cooldown.active]);
 
-  const cooling = Date.now() < cooldownUntil;
+  const disabled = busy || liked || cooldown.active;
 
   return (
     <Card className="flex flex-col items-center justify-center gap-3 p-6 text-center">
       <Button
         variant={liked ? "primary" : "secondary"}
         onClick={like}
-        disabled={busy || liked || cooling}
+        disabled={disabled}
         aria-pressed={liked}
         className="w-full sm:w-auto"
       >
         <ThumbsUp className="h-4 w-4" />
-        {liked ? "Liked" : cooling ? "Try again later" : "Like this page"}
+        {liked ? "Liked" : cooldown.active ? cooldownLabel(cooldown.secondsLeft) : "Like this page"}
       </Button>
       <p className="text-sm tabular-nums text-text-secondary" aria-live="polite">
         {count === null ? "—" : count} {count === 1 ? "like" : "likes"} on this
         page
       </p>
       {error && (
-        <p className="text-xs text-danger">
+        <p className="text-xs text-danger" aria-live="polite">
           {error}{" "}
-          <button
-            type="button"
-            onClick={retry}
-            className="font-medium underline underline-offset-2 hover:text-electric-blue"
-          >
-            Retry
-          </button>
+          {!cooldown.active && (
+            <button
+              type="button"
+              onClick={retry}
+              className="font-medium underline underline-offset-2 hover:text-electric-blue"
+            >
+              Retry
+            </button>
+          )}
         </p>
       )}
     </Card>
@@ -158,22 +190,23 @@ type FeedbackState = "idle" | "sending" | "sent" | "error";
 
 function FeedbackCard({ page }: { page: string }) {
   const [open, setOpen] = useState(false);
-  const [alreadySent, setAlreadySent] = useState(false);
+  const [alreadySent, setAlreadySent] = useState(() => readFlag(`nullbase:sent-feedback:${page}`));
   const [rating, setRating] = useState<number | null>(null);
   const [comment, setComment] = useState("");
   const [email, setEmail] = useState("");
   const [state, setState] = useState<FeedbackState>("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const cooldown = useCooldown();
 
   const commentWordCount = comment.trim() ? comment.trim().split(/\s+/).filter(Boolean).length : 0;
-
-  useEffect(() => {
-    setAlreadySent(readFlag(`nullbase:sent-feedback:${page}`));
-  }, [page]);
 
   const submit = useCallback(
     async (e: FormEvent) => {
       e.preventDefault();
+      // Previously missing entirely: a 429 here left the form fully
+      // resubmittable, so a rejected submission could just be retried
+      // immediately in a loop.
+      if (cooldown.active) return;
       if (rating == null && comment.trim() === "") {
         setState("error");
         setErrorMsg("Add a rating or a short comment first.");
@@ -198,14 +231,19 @@ function FeedbackCard({ page }: { page: string }) {
         writeFlag(`nullbase:sent-feedback:${page}`, true);
       } catch (err) {
         setState("error");
-        setErrorMsg(
-          err instanceof ApiError
-            ? err.message
-            : "Something went wrong — your text is preserved, try again.",
-        );
+        if (err instanceof ApiError && err.status === 429) {
+          cooldown.start(err.retryAfterSeconds ?? 60);
+          setErrorMsg(err.message);
+        } else {
+          setErrorMsg(
+            err instanceof ApiError
+              ? err.message
+              : "Something went wrong — your text is preserved, try again.",
+          );
+        }
       }
     },
-    [page, rating, comment, email],
+    [page, rating, comment, email, commentWordCount, cooldown],
   );
 
   if (state === "sent" || alreadySent) {
@@ -284,10 +322,24 @@ function FeedbackCard({ page }: { page: string }) {
           placeholder="Email (optional — only if you want a reply)"
           className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-electric-blue"
         />
-        {errorMsg && <p className="text-xs text-danger">{errorMsg}</p>}
+        {errorMsg && (
+          <p className="text-xs text-danger" aria-live="polite">
+            {errorMsg}
+          </p>
+        )}
         <div className="flex items-center gap-2">
-          <Button type="submit" variant="primary" disabled={state === "sending"}>
-            {state === "sending" ? "Sending…" : errorMsg ? "Retry" : "Send feedback"}
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={state === "sending" || cooldown.active}
+          >
+            {state === "sending"
+              ? "Sending…"
+              : cooldown.active
+                ? cooldownLabel(cooldown.secondsLeft)
+                : errorMsg
+                  ? "Retry"
+                  : "Send feedback"}
           </Button>
           <Button
             type="button"
