@@ -117,10 +117,7 @@ export default function PrivacyPage() {
 
       <Section title="Hosting">
         <p>
-          nullbase runs on Cloudflare Workers with a Cloudflare D1 database.
-          Cloudflare, as our host, necessarily processes standard connection
-          metadata (like your IP address) to route requests and protect the
-          site from abuse — this happens at the infrastructure level, under{" "}
+          nullbase is hosted on Cloudflare, under{" "}
           <Link
             href="https://www.cloudflare.com/privacypolicy/"
             className="text-electric-blue hover:underline"
@@ -129,7 +126,7 @@ export default function PrivacyPage() {
           >
             Cloudflare&apos;s own privacy policy
           </Link>
-          , not something nullbase configures or has separate access to.
+          .
         </p>
       </Section>
 
