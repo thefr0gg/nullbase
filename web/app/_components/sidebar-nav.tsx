@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { SidebarNode } from "@/lib/content/meta";
 import { SidebarTree } from "./sidebar-tree";
+import { LogoMark } from "./logo-mark";
 
 interface Props {
   tree: SidebarNode[];
@@ -24,11 +25,7 @@ export function SidebarNav({ tree }: Props) {
       <div className="px-4 pb-3 pt-6">
         <Link href="/" className="block rounded-xl p-2 transition-colors hover:bg-background/80">
           <div className="flex items-center gap-3">
-            <img
-              src="/nullbase-logo-dark.svg"
-              alt="nullbase logo"
-              className="h-9 w-9"
-            />
+            <LogoMark className="h-9 w-9" />
             <div className="min-w-0">
               <div className="font-mono text-lg font-semibold text-text-primary">
                 nullbase

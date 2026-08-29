@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import type { SidebarNode } from "@/lib/content/meta";
 import { SidebarTree } from "./sidebar-tree";
+import { LogoMark } from "./logo-mark";
 
 interface Props {
   tree: SidebarNode[];
@@ -70,9 +71,7 @@ export function MobileNav({ tree }: Props) {
             <div className="absolute inset-y-0 left-0 flex w-72 max-w-[80vw] flex-col border-r border-border bg-surface/95 shadow-card backdrop-blur-md">
               <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
                 <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-electric-blue/12 text-sm font-bold text-electric-blue">
-                    n
-                  </div>
+                  <LogoMark className="h-8 w-8" />
                   <span className="font-mono text-base font-semibold text-text-primary">
                     nullbase
                   </span>

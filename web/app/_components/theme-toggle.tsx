@@ -1,40 +1,20 @@
 "use client";
 
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback } from "react";
 import { Moon, Sun } from "lucide-react";
-
-type Theme = "light" | "dark";
+import { useTheme, type Theme } from "@/lib/theme";
 
 /**
  * Light / dark toggle backed by a `data-theme` attribute on `<html>`.
  * A one-time inline script in `<head>` (see root layout) applies the theme
  * before the first paint to avoid a flash of incorrect colors.
- *
- * The DOM attribute is the source of truth, observed via useSyncExternalStore
- * (server snapshot renders the neutral icon; no setState-in-effect).
  */
-function subscribe(onChange: () => void) {
-  const observer = new MutationObserver(onChange);
-  observer.observe(document.documentElement, {
-    attributes: true,
-    attributeFilter: ["data-theme"],
-  });
-  return () => observer.disconnect();
-}
-
-function getTheme(): Theme {
-  return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
-}
-
-function getServerTheme(): Theme {
-  return "light";
-}
-
 export function ThemeToggle() {
-  const theme = useSyncExternalStore(subscribe, getTheme, getServerTheme);
+  const theme = useTheme();
 
   const toggle = useCallback(() => {
-    const next: Theme = getTheme() === "light" ? "dark" : "light";
+    const current = document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+    const next: Theme = current === "light" ? "dark" : "light";
     localStorage.setItem("theme", next);
     // Mutating the attribute notifies the MutationObserver above, which
     // re-renders this component with the new theme.
