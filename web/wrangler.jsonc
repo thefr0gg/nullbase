@@ -18,12 +18,22 @@
     // asset-serves-first behavior.
     "run_worker_first": true
   },
-  // Worker Custom Domain (NOT an A record) — configured in the Cloudflare
-  // dashboard zone for nullbase.wiki. nullbase.wiki/www.nullbase.wiki's own
-  // custom-domain bindings are dashboard-only (predate this file); this one
-  // is added explicitly so it's version-controlled, matching api/wrangler.jsonc's
-  // pattern for api.nullbase.wiki.
+  // Worker Custom Domains (NOT A records). `wrangler deploy` reconciles a
+  // Worker's custom domains to exactly match this list — any domain bound
+  // in the dashboard but NOT listed here gets removed on the next deploy.
+  // nullbase.wiki/www.nullbase.wiki used to be dashboard-only (predating
+  // this file) and were silently wiped by every deploy as a result; all
+  // three are declared here now so none of them get dropped again, matching
+  // api/wrangler.jsonc's pattern for api.nullbase.wiki.
   "routes": [
+    {
+      "pattern": "nullbase.wiki",
+      "custom_domain": true
+    },
+    {
+      "pattern": "www.nullbase.wiki",
+      "custom_domain": true
+    },
     {
       "pattern": "admin.nullbase.wiki",
       "custom_domain": true
