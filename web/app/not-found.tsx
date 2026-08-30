@@ -17,7 +17,7 @@ import { en } from "@/lib/i18n/dictionaries/en";
  */
 export default function RootNotFound() {
   return (
-    <html lang={defaultLocale}>
+    <html lang={defaultLocale} data-theme="dark">
       <body className="bg-background text-text-primary antialiased">
         <main className="mx-auto w-full max-w-4xl px-4 py-16 sm:px-6">
           <NotFoundContent homeHref={`/${defaultLocale}`} dict={en} />

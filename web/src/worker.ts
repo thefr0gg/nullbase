@@ -16,12 +16,28 @@ interface AssetsBinding {
   fetch(request: Request): Promise<Response>;
 }
 
+/**
+ * True for a request that resolves to a real static file rather than a
+ * page route — `/_next/*` (build chunks), and anything with a file
+ * extension in its last path segment (`/favicon.ico`, `/nullbase-logo-dark.svg`,
+ * `/robots.txt`, `/sitemap.xml`, ...). These all live once, at the root of
+ * `out/` (shared by every route tree, `public/` assets included), never
+ * under `out/admin/...` — rewriting them would 404. Real page routes never
+ * match this: `trailingSlash: true` means every route is a directory
+ * (`/foo/index.html`), never a bare dotted filename.
+ */
+function isStaticAsset(pathname: string): boolean {
+  if (pathname.startsWith("/_next/")) return true;
+  const lastSegment = pathname.slice(pathname.lastIndexOf("/") + 1);
+  return lastSegment.includes(".");
+}
+
 const worker = {
   async fetch(request: Request, env: { ASSETS: AssetsBinding }): Promise<Response> {
     const url = new URL(request.url);
     if (
       url.hostname === "admin.nullbase.wiki" &&
-      !url.pathname.startsWith("/_next/") &&
+      !isStaticAsset(url.pathname) &&
       !url.pathname.startsWith("/admin")
     ) {
       url.pathname = `/admin${url.pathname}`;

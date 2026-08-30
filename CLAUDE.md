@@ -154,6 +154,8 @@ anything requiring `node:fs` etc. only runs at build time.
 
 ## Conventions worth knowing
 
+- Git commits in this repo are made **without** a `Co-Authored-By` trailer —
+  do not add one when committing.
 - Everything on the API side is written once against the `Database` port —
   never import `better-sqlite3` or D1-specific types outside `db/d1.ts` /
   `db/sqlite.ts`.

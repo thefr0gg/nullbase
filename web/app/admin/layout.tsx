@@ -19,18 +19,20 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
  * `[locale]/layout.tsx`.
  */
 export const metadata: Metadata = {
-  title: { default: "nullbase admin", template: "%s · nullbase admin" },
+  title: { default: "nullbase - admin panel", template: "%s · nullbase - admin panel" },
   robots: { index: false, follow: false },
 };
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" data-theme="light" className={`${jakarta.variable} ${geistMono.variable} font-sans`}>
+    <html lang="en" data-theme="dark" className={`${jakarta.variable} ${geistMono.variable} font-sans`}>
       <head>
+        {/* Defaults to dark — only an explicit prior choice (saved by
+            <ThemeToggle>) overrides it. */}
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "(function(){try{var t=localStorage.getItem('theme');var m=window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.setAttribute('data-theme',t||(m?'dark':'light'));}catch(e){document.documentElement.setAttribute('data-theme','light');}})();",
+              "(function(){try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t==='light'?'light':'dark');}catch(e){document.documentElement.setAttribute('data-theme','dark');}})();",
           }}
         />
       </head>

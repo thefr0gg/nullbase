@@ -92,18 +92,19 @@ export default async function LocaleLayout({
     <html
       lang={locale}
       dir={dir}
-      data-theme="light"
+      data-theme="dark"
       className={`${jakarta.variable} ${geistMono.variable} font-sans`}
     >
       <head>
         {/*
-          Critical: apply the saved/preferred theme before the first paint so we
-          avoid a flash of the wrong color scheme.
+          Critical: apply the saved theme before the first paint so we avoid
+          a flash of the wrong color scheme. The site defaults to dark —
+          only an explicit prior choice (saved by <ThemeToggle>) overrides it.
         */}
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "(function(){try{var t=localStorage.getItem('theme');var m=window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.setAttribute('data-theme',t||(m?'dark':'light'));}catch(e){document.documentElement.setAttribute('data-theme','light');}})();",
+              "(function(){try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t==='light'?'light':'dark');}catch(e){document.documentElement.setAttribute('data-theme','dark');}})();",
           }}
         />
         {/* Google AdSense site verification + loader, kept for the pending

@@ -25,7 +25,11 @@ function getTheme(): Theme {
 }
 
 function getServerTheme(): Theme {
-  return "light";
+  // Matches the static `data-theme="dark"` the server/pre-hydration markup
+  // ships with by default (see the inline before-paint script in the root
+  // layout) — the site defaults to dark unless the visitor has explicitly
+  // chosen light before (saved in localStorage).
+  return "dark";
 }
 
 export function useTheme(): Theme {
