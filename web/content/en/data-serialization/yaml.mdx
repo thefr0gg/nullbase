@@ -1,0 +1,65 @@
+---
+title: YAML
+description: A human-friendly, indentation-based data format — rarely an API's wire format, but the default for almost every config file.
+category: Data & Serialization
+weight: 2
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+YAML ("YAML Ain't Markup Language") represents the same structured data as [JSON](/en/data-serialization/json) — objects, arrays, strings, numbers, booleans, null — with punctuation replaced by indentation, optimized for a human to read and write by hand rather than for a machine to parse fast. It's rarely used as an API's actual request/response format; its real home is configuration files (Docker Compose, Kubernetes manifests, CI pipelines, this very kind of site's own build config in some stacks).
+
+```yaml
+id: 42
+name: Grace Hopper
+active: true
+roles:
+  - admin
+  - editor
+manager: null
+```
+
+The same data in JSON, for comparison:
+
+```json
+{ "id": 42, "name": "Grace Hopper", "active": true, "roles": ["admin", "editor"], "manager": null }
+```
+
+## What YAML adds over JSON
+
+<ItemExplorer
+  layout="pills"
+  items={[
+    { id: "comments", label: "Comments", color: "blue", detail: "# a comment — genuinely useful in config files, and something JSON can't do at all." },
+    { id: "anchors", label: "Anchors & aliases", color: "green", detail: "&name / *name — define a value once, reference it elsewhere in the same document, avoiding duplication." },
+    { id: "multidoc", label: "Multiple documents", color: "purple", detail: "--- separates multiple YAML documents in one file/stream — Kubernetes manifests use this constantly." },
+    { id: "unquoted", label: "Unquoted strings", color: "orange", detail: "Strings don't need quotes at all in most cases — this is also YAML's most infamous footgun (see below)." },
+  ]}
+/>
+
+## Indentation is meaningful, and unforgiving
+
+Unlike JSON's braces, YAML's structure comes entirely from indentation — mixing tabs and spaces, or being one space off, is a parse error (or worse, silently changes the structure) with no closing brace to catch the mistake visually.
+
+```yaml
+parent:
+  child: value   # 2 spaces of indentation — a child of parent
+sibling: value    # 0 spaces — a top-level key, not nested
+```
+
+## The famous gotchas
+
+Because YAML tries to infer types from unquoted values, a handful of specific strings don't mean what they look like:
+
+```yaml
+country: NO        # parsed as the boolean false in YAML 1.1 (Norway's country code!)
+version: 1.10       # parsed as the number 1.1, not the string "1.10" — the trailing zero is lost
+enabled: yes         # parsed as boolean true
+```
+
+This is real, not a hypothetical — it's commonly called "the Norway problem," and it's why quoting a value explicitly (`country: "NO"`) is the safe default whenever a string could be mistaken for another type.
+
+## See also
+
+- **[JSON](/en/data-serialization/json)** — the same data model, stricter syntax, the actual wire format for most APIs.
+- **[XML](/en/data-serialization/xml)** — the third structured-data option, more verbose but with a mature schema-validation ecosystem YAML doesn't match.

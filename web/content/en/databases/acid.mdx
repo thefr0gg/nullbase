@@ -1,0 +1,84 @@
+---
+title: ACID
+description: Atomicity, Consistency, Isolation, Durability — the four guarantees a transaction is supposed to give you, and what breaks without each one.
+category: Databases
+weight: 7
+interactive: true
+interactiveType: ["ItemExplorer", "StepFlow"]
+---
+
+import { crashRecoverySteps } from "./acid-recovery-steps";
+
+ACID is the set of four guarantees a properly implemented [transaction](/en/databases/transactions) is supposed to provide. It's a checklist for what "safe" actually means for a database write — each letter covers a specific way a naive implementation could otherwise corrupt or lose data.
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[{ key: "guarantees", label: "Guarantees" }, { key: "withoutIt", label: "Without it" }]}
+  items={[
+    {
+      id: "atomicity",
+      label: "Atomicity",
+      color: "blue",
+      columns: {
+        guarantees: "Every statement in a transaction succeeds, or none of them take effect at all",
+        withoutIt: "A crash mid-transfer could debit one account without crediting the other — money vanishes",
+      },
+    },
+    {
+      id: "consistency",
+      label: "Consistency",
+      color: "green",
+      columns: {
+        guarantees: "A transaction can only move the database from one valid state to another — every constraint (foreign keys, unique, not-null) still holds after it commits",
+        withoutIt: "A committed transaction could leave an order referencing a customer that doesn't exist",
+      },
+    },
+    {
+      id: "isolation",
+      label: "Isolation",
+      color: "purple",
+      columns: {
+        guarantees: "Concurrent transactions don't see each other's uncommitted, in-progress changes",
+        withoutIt: "One transaction could read another's half-finished write and act on data that's about to be rolled back",
+      },
+    },
+    {
+      id: "durability",
+      label: "Durability",
+      color: "orange",
+      columns: {
+        guarantees: "Once a transaction is confirmed committed, it survives a crash immediately afterward",
+        withoutIt: "A user could be told \"payment successful\" moments before a crash discards it, with no record it ever happened",
+      },
+    },
+  ]}
+/>
+
+## Durability, step by step
+
+"Survives a crash" sounds abstract until you see the actual mechanism — a write-ahead log is what makes it concrete.
+
+<StepFlow title="How a commit survives a crash" steps={crashRecoverySteps} />
+
+## Isolation levels: a deliberately tunable guarantee
+
+Full isolation (every transaction behaving as if it ran completely alone) is expensive to implement — engines offer weaker, faster isolation levels as an explicit trade-off, and picking one is a real engineering decision, not just an academic distinction.
+
+<ItemExplorer
+  layout="pills"
+  items={[
+    { id: "read-uncommitted", label: "Read Uncommitted", color: "red", detail: "Can see other transactions' uncommitted changes (\"dirty reads\") — rarely used, and not even supported by some engines." },
+    { id: "read-committed", label: "Read Committed", color: "orange", detail: "Never sees uncommitted data, but a repeated read within the same transaction can see different results if another transaction commits in between. PostgreSQL's default." },
+    { id: "repeatable-read", label: "Repeatable Read", color: "blue", detail: "The same query run twice in one transaction always returns the same rows — MySQL/InnoDB's default." },
+    { id: "serializable", label: "Serializable", color: "green", detail: "The strongest level — behaves as if every transaction ran one at a time, in some order. Safest, and the most likely to force a transaction to retry due to a conflict." },
+  ]}
+/>
+
+## Not every database chooses full ACID
+
+Some databases (particularly many [NoSQL](/en/databases/nosql) stores) deliberately relax one or more of these guarantees — usually consistency or isolation — in exchange for availability or throughput across many machines. This isn't a defect; it's a legitimate trade-off for workloads where eventual consistency is acceptable and the coordination cost of full ACID across a distributed system isn't worth paying.
+
+## See also
+
+- **[Transactions](/en/databases/transactions)** — try atomicity and durability directly, with a real rollback.
+- **[Database Indexes](/en/databases/database-indexes)** — a concurrent write to an indexed row is exactly the kind of operation isolation levels govern.

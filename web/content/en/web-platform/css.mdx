@@ -1,0 +1,50 @@
+---
+title: CSS
+description: How the browser decides what a page looks like — selectors, the cascade, and the box every element is laid out in.
+category: Web Platform
+weight: 1
+interactive: true
+interactiveType: ["StepFlow", "ItemExplorer"]
+---
+
+import { cascadeResolutionSteps } from "./css-cascade-steps";
+
+CSS (Cascading Style Sheets) describes how [HTML](/en/web-platform/html)'s structure gets a visual presentation — colors, layout, spacing, typography. The same element can be targeted by rules from more than one place at once (a stylesheet, a `<style>` tag, an inline `style` attribute, the browser's own defaults), so CSS needs a deterministic way to decide which one actually wins. That's the "cascade" in the name.
+
+## The cascade, step by step
+
+<StepFlow title="Resolving a CSS conflict" steps={cascadeResolutionSteps} />
+
+## The box model
+
+Every element the browser lays out is a rectangular box made of four nested layers — this is the single most load-bearing mental model in CSS layout.
+
+<ItemExplorer
+  layout="pills"
+  items={[
+    { id: "content", label: "Content", color: "blue", detail: "The actual text/image/children — sized by width/height." },
+    { id: "padding", label: "Padding", color: "green", detail: "Space inside the border, around the content. Shares the element's background." },
+    { id: "border", label: "Border", color: "orange", detail: "A visible (or invisible) line around the padding." },
+    { id: "margin", label: "Margin", color: "purple", detail: "Space outside the border, between this element and its neighbors. Never has a background — it's just empty space." },
+  ]}
+/>
+
+By default, `width`/`height` size only the content box — padding and border are added on top, which is why `box-sizing: border-box` (sizing `width` to include padding and border instead) is close to universal in real stylesheets; without it, adding padding to an element silently makes it bigger than the width you set.
+
+## Selectors and specificity
+
+A selector's specificity is what the cascade compares when more than one rule matches with equal importance/origin — an ID (`#header`) always beats any number of classes, and any number of classes always beats any number of element selectors, regardless of how many of the weaker kind are stacked together.
+
+```css
+#header .nav a { }      /* 1 id, 1 class, 1 element  -> wins over the line below */
+.nav .nav-link a.active { }  /* 0 ids, 3 classes, 1 element */
+```
+
+## Layout: flow, flex, and grid
+
+Normal document flow (block elements stack vertically, inline elements flow horizontally) is CSS's default — `display: flex` and `display: grid` opt an element's children out of that default into a one-dimensional (flex) or two-dimensional (grid) layout algorithm instead, which is why almost no modern layout is built on floats anymore.
+
+## See also
+
+- **[HTML](/en/web-platform/html)** — the structure CSS is styling.
+- **[The DOM](/en/web-platform/dom)** — CSS's computed styles apply to DOM nodes, not the original HTML text.

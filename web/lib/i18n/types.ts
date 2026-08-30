@@ -63,6 +63,7 @@ export interface Dictionary {
     targetLabelEndpoint: string;
     targetLabelWebhook: string;
     targetLabelDefault: string;
+    targetLabelRpc: string;
     defaultTitleHttp: string;
     /** `{protocol}` */
     defaultTitleProtocol: string;
@@ -73,8 +74,10 @@ export interface Dictionary {
     queryLabel: string;
     bodyLabel: string;
     bodyPlaceholderGraphql: string;
+    bodyPlaceholderRpc: string;
     bodyPlaceholderDefault: string;
     variablesLabel: string;
+    paramsLabel: string;
     responseLabel: string;
     tabBody: string;
     /** `{count}` */
@@ -90,6 +93,11 @@ export interface Dictionary {
     wsConnect: string;
     sent: string;
     received: string;
+    sseDefaultTitle: string;
+    sseConnecting: string;
+    sseReconnect: string;
+    sseConnect: string;
+    sseWaiting: string;
   };
   interactive: {
     simulated: string;

@@ -1,0 +1,52 @@
+---
+title: Cookies
+description: A small piece of state the server asks the browser to hold onto and resend automatically — the mechanism behind logged-in sessions.
+category: Web Platform
+weight: 5
+interactive: true
+interactiveType: ["RequestPlayground", "ItemExplorer"]
+---
+
+HTTP itself is stateless — see [REST](/en/web-apis/rest)'s statelessness constraint — but a browser session usually needs to feel stateful ("you're still logged in"). Cookies are how: a server response can include a `Set-Cookie` header asking the browser to store a small piece of data, and the browser automatically resends it on every future request to that same origin, no extra code required on either side.
+
+## Try it
+
+`/api/login` in this site's mock API returns a `Set-Cookie` header — send the request and look at the Headers tab of the response.
+
+<RequestPlayground protocol="http" defaultMethod="POST" defaultTarget="/api/login" defaultHeaders="Content-Type: application/json" defaultBody={`{\n  "email": "demo@nullbase.wiki",\n  "password": "..."\n}`} />
+
+```http
+Set-Cookie: session=abc123; HttpOnly; Secure; SameSite=Lax; Max-Age=3600; Path=/
+```
+
+## Attributes
+
+Each attribute on a `Set-Cookie` header narrows exactly when and how the browser is allowed to send the cookie back — getting these wrong is one of the most common real-world web security mistakes.
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "controls", label: "Controls" },
+  ]}
+  items={[
+    { id: "httponly", label: "HttpOnly", color: "blue", columns: { controls: "Blocks JavaScript (document.cookie) from reading this cookie — the main defense against a session cookie being stolen via XSS." } },
+    { id: "secure", label: "Secure", color: "green", columns: { controls: "Only sent over HTTPS, never plain HTTP — prevents it leaking to a network eavesdropper." } },
+    { id: "samesite", label: "SameSite", color: "purple", columns: { controls: "Whether the cookie is sent on cross-site requests. Strict = never; Lax = only on top-level navigation (default in modern browsers); None = always, but requires Secure." } },
+    { id: "maxage", label: "Max-Age / Expires", color: "orange", columns: { controls: "How long the cookie persists. Omitted entirely -> a \"session cookie,\" cleared when the browser closes." } },
+    { id: "domain", label: "Domain", color: "default", columns: { controls: "Which hosts the cookie is sent to — omitted, it defaults to the exact host that set it (no subdomains)." } },
+    { id: "path", label: "Path", color: "default", columns: { controls: "Which URL paths on that host the cookie is sent for — most cookies just use Path=/, meaning everywhere." } },
+  ]}
+/>
+
+## SameSite and CSRF
+
+`SameSite=Lax` (the modern browser default when unspecified) is specifically a defense against CSRF (Cross-Site Request Forgery): without it, a malicious site could make your browser submit a request to a site you're logged into, and your session cookie would ride along automatically, authenticating an action you never intended. `SameSite=Strict` closes this further but breaks a common legitimate case (clicking a link from an email straight into a logged-in page).
+
+## First-party vs. third-party cookies
+
+A cookie is "first-party" if it's set by the site in the browser's address bar, and "third-party" if it's set by a different domain embedded on that page (an ad network, an analytics script on many sites at once) — third-party cookies are what let a network track a user across unrelated sites, which is why browsers have been progressively restricting or blocking them by default.
+
+## See also
+
+- **[Web Storage](/en/web-platform/web-storage)** — client-only storage that, unlike cookies, is never sent to the server automatically.
+- **[API Authentication](/en/web-apis/api-authentication)** — cookies are one of several ways to carry an identity credential; Bearer tokens are the other common one.

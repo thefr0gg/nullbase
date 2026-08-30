@@ -1,0 +1,70 @@
+---
+title: Web Storage
+description: localStorage and sessionStorage — larger, simpler, client-only key-value storage that the server never sees.
+category: Web Platform
+weight: 6
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+Unlike [cookies](/en/web-platform/cookies), Web Storage is never sent to the server — it's a plain synchronous key-value store, entirely client-side, accessed through two nearly-identical objects: `localStorage` and `sessionStorage`.
+
+```js
+localStorage.setItem("theme", "dark");
+localStorage.getItem("theme");   // "dark"
+localStorage.removeItem("theme");
+```
+
+Every value is stored as a string — storing an object requires `JSON.stringify` on the way in and `JSON.parse` on the way out; this site's own theme preference is stored exactly this way, see [JSON](/en/data-serialization/json).
+
+## Storage options compared
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "sentToServer", label: "Sent to server?" },
+    { key: "persists", label: "Persists" },
+    { key: "capacity", label: "Typical capacity" },
+  ]}
+  items={[
+    {
+      id: "cookies",
+      label: "Cookies",
+      color: "blue",
+      columns: { sentToServer: "Yes, every matching request", persists: "Until Max-Age/Expires (or session end)", capacity: "~4KB per cookie" },
+    },
+    {
+      id: "localstorage",
+      label: "localStorage",
+      color: "green",
+      columns: { sentToServer: "Never", persists: "Until explicitly cleared", capacity: "~5-10MB" },
+    },
+    {
+      id: "sessionstorage",
+      label: "sessionStorage",
+      color: "orange",
+      columns: { sentToServer: "Never", persists: "Until the tab closes", capacity: "~5-10MB" },
+    },
+    {
+      id: "indexeddb",
+      label: "IndexedDB",
+      color: "purple",
+      columns: { sentToServer: "Never", persists: "Until explicitly cleared", capacity: "Much larger (hundreds of MB+), browser-dependent" },
+    },
+  ]}
+/>
+
+`sessionStorage` is scoped to one tab — opening the same site in a second tab gets a completely empty `sessionStorage`, even though both tabs share the same `localStorage`. Closing the tab clears it; a page reload in the same tab does not.
+
+## Why IndexedDB exists
+
+Web Storage's API is synchronous and string-only, which is fine for small settings but a poor fit for larger or structured data — a synchronous read/write of a large value blocks the main thread. IndexedDB is a full asynchronous, transactional, indexed database built into the browser, for genuinely data-heavy client-side storage (an offline-capable app's local dataset, cached API responses for a [Service Worker](/en/web-platform/service-workers) to serve).
+
+## What not to store here
+
+Nothing here is encrypted, and it's readable by any JavaScript running on the page — including a successful XSS payload. Storing a long-lived auth token in `localStorage` is a common real-world mistake for exactly this reason; an `HttpOnly` cookie (unreadable by JavaScript at all) is the safer place for anything sensitive — see [Cookies](/en/web-platform/cookies)'s `HttpOnly` attribute.
+
+## See also
+
+- **[Cookies](/en/web-platform/cookies)** — the alternative that *is* sent to the server automatically.
+- **[JSON](/en/data-serialization/json)** — how structured data gets serialized to fit Web Storage's string-only values.

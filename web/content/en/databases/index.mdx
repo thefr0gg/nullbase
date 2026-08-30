@@ -1,0 +1,28 @@
+---
+title: Databases
+description: How data actually gets stored, queried, and kept consistent — SQL, real database engines, indexes, transactions, and schema design.
+category: Databases
+weight: 4
+---
+
+Every API in [Web APIs](/en/web-apis) has to persist data somewhere, and every serialized payload in [Data & Serialization](/en/data-serialization) usually starts life as a database row. This section covers how that storage actually works — and unlike most of this site's playgrounds, several pages here run a **real embedded SQLite database, compiled to WebAssembly, directly in your browser** — genuine SQL execution, genuine error messages, genuine query plans, nothing scripted.
+
+## SQL and database engines
+
+- **[SQL](/en/databases/sql)** — the query language nearly every relational database speaks.
+- **[SQLite](/en/databases/sqlite)** — a whole database in a single file, and what powers the playgrounds on this page.
+- **[PostgreSQL](/en/databases/postgresql)** — the open-source standard for serious relational workloads.
+- **[MySQL](/en/databases/mysql)** — the other long-standing open-source relational database.
+- **[NoSQL](/en/databases/nosql)** — document, key-value, column, and graph stores — when relational modeling isn't the fit.
+
+## Making queries fast and safe
+
+- **[Database Indexes](/en/databases/database-indexes)** — how a lookup goes from scanning everything to jumping straight to the answer.
+- **[Transactions](/en/databases/transactions)** — grouping multiple writes so they succeed or fail together.
+- **[ACID](/en/databases/acid)** — the four guarantees a transaction is supposed to give you.
+
+## Designing a schema
+
+- **[Database Normalization](/en/databases/database-normalization)** — structuring tables to avoid duplicated, inconsistent data.
+- **[Foreign Keys](/en/databases/foreign-keys)** — the constraint that keeps related tables honest.
+- **[Database Migrations](/en/databases/database-migrations)** — changing a schema that's already in production, safely.

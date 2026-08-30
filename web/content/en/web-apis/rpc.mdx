@@ -1,0 +1,65 @@
+---
+title: RPC
+description: Call a named method with arguments and get a result back — the oldest, most direct shape an API can take.
+category: Web APIs
+weight: 2
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+RPC (Remote Procedure Call) is the most direct way to shape an API: instead of modeling resources and reusing HTTP verbs like [REST](/en/web-apis/rest), a client calls a **named method** with some arguments and gets a result back — as if it were calling a local function, just over the network.
+
+```
+call:   getUser({ id: 42 })
+result: { id: 42, name: "Grace Hopper", email: "grace@example.com" }
+```
+
+There's no fixed transport RPC requires — implementations exist over plain HTTP+JSON (JSON-RPC), binary protocols (gRPC, built on HTTP/2 and Protocol Buffers), and older formats (SOAP, XML-RPC). What they share is the shape: name a method, pass arguments, get back a result or an error.
+
+## Try it
+
+<RequestPlayground protocol="rpc" defaultTarget="getUser" defaultBody={`{\n  "id": 42\n}`} />
+
+This demo echoes the method name and params back inside a JSON-RPC-2.0-shaped envelope — a real RPC server would resolve `getUser` against a registered method and actually run it.
+
+## RPC vs. REST vs. GraphQL
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "shape", label: "Request shape" },
+    { key: "endpoints", label: "Endpoints" },
+  ]}
+  items={[
+    {
+      id: "rest",
+      label: "REST",
+      color: "blue",
+      columns: { shape: "Verb + resource URL", endpoints: "One per resource, reused verbs" },
+    },
+    {
+      id: "graphql",
+      label: "GraphQL",
+      color: "purple",
+      columns: { shape: "A query describing the exact fields wanted", endpoints: "One, for everything" },
+    },
+    {
+      id: "rpc",
+      label: "RPC",
+      color: "orange",
+      columns: { shape: "Method name + arguments", endpoints: "One per method (or one endpoint routing by method name)" },
+    },
+  ]}
+/>
+
+Modeling "transfer $50 from account A to account B" is a good example of where RPC's shape fits naturally and REST's doesn't: it isn't really a `PUT` or `PATCH` on any single resource, it's an **action** — `transferFunds({ from, to, amount })` says exactly what's happening, where a REST design has to invent an artificial resource (like a "transfer") just to have something to `POST` to.
+
+## gRPC, briefly
+
+gRPC is the RPC style most production backend-to-backend traffic actually uses today. It defines methods and message shapes in a `.proto` file, generates typed client/server code in most major languages from that file, and transports calls as binary Protocol Buffers over HTTP/2 — smaller and faster to parse than JSON, at the cost of not being human-readable on the wire the way a REST/JSON or GraphQL request is.
+
+## See also
+
+- **[REST](/en/web-apis/rest)** — the resource-oriented alternative.
+- **[GraphQL](/en/web-apis/graphql)** — closer to RPC than to REST for mutations, but query-shaped for reads.
+- **[API Versioning](/en/web-apis/api-versioning)** — an RPC method's argument shape changing is a breaking change exactly like a REST endpoint's response shape changing.

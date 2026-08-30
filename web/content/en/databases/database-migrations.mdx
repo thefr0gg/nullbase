@@ -1,0 +1,53 @@
+---
+title: Database Migrations
+description: Changing a schema that's already running in production, safely and repeatably — one small, version-controlled step at a time.
+category: Databases
+weight: 10
+interactive: true
+interactiveType: ["StepFlow", "SqlPlayground"]
+---
+
+import { migrationLifecycleSteps } from "./migration-lifecycle-steps";
+
+A migration is a small, version-controlled script that changes a database's schema — adding a column, creating a table, adding an index — applied the same way, in the same order, to every environment that needs it (a developer's laptop, staging, production). The alternative — manually running `ALTER TABLE` statements by hand against production — has no record of what ran where, and no way to guarantee two environments actually ended up with the same schema.
+
+## The lifecycle
+
+<StepFlow title="A migration, from local change to production" steps={migrationLifecycleSteps} />
+
+## Try it — applying a real migration live
+
+<SqlPlayground
+  title="0007_add_users_last_login — applied live"
+  schema={`CREATE TABLE users (id INTEGER PRIMARY KEY, email TEXT NOT NULL);
+INSERT INTO users (id, email) VALUES (1, 'ada@example.com'), (2, 'alan@example.com');`}
+  defaultQuery={`ALTER TABLE users ADD COLUMN last_login_at TEXT;
+PRAGMA table_info(users);`}
+/>
+
+The `PRAGMA table_info(users)` result now shows a real new `last_login_at` column — the migration actually ran against this in-browser database. Try the "down" migration next: `ALTER TABLE users DROP COLUMN last_login_at;` followed by `PRAGMA table_info(users);` again — the column is genuinely gone.
+
+## Why migrations are additive by convention
+
+A well-written migration avoids destructive changes in the same step a new column is introduced — dropping a column the application still reads from would break anything not yet redeployed with the new code. A safer sequence for renaming a column, for example, is usually: (1) add the new column, (2) deploy code that writes to both old and new, (3) backfill existing rows, (4) deploy code that only uses the new column, (5) only then drop the old one — several small migrations instead of one risky one.
+
+## Schema drift
+
+"Schema drift" is what happens when a database's actual schema no longer matches what the migration history says it should be — usually from someone running an ad-hoc `ALTER TABLE` by hand instead of through a migration. It's a real operational hazard specifically because it's invisible until a migration that assumes the "correct" prior state fails, or worse, silently succeeds against the wrong assumption.
+
+## Common tools
+
+<ItemExplorer
+  layout="pills"
+  items={[
+    { id: "flyway", label: "Flyway", color: "blue", detail: "Java-based, database-agnostic, plain SQL migration files — one of the oldest and most widely adopted." },
+    { id: "prisma", label: "Prisma Migrate", color: "green", detail: "Generates SQL migrations from a schema file written in Prisma's own schema language, rather than hand-written SQL." },
+    { id: "rails", label: "Rails Active Record Migrations", color: "purple", detail: "Migrations written in Ruby, one of the earliest frameworks to make this workflow mainstream." },
+    { id: "wrangler-d1", label: "wrangler d1 migrations", color: "orange", detail: "Plain .sql migration files applied to a Cloudflare D1 (SQLite-based) database — the same file works locally and against production." },
+  ]}
+/>
+
+## See also
+
+- **[SQLite](/en/databases/sqlite)** — `ALTER TABLE`'s capabilities (like the `DROP COLUMN` used above) vary meaningfully by engine and version.
+- **[Foreign Keys](/en/databases/foreign-keys)** — adding a new foreign key constraint to an existing, populated table is one of the trickier migrations to write safely.

@@ -1,0 +1,78 @@
+---
+title: Pagination
+description: Returning a lot of data a page at a time instead of all at once — offset, cursor, and keyset pagination compared.
+category: Web APIs
+weight: 10
+interactive: true
+interactiveType: ["RequestPlayground", "ItemExplorer"]
+---
+
+A list endpoint that returns everything at once doesn't scale — a table with a million rows would mean a million-row response for a client that only needs to show 20. Pagination splits a list into pages, returned one request at a time, with some marker telling the client how to fetch the next one.
+
+## Try it
+
+The mock `/api/items` endpoint supports both offset-style (`page`/`limit`) and cursor-style (`cursor`/`limit`) pagination over the same 24-item list — try the chips below, or edit the query string yourself.
+
+<RequestPlayground
+  protocol="http"
+  defaultTarget="/api/items?page=1&limit=5"
+  examplePaths={[
+    { method: "GET", path: "/api/items?page=1&limit=5", label: "page 1" },
+    { method: "GET", path: "/api/items?page=2&limit=5", label: "page 2" },
+    { method: "GET", path: "/api/items?cursor=5&limit=5", label: "cursor" },
+  ]}
+/>
+
+## Strategies compared
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "howItWorks", label: "How it works" },
+    { key: "weakness", label: "Weakness" },
+  ]}
+  items={[
+    {
+      id: "offset",
+      label: "Offset",
+      color: "blue",
+      columns: {
+        howItWorks: "?page=2&limit=20 — \"skip 20, take 20\"",
+        weakness: "If a row is inserted/deleted while paging, later pages shift — a row can be skipped or shown twice. Also gets slower on very large tables (the database still has to scan past every skipped row).",
+      },
+    },
+    {
+      id: "cursor",
+      label: "Cursor",
+      color: "green",
+      columns: {
+        howItWorks: "?cursor=<last item's id>&limit=20 — \"give me the next 20 after this one\"",
+        weakness: "Can't jump directly to an arbitrary page (\"show me page 50\") — only forward/backward from where you are.",
+      },
+    },
+    {
+      id: "keyset",
+      label: "Keyset",
+      color: "purple",
+      columns: {
+        howItWorks: "A cursor built from the actual sort column(s) (e.g. ?after=2024-01-15T09:00:00Z), not an opaque id",
+        weakness: "Requires the sort column(s) to be indexed and the query written around them specifically — more design work up front than offset.",
+      },
+    },
+  ]}
+/>
+
+Cursor and keyset pagination are effectively the same idea (page by "after this marker" instead of "skip N rows") — keyset just uses the actual sort field as the marker instead of an opaque ID, which is what makes it stay fast at scale: the database can seek directly to that value using an index instead of counting rows from the start.
+
+## Shaping the response
+
+Whichever strategy is used, the response should tell the client how to get the next page without it having to guess — a `next_cursor` (or `next` link entirely, `_links.next`) plus a `has_more` boolean is enough for a client to loop until it's out of pages, with no off-by-one guessing about whether it just fetched the last one.
+
+```json
+{ "data": [ /* ... */ ], "next_cursor": "42", "has_more": true }
+```
+
+## See also
+
+- **[REST](/en/web-apis/rest)** — pagination is almost always applied to a REST `GET` list endpoint specifically.
+- **[Rate Limiting](/en/web-apis/rate-limiting)** — a client that pages through a huge list quickly is exactly the kind of traffic a limit exists to smooth out.

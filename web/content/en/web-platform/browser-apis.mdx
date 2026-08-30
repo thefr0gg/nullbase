@@ -1,0 +1,93 @@
+---
+title: Browser APIs
+description: Everything the browser gives a page beyond the core languages — network, device, and platform capabilities exposed as JavaScript objects.
+category: Web Platform
+weight: 4
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+Beyond [HTML](/en/web-platform/html), [CSS](/en/web-platform/css), and the [DOM](/en/web-platform/dom), the browser exposes a large set of built-in JavaScript APIs — capabilities that aren't part of the JavaScript language itself, but are provided by the browser environment JavaScript runs inside. Node.js runs the same language with a completely different set of built-in APIs, which is the clearest way to see that these are platform features, not language features.
+
+## A working glossary
+
+<ItemExplorer
+  layout="grid"
+  items={[
+    {
+      id: "fetch",
+      label: "Fetch",
+      color: "blue",
+      detail: "Makes HTTP requests from JavaScript, returning a Promise — the modern replacement for XMLHttpRequest.",
+    },
+    {
+      id: "geolocation",
+      label: "Geolocation",
+      color: "green",
+      detail: "Asks the user for permission, then reports their device's approximate location.",
+    },
+    {
+      id: "notifications",
+      label: "Notifications",
+      color: "purple",
+      detail: "Shows OS-level notifications, with the user's permission — often paired with a Service Worker for background delivery.",
+    },
+    {
+      id: "clipboard",
+      label: "Clipboard",
+      color: "orange",
+      detail: "Reads from and writes to the system clipboard — writing usually needs a user gesture (a click) to be allowed.",
+    },
+    {
+      id: "intersection",
+      label: "IntersectionObserver",
+      color: "blue",
+      detail: "Efficiently detects when an element enters or leaves the viewport — powers lazy-loading and infinite scroll without a scroll-event listener.",
+    },
+    {
+      id: "history",
+      label: "History",
+      color: "green",
+      detail: "Reads and manipulates the browser's session history — history.pushState() is what lets single-page apps change the URL without a full page load.",
+    },
+    {
+      id: "webrtc",
+      label: "WebRTC",
+      color: "purple",
+      detail: "Peer-to-peer audio, video, and data — powers browser-based video calls without routing media through a server.",
+    },
+    {
+      id: "canvas",
+      label: "Canvas / WebGL",
+      color: "orange",
+      detail: "Immediate-mode 2D and 3D drawing surfaces — used for games, data visualization, and image editing in the browser.",
+    },
+    {
+      id: "observer",
+      label: "MutationObserver",
+      color: "default",
+      detail: "Watches a part of the DOM tree and fires a callback whenever it changes — used by tools that need to react to markup they don't control.",
+    },
+  ]}
+/>
+
+## Feature detection over browser sniffing
+
+Because not every browser (or version) supports every API, code that depends on one should check for its existence directly rather than trying to identify the browser:
+
+```js
+if ("clipboard" in navigator) {
+  await navigator.clipboard.writeText("copied!");
+} else {
+  // fall back to a manual copy affordance
+}
+```
+
+## Permissions
+
+Several of these APIs (geolocation, notifications, clipboard, camera/microphone) are gated behind an explicit user permission prompt the first time a page requests them — and most only work at all in a secure context (`https://` or `localhost`), a deliberate constraint since they expose real device/user capability.
+
+## See also
+
+- **[Cookies](/en/web-platform/cookies)** and **[Web Storage](/en/web-platform/web-storage)** — two of the most commonly used browser APIs, covered separately since there's enough to say about each on its own.
+- **[Service Workers](/en/web-platform/service-workers)** — the API behind offline support and background notifications.

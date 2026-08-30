@@ -28,11 +28,17 @@ export type { HttpMethod } from "./mock-api";
  * component this replaces.
  */
 
-export type Protocol = "http" | "graphql" | "websocket" | "webhook";
+export type Protocol = "http" | "graphql" | "websocket" | "webhook" | "rpc" | "sse";
 
 export interface SimulatedMessage {
   direction: "sent" | "received";
   body: string;
+  delayMs?: number;
+}
+
+export interface SimulatedEvent {
+  event?: string;
+  data: string;
   delayMs?: number;
 }
 
@@ -42,9 +48,10 @@ export interface RequestPlaygroundProps {
   defaultTarget?: string;
   defaultMethod?: HttpMethod; // http only
   defaultHeaders?: string; // http/webhook — "Name: value" lines
-  defaultBody?: string; // http body / graphql query text / webhook payload
+  defaultBody?: string; // http body / graphql query text / webhook payload / rpc params
   defaultVariables?: string; // graphql only — JSON text
   simulatedMessages?: SimulatedMessage[]; // websocket only
+  simulatedEvents?: SimulatedEvent[]; // sse only
   /** Clickable "try this" chips under the target field. Defaults to
    *  `DEFAULT_HTTP_EXAMPLES` for protocol="http"; empty for everything else. */
   examplePaths?: ExamplePath[];
@@ -78,10 +85,37 @@ function buildCurl({
  *  the shared shell/loading-state/response-panel chrome below never has to
  *  branch on protocol itself. */
 const adapters: Record<
-  Exclude<Protocol, "websocket">,
+  Exclude<Protocol, "websocket" | "sse">,
   (input: { target: string; method?: HttpMethod; headers: string; body: string; variables?: string }) => SimulatedResult
 > = {
   http: ({ target, method = "GET", headers, body }) => simulateHttp({ target, method, headers, body }),
+
+  rpc: ({ target, body }) => {
+    let params: unknown = undefined;
+    try {
+      params = body ? JSON.parse(body) : undefined;
+    } catch {
+      params = body;
+    }
+    return {
+      status: 200,
+      statusText: "OK",
+      headers: [["content-type", "application/json"]],
+      body: JSON.stringify(
+        {
+          jsonrpc: "2.0",
+          // A real RPC server would resolve `target` against a registered
+          // method and return its actual result — this demo just echoes the
+          // call shape back, same "honest echo" approach as the graphql
+          // adapter above.
+          result: { _simulatedEcho: { method: target, params } },
+          id: 1,
+        },
+        null,
+        2,
+      ),
+    };
+  },
 
   graphql: ({ target, body, variables }) => {
     let parsedVariables: unknown = undefined;
@@ -147,10 +181,11 @@ export default function RequestPlayground({
   defaultBody = JSON.stringify({ hello: "world" }, null, 2),
   defaultVariables = "{}",
   simulatedMessages = [],
+  simulatedEvents = [],
   examplePaths,
 }: RequestPlaygroundProps) {
   // All hooks must run unconditionally on every render (rules-of-hooks) —
-  // the websocket early return happens below, after every hook this
+  // the websocket/sse early returns happen below, after every hook this
   // component owns has already been called.
   const [method, setMethod] = useState<HttpMethod>(defaultMethod);
   const [target, setTarget] = useState(defaultTarget);
@@ -165,6 +200,9 @@ export default function RequestPlayground({
 
   if (protocol === "websocket") {
     return <WebSocketPlayground title={title} target={defaultTarget} messages={simulatedMessages} />;
+  }
+  if (protocol === "sse") {
+    return <SsePlayground title={title} target={defaultTarget} events={simulatedEvents} />;
   }
 
   const isBodyless = protocol === "http" && (method === "GET" || method === "HEAD");
@@ -183,10 +221,10 @@ export default function RequestPlayground({
       // Brief pause so the pending state mirrors a real request round trip —
       // pure theater, no network call ever happens.
       await new Promise((resolve) => setTimeout(resolve, 250));
-      // `protocol !== "websocket"` here (that branch returned above before
-      // `send` could ever be wired to a button) — TS can't see that through
-      // the closure, so narrow explicitly.
-      const adapter = adapters[protocol as Exclude<Protocol, "websocket">];
+      // `protocol` is neither "websocket" nor "sse" here (those branches
+      // returned above before `send` could ever be wired to a button) — TS
+      // can't see that through the closure, so narrow explicitly.
+      const adapter = adapters[protocol as Exclude<Protocol, "websocket" | "sse">];
       setResult(
         adapter({ target: effectiveTarget, method: effectiveMethod, headers: headersText, body: bodyText, variables: variablesText }),
       );
@@ -204,7 +242,13 @@ export default function RequestPlayground({
   }
 
   const targetLabel =
-    protocol === "graphql" ? t.targetLabelEndpoint : protocol === "webhook" ? t.targetLabelWebhook : t.targetLabelDefault;
+    protocol === "graphql"
+      ? t.targetLabelEndpoint
+      : protocol === "webhook"
+        ? t.targetLabelWebhook
+        : protocol === "rpc"
+          ? t.targetLabelRpc
+          : t.targetLabelDefault;
   const curlCommand =
     protocol === "http"
       ? buildCurl({ method, target, headers: headersText, body: bodyText, isBodyless })
@@ -279,7 +323,7 @@ export default function RequestPlayground({
       </PlaygroundSection>
 
       <div className="grid gap-4 p-4 sm:grid-cols-2 sm:p-5">
-        {protocol !== "graphql" && (
+        {protocol !== "graphql" && protocol !== "rpc" && (
           <div className="space-y-2">
             <EyebrowLabel as="label">{t.headersLabel}</EyebrowLabel>
             <textarea
@@ -291,11 +335,15 @@ export default function RequestPlayground({
           </div>
         )}
         <div className="space-y-2">
-          <EyebrowLabel as="label">{protocol === "graphql" ? t.queryLabel : t.bodyLabel}</EyebrowLabel>
+          <EyebrowLabel as="label">
+            {protocol === "graphql" ? t.queryLabel : protocol === "rpc" ? t.paramsLabel : t.bodyLabel}
+          </EyebrowLabel>
           <textarea
             value={bodyText}
             onChange={(e) => setBodyText(e.target.value)}
-            placeholder={protocol === "graphql" ? t.bodyPlaceholderGraphql : t.bodyPlaceholderDefault}
+            placeholder={
+              protocol === "graphql" ? t.bodyPlaceholderGraphql : protocol === "rpc" ? t.bodyPlaceholderRpc : t.bodyPlaceholderDefault
+            }
             className="h-32 max-h-80 w-full max-w-full resize-y rounded-2xl border border-border bg-background p-3 font-mono text-xs text-text-primary outline-none transition focus:border-electric-blue focus:ring-3 focus:ring-electric-blue/15 disabled:cursor-not-allowed disabled:opacity-60"
             disabled={isBodyless}
           />
@@ -485,6 +533,73 @@ function WebSocketPlayground({
           </ul>
         </PlaygroundSection>
       )}
+    </PlaygroundShell>
+  );
+}
+
+/** SSE is one-directional and auto-appending — unlike WebSocket's manual
+ *  send/receive log, there's no "sent" side: a "Connect" button starts the
+ *  stream and events arrive on their own, framed like a real `text/
+ *  event-stream` body (`event: ...` / `data: ...`) rather than reusing the
+ *  WebSocket chat-bubble layout. */
+function SsePlayground({
+  title,
+  target,
+  events,
+}: {
+  title?: string;
+  target: string;
+  events: SimulatedEvent[];
+}) {
+  const [shown, setShown] = useState<SimulatedEvent[]>([]);
+  const [connecting, setConnecting] = useState(false);
+  const connected = shown.length > 0;
+  const dict = useInteractiveDict();
+  const t = dict.requestPlayground;
+
+  async function connect() {
+    setConnecting(true);
+    setShown([]);
+    for (const event of events) {
+      await new Promise((resolve) => setTimeout(resolve, event.delayMs ?? 500));
+      setShown((prev) => [...prev, event]);
+    }
+    setConnecting(false);
+  }
+
+  return (
+    <PlaygroundShell>
+      <PlaygroundSection divider="bottom" tone="muted">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <EyebrowLabel as="span" className="mb-0">
+            {title ?? t.sseDefaultTitle}
+          </EyebrowLabel>
+          <SimulatedTag label={dict.simulated} />
+        </div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <code className="min-w-0 flex-1 truncate rounded-xl border border-border bg-background px-3.5 py-2.5 font-mono text-sm text-text-primary">
+            {target}
+          </code>
+          <Button onClick={connect} disabled={connecting} variant="primary" className="sm:min-w-[120px]">
+            {connecting ? t.sseConnecting : connected ? t.sseReconnect : t.sseConnect}
+          </Button>
+        </div>
+      </PlaygroundSection>
+
+      <PlaygroundSection>
+        {shown.length === 0 ? (
+          <p className="text-xs text-text-secondary">{t.sseWaiting}</p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {shown.map((e, i) => (
+              <li key={i} className="rounded-2xl border border-border bg-surface px-3 py-2 font-mono text-xs text-text-primary">
+                {e.event && <div className="text-text-secondary">event: {e.event}</div>}
+                <div>data: {e.data}</div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </PlaygroundSection>
     </PlaygroundShell>
   );
 }

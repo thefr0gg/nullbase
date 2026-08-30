@@ -1,0 +1,73 @@
+---
+title: MySQL
+description: The other long-standing open-source relational database — historically the backbone of the LAMP stack, and still one of the most widely deployed databases in the world.
+category: Databases
+weight: 3
+interactive: true
+interactiveType: ["SqlPlayground", "ItemExplorer"]
+---
+
+MySQL is a client-server relational database, like [PostgreSQL](/en/databases/postgresql) — the two are the two dominant open-source options and are compared constantly, but they diverged from different design priorities: MySQL prioritized raw read speed and simplicity for the common web-app case (it powered the "M" in the classic LAMP stack — Linux, Apache, MySQL, PHP), where Postgres prioritized standards compliance and correctness first.
+
+## Try it (standard SQL, running on the in-browser engine)
+
+<SqlPlayground
+  title="ON DUPLICATE KEY UPDATE — MySQL's upsert shorthand (standard equivalent below)"
+  schema={`CREATE TABLE page_views (path TEXT PRIMARY KEY, views INTEGER NOT NULL DEFAULT 0);
+INSERT INTO page_views (path, views) VALUES ('/home', 10);`}
+  defaultQuery={`INSERT INTO page_views (path, views) VALUES ('/home', 1)
+ON CONFLICT(path) DO UPDATE SET views = views + 1;
+SELECT * FROM page_views;`}
+/>
+
+That query uses `ON CONFLICT ... DO UPDATE` (SQLite and Postgres's standard "upsert" syntax) since that's what the in-browser engine actually supports — MySQL's equivalent, shown below, isn't runnable here but does the same thing.
+
+## What's actually MySQL-specific
+
+```sql
+-- AUTO_INCREMENT: MySQL's spelling of an auto-incrementing primary key
+CREATE TABLE users (id INT AUTO_INCREMENT PRIMARY KEY, email VARCHAR(255) UNIQUE);
+
+-- MySQL's own upsert syntax
+INSERT INTO page_views (path, views) VALUES ('/home', 1)
+ON DUPLICATE KEY UPDATE views = views + 1;
+
+-- Storage engine selection, per table
+CREATE TABLE logs (id INT PRIMARY KEY, message TEXT) ENGINE=InnoDB;
+
+-- LIMIT with an offset, comma form (also valid in Postgres, not standard SQL)
+SELECT * FROM users LIMIT 10, 20; -- skip 10, take 20
+```
+
+## Storage engines
+
+Unusually among major databases, MySQL lets you choose a different **storage engine** per table — the engine is what actually implements how rows are stored, indexed, and locked on disk, underneath the same SQL interface.
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[{ key: "transactions", label: "Transactions" }, { key: "notes", label: "Notes" }]}
+  items={[
+    { id: "innodb", label: "InnoDB", color: "blue", columns: { transactions: "Yes, full ACID", notes: "The default since MySQL 5.5, and what almost every table should use today." } },
+    { id: "myisam", label: "MyISAM", color: "default", columns: { transactions: "No", notes: "Older, no transaction/foreign-key support — mostly a legacy holdover at this point." } },
+    { id: "memory", label: "MEMORY", color: "orange", columns: { transactions: "No", notes: "Stores the entire table in RAM — fast, but the data vanishes on restart." } },
+  ]}
+/>
+
+## Where the two diverge in practice
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[{ key: "mysql", label: "MySQL" }, { key: "postgres", label: "PostgreSQL" }]}
+  items={[
+    { id: "strictness", label: "Type strictness", color: "blue", columns: { mysql: "Historically lenient by default (silently truncating/coercing invalid values, until STRICT mode)", postgres: "Strict by default — an invalid value is a hard error" } },
+    { id: "json", label: "JSON support", color: "green", columns: { mysql: "A JSON column type, functionally solid but less deeply integrated", postgres: "JSONB — binary-encoded and indexable, more deeply woven into the query planner" } },
+    { id: "replication", label: "Replication", color: "purple", columns: { mysql: "Mature, widely deployed, simpler to reason about for basic primary/replica setups", postgres: "Also mature, with more configuration flexibility (logical vs. streaming replication)" } },
+  ]}
+/>
+
+Both are excellent, production-proven choices for the overwhelming majority of relational workloads — the actual decision usually comes down to team familiarity, hosting provider support, and whether a specific feature (Postgres's extensions, MySQL's simpler replication story) is a deciding factor for the project at hand, more than either database being categorically "better."
+
+## See also
+
+- **[PostgreSQL](/en/databases/postgresql)** — the direct point of comparison throughout this page.
+- **[SQLite](/en/databases/sqlite)** — what's actually running the executable example above.

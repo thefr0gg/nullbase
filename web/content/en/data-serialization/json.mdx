@@ -1,0 +1,54 @@
+---
+title: JSON
+description: JavaScript Object Notation — the default data format for almost every modern API, and the body every RequestPlayground demo on this site sends.
+category: Data & Serialization
+weight: 0
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+JSON (JavaScript Object Notation) is a lightweight, text-based data format — despite the name, it's language-independent today, with a parser in essentially every programming language. It's the default request/response body format across [REST](/en/web-apis/rest), most [RPC](/en/web-apis/rpc), and [GraphQL](/en/web-apis/graphql), and every mock response on this site is JSON for exactly that reason.
+
+```json
+{
+  "id": 42,
+  "name": "Grace Hopper",
+  "active": true,
+  "roles": ["admin", "editor"],
+  "manager": null
+}
+```
+
+## The complete type system
+
+JSON's entire type system is six types — nothing else is valid, which is part of why it's so easy to parse consistently across languages.
+
+<ItemExplorer
+  layout="pills"
+  items={[
+    { id: "string", label: "String", color: "green", detail: "Double-quoted text only — single quotes are not valid JSON, unlike JavaScript object literals." },
+    { id: "number", label: "Number", color: "orange", detail: "No distinction between integers and floats — just \"number.\" No NaN, no Infinity — both are invalid JSON." },
+    { id: "boolean", label: "Boolean", color: "purple", detail: "true or false, unquoted." },
+    { id: "null", label: "null", color: "default", detail: "A distinct value meaning \"deliberately no value\" — different from a missing key entirely." },
+    { id: "object", label: "Object", color: "blue", detail: "An unordered set of string-keyed properties — keys must be double-quoted strings, always." },
+    { id: "array", label: "Array", color: "blue", detail: "An ordered list of values, of any of these six types, mixed freely." },
+  ]}
+/>
+
+## What JSON can't represent
+
+JSON has no `Date` type — timestamps are conventionally serialized as ISO 8601 strings (`"2024-01-15T09:00:00Z"`) and parsed back into real date objects by the consumer, not automatically. It also can't represent `undefined`, functions, or circular references — `JSON.stringify` silently drops `undefined` values and functions, and throws on a circular reference.
+
+```js
+JSON.stringify({ a: undefined, b: () => {}, c: 1 });
+// '{"c":1}' — a and b are just gone, not null
+```
+
+## Strict syntax, on purpose
+
+Unlike JavaScript object literals, JSON has no trailing commas, no comments, no unquoted keys, and no single-quoted strings — this strictness is deliberate: a parser doesn't have to guess intent, which is what makes JSON reliably interoperable across every language's implementation.
+
+## See also
+
+- **[XML](/en/data-serialization/xml)** and **[YAML](/en/data-serialization/yaml)** — the same structured data, two other ways.
+- **[MIME Types](/en/data-serialization/mime-types)** — JSON is labeled `application/json` on the wire.

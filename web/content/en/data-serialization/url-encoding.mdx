@@ -1,0 +1,51 @@
+---
+title: URL Encoding
+description: Percent-encoding — escaping characters a URL can't safely contain, so they survive the trip without being misread as part of the URL's own structure.
+category: Data & Serialization
+weight: 4
+interactive: true
+interactiveType: ["Codec"]
+---
+
+A URL can only safely contain a limited set of characters — letters, digits, and a handful of punctuation marks (`- _ . ~` and the structural characters `: / ? # [ ] @ ! $ & ' ( ) * + , ; =`, which are reserved for the URL's own syntax). Anything else — a space, an `&` inside a value, non-ASCII text — has to be **percent-encoded**: replaced with `%` followed by the character's byte value in hex.
+
+```
+hello world     ->  hello%20world
+100% done       ->  100%25%20done
+café             ->  caf%C3%A9        (UTF-8 bytes, each percent-encoded)
+```
+
+## Try it
+
+<Codec mode="url" defaultInput="hello world & more=100%" />
+
+## Why `&` and `=` specifically matter
+
+Query strings use `&` to separate key-value pairs and `=` to separate a key from its value — a literal `&` or `=` *inside* a value has to be percent-encoded, or it gets misread as structure instead of data:
+
+```
+?comment=nice & tidy    -->  parsed as comment="nice ", " tidy"="" (broken)
+?comment=nice%20%26%20tidy  -->  parsed as comment="nice & tidy"  (correct)
+```
+
+This is exactly the class of bug [Form Data](/en/data-serialization/form-data)'s `application/x-www-form-urlencoded` encoding exists to prevent systematically, rather than leaving every form value to be escaped by hand.
+
+## `+` means space, sometimes
+
+Inside a query string or a `application/x-www-form-urlencoded` body specifically, a `+` is a shorthand for a space — but a literal `+` anywhere else in a URL means a literal plus sign. This dual meaning is a frequent source of bugs when the same string is decoded with the wrong assumption about which context it came from.
+
+## `encodeURIComponent` vs. `encodeURI`
+
+JavaScript has two built-in encoders with different scopes, and mixing them up is a common mistake:
+
+```js
+encodeURIComponent("a/b?c=d");  // "a%2Fb%3Fc%3Dd" — escapes EVERYTHING, safe for a single value
+encodeURI("https://x.com/a/b?c=d"); // "https://x.com/a/b?c=d" — leaves URL structure characters alone
+```
+
+`encodeURIComponent` is almost always the right choice when encoding a single value (a query parameter, a path segment) that will be inserted into a larger URL — `encodeURI` is only for encoding a string that's already a complete, valid URL.
+
+## See also
+
+- **[Base64](/en/data-serialization/base64)** — a different kind of text-safe encoding, for binary data rather than URL structure.
+- **[Form Data](/en/data-serialization/form-data)** — the format that relies on this encoding for every field value.

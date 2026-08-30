@@ -1,0 +1,71 @@
+---
+title: Server-Sent Events
+description: A persistent, one-way stream from server to client over plain HTTP — no upgrade, no new protocol, and the browser reconnects for you.
+category: Web APIs
+weight: 5
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+import { tickerEvents } from "./server-sent-events-messages";
+
+Server-Sent Events (SSE) is a one-directional stream: the server keeps a plain HTTP response open and writes events to it over time, and the client just listens. There's no handshake upgrade like [WebSockets](/en/web-apis/websockets) — the response's `Content-Type` is `text/event-stream`, and the connection just... doesn't end.
+
+```http
+GET /events HTTP/1.1
+Accept: text/event-stream
+
+HTTP/1.1 200 OK
+Content-Type: text/event-stream
+Cache-Control: no-cache
+Connection: keep-alive
+
+event: price
+data: {"symbol":"NB","price":128.42}
+
+event: price
+data: {"symbol":"NB","price":128.55}
+
+```
+
+Each event is a plain-text block: an optional `event:` name, a `data:` line (or several, joined), and a blank line to terminate it. No binary framing, no special client library required — it's just an HTTP response a client reads incrementally.
+
+## Try it
+
+<RequestPlayground protocol="sse" defaultTarget="/events/prices" simulatedEvents={tickerEvents} />
+
+## Why not always use this instead of WebSockets
+
+SSE is simpler than a WebSocket in almost every way that matters operationally: it's plain HTTP, so it passes through proxies/load balancers/CDNs that have no idea what a WebSocket `Upgrade` header even means, and the browser's `EventSource` API reconnects automatically after a drop — no reconnect logic to write. The one thing it genuinely can't do is send anything from the client back over the same connection; a client that also needs to send data uses a normal HTTP request alongside the stream, or reaches for a WebSocket instead if the two directions need to stay tightly coupled.
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "direction", label: "Direction" },
+    { key: "transport", label: "Transport" },
+    { key: "reconnect", label: "Reconnection" },
+  ]}
+  items={[
+    {
+      id: "sse",
+      label: "Server-Sent Events",
+      color: "blue",
+      columns: { direction: "Server → client only", transport: "Plain HTTP", reconnect: "Automatic, built into the browser" },
+    },
+    {
+      id: "ws",
+      label: "WebSockets",
+      color: "purple",
+      columns: { direction: "Both directions", transport: "Upgraded connection", reconnect: "Manual — the app has to implement it" },
+    },
+  ]}
+/>
+
+## Connection limits
+
+Browsers cap the number of simultaneous `EventSource` connections to the same origin over HTTP/1.1 (historically 6, shared with regular requests) — opening several SSE streams to the same host from several tabs can exhaust that limit. HTTP/2 removes this ceiling by multiplexing many streams over one connection, which is one more reason production SSE endpoints are typically served over HTTP/2.
+
+## See also
+
+- **[WebSockets](/en/web-apis/websockets)** — reach for this instead when the client needs to send data too.
+- **[Webhooks](/en/web-apis/webhooks)** — for "notify me" without the client keeping any connection open at all.

@@ -1,0 +1,53 @@
+---
+title: Database Normalization
+description: Structuring tables so each fact is stored in exactly one place — eliminating the class of bugs where the same data disagrees with itself.
+category: Databases
+weight: 8
+interactive: true
+interactiveType: ["StepFlow", "SqlPlayground"]
+---
+
+import { normalizationSteps } from "./normalization-steps";
+
+Normalization is the discipline of structuring tables so that each fact is stored in exactly one place. The problem it solves: if a customer's email is repeated on every order row, updating it means finding and changing every single row — miss one, and the database now contains two different "true" answers to "what's this customer's email," with no way to tell which one is actually current.
+
+## Walking through it
+
+The "normal forms" (1NF, 2NF, 3NF, and beyond) are a series of increasingly strict rules — each one fixes a specific kind of duplication.
+
+<StepFlow title="Normalizing an orders table" steps={normalizationSteps} />
+
+## Try it — the normalized version, reconstructed with a JOIN
+
+Splitting data into separate tables doesn't lose the original flat view — it's rebuilt on demand.
+
+<SqlPlayground
+  title="Three normalized tables -> the original flat view"
+  schema={`
+CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL);
+CREATE TABLE products (id INTEGER PRIMARY KEY, name TEXT NOT NULL, price REAL NOT NULL);
+CREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER REFERENCES customers(id), product_id INTEGER REFERENCES products(id), quantity INTEGER NOT NULL);
+INSERT INTO customers (id, name, email) VALUES (1, 'Ada Lovelace', 'ada@example.com'), (2, 'Alan Turing', 'alan@example.com');
+INSERT INTO products (id, name, price) VALUES (1, 'Widget', 9.99), (2, 'Gadget', 19.99);
+INSERT INTO orders (id, customer_id, product_id, quantity) VALUES (1, 1, 1, 3), (2, 1, 2, 1), (3, 2, 1, 2);
+`}
+  defaultQuery={`SELECT c.name AS customer, c.email, p.name AS product, p.price, o.quantity, (p.price * o.quantity) AS line_total
+FROM orders o
+JOIN customers c ON c.id = o.customer_id
+JOIN products p ON p.id = o.product_id;`}
+/>
+
+Try `UPDATE customers SET email = 'ada.lovelace@example.com' WHERE id = 1;` and re-run the query above — one row changed in `customers`, and every order line involving Ada reflects it immediately, because the email was never duplicated in the first place.
+
+## The trade-off: normalization vs. read performance
+
+Every level of normalization is one more `JOIN` a read query has to do to reconstruct the full picture — for most applications this cost is negligible next to the correctness it buys, but high-read, low-write systems (a reporting dashboard, an analytics pipeline) sometimes deliberately **denormalize** — duplicating data back for read speed, accepting the update-consistency risk as a conscious trade-off rather than an oversight.
+
+## Beyond 3NF
+
+Further normal forms exist (BCNF, 4NF, 5NF) for progressively rarer edge cases in dependency structure — in practice, the overwhelming majority of schemas stop being meaningfully improved past 3NF, and most real-world schema design discussions don't go further than it.
+
+## See also
+
+- **[Foreign Keys](/en/databases/foreign-keys)** — the constraint that keeps the split-apart tables from drifting out of sync with each other.
+- **[SQL](/en/databases/sql)** — the JOIN that reconstructs a normalized schema's flat view.

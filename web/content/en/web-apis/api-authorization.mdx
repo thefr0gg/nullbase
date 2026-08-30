@@ -1,0 +1,75 @@
+---
+title: API Authorization
+description: You know who's calling — now what are they allowed to do? RBAC, ABAC, scopes, and ACLs compared.
+category: Web APIs
+weight: 7
+interactive: true
+interactiveType: ["RequestPlayground", "ItemExplorer"]
+---
+
+[API Authentication](/en/web-apis/api-authentication) answers "who is this?" Authorization answers the next question: **what is this identity allowed to do?** A request can be perfectly authenticated — a valid, unexpired token — and still get rejected, because the identity behind that token isn't permitted to do what it's asking for. That's the difference between a `401 Unauthorized` (who are you? — actually means "not authenticated," a historically confusing name) and a `403 Forbidden` (I know who you are, and no).
+
+## Try it
+
+`/api/admin` in this site's mock API requires an `X-Role: admin` header — send the request without it (`403`), then add the header and send again (`200`).
+
+<RequestPlayground protocol="http" defaultTarget="/api/admin" defaultHeaders="Accept: application/json" />
+
+## Authorization models
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "decisionBasedOn", label: "Decision based on" },
+    { key: "example", label: "Example" },
+  ]}
+  items={[
+    {
+      id: "rbac",
+      label: "RBAC",
+      color: "blue",
+      columns: {
+        decisionBasedOn: "A role assigned to the user (admin, editor, viewer)",
+        example: "\"Only admins can delete a workspace.\"",
+      },
+    },
+    {
+      id: "abac",
+      label: "ABAC",
+      color: "purple",
+      columns: {
+        decisionBasedOn: "Attributes of the user, resource, and context together",
+        example: "\"A manager can approve an expense only if they're the submitter's manager and it's under $500.\"",
+      },
+    },
+    {
+      id: "scopes",
+      label: "Scopes / claims",
+      color: "green",
+      columns: {
+        decisionBasedOn: "Permissions embedded directly in the access token",
+        example: "A token issued with scope=read:orders can't call the write endpoint, no database lookup needed.",
+      },
+    },
+    {
+      id: "acl",
+      label: "ACL",
+      color: "orange",
+      columns: {
+        decisionBasedOn: "A per-resource list of who can do what",
+        example: "\"This specific document is shared with these 3 users, view-only.\"",
+      },
+    },
+  ]}
+/>
+
+RBAC is the simplest and most common starting point — most APIs that need any authorization at all start there and only reach for ABAC once role-based rules genuinely can't express a needed policy (RBAC answers "what role are you," ABAC can additionally ask "is this specifically your data").
+
+## Where the check happens
+
+Authorization can be enforced at more than one layer, and production systems often use several at once: at the edge/gateway (a scope check before the request even reaches application code), in the application (an RBAC/ABAC check against business logic), and at the data layer (a database row-level policy as a last line of defense if the application check has a bug). The gateway check is cheap and fails fast; the data-layer check is the one that actually can't be bypassed by an application bug.
+
+## See also
+
+- **[API Authentication](/en/web-apis/api-authentication)** — establishing identity, the step before this one.
+- **[REST](/en/web-apis/rest)** — status codes like `401`/`403` are part of a REST API's interface, not an implementation detail.

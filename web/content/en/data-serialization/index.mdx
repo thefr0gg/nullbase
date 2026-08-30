@@ -1,0 +1,24 @@
+---
+title: Data & Serialization
+description: The formats data actually travels in — turning structured data into bytes on the wire, and back again.
+category: Data & Serialization
+weight: 3
+---
+
+Every request and response in [Web APIs](/en/web-apis) carries data as bytes — a JavaScript object, a form, a file, all have to be turned into a byte stream to travel over the network, and turned back into structured data on the other end. This section covers the formats and encodings that make that translation work.
+
+## Structured data formats
+
+- **[JSON](/en/data-serialization/json)** — the default format for nearly every modern API.
+- **[XML](/en/data-serialization/xml)** — verbose, strict, and still everywhere in older and enterprise systems.
+- **[YAML](/en/data-serialization/yaml)** — human-friendly, indentation-based — mostly a config-file format today.
+
+## Submitting and encoding data
+
+- **[Form Data](/en/data-serialization/form-data)** — how an HTML form's fields are actually encoded for submission.
+- **[URL Encoding](/en/data-serialization/url-encoding)** — escaping characters a URL can't safely contain.
+- **[Base64](/en/data-serialization/base64)** — representing binary data as plain text.
+
+## Labeling data
+
+- **[MIME Types](/en/data-serialization/mime-types)** — telling the other side what kind of data this actually is.

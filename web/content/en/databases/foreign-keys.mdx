@@ -1,0 +1,57 @@
+---
+title: Foreign Keys
+description: A constraint that stops a row from referencing something that doesn't exist — enforced by the database itself, not left to application code to remember.
+category: Databases
+weight: 9
+interactive: true
+interactiveType: ["SqlPlayground"]
+---
+
+A foreign key is a column (or set of columns) in one table that references the primary key of another — `orders.customer_id` referencing `customers.id`. Declaring it as an actual `FOREIGN KEY` constraint, rather than just an integer column that happens to hold a customer's id, means the database itself refuses any row that would break the reference — an order can never point at a customer that doesn't exist, enforced automatically, with no application code that could forget to check.
+
+## Try it — a real constraint violation
+
+SQLite doesn't enforce foreign keys by default (a historical quirk, for backward compatibility) — this playground turns it on explicitly, so the error you see below is a genuine constraint failure, not a scripted message.
+
+<SqlPlayground
+  title="Foreign key enforcement, turned on"
+  enforceForeignKeys
+  schema={`
+CREATE TABLE authors (id INTEGER PRIMARY KEY, name TEXT NOT NULL);
+CREATE TABLE books (
+  id INTEGER PRIMARY KEY,
+  title TEXT NOT NULL,
+  author_id INTEGER NOT NULL REFERENCES authors(id)
+);
+INSERT INTO authors (id, name) VALUES (1, 'Octavia Butler'), (2, 'Ursula K. Le Guin');
+INSERT INTO books (id, title, author_id) VALUES (1, 'Kindred', 1), (2, 'The Left Hand of Darkness', 2);
+`}
+  defaultQuery={`INSERT INTO books (title, author_id) VALUES ('Ghost Author Book', 999);`}
+/>
+
+That fails with a real `FOREIGN KEY constraint failed` — there's no author with `id = 999`. Now try a valid insert instead: `INSERT INTO books (title, author_id) VALUES ('Parable of the Sower', 1);` — succeeds immediately, since author `1` genuinely exists.
+
+## `ON DELETE` behavior
+
+A foreign key also has to decide what happens when the row it points to gets deleted — this is set explicitly per constraint, and getting it wrong is a real, common source of either orphaned rows or unwanted cascading deletes.
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[{ key: "behavior", label: "On delete of the referenced row" }]}
+  items={[
+    { id: "restrict", label: "RESTRICT / NO ACTION", color: "blue", columns: { behavior: "Blocks the delete entirely while any row still references it — the default in most engines." } },
+    { id: "cascade", label: "CASCADE", color: "red", columns: { behavior: "Deletes every referencing row too — deleting an author would silently delete all of their books." } },
+    { id: "setnull", label: "SET NULL", color: "orange", columns: { behavior: "Sets the referencing column to NULL — only valid if that column allows NULL, i.e. the reference is optional." } },
+  ]}
+/>
+
+Try adding `ON DELETE CASCADE` to the schema above (`author_id INTEGER NOT NULL REFERENCES authors(id) ON DELETE CASCADE`), reset, then `DELETE FROM authors WHERE id = 1;` followed by `SELECT * FROM books;` — Octavia Butler's books are gone too, deleted automatically along with their author.
+
+## Why not just check in application code?
+
+An application could check "does this author exist" before every insert instead of declaring a constraint — but that check and the insert aren't atomic unless wrapped in a [transaction](/en/databases/transactions), a second code path (a bulk import script, a different service, direct database access) can always forget the check, and a foreign key is one line of schema instead of application logic that has to be correct and duplicated everywhere writes happen. The database enforcing it is strictly more reliable than trusting every caller to remember.
+
+## See also
+
+- **[Database Normalization](/en/databases/database-normalization)** — foreign keys are what keep a normalized schema's split-apart tables consistent with each other.
+- **[Transactions](/en/databases/transactions)** — a foreign key violation mid-transaction causes that transaction to fail and roll back.

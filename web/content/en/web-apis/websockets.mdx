@@ -1,0 +1,49 @@
+---
+title: WebSockets
+description: One long-lived, two-way connection — the client and server can each send a message at any time, with no request/response pairing required.
+category: Web APIs
+weight: 4
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+import { chatSocketMessages } from "./websocket-messages";
+
+Every pattern covered so far in this section — REST, GraphQL, RPC, webhooks — is still request/response shaped: one side asks, the other answers. A WebSocket connection is different: after a single HTTP handshake upgrades the connection, it stays open, and **either side can send a message at any time**, with no request/response pairing required. It's the closest thing on the web to a raw, persistent socket.
+
+## The handshake
+
+A WebSocket connection starts as a normal HTTP request with an `Upgrade` header, asking the server to switch protocols:
+
+```http
+GET /chat HTTP/1.1
+Host: example.com
+Upgrade: websocket
+Connection: Upgrade
+Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==
+Sec-WebSocket-Version: 13
+
+HTTP/1.1 101 Switching Protocols
+Upgrade: websocket
+Connection: Upgrade
+Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
+```
+
+`101 Switching Protocols` is the tell — after this response, the TCP connection is no longer speaking HTTP at all. It's a raw duplex channel that both sides frame WebSocket messages over, until either side closes it.
+
+## Try it
+
+<RequestPlayground protocol="websocket" defaultTarget="wss://chat.example.com/rooms/general" simulatedMessages={chatSocketMessages} />
+
+## When to reach for one
+
+WebSockets fit anything genuinely bidirectional and low-latency: chat, multiplayer state, live cursors/collaborative editing, trading tickers. They're the wrong tool when the client never needs to send anything after the initial subscribe — a one-way feed of server updates is exactly what [Server-Sent Events](/en/web-apis/server-sent-events) is built for, with far less operational complexity (plain HTTP, automatic reconnection built into the browser, works through infrastructure that doesn't know about the `Upgrade` header).
+
+## Operational reality
+
+A WebSocket connection is stateful and long-lived, which is a very different shape from the stateless, short-lived requests everything else in this section assumes. That has consequences: a load balancer has to keep routing a given connection to the same backend instance (or that instance has to share state some other way), a server restart drops every open connection at once, and a client has to handle reconnecting and re-subscribing on its own after any drop — none of which a plain HTTP API has to think about.
+
+## See also
+
+- **[Server-Sent Events](/en/web-apis/server-sent-events)** — the simpler, one-way alternative.
+- **[Webhooks](/en/web-apis/webhooks)** — for "notify me when X happens" without holding a connection open at all.

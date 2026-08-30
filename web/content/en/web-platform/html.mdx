@@ -1,0 +1,53 @@
+---
+title: HTML
+description: Structure and meaning, not appearance — what an element communicates matters as much as what it renders like.
+category: Web Platform
+weight: 0
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+HTML (HyperText Markup Language) describes the **structure and meaning** of a document, not how it looks — that's [CSS](/en/web-platform/css)'s job. A `<button>` and a `<div onclick="...">` can be made to look identical, but only one of them tells the browser, a screen reader, and a search engine "this is a clickable control" for free: keyboard focus, `Enter`/`Space` activation, and an accessibility role all come from choosing the right element, not from styling.
+
+```html
+<article>
+  <h1>Article title</h1>
+  <p>Some text, with a <a href="/other-page">link</a>.</p>
+</article>
+```
+
+## Semantic elements
+
+Using an element for what it means — not just what it happens to render like — is what "semantic HTML" refers to. It's free accessibility, free SEO structure, and it documents the page's structure to the next person reading the markup.
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "meaning", label: "Means" },
+    { key: "insteadOf", label: "Instead of" },
+  ]}
+  items={[
+    { id: "nav", label: "<nav>", color: "blue", columns: { meaning: "A block of navigation links", insteadOf: "<div class=\"nav\">" } },
+    { id: "main", label: "<main>", color: "green", columns: { meaning: "The page's primary content, one per page", insteadOf: "<div id=\"main\">" } },
+    { id: "button", label: "<button>", color: "orange", columns: { meaning: "A clickable control — focusable, keyboard-activatable for free", insteadOf: "<div onclick=\"...\">" } },
+    { id: "article", label: "<article>", color: "purple", columns: { meaning: "Self-contained content (a post, a card)", insteadOf: "<div class=\"card\">" } },
+    { id: "label", label: "<label>", color: "default", columns: { meaning: "Text bound to a form control — clicking it focuses the input", insteadOf: "A <span> next to an <input>" } },
+  ]}
+/>
+
+## The document as a tree
+
+The browser parses HTML into a tree of nodes — this parsed, in-memory tree is the [DOM](/en/web-platform/dom), and it's what [JavaScript](/en/web-platform/javascript) actually reads and mutates, not the original HTML text. Once parsed, the source markup is gone; only the tree remains.
+
+## Forms
+
+`<form>` is HTML's built-in mechanism for collecting and submitting user input — see [Form Data](/en/data-serialization/form-data) for how a submission is actually encoded on the wire, and [URL Encoding](/en/data-serialization/url-encoding) for how special characters in form values get escaped.
+
+## Attributes that do real work
+
+Some attributes aren't just metadata — they change browser behavior directly: `disabled` on a form control removes it from tab order and form submission entirely, not just visually; `loading="lazy"` on an `<img>` defers loading until it's near the viewport; `rel="noopener"` on a `target="_blank"` link prevents the new page from getting a reference back to the opener window (a real security boundary, not a style hint).
+
+## See also
+
+- **[CSS](/en/web-platform/css)** — how HTML's structure gets a visual presentation.
+- **[The DOM](/en/web-platform/dom)** — the live tree HTML parses into.

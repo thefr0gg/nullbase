@@ -1,0 +1,54 @@
+---
+title: Database Indexes
+description: How a lookup goes from scanning every row to jumping straight to the answer — and how to prove, not just assume, that an index is actually being used.
+category: Databases
+weight: 5
+interactive: true
+interactiveType: ["SqlPlayground"]
+---
+
+Without an index, finding rows that match a `WHERE` condition means checking every single row in the table — a **full table scan**. An index is a separate, sorted data structure (almost always a B-tree) that maps a column's values to the rows containing them, so the engine can jump straight to a match instead of scanning everything. This is genuinely the same trade-off as a book's index: skimming every page for a topic vs. flipping to a page number the index already gave you.
+
+## Try it — proving it with a real query plan
+
+This isn't a claim to take on faith — `EXPLAIN QUERY PLAN` asks SQLite to show you exactly how it intends to execute a query, and the playground below is running real SQLite. The seed data below builds 1,000 rows and puts a real index on one column but not another, so you can compare the plan for an indexed lookup against an unindexed one on the same table.
+
+<SqlPlayground
+  title="1,000-row table — indexed email, unindexed age"
+  schema={`
+CREATE TABLE users (id INTEGER PRIMARY KEY, email TEXT NOT NULL, age INTEGER NOT NULL);
+INSERT INTO users (id, email, age)
+WITH RECURSIVE seq(x) AS (SELECT 1 UNION ALL SELECT x + 1 FROM seq WHERE x < 1000)
+SELECT x, 'user' || x || '@example.com', 18 + (x % 50) FROM seq;
+CREATE INDEX idx_users_email ON users(email);
+`}
+  defaultQuery={`EXPLAIN QUERY PLAN SELECT * FROM users WHERE email = 'user500@example.com';`}
+/>
+
+That plan should read something like `SEARCH users USING INDEX idx_users_email (email=?)` — a direct lookup. Now try the same thing on the column with no index:
+
+```sql
+EXPLAIN QUERY PLAN SELECT * FROM users WHERE age = 30;
+```
+
+This one comes back `SCAN users` — every one of the 1,000 rows gets checked, because there's nothing telling the engine where the `age = 30` rows actually live. On a table this small the difference is invisible to a human; on a table with 100 million rows, it's the difference between a millisecond and a query that times out.
+
+## What an index actually costs
+
+An index isn't free — every `INSERT`, `UPDATE`, or `DELETE` on an indexed column has to also update the index's own data structure, and the index itself takes additional disk space. This is why indexes aren't added to every column by default: an index that speeds up a rare report query but slows down a hot write path can be a net loss. The general rule is to index columns that are frequently searched, filtered, or joined on — not every column that merely *could* be searched.
+
+## Composite indexes and column order
+
+An index can span more than one column, and the order matters — an index on `(last_name, first_name)` can efficiently serve a query filtering on `last_name` alone, or on both columns together, but generally can't efficiently serve a query filtering on `first_name` alone, for the same reason a phone book sorted by last name doesn't help you find everyone with a given first name.
+
+```sql
+CREATE INDEX idx_name ON people(last_name, first_name);
+-- Fast: WHERE last_name = 'Hopper'
+-- Fast: WHERE last_name = 'Hopper' AND first_name = 'Grace'
+-- Slow (falls back to a scan): WHERE first_name = 'Grace'
+```
+
+## See also
+
+- **[SQL](/en/databases/sql)** — the queries an index speeds up.
+- **[Database Normalization](/en/databases/database-normalization)** — a normalized schema often needs indexes specifically on foreign key columns to keep joins fast, see [Foreign Keys](/en/databases/foreign-keys).

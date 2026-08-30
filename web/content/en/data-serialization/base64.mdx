@@ -1,0 +1,48 @@
+---
+title: Base64
+description: Representing arbitrary binary data as plain, URL/text-safe ASCII characters — not encryption, not compression, just a different alphabet.
+category: Data & Serialization
+weight: 5
+interactive: true
+interactiveType: ["Codec"]
+---
+
+Base64 converts arbitrary binary data into text made up of only 64 safe characters (`A-Z`, `a-z`, `0-9`, `+`, `/`, plus `=` for padding) — useful anywhere binary data needs to travel through a channel that only reliably handles text: embedding an image directly in a JSON payload or a CSS file, an email attachment (email was originally text-only), a JWT's header/payload segments (see [API Authentication](/en/web-apis/api-authentication)).
+
+```
+"Hi" -> "SGk="
+```
+
+## Try it
+
+<Codec mode="base64" defaultInput="Hello, nullbase!" />
+
+## Not encryption
+
+This is the single most important thing to know about Base64: it's **not** a security mechanism. Decoding it requires no key or secret — it's purely a representation change, reversible by anyone with the string. A Base64-encoded password is exactly as exposed as a plain-text one; it's just harder to read at a glance, which is not the same thing as being protected.
+
+```js
+atob("cGFzc3dvcmQ=");  // "password" — no secret required
+```
+
+## Why it's ~33% larger
+
+Base64 packs 3 bytes of binary input into 4 output characters, each carrying 6 bits instead of a byte's 8 — this is what buys text-safety, at a fixed size cost: any Base64-encoded payload is roughly 4/3 the size of the original binary, which is why embedding large binary blobs as Base64 (rather than serving them as their own request) has a real bandwidth cost.
+
+## How the padding works
+
+The trailing `=` characters pad the output to a multiple of 4 characters when the input isn't a multiple of 3 bytes — one `=` if there's 1 leftover byte's worth of bits, two `=` if there are 2:
+
+```
+"Hi"  (2 bytes) -> "SGk="   (1 padding character)
+"Hii" (3 bytes) -> "SGlp"    (no padding — divides evenly)
+```
+
+## Base64 vs. Base64URL
+
+Standard Base64's `+` and `/` characters aren't safe inside a URL or filename without further encoding (see [URL Encoding](/en/data-serialization/url-encoding)) — a URL-safe variant, Base64URL, substitutes `-` and `_` for those two characters and usually drops the `=` padding entirely. JWTs specifically use Base64URL for exactly this reason, since a JWT is commonly passed as part of a URL or an HTTP header.
+
+## See also
+
+- **[URL Encoding](/en/data-serialization/url-encoding)** — the encoding Base64URL avoids needing on top of itself.
+- **[MIME Types](/en/data-serialization/mime-types)** — a data URL (`data:image/png;base64,...`) combines a MIME type with Base64-encoded content inline.

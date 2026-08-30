@@ -1,0 +1,64 @@
+---
+title: PostgreSQL
+description: The open-source relational database most new serious projects reach for — strict standards compliance, a large extension ecosystem, and genuine concurrency.
+category: Databases
+weight: 2
+interactive: true
+interactiveType: ["SqlPlayground", "ItemExplorer"]
+---
+
+PostgreSQL ("Postgres") is a client-server relational database — unlike [SQLite](/en/databases/sqlite), it runs as its own long-lived process, accepting connections over the network from potentially many applications and users at once. It's known for close adherence to the SQL standard, a genuinely robust concurrency model (MVCC — see [Transactions](/en/databases/transactions)), and an extension ecosystem that lets it take on jobs a plainer relational database can't (full-text search, geospatial queries via PostGIS, even vector similarity search for embeddings).
+
+## Try it (standard SQL, running on the in-browser engine)
+
+The playground below runs on the same embedded SQLite engine as the rest of this section — it's the same standard SQL Postgres also understands, but it isn't literally Postgres. Postgres-only syntax (further down this page) is shown in static code blocks instead, since it wouldn't actually run here.
+
+<SqlPlayground
+  title="RETURNING — insert and get the new row back in one round trip"
+  schema={`CREATE TABLE orders (id INTEGER PRIMARY KEY, item TEXT NOT NULL, quantity INTEGER NOT NULL);`}
+  defaultQuery={`INSERT INTO orders (item, quantity) VALUES ('Widget', 3) RETURNING *;`}
+/>
+
+Without `RETURNING`, getting the new row back would take a second round trip (an `INSERT` followed by a separate `SELECT`) — Postgres popularized this clause, and it's genuinely useful enough that SQLite added support for it too.
+
+## What's actually Postgres-specific
+
+```sql
+-- SERIAL: an auto-incrementing integer, Postgres's shorthand for a common pattern
+CREATE TABLE users (id SERIAL PRIMARY KEY, email TEXT UNIQUE NOT NULL);
+
+-- JSONB: binary-encoded, indexable JSON stored directly in a column
+CREATE TABLE events (id SERIAL PRIMARY KEY, payload JSONB);
+SELECT * FROM events WHERE payload->>'type' = 'signup';
+
+-- Native array columns — no separate join table needed for a simple list
+CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[]);
+SELECT * FROM posts WHERE 'featured' = ANY(tags);
+
+-- Schemas: namespaces within one database
+CREATE SCHEMA billing;
+SELECT * FROM billing.invoices;
+```
+
+None of these four exist in standard SQLite — `JSONB` in particular is a large part of why Postgres is often chosen even for workloads that feel more document-oriented than relational, since it lets a team get structured-query power over semi-structured data without reaching for a separate [NoSQL](/en/databases/nosql) store at all.
+
+## MVCC: how Postgres handles concurrent access
+
+Postgres uses MVCC (Multi-Version Concurrency Control): instead of readers blocking writers (or vice versa), each transaction sees a consistent snapshot of the data as it existed when that transaction started — a long-running report query never blocks, or gets blocked by, ongoing writes. The cost is that old row versions ("dead tuples") accumulate until a background process (`VACUUM`) reclaims them — a real, if usually invisible, operational concern in a busy Postgres database.
+
+## Extensions
+
+<ItemExplorer
+  layout="pills"
+  items={[
+    { id: "postgis", label: "PostGIS", color: "green", detail: "Geospatial data types and queries — \"find every store within 5km\" as a native SQL query." },
+    { id: "pgvector", label: "pgvector", color: "purple", detail: "Vector similarity search — stores embeddings and finds nearest neighbors, the backbone of many AI-search features, directly in Postgres." },
+    { id: "timescaledb", label: "TimescaleDB", color: "blue", detail: "Time-series-optimized storage and queries, as a Postgres extension rather than a separate database." },
+    { id: "pgcrypto", label: "pgcrypto", color: "orange", detail: "Cryptographic functions (hashing, encryption) callable directly from SQL." },
+  ]}
+/>
+
+## See also
+
+- **[SQLite](/en/databases/sqlite)** — what's actually executing the runnable examples on this page.
+- **[MySQL](/en/databases/mysql)** — the other dominant open-source relational database, with a different set of trade-offs.

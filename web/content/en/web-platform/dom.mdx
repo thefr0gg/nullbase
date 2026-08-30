@@ -1,0 +1,47 @@
+---
+title: The DOM
+description: The live, in-memory tree the browser builds from parsed HTML — what JavaScript actually reads and mutates, and how events travel through it.
+category: Web Platform
+weight: 3
+interactive: true
+interactiveType: ["StepFlow", "ItemExplorer"]
+---
+
+import { eventPropagationSteps } from "./dom-event-propagation-steps";
+
+The DOM (Document Object Model) is what a browser turns [HTML](/en/web-platform/html) into after parsing it: a tree of objects in memory, each representing an element, a piece of text, or a comment. [JavaScript](/en/web-platform/javascript) never touches the original HTML source — it reads and mutates this tree, and the browser re-renders whatever changed.
+
+```js
+const el = document.querySelector("#greeting");
+el.textContent = "Hello";     // mutates the tree — the page updates
+el.classList.add("visible");  // same
+```
+
+## Node types
+
+<ItemExplorer
+  layout="pills"
+  items={[
+    { id: "element", label: "Element node", color: "blue", detail: "A tag — <div>, <p>, <button>. Has attributes, can have children." },
+    { id: "text", label: "Text node", color: "green", detail: "The actual text content between tags — a separate node from the element that contains it." },
+    { id: "comment", label: "Comment node", color: "default", detail: "An HTML comment — <!-- ... --> — present in the tree but never rendered." },
+    { id: "document", label: "Document node", color: "purple", detail: "The single root of the whole tree — document itself." },
+  ]}
+/>
+
+Every element node is also a text-containing container: `<p>Hello</p>` is an element node with one child, a text node containing `"Hello"` — `el.textContent` reads/writes that child directly, which is why setting it replaces every child at once rather than merging with existing content.
+
+## How an event travels the tree
+
+A click doesn't just fire once on the element you clicked — it travels through the whole ancestor chain, in two directions, which is the basis for a pattern called event delegation (one listener on a parent, handling events from any current or future child).
+
+<StepFlow title="Event propagation" steps={eventPropagationSteps} />
+
+## Reading vs. writing triggers different costs
+
+Reading layout information (`el.offsetHeight`, `getBoundingClientRect()`) can force the browser to recalculate layout early if a previous write is still pending — doing many read-then-write-then-read operations in a loop (a "layout thrash") is a classic DOM performance mistake; batching all reads, then all writes, avoids it.
+
+## See also
+
+- **[JavaScript](/en/web-platform/javascript)** — the language reading and mutating this tree.
+- **[HTML](/en/web-platform/html)** — the source the DOM is originally parsed from.

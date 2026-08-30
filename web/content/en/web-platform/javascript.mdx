@@ -1,0 +1,50 @@
+---
+title: JavaScript
+description: The language that runs in the browser — and the single-threaded event loop that decides when your code actually executes.
+category: Web Platform
+weight: 2
+interactive: true
+interactiveType: ["StepFlow"]
+---
+
+import { eventLoopSteps } from "./javascript-event-loop-steps";
+
+JavaScript is the only language browsers run natively. Two things make it distinctive compared to most server-side languages: it's **single-threaded** (one call stack, no true parallel execution of your code), and almost everything that touches the outside world — a timer, a network request, a DOM event — is **asynchronous**, handled through callbacks, Promises, or `async`/`await` instead of blocking that one thread.
+
+## The event loop
+
+This is the mechanism that reconciles "single-threaded" with "asynchronous": synchronous code always runs to completion first, then queued async callbacks run in a specific, deterministic order — not whenever they happen to finish.
+
+<StepFlow title="The JavaScript event loop" steps={eventLoopSteps} />
+
+## Why this order surprises people
+
+```js
+console.log("1");
+setTimeout(() => console.log("2"), 0);
+Promise.resolve().then(() => console.log("3"));
+console.log("4");
+// logs: 1, 4, 3, 2 — not 1, 2, 3, 4
+```
+
+A `setTimeout(fn, 0)` doesn't mean "run immediately" — it means "queue as a macrotask once the delay elapses (effectively: as soon as possible)," and the microtask queue (which Promise callbacks join) is always fully drained before the next macrotask runs, even one queued with a 0ms delay.
+
+## Promises and async/await
+
+`async`/`await` is syntax sugar over Promises, not a different concurrency model — an `async` function always returns a Promise, and `await` pauses that function (not the whole thread) until the awaited Promise settles, queuing the rest of the function as a microtask.
+
+```js
+async function getUser(id) {
+  const res = await fetch(`/api/users/${id}`); // pauses here, thread is free
+  return res.json();                            // resumes once the fetch settles
+}
+```
+
+## Where the DOM comes in
+
+JavaScript in a browser almost always ends up reading or mutating the [DOM](/en/web-platform/dom) — the live tree the browser builds from parsed [HTML](/en/web-platform/html). DOM events (a click, a keypress) are exactly the kind of async work described above: a callback queued to run once the current synchronous code finishes.
+
+## See also
+
+- **[The DOM](/en/web-platform/dom)** — what JavaScript is usually manipulating.
+- **[Web Workers](/en/web-platform/web-workers)** — running JavaScript on a genuinely separate thread, outside this single-threaded model.

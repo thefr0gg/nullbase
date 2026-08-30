@@ -1,0 +1,80 @@
+---
+title: Form Data
+description: How an HTML form's fields actually get encoded for submission — and why file uploads need a different encoding than everything else.
+category: Data & Serialization
+weight: 3
+interactive: true
+interactiveType: ["RequestPlayground", "ItemExplorer"]
+---
+
+An HTML `<form>` doesn't submit its fields as [JSON](/en/data-serialization/json) by default — it uses one of two older encodings, chosen by the form's `enctype` attribute, that predate JSON as a web format entirely.
+
+## Try it
+
+`/api/form-submit` in this site's mock API parses whichever encoding you actually send — try the urlencoded example, then switch the `Content-Type` header and body to JSON and send again.
+
+<RequestPlayground
+  protocol="http"
+  defaultMethod="POST"
+  defaultTarget="/api/form-submit"
+  defaultHeaders="Content-Type: application/x-www-form-urlencoded"
+  defaultBody={"name=Grace+Hopper&role=admin"}
+/>
+
+## The two form encodings
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "shape", label: "Body shape" },
+    { key: "handlesFiles", label: "Handles file uploads?" },
+  ]}
+  items={[
+    {
+      id: "urlencoded",
+      label: "application/x-www-form-urlencoded",
+      color: "blue",
+      columns: { shape: "key=value pairs joined by &, values percent-encoded", handlesFiles: "No" },
+    },
+    {
+      id: "multipart",
+      label: "multipart/form-data",
+      color: "green",
+      columns: { shape: "Each field is its own \"part,\" separated by a boundary string, with its own headers", handlesFiles: "Yes — a file's part carries its own Content-Type and filename" },
+    },
+  ]}
+/>
+
+`application/x-www-form-urlencoded` is the default and is what the example above sends — it's compact but can't carry binary data at all, since everything has to be percent-encoded text (see [URL Encoding](/en/data-serialization/url-encoding)). A form with `<input type="file">` has to use `multipart/form-data` instead, which is why file-upload forms always need `enctype="multipart/form-data"` set explicitly.
+
+```http
+POST /upload HTTP/1.1
+Content-Type: multipart/form-data; boundary=----abc123
+
+------abc123
+Content-Disposition: form-data; name="username"
+
+grace
+------abc123
+Content-Disposition: form-data; name="avatar"; filename="photo.png"
+Content-Type: image/png
+
+<binary bytes>
+------abc123--
+```
+
+## FormData in JavaScript
+
+The browser's `FormData` object builds either encoding for you when submitted via `fetch` — you never hand-construct the boundary string or percent-encoding yourself in modern code:
+
+```js
+const form = new FormData();
+form.append("username", "grace");
+form.append("avatar", fileInput.files[0]);
+fetch("/upload", { method: "POST", body: form }); // browser sets Content-Type + boundary automatically
+```
+
+## See also
+
+- **[URL Encoding](/en/data-serialization/url-encoding)** — the percent-encoding scheme `application/x-www-form-urlencoded` values use.
+- **[JSON](/en/data-serialization/json)** — the format most modern APIs prefer over either form encoding, for non-file submissions.

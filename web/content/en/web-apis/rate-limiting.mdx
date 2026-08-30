@@ -1,0 +1,45 @@
+---
+title: Rate Limiting
+description: Protecting a service from being overwhelmed — by one runaway client, a bug, or an attack — by capping how many requests it will accept.
+category: Web APIs
+weight: 9
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+A rate limit caps how many requests a client can make in a given window of time. Without one, a single misbehaving client — a retry loop with no backoff, a scraper, an actual attack — can consume enough capacity to degrade the service for everyone else. It's the API-level equivalent of a circuit breaker: a small number of clients get a `429` so the rest keep working.
+
+## Try it
+
+The mock `/api/rate-limited` endpoint below allows 5 requests per 30-second window (tracked for your whole session, not per-request) — click Send repeatedly and watch the `X-RateLimit-Remaining` header count down, then flip to a real `429`.
+
+<RequestPlayground protocol="http" defaultTarget="/api/rate-limited" defaultHeaders="Accept: application/json" />
+
+A real rate-limited response looks like this:
+
+```http
+HTTP/1.1 429 Too Many Requests
+X-RateLimit-Limit: 5
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1700000030
+Retry-After: 18
+
+{ "error": "Too Many Requests", "message": "Rate limit exceeded. Retry in 18s." }
+```
+
+`Retry-After` tells a well-behaved client exactly how long to wait before trying again — ignoring it and retrying immediately just extends the client's own penalty.
+
+## What to key the limit on
+
+A limit can be scoped several different ways, often layered: per IP address (catches anonymous abuse, but penalizes everyone behind a shared NAT/proxy together), per API key or access token (the most common choice for authenticated APIs — see [API Authentication](/en/web-apis/api-authentication)), per endpoint (an expensive search endpoint might get a tighter limit than a cheap health check), or globally (protecting the whole service regardless of who's asking).
+
+## Common algorithms
+
+- **Fixed window** — count requests in the current calendar window (e.g. this minute); simple, but allows a burst right at the window boundary (2x the limit across the boundary instant).
+- **Sliding window** — counts over a rolling window ending "now" instead of a fixed clock boundary; smooths out the boundary-burst problem at the cost of a bit more state to track.
+- **Token bucket** — a bucket holds tokens that refill at a steady rate; each request costs a token, and the bucket can hold a small burst of saved-up tokens. This is what most production rate limiters actually use — it tolerates short bursts gracefully while still enforcing a long-run average.
+
+## See also
+
+- **[API Authentication](/en/web-apis/api-authentication)** — usually what a per-client limit is actually keyed on.
+- **[Idempotency](/en/web-apis/idempotency)** — a client retrying after a `429` needs its retry to be safe, which is exactly what idempotency guarantees.

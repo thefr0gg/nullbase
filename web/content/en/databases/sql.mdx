@@ -1,0 +1,73 @@
+---
+title: SQL
+description: The query language nearly every relational database speaks — declarative, set-based, and (mostly) standardized across engines.
+category: Databases
+weight: 0
+interactive: true
+interactiveType: ["SqlPlayground", "ItemExplorer"]
+---
+
+SQL (Structured Query Language) describes **what** data you want, not **how** to fetch it — you write `SELECT name FROM users WHERE age > 18`, and the database engine decides the actual retrieval strategy (a full scan, an index lookup, a join order) itself. This is the defining difference from imperative code: there's no loop to write, no pointer to walk — you declare the shape of the result you want.
+
+The playground below is real: it's SQLite compiled to WebAssembly, running entirely in your browser. Every query actually executes against a real, small in-memory database.
+
+## Try it
+
+<SqlPlayground
+  title="employees / departments"
+  schema={`
+CREATE TABLE departments (id INTEGER PRIMARY KEY, name TEXT NOT NULL);
+CREATE TABLE employees (
+  id INTEGER PRIMARY KEY,
+  name TEXT NOT NULL,
+  department_id INTEGER REFERENCES departments(id),
+  salary INTEGER NOT NULL
+);
+INSERT INTO departments (id, name) VALUES (1, 'Engineering'), (2, 'Sales'), (3, 'Design');
+INSERT INTO employees (id, name, department_id, salary) VALUES
+  (1, 'Ada Lovelace', 1, 145000),
+  (2, 'Grace Hopper', 1, 152000),
+  (3, 'Alan Turing', 1, 149000),
+  (4, 'Ida Tacke', 2, 98000),
+  (5, 'Rosalind Franklin', 3, 110000);
+`}
+  defaultQuery={`SELECT e.name, d.name AS department, e.salary
+FROM employees e
+JOIN departments d ON d.id = e.department_id
+WHERE e.salary > 100000
+ORDER BY e.salary DESC;`}
+/>
+
+Try changing the `WHERE` threshold, removing the `JOIN`, or running `SELECT department_id, AVG(salary) FROM employees GROUP BY department_id;` to see aggregation.
+
+## Clause order vs. execution order
+
+SQL's clauses are *written* in one order but *executed* in a different one — this mismatch is a common source of confusion, especially around why you can't reference a `SELECT`-aliased column in its own `WHERE` clause.
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[{ key: "written", label: "Written position" }, { key: "executed", label: "Actual execution order" }]}
+  items={[
+    { id: "from", label: "FROM / JOIN", color: "blue", columns: { written: "1st", executed: "1st — build the working row set" } },
+    { id: "where", label: "WHERE", color: "green", columns: { written: "2nd", executed: "2nd — filter rows before grouping" } },
+    { id: "groupby", label: "GROUP BY", color: "orange", columns: { written: "4th", executed: "3rd — collapse rows into groups" } },
+    { id: "having", label: "HAVING", color: "purple", columns: { written: "5th", executed: "4th — filter groups, after aggregation" } },
+    { id: "select", label: "SELECT", color: "default", columns: { written: "1st on the page", executed: "5th — compute the actual output columns" } },
+    { id: "orderby", label: "ORDER BY", color: "default", columns: { written: "6th", executed: "6th — sort the final result" } },
+  ]}
+/>
+
+This is exactly why `WHERE` can't filter on an aggregate (`WHERE COUNT(*) > 5` is invalid — use `HAVING`) — `WHERE` runs before grouping even happens, so no aggregate value exists yet to filter on.
+
+## Joins, briefly
+
+A `JOIN` combines rows from two tables based on a matching condition. `INNER JOIN` (the default `JOIN`) keeps only rows with a match on both sides; `LEFT JOIN` keeps every row from the left table regardless of whether a match exists, filling unmatched columns with `NULL` — try changing `JOIN` to `LEFT JOIN` in the playground above and adding an employee with no `department_id` to see the difference.
+
+## SQL isn't fully standardized
+
+ANSI SQL defines a common core, but every real engine adds its own extensions and diverges on edge cases — see [PostgreSQL](/en/databases/postgresql) and [MySQL](/en/databases/mysql) for engine-specific syntax that doesn't necessarily run on the others.
+
+## See also
+
+- **[SQLite](/en/databases/sqlite)** — the actual engine powering this page's playground.
+- **[Database Indexes](/en/databases/database-indexes)** — how the engine decides *how* to execute the query you declared.

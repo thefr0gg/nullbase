@@ -1,0 +1,46 @@
+---
+title: Web Workers
+description: Background JavaScript on a genuinely separate thread — for when a computation is too heavy to run on the thread rendering the UI.
+category: Web Platform
+weight: 8
+interactive: true
+interactiveType: ["StepFlow"]
+---
+
+import { webWorkerLifecycleSteps } from "./web-worker-lifecycle-steps";
+
+[JavaScript](/en/web-platform/javascript) in a page normally runs on a single thread that also handles rendering and user input — a long-running computation on that thread freezes the page, since nothing else can run until it finishes. A Web Worker runs a separate script on its own OS thread, in true parallel, specifically to avoid that.
+
+## The lifecycle
+
+There's no shared memory between the main thread and a worker by default — every message crosses the boundary as a copy, not a reference, which shapes how the whole exchange works.
+
+<StepFlow title="Spawning and messaging a worker" steps={webWorkerLifecycleSteps} />
+
+## What a worker can't do
+
+A worker has no access to the [DOM](/en/web-platform/dom), `window`, or the parent page's variables — it runs in a completely separate global scope. It can use `fetch`, timers, and most other non-DOM Browser APIs, but it can never directly touch the page it was spawned from; every interaction goes through `postMessage`.
+
+## Main thread vs. worker
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "domAccess", label: "DOM access" },
+    { key: "blocksUi", label: "Blocks UI if busy?" },
+  ]}
+  items={[
+    { id: "main", label: "Main thread", color: "blue", columns: { domAccess: "Yes", blocksUi: "Yes — this is the thread that renders" } },
+    { id: "worker", label: "Web Worker", color: "green", columns: { domAccess: "No", blocksUi: "No — runs in parallel" } },
+    { id: "sw", label: "Service Worker", color: "purple", columns: { domAccess: "No", blocksUi: "No — also runs on its own thread" } },
+  ]}
+/>
+
+## When it's actually worth it
+
+Spawning a worker has real overhead (starting a new thread, and every message is copied, not free) — it pays off for genuinely CPU-heavy work (parsing a large dataset, image/video processing, complex calculations), not for the everyday async work `async`/`await` and Promises already handle without needing a second thread at all. Most page interactivity never needs a worker; reach for one only when profiling shows the main thread is actually the bottleneck.
+
+## See also
+
+- **[JavaScript](/en/web-platform/javascript)** — the single-threaded event loop this exists alongside, not instead of.
+- **[Service Workers](/en/web-platform/service-workers)** — a specialized worker for network interception, not general computation.

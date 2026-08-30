@@ -1,0 +1,40 @@
+---
+title: Webhooks
+description: Instead of you asking the server "did it happen yet?", the server calls you back when it does.
+category: Web APIs
+weight: 3
+interactive: true
+interactiveType: ["RequestPlayground", "StepFlow"]
+---
+
+import { webhookDeliverySteps } from "./webhooks-steps";
+
+Most of what this section covers so far is a client calling a server. A webhook flips that: the server calls **you** — an HTTP `POST` to a URL you registered in advance, sent whenever some event happens on the other side. Instead of polling "has this payment cleared yet?" every few seconds, you register a URL once and get told the moment it clears.
+
+## Delivery, step by step
+
+<StepFlow title="Webhook delivery" steps={webhookDeliverySteps} />
+
+## Try receiving one
+
+The playground below is shaped like your endpoint receiving a webhook: whatever headers and payload you send back a `received: true` echo, the same as a real receiver would return a `2xx` to acknowledge delivery.
+
+<RequestPlayground
+  protocol="webhook"
+  defaultTarget="/hooks/payments"
+  defaultHeaders={"X-Signature: sha256=4a1f9c...\nContent-Type: application/json"}
+  defaultBody={`{\n  "event": "payment.succeeded",\n  "id": "pay_123",\n  "amount": 4200\n}`}
+/>
+
+## Signature verification
+
+Anyone can send a `POST` to a public URL. Webhook senders prove the request really came from them by signing the raw payload with a shared secret (usually HMAC-SHA256) and sending the signature in a header. Your receiver recomputes the same signature over the same bytes and rejects the request if they don't match — this is the webhook equivalent of [API Authentication](/en/web-apis/api-authentication).
+
+## Retries mean duplicates
+
+If your endpoint is slow, down, or errors, the sender retries — which means the same event can arrive twice. Treat every webhook handler as **idempotent**: store the event ID you've already processed and skip anything you've seen before. See [Idempotency](/en/web-apis/idempotency) for the same pattern applied to outgoing requests instead of incoming ones.
+
+## See also
+
+- **[WebSockets](/en/web-apis/websockets)** — for when you need two-way, continuous communication instead of one-off event notifications.
+- **[Server-Sent Events](/en/web-apis/server-sent-events)** — a persistent connection the *client* opens, if polling a webhook receiver isn't an option (e.g. from a browser).

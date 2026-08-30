@@ -1,0 +1,64 @@
+---
+title: Web Components
+description: Custom, reusable HTML elements with their own encapsulated markup and styling — built into the browser, no framework required.
+category: Web Platform
+weight: 9
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+Web Components is a set of browser-native APIs for building custom, reusable elements — `<user-card>`, `<rating-stars>` — that behave like any other [HTML](/en/web-platform/html) element (they can be used in any markup, with any framework, or none at all) while encapsulating their own internal structure and [CSS](/en/web-platform/css) so page styles can't accidentally leak in or out.
+
+```html
+<my-counter start="5"></my-counter>
+```
+
+```js
+class MyCounter extends HTMLElement {
+  connectedCallback() {
+    this.attachShadow({ mode: "open" }).innerHTML = `<button>Count: ${this.getAttribute("start")}</button>`;
+  }
+}
+customElements.define("my-counter", MyCounter);
+```
+
+## The three technologies
+
+Web Components isn't one API — it's three separate browser features that are almost always used together.
+
+<ItemExplorer
+  layout="grid"
+  items={[
+    {
+      id: "custom-elements",
+      label: "Custom Elements",
+      color: "blue",
+      detail: "Lets JavaScript define a new HTML tag name, backed by a class that extends HTMLElement — customElements.define(\"my-counter\", MyCounter).",
+    },
+    {
+      id: "shadow-dom",
+      label: "Shadow DOM",
+      color: "green",
+      detail: "Attaches a hidden, separate DOM subtree to an element — CSS and querySelector from the outside page can't see or affect it, and vice versa.",
+    },
+    {
+      id: "templates",
+      label: "HTML Templates",
+      color: "purple",
+      detail: "A <template> element holds inert markup — not rendered, not run — until JavaScript explicitly clones it into the live DOM.",
+    },
+  ]}
+/>
+
+## Why encapsulation matters here
+
+A regular `<div class="counter">` is fully exposed to every page-level CSS rule and every `document.querySelector` — a page-wide `button { color: red; }` rule affects it whether the component's author wanted that or not. Shadow DOM's boundary means a Web Component's internal styles never leak out, and page styles never leak in (unless deliberately exposed via CSS custom properties), which is what makes a component genuinely drop-in-safe regardless of what CSS the host page already has.
+
+## Framework-agnostic by design
+
+Because Custom Elements are just HTML tags under the hood, a Web Component built once can be used inside a React app, a Vue app, plain HTML, or any future framework, without a framework-specific wrapper — this is the main pitch over a component built in a specific framework's own component model, which only that framework's apps can consume.
+
+## See also
+
+- **[The DOM](/en/web-platform/dom)** — Shadow DOM is a variant of the same tree structure, just with a visibility boundary added.
+- **[CSS](/en/web-platform/css)** — the cascade normally applies globally; Shadow DOM is one of the few ways to opt an entire subtree out of it.

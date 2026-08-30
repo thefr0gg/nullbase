@@ -1,0 +1,62 @@
+---
+title: XML
+description: A verbose, strict, self-describing markup-based data format — the standard before JSON, and still common in enterprise and document formats.
+category: Data & Serialization
+weight: 1
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+XML (eXtensible Markup Language) represents structured data as nested, named tags — closer in shape to [HTML](/en/web-platform/html) than to [JSON](/en/data-serialization/json), since it uses the same markup syntax. Before JSON became the default, XML was the standard data-interchange format for web APIs (SOAP, RSS, early REST-ish APIs); today it survives mainly in enterprise systems, document formats, and configuration.
+
+```xml
+<user id="42">
+  <name>Grace Hopper</name>
+  <active>true</active>
+  <roles>
+    <role>admin</role>
+    <role>editor</role>
+  </roles>
+</user>
+```
+
+## XML vs. JSON
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "xml", label: "XML" },
+    { key: "json", label: "JSON" },
+  ]}
+  items={[
+    { id: "verbosity", label: "Verbosity", color: "blue", columns: { xml: "Every value needs an opening and closing tag", json: "Punctuation-only structure — much shorter" } },
+    { id: "attrs", label: "Attributes vs. elements", color: "green", columns: { xml: "Data can live in a tag's attributes or its content — two ways to express the same thing", json: "One way: a key-value pair, always" } },
+    { id: "schema", label: "Schema validation", color: "purple", columns: { xml: "Mature, standardized (XSD) — widely used to validate documents before processing", json: "Possible (JSON Schema) but far less universally adopted" } },
+    { id: "namespaces", label: "Namespaces", color: "orange", columns: { xml: "Built in — lets documents mix vocabularies from different sources without collisions", json: "No equivalent concept" } },
+    { id: "comments", label: "Comments", color: "default", columns: { xml: "Supported — <!-- ... -->", json: "Not valid JSON at all" } },
+  ]}
+/>
+
+## Attributes vs. elements
+
+The same data can be expressed two different ways in XML, which is a real source of ambiguity JSON doesn't have:
+
+```xml
+<user id="42" name="Grace Hopper" />
+<!-- vs. -->
+<user>
+  <id>42</id>
+  <name>Grace Hopper</name>
+</user>
+```
+
+Neither is "more correct" — conventions vary by project, which is itself a common criticism of XML compared to JSON's single obvious way to write a key-value pair.
+
+## Where it's still the standard
+
+XML remains the actual standard, not a legacy holdover, in several places: SOAP web services (common in enterprise/finance/healthcare integrations), Microsoft Office and OpenDocument file formats (a `.docx` is a zip of XML files), RSS/Atom feeds, and SVG (which is XML, not a separate image format).
+
+## See also
+
+- **[JSON](/en/data-serialization/json)** — the format that displaced XML for most new web APIs.
+- **[YAML](/en/data-serialization/yaml)** — a third structured-data option, optimized for human editing rather than machine strictness.

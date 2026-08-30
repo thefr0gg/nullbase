@@ -1,0 +1,56 @@
+---
+title: Transactions
+description: Grouping multiple writes so they succeed or fail together — and undoing every one of them, for real, with a rollback.
+category: Databases
+weight: 6
+interactive: true
+interactiveType: ["SqlPlayground"]
+---
+
+A transaction groups multiple statements into one unit: either every statement in it takes effect, or none of them do. The canonical example is a funds transfer — subtracting from one account and adding to another has to happen together, because a crash between the two steps would otherwise either destroy money or create it out of nowhere.
+
+## Try it — a real rollback
+
+This isn't scripted — it's a genuine `BEGIN` / `ROLLBACK` executing against the real SQLite engine, and the account balances really do revert.
+
+<SqlPlayground
+  title="Funds transfer, rolled back"
+  schema={`CREATE TABLE accounts (id INTEGER PRIMARY KEY, owner TEXT NOT NULL, balance INTEGER NOT NULL);
+INSERT INTO accounts (id, owner, balance) VALUES (1, 'Alice', 1000), (2, 'Bob', 500);`}
+  defaultQuery={`BEGIN;
+UPDATE accounts SET balance = balance - 100 WHERE id = 1;
+UPDATE accounts SET balance = balance + 100 WHERE id = 2;
+SELECT * FROM accounts;
+ROLLBACK;`}
+/>
+
+Run it as-is: the `SELECT` in the middle shows the transfer having happened — Alice down to 900, Bob up to 600 — but that's *inside* the still-open transaction. Now click **Run query** again with just `SELECT * FROM accounts;` — the balances are back to 1000/500, exactly as if the transfer never happened, because `ROLLBACK` discarded every change the transaction made.
+
+Now edit the query, replacing `ROLLBACK` with `COMMIT`, and run it. Follow it with a plain `SELECT * FROM accounts;` again — this time the transfer sticks permanently, because a commit makes every change in the transaction durable.
+
+## Why the middle `SELECT` matters
+
+A statement executed *inside* an open transaction sees that transaction's own uncommitted changes — this is what makes "check something, then act on it, all within one transaction" a coherent pattern (verify a balance is sufficient, then debit it, without another transaction sneaking in between the check and the debit — see [ACID](/en/databases/acid)'s isolation property).
+
+## Explicit vs. implicit transactions
+
+Most database clients run every individual statement in its own implicit transaction unless you explicitly `BEGIN` one — a lone `UPDATE` with no surrounding `BEGIN`/`COMMIT` is still transactional, it's just a transaction of one statement, auto-committed immediately. Wrapping several statements in an explicit `BEGIN` ... `COMMIT` is what's needed to make *multiple* statements atomic together.
+
+## Savepoints — a rollback that doesn't undo everything
+
+A `SAVEPOINT` marks a point inside a transaction that can be individually rolled back to, without discarding everything before it — useful for a multi-step operation where one sub-step failing shouldn't necessarily abort the whole transaction:
+
+```sql
+BEGIN;
+UPDATE accounts SET balance = balance - 100 WHERE id = 1;
+SAVEPOINT before_bonus;
+UPDATE accounts SET balance = balance + 9999 WHERE id = 2; -- oops, wrong amount
+ROLLBACK TO before_bonus; -- undoes only the bonus, keeps the first update
+UPDATE accounts SET balance = balance + 100 WHERE id = 2;  -- correct amount
+COMMIT;
+```
+
+## See also
+
+- **[ACID](/en/databases/acid)** — the four properties transactions exist to provide.
+- **[Foreign Keys](/en/databases/foreign-keys)** — a constraint violation mid-transaction is one more reason a transaction might need to roll back.

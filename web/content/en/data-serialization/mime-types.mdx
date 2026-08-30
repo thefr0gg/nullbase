@@ -1,0 +1,60 @@
+---
+title: MIME Types
+description: How a request or response tells the other side what kind of data it's actually sending — the Content-Type header's value.
+category: Data & Serialization
+weight: 6
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+A MIME type (Multipurpose Internet Mail Extensions type — the name is a holdover from email, its original use) is a short string identifying a data format: `application/json`, `image/png`, `text/html`. Every [HTTP](/en/web-fundamentals/http) request or response with a body should label it with a `Content-Type` header carrying one, so the receiver knows how to parse or render it without guessing.
+
+```http
+Content-Type: application/json; charset=utf-8
+```
+
+## Structure: type/subtype
+
+Every MIME type is a `type/subtype` pair, and optionally parameters after a semicolon (like `charset` above, or `boundary` for `multipart/form-data` — see [Form Data](/en/data-serialization/form-data)):
+
+```
+application / json
+    type    subtype
+```
+
+## Common types
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "used", label: "Used for" },
+  ]}
+  items={[
+    { id: "json", label: "application/json", color: "blue", columns: { used: "JSON — the default for most API bodies" } },
+    { id: "form", label: "application/x-www-form-urlencoded", color: "blue", columns: { used: "Simple HTML form submissions" } },
+    { id: "multipart", label: "multipart/form-data", color: "blue", columns: { used: "Form submissions that include file uploads" } },
+    { id: "html", label: "text/html", color: "green", columns: { used: "An HTML document" } },
+    { id: "plain", label: "text/plain", color: "green", columns: { used: "Unformatted text — also the fallback when nothing more specific applies" } },
+    { id: "png", label: "image/png", color: "purple", columns: { used: "PNG images" } },
+    { id: "octet", label: "application/octet-stream", color: "orange", columns: { used: "\"Some binary data\" — the generic fallback when the specific format is unknown" } },
+    { id: "pdf", label: "application/pdf", color: "orange", columns: { used: "PDF documents" } },
+  ]}
+/>
+
+## Why the browser trusts this header
+
+A file named `report.json` doesn't guarantee JSON content — the browser and most HTTP clients trust the `Content-Type` header, not the URL's file extension, to decide how to handle a response (render it, download it, parse it as a specific format). Serving the wrong `Content-Type` is a real, if subtle, class of bug: a JSON API response served as `text/html` might get rendered as a raw text blob by a browser instead of triggering a client's JSON parser, or worse, is itself a security relevant mismatch (MIME sniffing has been abused for XSS in the past, which is part of why the `X-Content-Type-Options: nosniff` header exists).
+
+## `Accept` is the request-side counterpart
+
+Where `Content-Type` labels what a body *is*, the `Accept` request header tells the server what formats the client is willing to receive — this is the basis for content negotiation, one of the [API Versioning](/en/web-apis/api-versioning) strategies covered earlier:
+
+```http
+GET /api/users/42
+Accept: application/json
+```
+
+## See also
+
+- **[JSON](/en/data-serialization/json)**, **[XML](/en/data-serialization/xml)** — two of the formats a MIME type commonly identifies.
+- **[Base64](/en/data-serialization/base64)** — a data URL (`data:image/png;base64,...`) embeds both a MIME type and encoded content in one string.

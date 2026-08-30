@@ -1,0 +1,71 @@
+---
+title: NoSQL
+description: When the data doesn't fit neatly into rows and columns, or the scale doesn't fit on one machine — document, key-value, column, and graph stores.
+category: Databases
+weight: 4
+interactive: true
+interactiveType: ["RequestPlayground", "ItemExplorer"]
+---
+
+"NoSQL" isn't one technology — it's a catch-all for databases that deliberately don't use the relational model [SQL](/en/databases/sql) is built around. What they share is usually a looser (or absent) schema and a design biased toward horizontal scaling across many machines, at the cost of some of the guarantees a relational database gives you by default (see [ACID](/en/databases/acid)).
+
+## Try it
+
+The mock `/api/documents` endpoint below has no fixed schema — send a document with any fields you want and it's stored as-is, unlike a SQL `INSERT` which would fail against a table missing those columns.
+
+<RequestPlayground
+  protocol="http"
+  defaultMethod="POST"
+  defaultTarget="/api/documents"
+  defaultHeaders="Content-Type: application/json"
+  defaultBody={`{\n  "name": "Katherine Johnson",\n  "field": "Orbital mechanics",\n  "awards": ["Presidential Medal of Freedom"]\n}`}
+  examplePaths={[{ method: "GET", path: "/api/documents", label: "list all" }]}
+/>
+
+Notice the two seeded documents in a `GET` don't share the same fields — one has `tags`, the other has `notes` — and neither is an error. That flexibility is the entire pitch of a document store, and also its biggest trade-off: nothing stops two documents that were *supposed* to be the same shape from silently drifting apart.
+
+## The four common categories
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[{ key: "shape", label: "Data shape" }, { key: "example", label: "Example" }]}
+  items={[
+    {
+      id: "document",
+      label: "Document",
+      color: "blue",
+      columns: { shape: "Self-contained JSON-like documents, grouped into collections", example: "MongoDB, Couchbase" },
+    },
+    {
+      id: "keyvalue",
+      label: "Key-value",
+      color: "green",
+      columns: { shape: "An opaque value looked up by a single key — no query language over the value itself", example: "Redis, DynamoDB" },
+    },
+    {
+      id: "columnfamily",
+      label: "Column-family",
+      color: "purple",
+      columns: { shape: "Rows with a flexible, sparse set of columns, optimized for huge write volume across many machines", example: "Cassandra, HBase" },
+    },
+    {
+      id: "graph",
+      label: "Graph",
+      color: "orange",
+      columns: { shape: "Nodes and typed relationships between them, optimized for traversal queries", example: "Neo4j" },
+    },
+  ]}
+/>
+
+## Why give up relational guarantees at all
+
+The relational model's strengths — normalization, joins, strong consistency (see [Database Normalization](/en/databases/database-normalization) and [ACID](/en/databases/acid)) — come with a cost: a single powerful machine (or careful, complex sharding) to enforce them. Some NoSQL databases trade strict consistency for horizontal scale that's straightforward to reason about — many independent machines, each owning a slice of the data, no cross-machine transaction to coordinate. This is often summarized as the CAP theorem: under a network partition, a distributed system has to choose between staying fully **C**onsistent or staying fully **A**vailable — it can't guarantee both.
+
+## Not a replacement, usually a complement
+
+Very few real systems are "NoSQL only" — a common production shape uses a relational database as the source of truth for data that genuinely benefits from strong consistency and relationships (users, orders, billing), alongside a key-value store for caching (Redis in front of expensive queries) and maybe a document store for a specific feature that's naturally schema-flexible (activity logs, user-generated content with varying fields).
+
+## See also
+
+- **[Database Normalization](/en/databases/database-normalization)** — the relational discipline NoSQL's flexible schemas deliberately opt out of.
+- **[Pagination](/en/web-apis/pagination)** — cursor-based pagination in particular is the natural fit for the sharded, non-sequential-ID datasets NoSQL stores often produce.

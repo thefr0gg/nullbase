@@ -3,6 +3,8 @@ import RequestPlayground from "./RequestPlayground";
 import ItemExplorer from "./ItemExplorer";
 import MermaidDiagram from "./MermaidDiagram";
 import UrlAnatomy from "./UrlAnatomy";
+import Codec from "./Codec";
+import SqlPlayground from "./SqlPlayground";
 import { LegacyHttpRequest, LegacyStatusCodeExplorer } from "./legacy";
 
 /**
@@ -22,6 +24,8 @@ export const interactiveComponents = {
   ItemExplorer,
   MermaidDiagram,
   UrlAnatomy,
+  Codec,
+  SqlPlayground,
 
   // Legacy aliases — do not remove without migrating web/content/http/**.
   HttpRequest: LegacyHttpRequest,

@@ -1,0 +1,32 @@
+---
+title: Web APIs
+description: How services talk to each other and to clients — request shapes, message patterns, auth, and the operational concerns every real API has to handle.
+category: Web APIs
+weight: 1
+---
+
+HTTP gets a request from A to B. What A and B actually say to each other — how a request is shaped, how a client proves who it is, how a server protects itself from being overwhelmed — is a separate layer of design on top of that. This section covers the patterns real APIs are built from, independent of any one framework or language.
+
+## Request patterns
+
+- **[REST](/en/web-apis/rest)** — resources, HTTP verbs, and statelessness.
+- **[GraphQL](/en/web-apis/graphql)** — one endpoint, a query language, ask for exactly the fields you need.
+- **[RPC](/en/web-apis/rpc)** — call a named method directly instead of modeling a resource.
+
+## Push and real-time
+
+- **[Webhooks](/en/web-apis/webhooks)** — the server calls you back when something happens.
+- **[WebSockets](/en/web-apis/websockets)** — a persistent, two-way connection.
+- **[Server-Sent Events](/en/web-apis/server-sent-events)** — a persistent, one-way stream from server to client.
+
+## Access control
+
+- **[API Authentication](/en/web-apis/api-authentication)** — proving who's calling.
+- **[API Authorization](/en/web-apis/api-authorization)** — deciding what they're allowed to do.
+
+## Operating an API
+
+- **[API Versioning](/en/web-apis/api-versioning)** — changing an API without breaking everyone using it.
+- **[Rate Limiting](/en/web-apis/rate-limiting)** — protecting a service from being overwhelmed.
+- **[Pagination](/en/web-apis/pagination)** — returning a lot of data a page at a time.
+- **[Idempotency](/en/web-apis/idempotency)** — making retries safe.

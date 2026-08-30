@@ -1,0 +1,53 @@
+---
+title: SQLite
+description: A complete relational database in a single file, with no separate server process — and, compiled to WebAssembly, exactly what's running the playgrounds on this page.
+category: Databases
+weight: 1
+interactive: true
+interactiveType: ["SqlPlayground"]
+---
+
+Most relational databases run as a separate server process — [PostgreSQL](/en/databases/postgresql) and [MySQL](/en/databases/mysql) both listen on a network port, and your application connects to them over that connection. SQLite doesn't: it's a C library, linked directly into your application, that reads and writes a single ordinary file on disk. There's no server to start, no connection string, no network round trip — a query is a local function call.
+
+This isn't a toy engine — it's the most widely deployed database in the world by install count, because it's built into every phone, every browser, and most desktop apps for exactly the "embedded" storage that a client-server database is overkill for. It's also literally what's running the SQL playground you're about to use: sql.js compiles SQLite itself to WebAssembly, so the query engine below is the real thing, running entirely inside your browser tab.
+
+## Try it — introspecting a real SQLite database
+
+SQLite stores its own schema as ordinary rows in a table called `sqlite_master` — you can query your own database's structure the same way you'd query any other table.
+
+<SqlPlayground
+  title="A file-less SQLite database, in your browser"
+  schema={`
+CREATE TABLE notes (id INTEGER PRIMARY KEY, title TEXT NOT NULL, body TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP);
+CREATE INDEX idx_notes_title ON notes(title);
+INSERT INTO notes (title, body) VALUES ('First note', 'SQLite runs right here.'), ('Second note', 'No server, no network call.');
+`}
+  defaultQuery={`SELECT type, name, sql FROM sqlite_master;`}
+/>
+
+Try `SELECT * FROM notes;` next, then `PRAGMA table_info(notes);` to see each column's declared type and constraints — another SQLite-specific introspection feature.
+
+## Dynamic typing
+
+Unlike most SQL engines, SQLite doesn't strictly enforce a column's declared type — a column declared `INTEGER` will still accept and store a text value if you insert one (this is called "type affinity," not strict typing). Modern SQLite added `STRICT` tables as an opt-in for when this flexibility isn't wanted, but the loose default remains for backward compatibility with decades of existing databases.
+
+## Where SQLite fits
+
+<ItemExplorer
+  layout="pills"
+  items={[
+    { id: "mobile", label: "Mobile apps", color: "blue", detail: "The default local storage engine on both iOS and Android — nearly every app with any structured local data uses it, even indirectly through a higher-level ORM." },
+    { id: "browser", label: "Browsers", color: "green", detail: "Chrome's IndexedDB and Safari's local storage are both backed by SQLite under the hood — and now, via WebAssembly, it can run directly inside a web page too, as it is on this one." },
+    { id: "desktop", label: "Desktop apps", color: "purple", detail: "VS Code, most browsers' own settings/history storage, and countless other desktop apps use it as their embedded data file format." },
+    { id: "cli-testing", label: "Dev/test environments", color: "orange", detail: "A common substitute for a full client-server database during local development or in a test suite, precisely because there's no server to run." },
+  ]}
+/>
+
+## What it deliberately gives up
+
+Because SQLite has no server process managing concurrent access, its story for many simultaneous *writers* is weaker than a client-server database's — by default, one write locks the whole database file for its duration (newer versions' WAL mode improves concurrent reads-during-writes significantly, but SQLite still isn't the right choice for a workload with many independent processes writing at once). This trade-off — simplicity and zero-ops in exchange for a lighter concurrency model — is exactly why it's the default choice for embedded/local use and rarely the choice for a big multi-user web application's primary database.
+
+## See also
+
+- **[PostgreSQL](/en/databases/postgresql)** — the client-server database of choice when SQLite's concurrency model isn't enough.
+- **[Database Migrations](/en/databases/database-migrations)** — SQLite's `ALTER TABLE` support is more limited than Postgres/MySQL's, which shapes how its migrations are typically written.

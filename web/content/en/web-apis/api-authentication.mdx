@@ -1,0 +1,80 @@
+---
+title: API Authentication
+description: Proving who's calling — API keys, Basic auth, Bearer tokens, and the OAuth 2.0 flow that issues them.
+category: Web APIs
+weight: 6
+interactive: true
+interactiveType: ["RequestPlayground", "ItemExplorer", "StepFlow"]
+---
+
+import { oauthAuthCodeSteps } from "./api-authentication-steps";
+
+Authentication answers one question: **who is making this request?** (Not what they're allowed to do once identified — that's [API Authorization](/en/web-apis/api-authorization).) Nearly every scheme below boils down to "attach a credential to the request, on every request, since APIs are stateless" — see [REST](/en/web-apis/rest)'s statelessness constraint for why nothing gets remembered between calls.
+
+## Common schemes
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "howSent", label: "How it's sent" },
+    { key: "typicalUse", label: "Typical use" },
+  ]}
+  items={[
+    {
+      id: "apikey",
+      label: "API Key",
+      color: "blue",
+      columns: { howSent: "A header or query param, e.g. X-API-Key: sk_live_...", typicalUse: "Server-to-server, simple usage tracking" },
+    },
+    {
+      id: "basic",
+      label: "Basic Auth",
+      color: "default",
+      columns: { howSent: "Authorization: Basic <base64(user:pass)>", typicalUse: "Internal tools, quick scripts — rarely production APIs" },
+    },
+    {
+      id: "bearer",
+      label: "Bearer Token / JWT",
+      color: "green",
+      columns: { howSent: "Authorization: Bearer <token>", typicalUse: "Most modern APIs — the token is usually short-lived and issued by OAuth" },
+    },
+    {
+      id: "oauth2",
+      label: "OAuth 2.0",
+      color: "purple",
+      columns: { howSent: "A Bearer token, obtained via a login/consent flow", typicalUse: "\"Log in with Google\", third-party access on a user's behalf" },
+    },
+    {
+      id: "mtls",
+      label: "mTLS",
+      color: "orange",
+      columns: { howSent: "A client TLS certificate, verified during the TLS handshake itself", typicalUse: "High-trust service-to-service traffic (banking, internal infra)" },
+    },
+  ]}
+/>
+
+## Try it
+
+`/api/profile` in this site's mock API requires an `Authorization` header — send the request without one, then add `Authorization: Bearer demo-token` and send again.
+
+<RequestPlayground protocol="http" defaultTarget="/api/profile" defaultHeaders="Accept: application/json" />
+
+## Bearer tokens and JWTs
+
+A **JWT** (JSON Web Token) is the most common shape a Bearer token takes: three base64url segments — a header, a payload (claims like the user's ID and an expiry time), and a signature — joined by dots. The server verifies the signature to trust the claims without needing a database lookup on every request, which is why JWTs are popular for stateless APIs specifically.
+
+```
+eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI0MiIsImV4cCI6MTcwMDAwMDAwMH0.4f8s...
+       header                    payload                  signature
+```
+
+## OAuth 2.0 authorization code flow
+
+The scheme behind every "Log in with X" button — it lets your app get a token scoped to act on a user's behalf, without ever seeing their password.
+
+<StepFlow title="OAuth 2.0 authorization code flow" steps={oauthAuthCodeSteps} />
+
+## See also
+
+- **[API Authorization](/en/web-apis/api-authorization)** — what an authenticated caller is actually allowed to do.
+- **[Rate Limiting](/en/web-apis/rate-limiting)** — often applied per API key/token, not just per IP.

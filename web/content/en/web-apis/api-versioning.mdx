@@ -1,0 +1,86 @@
+---
+title: API Versioning
+description: How to change an API's shape without breaking every client already depending on the old one.
+category: Web APIs
+weight: 8
+interactive: true
+interactiveType: ["RequestPlayground", "ItemExplorer"]
+---
+
+An API that never changes is rare — fields get renamed, response shapes get restructured, behavior gets fixed in ways that happen to be breaking. The problem versioning solves: how do you ship that change without breaking every client already calling the old shape, often ones you don't control and can't force to update on your schedule?
+
+## Try it
+
+This site's mock API serves two versions of the same resource side by side — `v1` returns a single `name` field, `v2` splits it into `first_name`/`last_name`, a realistic example of a breaking change.
+
+<RequestPlayground
+  protocol="http"
+  defaultTarget="/api/v1/users"
+  examplePaths={[
+    { method: "GET", path: "/api/v1/users", label: "v1" },
+    { method: "GET", path: "/api/v2/users", label: "v2" },
+  ]}
+/>
+
+## Versioning strategies
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "example", label: "Example" },
+    { key: "tradeoff", label: "Trade-off" },
+  ]}
+  items={[
+    {
+      id: "uri",
+      label: "URI path",
+      color: "blue",
+      columns: {
+        example: "GET /api/v2/users",
+        tradeoff: "Most explicit and cacheable (each version is a distinct URL) — but the version leaks into every client's hardcoded URLs.",
+      },
+    },
+    {
+      id: "header",
+      label: "Custom header",
+      color: "purple",
+      columns: {
+        example: "GET /api/users\nX-API-Version: 2",
+        tradeoff: "Keeps URLs stable across versions — but less visible (easy to forget, invisible in a browser address bar or a shared link).",
+      },
+    },
+    {
+      id: "query",
+      label: "Query parameter",
+      color: "green",
+      columns: {
+        example: "GET /api/users?version=2",
+        tradeoff: "Easy to add, but easy to omit accidentally, and query params aren't always part of cache keys by default.",
+      },
+    },
+    {
+      id: "accept",
+      label: "Content negotiation",
+      color: "orange",
+      columns: {
+        example: "GET /api/users\nAccept: application/vnd.example.v2+json",
+        tradeoff: "The \"correct\" HTTP-native approach (versioning the representation, not the resource) — but the least discoverable and most unusual to consume.",
+      },
+    },
+  ]}
+/>
+
+URI-path versioning is by far the most common in practice, despite arguably being the least "pure" HTTP approach — explicitness and cacheability tend to win over theoretical correctness.
+
+## What actually counts as breaking
+
+Not every change needs a new version. Adding a new optional field to a response, or a new optional endpoint, is additive — existing clients that ignore unknown fields keep working unchanged. Renaming or removing a field, changing a field's type, or changing status code behavior is breaking — any client relying on the old shape stops working. Most GraphQL APIs lean on this distinction instead of versioning at all: add fields freely, mark old ones `@deprecated`, and only remove them once usage drops to zero — see [GraphQL](/en/web-apis/graphql).
+
+## Deprecation, not just versioning
+
+Shipping v2 doesn't mean v1 disappears immediately — real APIs typically announce a deprecation window (e.g. "v1 sunsets in 6 months"), return a `Deprecation`/`Sunset` header on v1 responses so clients can detect it programmatically, and only remove the old version once traffic to it is negligible.
+
+## See also
+
+- **[REST](/en/web-apis/rest)** — the resource-oriented style most URI-path versioning is layered onto.
+- **[Idempotency](/en/web-apis/idempotency)** — another concern that's easy to get wrong on the first version and awkward to retrofit later.

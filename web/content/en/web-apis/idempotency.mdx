@@ -1,0 +1,48 @@
+---
+title: Idempotency
+description: Making retries safe — sending the same request twice should never mean it happened twice.
+category: Web APIs
+weight: 11
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+A request is **idempotent** if making it once has the same effect as making it many times. This matters because networks fail in ambiguous ways: a client sends a request, the response never arrives (timeout, connection drop), and the client has no way to know whether the server actually processed it or not. The only safe move is to retry — and idempotency is what makes that safe instead of dangerous.
+
+`GET`, `PUT`, and `DELETE` are idempotent by definition in HTTP: fetching a resource twice doesn't change it, replacing it with the same value twice leaves it in the same state, deleting an already-deleted resource is still "deleted." `POST` is the odd one out — by default, `POST /api/orders` twice creates two orders, because HTTP gives `POST` no idempotency guarantee at all.
+
+## Try it
+
+Send a `POST` to `/api/orders` with an `Idempotency-Key` header, then send the exact same request again with the same key — the second response is replayed byte-for-byte (watch for `x-idempotent-replay: true`), instead of creating a second order. Change the key and it creates a new one.
+
+<RequestPlayground
+  protocol="http"
+  defaultMethod="POST"
+  defaultTarget="/api/orders"
+  defaultHeaders={"Content-Type: application/json\nIdempotency-Key: order-attempt-1"}
+  defaultBody={`{\n  "item": "widget",\n  "quantity": 3\n}`}
+  examplePaths={[
+    { method: "POST", path: "/api/orders", label: "same key" },
+  ]}
+/>
+
+## How an idempotency key works
+
+The client generates a unique key (a UUID is typical) once per logical operation — not per HTTP attempt — and sends it on every retry of that same operation. The server, on first seeing a key, processes the request normally and **stores the response** keyed by it. On any later request with the same key, it returns the stored response immediately without re-running the operation — so retrying a "charge this card" request never double-charges, even if the client genuinely can't tell whether the first attempt succeeded.
+
+```http
+POST /api/orders
+Idempotency-Key: 6c3a2e1e-...
+
+# First time: processed normally, response cached against this key.
+# Any retry with the same key: the cached response is replayed, unchanged.
+```
+
+## Where this matters most
+
+Payments are the canonical example — Stripe, and most other payment APIs, require an idempotency key on charge-creation requests for exactly this reason. But the same problem exists anywhere a `POST`/non-idempotent request has a real-world side effect that shouldn't happen twice: sending an email, provisioning a resource, incrementing an inventory count.
+
+## See also
+
+- **[Rate Limiting](/en/web-apis/rate-limiting)** — a client backing off and retrying after a `429` needs that retry to be idempotent.
+- **[Webhooks](/en/web-apis/webhooks)** — a webhook receiver needs the same de-duplication, keyed on the sender's event ID instead of a client-generated key.

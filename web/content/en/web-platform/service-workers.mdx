@@ -1,0 +1,39 @@
+---
+title: Service Workers
+description: A script the browser runs separately from any page, sitting between it and the network — the foundation of offline support.
+category: Web Platform
+weight: 7
+interactive: true
+interactiveType: ["StepFlow"]
+---
+
+import { serviceWorkerLifecycleSteps } from "./service-worker-lifecycle-steps";
+
+A service worker is a JavaScript file that runs on its own, separate from any particular page — it has no access to the [DOM](/en/web-platform/dom), keeps running (event-driven, not continuously) even after the page that registered it closes, and can intercept every network request the page makes. That interception is what makes offline support, background sync, and push notifications possible in a browser.
+
+## The lifecycle
+
+Getting a service worker's lifecycle right — specifically, understanding when the *new* version actually takes over from the old one — is the single most common source of "why isn't my update showing up" confusion.
+
+<StepFlow title="Service worker lifecycle" steps={serviceWorkerLifecycleSteps} />
+
+## Caching strategies
+
+Once a service worker is intercepting `fetch` events, it decides how to answer each one — this decision is the actual point of using one:
+
+- **Cache-first** — check the cache, only hit the network on a miss. Fast and works offline, but can serve stale content if the cache isn't invalidated correctly.
+- **Network-first** — try the network, fall back to cache on failure. Fresher, but slower on every request and useless offline unless the network attempt fails fast.
+- **Stale-while-revalidate** — serve the cached response immediately, then fetch a fresh one in the background to update the cache for next time. A common middle ground.
+
+## Scope
+
+A service worker only controls pages under its own registration scope — one registered at `/app/sw.js` with no explicit scope controls only `/app/*`, not the whole origin. This is a deliberate security boundary: a script at `/blog/sw.js` can't intercept requests for `/admin/*`.
+
+## Why this needs HTTPS
+
+Service workers can rewrite any network response a page receives, which is enormous power to hand a script — browsers only allow registering one on a secure origin (`https://`, or `localhost` for development) so it can't be tampered with by a network-level attacker on the way to the browser.
+
+## See also
+
+- **[Web Workers](/en/web-platform/web-workers)** — background JavaScript for computation, not network interception — a different tool for a different job.
+- **[Web Storage](/en/web-platform/web-storage)** and the Cache API are what a service worker actually stores cached responses in.
