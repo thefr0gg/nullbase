@@ -69,6 +69,8 @@
   --color-danger: #ef4444;
   --font-sans: var(--font-jakarta);
   --font-mono: var(--font-geist-mono);
+  /* Reserved for the SQL playground's CodeEditor — see [locale]/layout.tsx. */
+  --font-editor: var(--font-jetbrains-mono);
 }
 
 @layer base {

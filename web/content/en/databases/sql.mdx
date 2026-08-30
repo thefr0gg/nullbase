@@ -52,8 +52,8 @@ SQL's clauses are *written* in one order but *executed* in a different one — t
     { id: "where", label: "WHERE", color: "green", columns: { written: "2nd", executed: "2nd — filter rows before grouping" } },
     { id: "groupby", label: "GROUP BY", color: "orange", columns: { written: "4th", executed: "3rd — collapse rows into groups" } },
     { id: "having", label: "HAVING", color: "purple", columns: { written: "5th", executed: "4th — filter groups, after aggregation" } },
-    { id: "select", label: "SELECT", color: "default", columns: { written: "1st on the page", executed: "5th — compute the actual output columns" } },
-    { id: "orderby", label: "ORDER BY", color: "default", columns: { written: "6th", executed: "6th — sort the final result" } },
+    { id: "select", label: "SELECT", color: "red", columns: { written: "1st on the page", executed: "5th — compute the actual output columns" } },
+    { id: "orderby", label: "ORDER BY", color: "blue", columns: { written: "6th", executed: "6th — sort the final result" } },
   ]}
 />
 

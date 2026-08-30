@@ -1,6 +1,6 @@
 import "../globals.css";
 import "../mdx.css";
-import { Geist_Mono, Noto_Kufi_Arabic, Noto_Sans_Arabic, Plus_Jakarta_Sans } from "next/font/google";
+import { Geist_Mono, JetBrains_Mono, Noto_Kufi_Arabic, Noto_Sans_Arabic, Plus_Jakarta_Sans } from "next/font/google";
 import Link from "next/link";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
@@ -22,6 +22,11 @@ const jakarta = Plus_Jakarta_Sans({
   display: "swap",
 });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+// Distinct from --font-geist-mono (used for inline code/curl output
+// site-wide) — reserved for the SQL playground's CodeEditor, so it visibly
+// reads as "a real code editor" rather than blending into the rest of the
+// page's monospace text.
+const jetbrainsMono = JetBrains_Mono({ variable: "--font-jetbrains-mono", subsets: ["latin"] });
 // Arabic-script fonts — only ever selected by the `:lang(ar)` rules in
 // globals.css, but loaded unconditionally here since every locale shares
 // this one layout; unused font files simply aren't referenced for en/fr/es.
@@ -121,7 +126,7 @@ export default async function LocaleLayout({
       // you changed languages. `suppressHydrationWarning` only covers the
       // very first hydration pass, not this.
       suppressHydrationWarning
-      className={`${jakarta.variable} ${geistMono.variable} ${notoSansArabic.variable} ${notoKufiArabic.variable} font-sans`}
+      className={`${jakarta.variable} ${geistMono.variable} ${jetbrainsMono.variable} ${notoSansArabic.variable} ${notoKufiArabic.variable} font-sans`}
     >
       <head>
         {/*
