@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/app/_components/ui";
-import { useStepFlowLabels } from "@/lib/i18n/step-flow-context";
+import { useInteractiveDict } from "@/lib/i18n/step-flow-context";
+import { format } from "@/lib/i18n/format";
 import { DetailPanel, EyebrowLabel, PlaygroundSection, PlaygroundShell } from "./_shared";
 
 /**
@@ -35,7 +36,7 @@ export interface StepFlowProps {
 
 export default function StepFlow({ steps, title }: StepFlowProps) {
   const [index, setIndex] = useState(0);
-  const labels = useStepFlowLabels();
+  const dict = useInteractiveDict().stepFlow;
   const total = steps.length;
   const step = steps[index];
   if (!step) return null;
@@ -48,20 +49,20 @@ export default function StepFlow({ steps, title }: StepFlowProps) {
       <PlaygroundSection divider="bottom" tone="muted">
         <div className="flex items-center justify-between gap-2">
           <EyebrowLabel as="span" className="mb-0">
-            {title ?? "Step-by-step"}
+            {title ?? dict.defaultTitle}
           </EyebrowLabel>
           <span className="text-xs font-medium text-text-secondary">
-            Step {index + 1} of {total}
+            {format(dict.stepOf, { current: index + 1, total })}
           </span>
         </div>
-        <div className="mt-3 flex gap-1.5" role="tablist" aria-label="Steps">
+        <div className="mt-3 flex gap-1.5" role="tablist" aria-label={dict.stepsAriaLabel}>
           {steps.map((s, i) => (
             <button
               key={i}
               type="button"
               role="tab"
               aria-selected={i === index}
-              aria-label={`Step ${i + 1}: ${s.title}`}
+              aria-label={format(dict.stepAriaLabel, { n: i + 1, title: s.title })}
               onClick={() => setIndex(i)}
               className={[
                 "h-1.5 flex-1 rounded-full transition-colors duration-150",
@@ -97,7 +98,7 @@ export default function StepFlow({ steps, title }: StepFlowProps) {
           className="text-sm"
         >
           <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
-          {labels.previous}
+          {dict.previous}
         </Button>
         <Button
           variant="primary"
@@ -105,7 +106,7 @@ export default function StepFlow({ steps, title }: StepFlowProps) {
           disabled={atEnd}
           className="text-sm"
         >
-          {labels.next}
+          {dict.next}
           <ChevronRight className="h-4 w-4 rtl:rotate-180" />
         </Button>
       </PlaygroundSection>

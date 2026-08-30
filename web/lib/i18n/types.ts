@@ -15,11 +15,16 @@
  * `<LanguageSwitcher>`, ...), and function values can't cross that
  * server/client boundary.
  */
+import type { FeedbackType } from "../feedback-types";
+
 export interface Dictionary {
   nav: {
-    tagline: string;
     openNavigation: string;
     closeNavigation: string;
+    /** `{title}` */
+    collapseNode: string;
+    /** `{title}` */
+    expandNode: string;
   };
   search: {
     /** `{topic}` */
@@ -47,6 +52,98 @@ export interface Dictionary {
   stepFlow: {
     previous: string;
     next: string;
+    /** `{current}`, `{total}` */
+    stepOf: string;
+    defaultTitle: string;
+    stepsAriaLabel: string;
+    /** `{n}`, `{title}` */
+    stepAriaLabel: string;
+  };
+  requestPlayground: {
+    targetLabelEndpoint: string;
+    targetLabelWebhook: string;
+    targetLabelDefault: string;
+    defaultTitleHttp: string;
+    /** `{protocol}` */
+    defaultTitleProtocol: string;
+    send: string;
+    sending: string;
+    headersLabel: string;
+    headersPlaceholder: string;
+    queryLabel: string;
+    bodyLabel: string;
+    bodyPlaceholderGraphql: string;
+    bodyPlaceholderDefault: string;
+    variablesLabel: string;
+    responseLabel: string;
+    tabBody: string;
+    /** `{count}` */
+    tabHeaders: string;
+    copy: string;
+    copied: string;
+    copyCurl: string;
+    emptyBody: string;
+    noHeaders: string;
+    wsDefaultTitle: string;
+    wsConnecting: string;
+    wsReconnect: string;
+    wsConnect: string;
+    sent: string;
+    received: string;
+  };
+  interactive: {
+    simulated: string;
+  };
+  pageActions: {
+    /** Shared by the Like and Feedback cards' rate-limit cooldown display. */
+    cooldown: {
+      /** `{m}` */
+      minutes: string;
+      /** `{s}` */
+      seconds: string;
+    };
+    like: {
+      like: string;
+      liked: string;
+      loadingCount: string;
+      /** `{count}` — CLDR plural forms, see `lib/i18n/format.ts`'s `pluralize`. */
+      countSuffix: Partial<Record<Intl.LDMLPluralRule, string>> & { other: string };
+      genericError: string;
+      retryError: string;
+      retry: string;
+    };
+    feedback: {
+      openButton: string;
+      openSubtitle: string;
+      modalTitle: string;
+      close: string;
+      ratingAriaLabel: string;
+      /** `{count}` — CLDR plural forms, see above. */
+      starAriaLabel: Partial<Record<Intl.LDMLPluralRule, string>> & { other: string };
+      ratingOptional: string;
+      /** `{rating}` */
+      ratingValue: string;
+      typeAriaLabel: string;
+      typePlaceholder: string;
+      commentPlaceholder: string;
+      wordCountLabel: string;
+      /** `{count}` */
+      wordCountSuffix: string;
+      emailPlaceholder: string;
+      ratingOrCommentRequired: string;
+      commentTooLong: string;
+      genericError: string;
+      thanksBadge: string;
+      thanksBody: string;
+      sending: string;
+      retry: string;
+      send: string;
+      cancel: string;
+    };
+    /** Translated labels for every `FeedbackType` — public-site-only; the
+     *  admin panel keeps using `lib/feedback-types.ts`'s own neutral
+     *  `FEEDBACK_TYPE_LABELS` since it's an English-only internal tool. */
+    feedbackTypes: Record<FeedbackType, string>;
   };
   notFound: {
     badge: string;
@@ -54,6 +151,9 @@ export interface Dictionary {
     description: string;
     responseLabel: string;
     backToHome: string;
+    statusBadge: string;
+    jsonError: string;
+    jsonMessage: string;
   };
   home: {
     heroLead: string;
@@ -71,6 +171,12 @@ export interface Dictionary {
     comingSoon: string;
     /** `{count}` — CLDR plural forms, see above. */
     pageCount: Partial<Record<Intl.LDMLPluralRule, string>> & { other: string };
+    /** The 15-entry planned-topic roadmap shown in "Coming soon" — order
+     *  must match `PLANNED_CATEGORIES` in `app/[locale]/page.tsx`, and each
+     *  entry must exactly match (case-insensitively) that topic's actual
+     *  translated content title once it's built, so the "already built"
+     *  filter keeps working per locale. */
+    plannedCategories: string[];
   };
   privacy: {
     badge: string;

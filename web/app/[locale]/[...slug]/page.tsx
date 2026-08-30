@@ -7,7 +7,8 @@ import { JsonLd } from "@/app/_components/json-ld";
 import { SITE_URL } from "@/lib/site";
 import { defaultLocale, locales, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
-import { StepFlowLabelsProvider } from "@/lib/i18n/step-flow-context";
+import { InteractiveDictProvider, type InteractiveDict } from "@/lib/i18n/step-flow-context";
+import type { Dictionary } from "@/lib/i18n/types";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { buildBreadcrumbList, buildTechArticle } from "@/lib/seo/structured-data";
 
@@ -71,7 +72,12 @@ export default async function SlugPage({
       // actual viewing locale is still recorded on feedback separately.
       pagePath={slugToHref(defaultLocale, page.slug)}
       nextLabel={dict.pageFooter.next}
-      stepFlowLabels={dict.stepFlow}
+      pageActionsDict={dict.pageActions}
+      interactiveDict={{
+        stepFlow: dict.stepFlow,
+        requestPlayground: dict.requestPlayground,
+        simulated: dict.interactive.simulated,
+      }}
     />
   );
 }
@@ -82,14 +88,16 @@ async function ContentRenderer({
   next,
   pagePath,
   nextLabel,
-  stepFlowLabels,
+  pageActionsDict,
+  interactiveDict,
 }: {
   page: CollectedPage;
   locale: Locale;
   next: ReturnType<typeof getNextPage>;
   pagePath: string;
   nextLabel: string;
-  stepFlowLabels: { previous: string; next: string };
+  pageActionsDict: Dictionary["pageActions"];
+  interactiveDict: InteractiveDict;
 }) {
   // Dynamic import of the compiled `.mdx` (resolved by @next/mdx's loader).
   const mod = (await import(`../../../content/${locale}/${page.fileRel}.mdx`)) as {
@@ -105,10 +113,10 @@ async function ContentRenderer({
       <h1 className="mdx-h1">
         <span className="mdx-heading-text">{page.frontmatter.title}</span>
       </h1>
-      <StepFlowLabelsProvider value={stepFlowLabels}>
+      <InteractiveDictProvider value={interactiveDict}>
         <MDX />
-      </StepFlowLabelsProvider>
-      <PageFooter next={next} page={pagePath} locale={locale} nextLabel={nextLabel} />
+      </InteractiveDictProvider>
+      <PageFooter next={next} page={pagePath} locale={locale} nextLabel={nextLabel} dict={pageActionsDict} />
       <JsonLd data={buildBreadcrumbList(locale, page.slug)} />
       <JsonLd data={buildTechArticle(locale, page, `${SITE_URL}${pagePath}`)} />
     </article>

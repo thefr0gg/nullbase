@@ -5,6 +5,10 @@ import Link from "next/link";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import clsx from "clsx";
 import type { SidebarNode } from "@/lib/content/meta";
+import type { Dictionary } from "@/lib/i18n/types";
+import { format } from "@/lib/i18n/format";
+
+type NavDict = Pick<Dictionary["nav"], "collapseNode" | "expandNode">;
 
 /**
  * Shared tree renderer for both the desktop sidebar and the mobile drawer —
@@ -36,16 +40,18 @@ function containsActive(node: SidebarNode, pathname: string): boolean {
 export function SidebarTree({
   tree,
   pathname,
+  dict,
   onNavigate,
 }: {
   tree: SidebarNode[];
   pathname: string;
+  dict: NavDict;
   onNavigate?: () => void;
 }) {
   return (
     <ul className="space-y-1 text-sm">
       {tree.map((node) => (
-        <SidebarTreeItem key={node.href} node={node} pathname={pathname} onNavigate={onNavigate} />
+        <SidebarTreeItem key={node.href} node={node} pathname={pathname} dict={dict} onNavigate={onNavigate} />
       ))}
     </ul>
   );
@@ -54,10 +60,12 @@ export function SidebarTree({
 function SidebarTreeItem({
   node,
   pathname,
+  dict,
   onNavigate,
 }: {
   node: SidebarNode;
   pathname: string;
+  dict: NavDict;
   onNavigate?: () => void;
 }) {
   const active = isNodeActive(node, pathname);
@@ -86,7 +94,7 @@ function SidebarTreeItem({
           <button
             type="button"
             onClick={() => setOpen((o) => !o)}
-            aria-label={open ? `Collapse ${node.title}` : `Expand ${node.title}`}
+            aria-label={format(open ? dict.collapseNode : dict.expandNode, { title: node.title })}
             aria-expanded={open}
             className={clsx(
               "shrink-0 rounded-lg p-1.5 transition-colors",
@@ -100,7 +108,7 @@ function SidebarTreeItem({
       {hasChildren && open && (
         <ul className="mt-1 ms-4 space-y-1 border-s border-border ps-3">
           {node.children.map((child) => (
-            <SidebarTreeItem key={child.href} node={child} pathname={pathname} onNavigate={onNavigate} />
+            <SidebarTreeItem key={child.href} node={child} pathname={pathname} dict={dict} onNavigate={onNavigate} />
           ))}
         </ul>
       )}

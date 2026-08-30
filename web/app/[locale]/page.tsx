@@ -55,28 +55,6 @@ export async function generateMetadata({
   };
 }
 
-// Full 15-category roadmap, in the order the site will fill it in. Anything
-// already present as a root in the content tree is dropped from the "Coming
-// soon" list below — this array needs no maintenance as topics land, only
-// as the roadmap itself changes.
-const PLANNED_CATEGORIES = [
-  "Web Fundamentals",
-  "Web APIs",
-  "Web Platform",
-  "Data & Serialization",
-  "Databases",
-  "Networking",
-  "Security",
-  "Backend",
-  "DevOps & Infrastructure",
-  "Developer Tools",
-  "Cloudflare",
-  "Programming Languages",
-  "Software Architecture",
-  "Operating Systems",
-  "Computer Science",
-];
-
 const CARD_ACCENTS: { badge: BadgeColor; border: string }[] = [
   { badge: "blue", border: "border-t-electric-blue" },
   { badge: "purple", border: "border-t-violet" },
@@ -104,7 +82,7 @@ export default async function HomePage({
   const dict = getDictionary(locale);
   const roots = getSidebarTree(locale);
   const builtTitles = new Set(roots.map((r) => r.title.toLowerCase()));
-  const upcoming = PLANNED_CATEGORIES.filter(
+  const upcoming = dict.home.plannedCategories.filter(
     (name) => !builtTitles.has(name.toLowerCase()),
   );
 
@@ -112,8 +90,8 @@ export default async function HomePage({
     <div className="flex flex-col gap-16">
       <JsonLd data={buildWebSite(locale)} />
       <header className="flex flex-col gap-5">
-        <h1 className="max-w-2xl text-4xl font-semibold tracking-tight text-text-primary sm:text-5xl">
-          {dict.home.heroLead}{" "}
+        <h1 className="flex max-w-2xl flex-wrap items-baseline gap-x-2.5 gap-y-1 text-4xl font-semibold tracking-tight text-text-primary sm:text-5xl">
+          <span>{dict.home.heroLead}</span>
           <code className="rounded-md bg-[color-mix(in_oklch,var(--color-electric-blue)_14%,var(--surface))] px-2 py-0.5 font-mono text-electric-blue">
             {dict.home.heroCode}
           </code>

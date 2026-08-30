@@ -104,11 +104,17 @@ export function DetailPanel({
  * Every interactive widget on the site is simulated, never a real network
  * call or real code execution — one consistent small marker so a learner
  * never mistakes a widget for the real thing.
+ *
+ * `label` defaults to English rather than reading the i18n context itself,
+ * so this stays a plain server-renderable component (no "use client") —
+ * callers that already have `useInteractiveDict()` (RequestPlayground) pass
+ * `dict.simulated` in; `legacy.tsx`'s components don't, and fall back to
+ * English, matching their overall out-of-scope status for this pass.
  */
-export function SimulatedTag({ className }: { className?: string }) {
+export function SimulatedTag({ className, label = "Simulated" }: { className?: string; label?: string }) {
   return (
     <Badge color="default" className={clsx("shrink-0", className)}>
-      Simulated
+      {label}
     </Badge>
   );
 }

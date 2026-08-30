@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import type { SidebarNode } from "@/lib/content/meta";
 import type { Locale } from "@/lib/i18n/config";
+import type { Dictionary } from "@/lib/i18n/types";
 import { PageActions } from "./page-actions";
 
 interface Props {
@@ -15,6 +16,7 @@ interface Props {
    *  translation a report is about. */
   locale: Locale;
   nextLabel: string;
+  dict: Dictionary["pageActions"];
 }
 
 /**
@@ -22,7 +24,7 @@ interface Props {
  * card (full width) and, below it, the interactive Like + Feedback cards
  * side by side (stacked on mobile).
  */
-export function PageFooter({ next, page, locale, nextLabel }: Props) {
+export function PageFooter({ next, page, locale, nextLabel, dict }: Props) {
   return (
     <div className="mt-12 rounded-2xl border border-border bg-surface/40 p-4 sm:p-5">
       <div className="flex flex-col gap-4">
@@ -54,7 +56,7 @@ export function PageFooter({ next, page, locale, nextLabel }: Props) {
         )}
 
         {/* Like + Feedback cards (wired to the API) */}
-        <PageActions page={page} locale={locale} />
+        <PageActions page={page} locale={locale} dict={dict} />
       </div>
     </div>
   );

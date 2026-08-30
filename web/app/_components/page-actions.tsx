@@ -6,7 +6,9 @@ import { createPortal } from "react-dom";
 import { MessageSquare, Star, ThumbsUp, X } from "lucide-react";
 import { ApiError, getPageLikes, likePage, submitFeedback } from "@/lib/api";
 import { useHasMounted } from "@/lib/use-has-mounted";
-import { FEEDBACK_TYPES, FEEDBACK_TYPE_LABELS, type FeedbackType } from "@/lib/feedback-types";
+import { FEEDBACK_TYPES, type FeedbackType } from "@/lib/feedback-types";
+import { pluralize, format } from "@/lib/i18n/format";
+import type { Dictionary } from "@/lib/i18n/types";
 import { Button, Card } from "./ui";
 
 /**
@@ -17,6 +19,8 @@ import { Button, Card } from "./ui";
  * surface as inline messages with a manual retry — never auto-retry loops,
  * never a broken page.
  */
+
+type Dict = Dictionary["pageActions"];
 
 // localStorage guards (private mode / blocked storage must not break the page)
 function readFlag(key: string): boolean {
@@ -65,19 +69,18 @@ function useCooldown() {
   return { secondsLeft, active, start };
 }
 
-function cooldownLabel(seconds: number): string {
+function cooldownLabel(seconds: number, dict: Dict["cooldown"]): string {
   if (seconds >= 60) {
-    const m = Math.ceil(seconds / 60);
-    return `Try again in ${m}m`;
+    return format(dict.minutes, { m: Math.ceil(seconds / 60) });
   }
-  return `Try again in ${seconds}s`;
+  return format(dict.seconds, { s: seconds });
 }
 
-export function PageActions({ page, locale }: { page: string; locale: string }) {
+export function PageActions({ page, locale, dict }: { page: string; locale: string; dict: Dict }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
-      <LikeCard page={page} />
-      <FeedbackCard page={page} locale={locale} />
+      <LikeCard page={page} locale={locale} dict={dict.like} cooldownDict={dict.cooldown} />
+      <FeedbackCard page={page} locale={locale} dict={dict} />
     </div>
   );
 }
@@ -86,7 +89,17 @@ export function PageActions({ page, locale }: { page: string; locale: string }) 
 // Like card
 // ---------------------------------------------------------------------------
 
-function LikeCard({ page }: { page: string }) {
+function LikeCard({
+  page,
+  locale,
+  dict,
+  cooldownDict,
+}: {
+  page: string;
+  locale: string;
+  dict: Dict["like"];
+  cooldownDict: Dict["cooldown"];
+}) {
   const [count, setCount] = useState<number | null>(null); // null = loading
   const [liked, setLiked] = useState(() => readFlag(`nullbase:liked:${page}`));
   const [busy, setBusy] = useState(false);
@@ -127,11 +140,11 @@ function LikeCard({ page }: { page: string }) {
       if (e instanceof ApiError && e.status === 429) {
         cooldown.start(e.retryAfterSeconds ?? 60);
       }
-      setError(e instanceof ApiError ? e.message : "Something went wrong.");
+      setError(e instanceof ApiError ? e.message : dict.genericError);
     } finally {
       setBusy(false);
     }
-  }, [busy, liked, count, page, cooldown]);
+  }, [busy, liked, count, page, cooldown, dict.genericError]);
 
   const retry = useCallback(() => {
     // Rate-limited failures must wait out the cooldown like any other like
@@ -143,11 +156,11 @@ function LikeCard({ page }: { page: string }) {
       // The like itself succeeded earlier — just refresh the count.
       getPageLikes(page)
         .then(setCount)
-        .catch(() => setError("Still can't reach the server."));
+        .catch(() => setError(dict.retryError));
     } else {
       void like();
     }
-  }, [liked, like, page, cooldown.active]);
+  }, [liked, like, page, cooldown.active, dict.retryError]);
 
   const disabled = busy || liked || cooldown.active;
 
@@ -161,11 +174,10 @@ function LikeCard({ page }: { page: string }) {
         className="w-full sm:w-auto"
       >
         <ThumbsUp className="h-4 w-4" />
-        {liked ? "Liked" : cooldown.active ? cooldownLabel(cooldown.secondsLeft) : "Like this page"}
+        {liked ? dict.liked : cooldown.active ? cooldownLabel(cooldown.secondsLeft, cooldownDict) : dict.like}
       </Button>
       <p className="text-sm tabular-nums text-text-secondary" aria-live="polite">
-        {count === null ? "—" : count} {count === 1 ? "like" : "likes"} on this
-        page
+        {count === null ? dict.loadingCount : pluralize(locale, count, dict.countSuffix)}
       </p>
       {error && (
         <p className="text-xs text-danger" aria-live="polite">
@@ -176,7 +188,7 @@ function LikeCard({ page }: { page: string }) {
               onClick={retry}
               className="font-medium underline underline-offset-2 hover:text-electric-blue"
             >
-              Retry
+              {dict.retry}
             </button>
           )}
         </p>
@@ -191,7 +203,8 @@ function LikeCard({ page }: { page: string }) {
 
 type FeedbackState = "idle" | "sending" | "sent" | "error";
 
-function FeedbackCard({ page, locale }: { page: string; locale: string }) {
+function FeedbackCard({ page, locale, dict }: { page: string; locale: string; dict: Dict }) {
+  const t = dict.feedback;
   const [open, setOpen] = useState(false);
   const [alreadySent, setAlreadySent] = useState(() => readFlag(`nullbase:sent-feedback:${page}`));
   const [rating, setRating] = useState<number | null>(null);
@@ -213,12 +226,12 @@ function FeedbackCard({ page, locale }: { page: string; locale: string }) {
       if (cooldown.active) return;
       if (rating == null && comment.trim() === "") {
         setState("error");
-        setErrorMsg("Add a rating or a short comment first.");
+        setErrorMsg(t.ratingOrCommentRequired);
         return;
       }
       if (commentWordCount > 1000) {
         setState("error");
-        setErrorMsg("Keep your feedback under 1000 words.");
+        setErrorMsg(t.commentTooLong);
         return;
       }
       setState("sending");
@@ -241,15 +254,11 @@ function FeedbackCard({ page, locale }: { page: string; locale: string }) {
           cooldown.start(err.retryAfterSeconds ?? 60);
           setErrorMsg(err.message);
         } else {
-          setErrorMsg(
-            err instanceof ApiError
-              ? err.message
-              : "Something went wrong — your text is preserved, try again.",
-          );
+          setErrorMsg(err instanceof ApiError ? err.message : t.genericError);
         }
       }
     },
-    [page, locale, rating, type, comment, email, commentWordCount, cooldown],
+    [page, locale, rating, type, comment, email, commentWordCount, cooldown, t],
   );
 
   const mounted = useHasMounted();
@@ -258,9 +267,9 @@ function FeedbackCard({ page, locale }: { page: string; locale: string }) {
     return (
       <Card className="flex flex-col items-center justify-center gap-2 p-6 text-center">
         <span className="inline-flex items-center rounded-lg bg-success/15 px-2 py-0.5 text-xs font-medium text-success">
-          Thanks!
+          {t.thanksBadge}
         </span>
-        <p className="text-sm text-text-secondary">Your feedback has been noted.</p>
+        <p className="text-sm text-text-secondary">{t.thanksBody}</p>
       </Card>
     );
   }
@@ -270,11 +279,9 @@ function FeedbackCard({ page, locale }: { page: string; locale: string }) {
       <Card className="flex flex-col items-center justify-center gap-3 p-6 text-center">
         <Button variant="secondary" onClick={() => setOpen(true)}>
           <MessageSquare className="h-4 w-4" />
-          Feedback
+          {t.openButton}
         </Button>
-        <p className="text-xs text-text-secondary">
-          Spot a mistake? Tell us what to improve.
-        </p>
+        <p className="text-xs text-text-secondary">{t.openSubtitle}</p>
       </Card>
 
       {/* Portaled to <body> and rendered as a fixed-position overlay instead
@@ -292,25 +299,25 @@ function FeedbackCard({ page, locale }: { page: string; locale: string }) {
             />
             <Card className="relative max-h-[90vh] w-full max-w-md overflow-y-auto p-6 text-start shadow-card">
               <div className="mb-4 flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-text-primary">Feedback</h3>
+                <h3 className="text-sm font-semibold text-text-primary">{t.modalTitle}</h3>
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  aria-label="Close"
+                  aria-label={t.close}
                   className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-text-secondary hover:bg-background hover:text-text-primary"
                 >
                   <X className="h-4 w-4" />
                 </button>
               </div>
               <form onSubmit={submit} className="grid gap-3">
-                <div className="flex items-center gap-1" role="radiogroup" aria-label="Page rating">
+                <div className="flex items-center gap-1" role="radiogroup" aria-label={t.ratingAriaLabel}>
                   {[1, 2, 3, 4, 5].map((n) => (
                     <button
                       key={n}
                       type="button"
                       role="radio"
                       aria-checked={rating === n}
-                      aria-label={`${n} star${n > 1 ? "s" : ""}`}
+                      aria-label={pluralize(locale, n, t.starAriaLabel)}
                       onClick={() => setRating(rating === n ? null : n)}
                       className="cursor-pointer rounded-md p-1 transition-colors hover:bg-electric-blue/10"
                     >
@@ -324,19 +331,19 @@ function FeedbackCard({ page, locale }: { page: string; locale: string }) {
                     </button>
                   ))}
                   <span className="ms-2 text-xs text-text-secondary">
-                    {rating ? `${rating}/5` : "Rating (optional)"}
+                    {rating ? format(t.ratingValue, { rating }) : t.ratingOptional}
                   </span>
                 </div>
                 <select
                   value={type}
                   onChange={(e) => setType(e.target.value as FeedbackType | "")}
-                  aria-label="Feedback type"
+                  aria-label={t.typeAriaLabel}
                   className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-electric-blue"
                 >
-                  <option value="">What&apos;s wrong? (optional)</option>
-                  {FEEDBACK_TYPES.map((t) => (
-                    <option key={t} value={t}>
-                      {FEEDBACK_TYPE_LABELS[t]}
+                  <option value="">{t.typePlaceholder}</option>
+                  {FEEDBACK_TYPES.map((ft) => (
+                    <option key={ft} value={ft}>
+                      {dict.feedbackTypes[ft]}
                     </option>
                   ))}
                 </select>
@@ -350,18 +357,18 @@ function FeedbackCard({ page, locale }: { page: string; locale: string }) {
                   }}
                   rows={4}
                   maxLength={2000}
-                  placeholder="What did you think of this page? (optional)"
+                  placeholder={t.commentPlaceholder}
                   className="max-h-80 w-full max-w-full resize-y rounded-xl border border-border bg-background p-3 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-electric-blue"
                 />
                 <div className="flex items-center justify-between text-[11px] text-text-secondary">
-                  <span>Feedback</span>
-                  <span>{commentWordCount}/1000 words</span>
+                  <span>{t.wordCountLabel}</span>
+                  <span>{format(t.wordCountSuffix, { count: commentWordCount })}</span>
                 </div>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Email (optional — only if you want a reply)"
+                  placeholder={t.emailPlaceholder}
                   className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-electric-blue"
                 />
                 {errorMsg && (
@@ -376,12 +383,12 @@ function FeedbackCard({ page, locale }: { page: string; locale: string }) {
                     disabled={state === "sending" || cooldown.active}
                   >
                     {state === "sending"
-                      ? "Sending…"
+                      ? t.sending
                       : cooldown.active
-                        ? cooldownLabel(cooldown.secondsLeft)
+                        ? cooldownLabel(cooldown.secondsLeft, dict.cooldown)
                         : errorMsg
-                          ? "Retry"
-                          : "Send feedback"}
+                          ? t.retry
+                          : t.send}
                   </Button>
                   <Button
                     type="button"
@@ -392,7 +399,7 @@ function FeedbackCard({ page, locale }: { page: string; locale: string }) {
                       setState("idle");
                     }}
                   >
-                    Cancel
+                    {t.cancel}
                   </Button>
                 </div>
               </form>

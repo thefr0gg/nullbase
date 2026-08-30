@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 import clsx from "clsx";
 import { Badge, Button } from "@/app/_components/ui";
+import { useInteractiveDict } from "@/lib/i18n/step-flow-context";
+import { format } from "@/lib/i18n/format";
 import { DetailPanel, EyebrowLabel, JsonBlock, PlaygroundSection, PlaygroundShell, SimulatedTag } from "./_shared";
 import {
   DEFAULT_HTTP_EXAMPLES,
@@ -158,6 +160,8 @@ export default function RequestPlayground({
   const [result, setResult] = useState<SimulatedResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const dict = useInteractiveDict();
+  const t = dict.requestPlayground;
 
   if (protocol === "websocket") {
     return <WebSocketPlayground title={title} target={defaultTarget} messages={simulatedMessages} />;
@@ -199,7 +203,8 @@ export default function RequestPlayground({
     void send({ method: ex.method, target: ex.path });
   }
 
-  const targetLabel = protocol === "graphql" ? "Endpoint" : protocol === "webhook" ? "Webhook URL" : "Target";
+  const targetLabel =
+    protocol === "graphql" ? t.targetLabelEndpoint : protocol === "webhook" ? t.targetLabelWebhook : t.targetLabelDefault;
   const curlCommand =
     protocol === "http"
       ? buildCurl({ method, target, headers: headersText, body: bodyText, isBodyless })
@@ -210,9 +215,9 @@ export default function RequestPlayground({
       <PlaygroundSection divider="bottom" tone="muted">
         <div className="mb-2 flex items-center justify-between gap-2">
           <EyebrowLabel as="span" className="mb-0">
-            {title ?? (protocol === "http" ? "Request line" : `${protocol} request`)}
+            {title ?? (protocol === "http" ? t.defaultTitleHttp : format(t.defaultTitleProtocol, { protocol }))}
           </EyebrowLabel>
-          <SimulatedTag />
+          <SimulatedTag label={dict.simulated} />
         </div>
 
         {protocol === "http" && (
@@ -252,7 +257,7 @@ export default function RequestPlayground({
             variant="primary"
             className="h-[52px] w-full min-w-0 rounded-xl px-4 text-sm sm:w-auto sm:min-w-[120px]"
           >
-            {loading ? "Sending…" : "Send request"}
+            {loading ? t.sending : t.send}
           </Button>
         </div>
 
@@ -276,28 +281,28 @@ export default function RequestPlayground({
       <div className="grid gap-4 p-4 sm:grid-cols-2 sm:p-5">
         {protocol !== "graphql" && (
           <div className="space-y-2">
-            <EyebrowLabel as="label">Headers</EyebrowLabel>
+            <EyebrowLabel as="label">{t.headersLabel}</EyebrowLabel>
             <textarea
               value={headersText}
               onChange={(e) => setHeadersText(e.target.value)}
-              placeholder="Headers — one per line as `Name: value`"
+              placeholder={t.headersPlaceholder}
               className="h-32 max-h-80 w-full max-w-full resize-y rounded-2xl border border-border bg-background p-3 font-mono text-xs text-text-primary outline-none transition focus:border-electric-blue focus:ring-3 focus:ring-electric-blue/15"
             />
           </div>
         )}
         <div className="space-y-2">
-          <EyebrowLabel as="label">{protocol === "graphql" ? "Query" : "Body"}</EyebrowLabel>
+          <EyebrowLabel as="label">{protocol === "graphql" ? t.queryLabel : t.bodyLabel}</EyebrowLabel>
           <textarea
             value={bodyText}
             onChange={(e) => setBodyText(e.target.value)}
-            placeholder={protocol === "graphql" ? "GraphQL query" : "Request body"}
+            placeholder={protocol === "graphql" ? t.bodyPlaceholderGraphql : t.bodyPlaceholderDefault}
             className="h-32 max-h-80 w-full max-w-full resize-y rounded-2xl border border-border bg-background p-3 font-mono text-xs text-text-primary outline-none transition focus:border-electric-blue focus:ring-3 focus:ring-electric-blue/15 disabled:cursor-not-allowed disabled:opacity-60"
             disabled={isBodyless}
           />
         </div>
         {protocol === "graphql" && (
           <div className="space-y-2 sm:col-span-2">
-            <EyebrowLabel as="label">Variables (JSON)</EyebrowLabel>
+            <EyebrowLabel as="label">{t.variablesLabel}</EyebrowLabel>
             <textarea
               value={variablesText}
               onChange={(e) => setVariablesText(e.target.value)}
@@ -323,6 +328,7 @@ export default function RequestPlayground({
 function ResponsePanel({ result, curl }: { result: SimulatedResult; curl?: string }) {
   const [tab, setTab] = useState<"body" | "headers">("body");
   const [copied, setCopied] = useState<"body" | "curl" | null>(null);
+  const t = useInteractiveDict().requestPlayground;
   const level: "green" | "red" | "blue" =
     result.status >= 200 && result.status < 300 ? "green" : result.status >= 400 ? "red" : "blue";
 
@@ -341,7 +347,7 @@ function ResponsePanel({ result, curl }: { result: SimulatedResult; curl?: strin
     <PlaygroundSection divider="top" tone="muted">
       <div className="mb-3 flex items-center justify-between gap-3">
         <EyebrowLabel as="span" className="mb-0">
-          Response
+          {t.responseLabel}
         </EyebrowLabel>
         <Badge color={level} className="rounded-full px-2.5 py-1">
           {result.status} {result.statusText}
@@ -358,7 +364,7 @@ function ResponsePanel({ result, curl }: { result: SimulatedResult; curl?: strin
               tab === "body" ? "bg-surface text-text-primary shadow-card" : "text-text-secondary hover:text-text-primary",
             )}
           >
-            Body
+            {t.tabBody}
           </button>
           <button
             type="button"
@@ -368,7 +374,7 @@ function ResponsePanel({ result, curl }: { result: SimulatedResult; curl?: strin
               tab === "headers" ? "bg-surface text-text-primary shadow-card" : "text-text-secondary hover:text-text-primary",
             )}
           >
-            Headers ({result.headers.length})
+            {format(t.tabHeaders, { count: result.headers.length })}
           </button>
         </div>
         <div className="flex items-center gap-2">
@@ -378,7 +384,7 @@ function ResponsePanel({ result, curl }: { result: SimulatedResult; curl?: strin
             className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-text-secondary transition-colors hover:bg-background hover:text-text-primary"
           >
             {copied === "body" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-            {copied === "body" ? "Copied" : "Copy"}
+            {copied === "body" ? t.copied : t.copy}
           </button>
           {curl && (
             <button
@@ -387,18 +393,18 @@ function ResponsePanel({ result, curl }: { result: SimulatedResult; curl?: strin
               className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-text-secondary transition-colors hover:bg-background hover:text-text-primary"
             >
               {copied === "curl" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-              {copied === "curl" ? "Copied" : "Copy as cURL"}
+              {copied === "curl" ? t.copied : t.copyCurl}
             </button>
           )}
         </div>
       </div>
 
       {tab === "body" ? (
-        <JsonBlock text={result.body || "(empty body)"} className="rounded-2xl border border-border bg-surface p-3" />
+        <JsonBlock text={result.body || t.emptyBody} className="rounded-2xl border border-border bg-surface p-3" />
       ) : (
         <DetailPanel className="overflow-hidden">
           {result.headers.length === 0 ? (
-            <p className="px-3 py-2 text-xs text-text-secondary">No headers.</p>
+            <p className="px-3 py-2 text-xs text-text-secondary">{t.noHeaders}</p>
           ) : (
             result.headers.map(([k, v]) => (
               <div key={k} className="flex items-start justify-between gap-2 border-b border-border px-3 py-2 last:border-b-0">
@@ -427,6 +433,8 @@ function WebSocketPlayground({
   const [shown, setShown] = useState<SimulatedMessage[]>([]);
   const [connecting, setConnecting] = useState(false);
   const connected = shown.length > 0;
+  const dict = useInteractiveDict();
+  const t = dict.requestPlayground;
 
   async function connect() {
     setConnecting(true);
@@ -443,16 +451,16 @@ function WebSocketPlayground({
       <PlaygroundSection divider="bottom" tone="muted">
         <div className="mb-3 flex items-center justify-between gap-2">
           <EyebrowLabel as="span" className="mb-0">
-            {title ?? "WebSocket connection"}
+            {title ?? t.wsDefaultTitle}
           </EyebrowLabel>
-          <SimulatedTag />
+          <SimulatedTag label={dict.simulated} />
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <code className="min-w-0 flex-1 truncate rounded-xl border border-border bg-background px-3.5 py-2.5 font-mono text-sm text-text-primary">
             {target}
           </code>
           <Button onClick={connect} disabled={connecting} variant="primary" className="sm:min-w-[120px]">
-            {connecting ? "Connecting…" : connected ? "Reconnect" : "Connect"}
+            {connecting ? t.wsConnecting : connected ? t.wsReconnect : t.wsConnect}
           </Button>
         </div>
       </PlaygroundSection>
@@ -469,7 +477,7 @@ function WebSocketPlayground({
                 ].join(" ")}
               >
                 <span className="mb-1 block text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-text-secondary">
-                  {m.direction === "sent" ? "Sent" : "Received"}
+                  {m.direction === "sent" ? t.sent : t.received}
                 </span>
                 {m.body}
               </li>

@@ -88,12 +88,19 @@ export default async function LocaleLayout({
   const dir = localeMeta[locale].dir;
 
   // Which locales have a translation of a given slug — keyed by the slug
-  // joined with "/" ("" for the homepage, which always exists in every
-  // locale regardless of content). Small at this site's scale (locales ×
-  // pages); lets <LanguageSwitcher> know, for the page it's rendered on,
-  // which target locales it can link straight to vs. fall back to that
-  // locale's homepage for.
-  const localesForSlug: Record<string, Locale[]> = {};
+  // joined with "/". Small at this site's scale (locales × pages); lets
+  // <LanguageSwitcher> know, for the page it's rendered on, which target
+  // locales it can link straight to vs. fall back to that locale's
+  // homepage for.
+  const localesForSlug: Record<string, Locale[]> = {
+    // These routes are hardcoded pages (app/[locale]/page.tsx,
+    // app/[locale]/privacy/page.tsx), not derived from the per-locale
+    // content tree, so getAllSlugs() below never reports them — without
+    // this they'd always read as "not translated" in the switcher even
+    // though every locale genuinely has them.
+    "": [...locales],
+    privacy: [...locales],
+  };
   for (const l of locales) {
     for (const slug of getAllSlugs(l)) {
       const key = slug.join("/");

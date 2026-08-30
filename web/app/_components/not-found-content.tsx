@@ -41,12 +41,12 @@ export function NotFoundContent({
           <EyebrowLabel as="span" className="mb-0">
             {t.responseLabel}
           </EyebrowLabel>
-          <Badge color="red">404 Not Found</Badge>
+          <Badge color="red">{t.statusBadge}</Badge>
         </div>
         <div className="p-5">
           <JsonBlock
             text={JSON.stringify(
-              { error: "Not Found", message: "No page matches this URL." },
+              { error: t.jsonError, message: t.jsonMessage },
               null,
               2,
             )}
