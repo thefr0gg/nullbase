@@ -14,7 +14,7 @@ import { AdminPagination } from "./admin-pagination";
 // only exist in the frontend content tree, not the likes table, so there's
 // no server-side search to fall back on) — acceptable since the point of
 // paginating is to stop loading every row up front.
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 16;
 
 type SortDirection = "desc" | "asc";
 
