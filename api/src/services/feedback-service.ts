@@ -47,6 +47,7 @@ export class FeedbackService {
       comment: input.comment?.trim() || undefined,
       email: input.email?.trim() || undefined,
       type: input.type,
+      locale: input.locale,
       visitorHash,
       ipHash,
     });

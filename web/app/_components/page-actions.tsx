@@ -73,11 +73,11 @@ function cooldownLabel(seconds: number): string {
   return `Try again in ${seconds}s`;
 }
 
-export function PageActions({ page }: { page: string }) {
+export function PageActions({ page, locale }: { page: string; locale: string }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <LikeCard page={page} />
-      <FeedbackCard page={page} />
+      <FeedbackCard page={page} locale={locale} />
     </div>
   );
 }
@@ -191,7 +191,7 @@ function LikeCard({ page }: { page: string }) {
 
 type FeedbackState = "idle" | "sending" | "sent" | "error";
 
-function FeedbackCard({ page }: { page: string }) {
+function FeedbackCard({ page, locale }: { page: string; locale: string }) {
   const [open, setOpen] = useState(false);
   const [alreadySent, setAlreadySent] = useState(() => readFlag(`nullbase:sent-feedback:${page}`));
   const [rating, setRating] = useState<number | null>(null);
@@ -230,6 +230,7 @@ function FeedbackCard({ page }: { page: string }) {
           comment: comment.trim() || undefined,
           email: email.trim() || undefined,
           type: type || undefined,
+          locale,
         });
         setState("sent");
         setAlreadySent(true);
@@ -248,7 +249,7 @@ function FeedbackCard({ page }: { page: string }) {
         }
       }
     },
-    [page, rating, type, comment, email, commentWordCount, cooldown],
+    [page, locale, rating, type, comment, email, commentWordCount, cooldown],
   );
 
   const mounted = useHasMounted();

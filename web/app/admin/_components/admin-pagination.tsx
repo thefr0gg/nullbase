@@ -23,26 +23,28 @@ export function AdminPagination({
   if (totalPages <= 1) return null;
 
   return (
-    <div className="flex items-center justify-between gap-3">
+    <div className="flex items-center justify-between gap-2">
       <Button
         variant="secondary"
         disabled={disabled || page <= 1}
         onClick={() => onChange(page - 1)}
-        className="text-sm"
+        aria-label="Previous page"
+        className="shrink-0 text-sm"
       >
         <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
-        Previous
+        <span className="hidden sm:inline">Previous</span>
       </Button>
-      <span className="text-xs tabular-nums text-text-secondary">
+      <span className="shrink-0 text-xs tabular-nums text-text-secondary">
         Page {page} of {totalPages}
       </span>
       <Button
         variant="secondary"
         disabled={disabled || page >= totalPages}
         onClick={() => onChange(page + 1)}
-        className="text-sm"
+        aria-label="Next page"
+        className="shrink-0 text-sm"
       >
-        Next
+        <span className="hidden sm:inline">Next</span>
         <ChevronRight className="h-4 w-4 rtl:rotate-180" />
       </Button>
     </div>

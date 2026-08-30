@@ -13,6 +13,10 @@ const submitSchema = z
     comment: z.string().max(2000).optional(),
     email: z.email().optional(),
     type: z.enum(FEEDBACK_TYPES).optional(),
+    // The visitor's locale at submission time — not tied to a fixed enum
+    // here since the API shouldn't need to know the web workspace's locale
+    // list to accept a value; it's just recorded for display.
+    locale: z.string().min(2).max(10).optional(),
   })
   .refine((v) => v.rating != null || (v.comment != null && v.comment.trim() !== ""), {
     message: "A rating or a comment is required.",
@@ -36,6 +40,7 @@ export function feedbackRoutes(services: Services): Hono<AppEnv> {
           comment: parsed.data.comment,
           email: parsed.data.email,
           type: parsed.data.type,
+          locale: parsed.data.locale,
         },
         readIdentity(c),
       );

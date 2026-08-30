@@ -99,7 +99,7 @@ export function AdminLikesPanel({ pageTitles }: { pageTitles: Record<string, str
         <button
           type="button"
           onClick={() => setSort((s) => (s === "desc" ? "asc" : "desc"))}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:text-text-primary"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:text-text-primary"
         >
           {sort === "desc" ? <ArrowDownAZ className="h-3.5 w-3.5" /> : <ArrowUpAZ className="h-3.5 w-3.5" />}
           {sort === "desc" ? "Highest first" : "Lowest first"}
@@ -116,28 +116,34 @@ export function AdminLikesPanel({ pageTitles }: { pageTitles: Record<string, str
         </p>
       ) : (
         <Card className="overflow-hidden p-0">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-background/60 text-left text-xs uppercase tracking-wide text-text-secondary">
-                <th className="px-4 py-2 font-medium">Page</th>
-                <th className="px-4 py-2 font-medium">Likes</th>
-                <th className="px-4 py-2 font-medium">Last liked</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visible.map((row) => (
-                <tr key={row.page_path} className="border-b border-border last:border-0">
-                  <td className="max-w-xs truncate px-4 py-2 text-sm font-medium text-text-primary">
-                    {pageTitles[row.page_path] ?? row.page_path}
-                  </td>
-                  <td className="px-4 py-2 tabular-nums text-text-primary">{row.count}</td>
-                  <td className="px-4 py-2 text-xs text-text-secondary">
-                    {new Date(row.updated_at).toLocaleString()}
-                  </td>
+          {/* Narrow phones can't fit all three columns — scroll horizontally
+              inside the card rather than clipping (Card's own rounded
+              corners come from overflow-hidden on the outer element above;
+              this inner div is the one that actually scrolls). */}
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[26rem] text-sm">
+              <thead>
+                <tr className="border-b border-border bg-background/60 text-left text-xs uppercase tracking-wide text-text-secondary">
+                  <th className="px-4 py-2 font-medium">Page</th>
+                  <th className="px-4 py-2 font-medium">Likes</th>
+                  <th className="px-4 py-2 font-medium">Last liked</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {visible.map((row) => (
+                  <tr key={row.page_path} className="border-b border-border last:border-0">
+                    <td className="max-w-[10rem] truncate px-4 py-2 text-sm font-medium text-text-primary sm:max-w-xs">
+                      {pageTitles[row.page_path] ?? row.page_path}
+                    </td>
+                    <td className="px-4 py-2 tabular-nums text-text-primary">{row.count}</td>
+                    <td className="whitespace-nowrap px-4 py-2 text-xs text-text-secondary">
+                      {new Date(row.updated_at).toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </Card>
       )}
 

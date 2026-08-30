@@ -134,6 +134,7 @@ const feedbackRowSchema = z.object({
   email: z.string().nullable(),
   status: z.enum(["new", "resolved", "dismissed"]),
   type: z.enum(FEEDBACK_TYPES).nullable(),
+  locale: z.string().nullable(),
   created_at: z.string(),
 });
 export type FeedbackRow = z.infer<typeof feedbackRowSchema>;

@@ -10,6 +10,7 @@ export interface FeedbackRow {
   email: string | null;
   status: "new" | "resolved" | "dismissed";
   type: FeedbackType | null;
+  locale: string | null;
   created_at: string;
 }
 
@@ -21,6 +22,10 @@ export interface FeedbackInput {
   comment?: string;
   email?: string;
   type?: FeedbackType;
+  /** Which locale the visitor was actually viewing — `pagePath` is always
+   *  the canonical (English) path, so this is the only record of which
+   *  translation the feedback is actually about. */
+  locale?: string;
   visitorHash: string;
   ipHash: string;
 }
@@ -31,8 +36,8 @@ export class FeedbackRepository {
   async insert(input: FeedbackInput): Promise<FeedbackRow> {
     await this.db
       .prepare(
-        `INSERT INTO feedback (page_path, rating, comment, email, type, visitor_hash, ip_hash, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO feedback (page_path, rating, comment, email, type, locale, visitor_hash, ip_hash, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .bind(
         input.pagePath,
@@ -40,6 +45,7 @@ export class FeedbackRepository {
         input.comment ?? null,
         input.email ?? null,
         input.type ?? null,
+        input.locale ?? null,
         input.visitorHash,
         input.ipHash,
         now(),

@@ -132,7 +132,7 @@ export function AdminFeedbackPanel({ pageTitles }: { pageTitles: Record<string, 
           options={TYPE_OPTIONS}
           onChange={(v) => selectType(v as TypeFilter)}
           ariaLabel="Filter by feedback type"
-          className="w-44"
+          className="w-full sm:w-44"
         />
       </div>
 
@@ -151,6 +151,11 @@ export function AdminFeedbackPanel({ pageTitles }: { pageTitles: Record<string, 
                   {pageTitles[item.page_path] ?? item.page_path}
                 </p>
                 <div className="flex shrink-0 items-center gap-1.5">
+                  {item.locale && (
+                    <Badge color="default" className="uppercase">
+                      {item.locale}
+                    </Badge>
+                  )}
                   {item.type && <Badge color="purple">{FEEDBACK_TYPE_LABELS[item.type]}</Badge>}
                   <Badge color={STATUS_BADGE[item.status].color}>{STATUS_BADGE[item.status].label}</Badge>
                 </div>
@@ -167,11 +172,11 @@ export function AdminFeedbackPanel({ pageTitles }: { pageTitles: Record<string, 
               )}
               {item.comment && <p className="text-sm text-text-primary">{item.comment}</p>}
               <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-text-secondary">
-                <span>
+                <span className="min-w-0 break-words">
                   {item.email ? `${item.email} · ` : ""}
                   {new Date(item.created_at).toLocaleString()}
                 </span>
-                <div className="flex gap-1.5">
+                <div className="flex shrink-0 flex-wrap gap-1.5">
                   {(["new", "resolved", "dismissed"] as const)
                     .filter((s) => s !== item.status)
                     .map((s) => (

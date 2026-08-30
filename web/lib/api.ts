@@ -104,6 +104,7 @@ export interface FeedbackInput {
   comment?: string;
   email?: string;
   type?: FeedbackType;
+  locale?: string;
 }
 
 export async function submitFeedback(input: FeedbackInput): Promise<void> {

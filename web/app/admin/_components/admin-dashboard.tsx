@@ -51,12 +51,12 @@ export function AdminDashboard({ pageTitles }: { pageTitles: Record<string, stri
             <p className="text-[0.68rem] uppercase tracking-[0.16em] text-text-secondary">Admin Panel</p>
           </div>
         </Link>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <span className="hidden text-xs text-text-secondary sm:inline">{admin.email}</span>
           <ThemeToggle dict={THEME_DICT} />
-          <Button variant="ghost" onClick={logout}>
+          <Button variant="ghost" onClick={logout} aria-label="Sign out">
             <LogOut className="h-4 w-4" />
-            Sign out
+            <span className="hidden sm:inline">Sign out</span>
           </Button>
         </div>
       </header>

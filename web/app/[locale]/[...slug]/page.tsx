@@ -5,7 +5,7 @@ import { getNextPage, slugToHref } from "@/lib/content/meta";
 import { PageFooter } from "@/app/_components/page-footer";
 import { JsonLd } from "@/app/_components/json-ld";
 import { SITE_URL } from "@/lib/site";
-import { locales, type Locale } from "@/lib/i18n/config";
+import { defaultLocale, locales, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { StepFlowLabelsProvider } from "@/lib/i18n/step-flow-context";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -65,7 +65,11 @@ export default async function SlugPage({
       page={page}
       locale={locale}
       next={next}
-      pagePath={slugToHref(locale, page.slug)}
+      // Canonical (English) path, not this locale's — likes/feedback for
+      // the same content should consolidate across translations instead of
+      // fragmenting per locale. See <PageFooter>/<PageActions> for how the
+      // actual viewing locale is still recorded on feedback separately.
+      pagePath={slugToHref(defaultLocale, page.slug)}
       nextLabel={dict.pageFooter.next}
       stepFlowLabels={dict.stepFlow}
     />
@@ -104,7 +108,7 @@ async function ContentRenderer({
       <StepFlowLabelsProvider value={stepFlowLabels}>
         <MDX />
       </StepFlowLabelsProvider>
-      <PageFooter next={next} page={pagePath} nextLabel={nextLabel} />
+      <PageFooter next={next} page={pagePath} locale={locale} nextLabel={nextLabel} />
       <JsonLd data={buildBreadcrumbList(locale, page.slug)} />
       <JsonLd data={buildTechArticle(locale, page, `${SITE_URL}${pagePath}`)} />
     </article>
