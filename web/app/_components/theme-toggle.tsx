@@ -3,13 +3,14 @@
 import { useCallback } from "react";
 import { Moon, Sun } from "lucide-react";
 import { useTheme, type Theme } from "@/lib/theme";
+import type { Dictionary } from "@/lib/i18n/types";
 
 /**
  * Light / dark toggle backed by a `data-theme` attribute on `<html>`.
  * A one-time inline script in `<head>` (see root layout) applies the theme
  * before the first paint to avoid a flash of incorrect colors.
  */
-export function ThemeToggle() {
+export function ThemeToggle({ dict }: { dict: Dictionary }) {
   const theme = useTheme();
 
   const toggle = useCallback(() => {
@@ -21,12 +22,14 @@ export function ThemeToggle() {
     document.documentElement.setAttribute("data-theme", next);
   }, []);
 
+  const label = theme === "light" ? dict.theme.enableDark : dict.theme.enableLight;
+
   return (
     <button
       type="button"
       onClick={toggle}
-      aria-label={theme === "light" ? "Enable dark mode" : "Enable light mode"}
-      title={theme === "light" ? "Enable dark mode" : "Enable light mode"}
+      aria-label={label}
+      title={label}
       className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg bg-surface text-text-secondary transition-colors hover:bg-electric-blue/10 hover:text-electric-blue"
     >
       {theme === "light" ? (

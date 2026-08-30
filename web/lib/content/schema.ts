@@ -7,7 +7,10 @@ import { z } from "zod";
  */
 export const PageFrontmatterSchema = z.object({
   title: z.string(),
-  description: z.string().optional(),
+  // Required: every page's meta description and social-share summary
+  // comes straight from this, so a page without one would silently ship
+  // thin/generic metadata instead of failing the build.
+  description: z.string().min(1),
   category: z.string().optional(),
   weight: z
     .number()

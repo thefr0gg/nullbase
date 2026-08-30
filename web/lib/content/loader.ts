@@ -3,9 +3,14 @@ import path from "node:path";
 import matter from "gray-matter";
 import type { CollectedPage, PageFrontmatter } from "./schema";
 import { PageFrontmatterSchema } from "./schema";
+import type { Locale } from "@/lib/i18n/config";
 
-/** Absolute path to the `/content` directory (the single source of truth). */
-export const CONTENT_ROOT = path.join(process.cwd(), "content");
+/** Absolute path to the content root for one locale — `content/<locale>/`.
+ *  Adding a new locale is just a new sibling directory here; nothing else
+ *  in this file changes. */
+function contentRoot(locale: Locale): string {
+  return path.join(process.cwd(), "content", locale);
+}
 
 /** A parsed content page plus its location on disk. */
 export type { CollectedPage, PageFrontmatter } from "./schema";
@@ -29,16 +34,16 @@ function readMdxFiles(dir: string, acc: string[] = []): string[] {
 }
 
 /** Convert an absolute `.mdx` path into a slug array (trailing `index` dropped). */
-function fileToSlug(fileAbs: string): string[] {
-  const rel = path.relative(CONTENT_ROOT, fileAbs).replace(/\.mdx$/, "");
+function fileToSlug(root: string, fileAbs: string): string[] {
+  const rel = path.relative(root, fileAbs).replace(/\.mdx$/, "");
   const parts = rel.split(path.sep);
   if (parts.length && parts[parts.length - 1] === "index") parts.pop();
   return parts;
 }
 
 /** Forward-slash relative path (no extension) used in dynamic `import()`. */
-function fileToRel(fileAbs: string): string {
-  const rel = path.relative(CONTENT_ROOT, fileAbs).replace(/\.mdx$/, "");
+function fileToRel(root: string, fileAbs: string): string {
+  const rel = path.relative(root, fileAbs).replace(/\.mdx$/, "");
   return rel.split(path.sep).join("/");
 }
 
@@ -51,36 +56,39 @@ function parseFrontmatter(source: string): PageFrontmatter {
   return parsed.data;
 }
 
-// Build-time cache: the content tree never changes during a single build, but
-// `getPage` is called from `generateStaticParams`, `generateMetadata` and the
-// page itself. In dev we bypass the cache so edits are picked up immediately.
-let cache: CollectedPage[] | null = null;
+// Build-time cache, keyed by locale: the content tree never changes during a
+// single build, but `getPage` is called from `generateStaticParams`,
+// `generateMetadata` and the page itself. In dev we bypass the cache so
+// edits are picked up immediately.
+const cache = new Map<Locale, CollectedPage[]>();
 
-export function getAllPages(): CollectedPage[] {
-  if (cache && process.env.NODE_ENV === "production") return cache;
-  if (!fs.existsSync(CONTENT_ROOT)) {
-    cache = [];
-    return cache;
+export function getAllPages(locale: Locale): CollectedPage[] {
+  const cached = cache.get(locale);
+  if (cached && process.env.NODE_ENV === "production") return cached;
+  const root = contentRoot(locale);
+  if (!fs.existsSync(root)) {
+    cache.set(locale, []);
+    return [];
   }
-  const files = readMdxFiles(CONTENT_ROOT);
+  const files = readMdxFiles(root);
   const pages: CollectedPage[] = files.map((file) => ({
-    slug: fileToSlug(file),
+    slug: fileToSlug(root, file),
     frontmatter: parseFrontmatter(fs.readFileSync(file, "utf-8")),
-    fileRel: fileToRel(file),
+    fileRel: fileToRel(root, file),
   }));
-  cache = pages;
+  cache.set(locale, pages);
   return pages;
 }
 
-/** Find a page by slug array, or `null` if it does not exist. */
-export function getPage(slug: string[]): CollectedPage | null {
-  const all = getAllPages();
+/** Find a page by slug array, or `null` if it does not exist in this locale. */
+export function getPage(locale: Locale, slug: string[]): CollectedPage | null {
+  const all = getAllPages(locale);
   const target = JSON.stringify(slug);
   return all.find((p) => JSON.stringify(p.slug) === target) ?? null;
 }
 
-export function getAllSlugs(): string[][] {
-  return getAllPages().map((p) => p.slug);
+export function getAllSlugs(locale: Locale): string[][] {
+  return getAllPages(locale).map((p) => p.slug);
 }
 
 /** A lightweight, serializable entry used by the client-side search bar. */
@@ -123,20 +131,22 @@ function cleanForSearch(raw: string): string {
 }
 
 /**
- * Build a search index from the content tree. Runs at build time (server-side);
- * the result is passed to the client `<SearchBar />` for instant, dependency-free
- * search across topic names and page content.
+ * Build a search index from one locale's content tree. Runs at build time
+ * (server-side); the result is passed to the client `<SearchBar />` for
+ * instant, dependency-free search across topic names and page content.
  */
-export function getSearchIndex(): SearchEntry[] {
-  if (!fs.existsSync(CONTENT_ROOT)) return [];
-  const files = readMdxFiles(CONTENT_ROOT);
+export function getSearchIndex(locale: Locale): SearchEntry[] {
+  const root = contentRoot(locale);
+  if (!fs.existsSync(root)) return [];
+  const files = readMdxFiles(root);
   return files.map((file) => {
     const source = fs.readFileSync(file, "utf-8");
     const { data, content } = matter(source);
     const parsed = PageFrontmatterSchema.safeParse(data);
+    const slug = fileToSlug(root, file);
     return {
-      slug: fileToSlug(file),
-      title: parsed.success ? parsed.data.title : fileToSlug(file).join("/"),
+      slug,
+      title: parsed.success ? parsed.data.title : slug.join("/"),
       description: parsed.success ? parsed.data.description : undefined,
       content: cleanForSearch(content),
     };

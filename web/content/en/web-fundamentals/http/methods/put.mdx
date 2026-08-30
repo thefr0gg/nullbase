@@ -1,0 +1,32 @@
+---
+title: PUT
+description: The PUT method replaces all current representations of the target resource with the request payload.
+category: HTTP
+weight: 33
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+The `PUT` method replaces all current representations of the target resource with the request payload. It is **idempotent**: sending an identical `PUT` repeatedly has the same effect as sending it once.
+
+<HttpRequest
+  defaultMethod="PUT"
+  defaultPath="/api/http/echo"
+  defaultHeaders="Content-Type: application/json"
+  defaultBody='{ "resource": "updated" }'
+/>
+
+## Properties
+
+- **Not safe**, but **idempotent**.
+- The request is **self-descriptive**: the body fully describes the new state of the resource.
+- Often used to create or update a known resource: `PUT /users/123` replaces user 123.
+
+## Example
+
+```http
+PUT /api/http/echo HTTP/1.1
+Host: nullbase.local
+Content-Type: application/json
+
+{ "resource": "updated" }

@@ -1,0 +1,34 @@
+---
+title: POST
+description: The POST method submits data to be processed by the identified resource.
+category: HTTP
+weight: 32
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+The `POST` method submits data to the identified resource for processing. Data travels in the **message body**, so `POST` is the method to use when sending a payload (typically JSON, form data, or uploads).
+
+<HttpRequest
+  defaultMethod="POST"
+  defaultPath="/api/http/echo"
+  defaultHeaders="Content-Type: application/json
+Accept: application/json"
+  defaultBody='{ "hello": "world" }'
+/>
+
+## Properties
+
+- **Not safe** — `POST` is intended to cause a change (create a resource, trigger an action).
+- **Not idempotent** — repeating a `POST` may create duplicate resources.
+- **Not cacheable** — cached `POST` responses have limited usefulness.
+
+## Example
+
+```http
+POST /api/http/echo HTTP/1.1
+Host: nullbase.local
+Content-Type: application/json
+Accept: application/json
+
+{ "hello": "world" }

@@ -1,0 +1,179 @@
+---
+title: HTTP Methods Reference
+description: All HTTP methods, their properties, and when to use each one.
+category: HTTP
+weight: 3
+---
+
+Every HTTP request names a **method** — GET, POST, PUT, and the rest — that tells the server what kind of operation to perform on a resource. The choice matters beyond semantics: it determines whether a request is safe to retry, whether a cache can store the response, and whether an intermediate proxy is even allowed to pass a body along.
+
+## All Methods at a Glance
+
+| Method | Purpose | Has Body? | Safe? | Idempotent? | Cacheable? |
+|--------|---------|-----------|-------|------------|-----------|
+| GET | Retrieve a resource | No | Yes | Yes | Yes |
+| HEAD | Get headers only (no body) | No | Yes | Yes | Yes |
+| POST | Create resource or trigger action | Yes | No | No | Maybe |
+| PUT | Replace a resource | Yes | No | Yes | No |
+| PATCH | Partially update a resource | Yes | No | No | No |
+| DELETE | Remove a resource | No | No | Yes | No |
+| OPTIONS | Describe communication options | No | Yes | Yes | No |
+| CONNECT | Establish a tunnel (proxies) | No | No | No | No |
+| TRACE | Echo the request (debugging) | No | Yes | Yes | No |
+
+---
+
+## Key Properties Explained
+
+### Safe
+A **safe** method doesn't modify data on the server. It's read-only. GET, HEAD, and OPTIONS are safe. POST, PUT, PATCH, DELETE are not.
+
+Servers should never modify data in response to a safe request.
+
+### Idempotent
+Calling an **idempotent** method multiple times has the same effect as calling it once.
+
+- **GET**: Call 1000 times, same result.
+- **PUT**: Call 1000 times, same result (the resource ends up the same).
+- **DELETE**: Call 1000 times, same result (it stays deleted).
+- **POST**: NOT idempotent. Call twice, you might create two resources.
+
+Idempotent methods are safe for retries. If your network fails and you retry, you won't accidentally do something twice.
+
+### Cacheable
+Can the response be **cached** by the browser or by intermediary caches?
+
+- GET responses: Usually cached.
+- POST responses: Only if explicit cache headers say so.
+- PUT, PATCH, DELETE: Not cached (they modify data).
+
+---
+
+## Most Common Methods
+
+### [GET](/en/web-fundamentals/http/methods/get)
+Retrieve a resource. This is the default method your browser uses.
+
+```http
+GET /api/users/42 HTTP/1.1
+Host: api.example.com
+```
+
+### [POST](/en/web-fundamentals/http/methods/post)
+Create a resource or trigger an action. Requires a body.
+
+```http
+POST /api/users HTTP/1.1
+Host: api.example.com
+Content-Type: application/json
+
+{
+  "name": "Alice",
+  "email": "alice@example.com"
+}
+```
+
+### [PUT](/en/web-fundamentals/http/methods/put)
+Replace a resource entirely. Requires the full resource in the body.
+
+```http
+PUT /api/users/42 HTTP/1.1
+Host: api.example.com
+Content-Type: application/json
+
+{
+  "id": 42,
+  "name": "Alice",
+  "email": "alice@example.com"
+}
+```
+
+### [DELETE](/en/web-fundamentals/http/methods/delete)
+Remove a resource.
+
+```http
+DELETE /api/users/42 HTTP/1.1
+Host: api.example.com
+```
+
+### [PATCH](/en/web-fundamentals/http/methods/patch)
+Partially update a resource (only send the fields you're changing).
+
+```http
+PATCH /api/users/42 HTTP/1.1
+Host: api.example.com
+Content-Type: application/json
+
+{
+  "email": "alice@example.com"
+}
+```
+
+---
+
+## Less Common Methods
+
+### [HEAD](/en/web-fundamentals/http/methods/head)
+Like GET, but the server doesn't send the response body. Useful for checking if a resource exists or its size without downloading it.
+
+### [OPTIONS](/en/web-fundamentals/http/methods/options)
+Asks the server what methods are allowed. Used for CORS preflight checks (when your browser checks if a cross-origin request is allowed).
+
+### [CONNECT](/en/web-fundamentals/http/methods/connect)
+Establishes a tunnel through a proxy. Used for HTTPS over proxies. You rarely use this directly.
+
+### [TRACE](/en/web-fundamentals/http/methods/trace)
+Echoes the request back to you (for debugging). Most servers disable this for security reasons.
+
+---
+
+## Creating vs Updating
+
+**Create (POST):**
+- Client doesn't know the ID
+- Server generates the ID
+- Request: `/api/users` with body
+- Response: `201 Created` with the new resource
+
+**Replace (PUT):**
+- Client knows the ID (in the URL)
+- Client sends the full resource
+- Request: `/api/users/42` with full body
+- Response: `200 OK` or `204 No Content`
+
+**Partially Update (PATCH):**
+- Client knows the ID
+- Client sends only changed fields
+- Request: `/api/users/42` with partial body
+- Response: `200 OK` or `204 No Content`
+
+---
+
+## Try It
+
+<HttpRequest 
+  defaultMethod="GET" 
+  defaultPath="/api/data"
+  defaultHeaders="Accept: application/json"
+/>
+
+---
+
+## Common Mistakes
+
+**Avoid:** Using GET for sensitive data — Query parameters are visible in URLs. Use POST.
+
+**Avoid:** Thinking GET can have a body — Most servers ignore it. Use POST instead.
+
+**Avoid:** Using POST for everything — POST isn't idempotent. Use GET when just fetching, PUT/PATCH for updates, DELETE for removal.
+
+**Avoid:** Not checking if a method is idempotent — Before retrying a request, check if the method is safe for retries.
+
+**Avoid:** PUT vs PATCH confusion — PUT replaces the whole thing, PATCH updates only what you send.
+
+---
+
+## See Also
+
+- **[Fundamentals](/en/web-fundamentals/http/fundamentals)** — Intro to HTTP.
+- **[Status Codes](/en/web-fundamentals/http/status-codes)** — What the server responds with.

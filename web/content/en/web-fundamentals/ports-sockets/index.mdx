@@ -1,0 +1,33 @@
+---
+title: Ports & Sockets
+description: How a single IP address serves hundreds of different applications at once.
+category: Web Fundamentals
+weight: 6
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+import { commonPortItems } from "./common-ports";
+
+An IP address identifies a *machine*. A **port** identifies *which application on that machine* a piece of traffic is for. Without ports, a server couldn't run a web server and a database and an SSH daemon on the same IP at the same time — every incoming connection would have nowhere unambiguous to go.
+
+## Port ranges
+
+Ports are 16-bit numbers, 0–65535, split into three conventional ranges:
+
+- **0–1023 — Well-known ports.** Reserved for standard services (HTTP, HTTPS, SSH, DNS...). Binding to one of these usually requires elevated privileges on the host OS.
+- **1024–49151 — Registered ports.** Assigned to specific applications by IANA on request, but not OS-restricted (MySQL's 3306, PostgreSQL's 5432).
+- **49152–65535 — Dynamic/ephemeral ports.** Not assigned to any service — the OS hands these out temporarily as the *client* side of an outgoing connection.
+
+<ItemExplorer title="Common Well-Known & Registered Ports" layout="pills" defaultId="443" items={commonPortItems} />
+
+## What a socket actually is
+
+A **socket** is the combination of an IP address, a port, and a protocol (TCP or UDP) — it's the actual endpoint an operating system uses to track a connection. A full TCP connection is uniquely identified by a pair of sockets: `(client IP, client port, server IP, server port)`.
+
+This is why a server listening on port 443 can handle thousands of simultaneous HTTPS connections from different clients — every client uses a different *ephemeral* source port, so every `(client socket, server socket)` pair is unique even though the server-side socket (its IP and 443) never changes.
+
+## See Also
+
+- **[TCP/IP](/en/web-fundamentals/tcp-ip)** — the protocol layer that ports belong to.
+- **[HTTP](/en/web-fundamentals/http)** — the application protocol that, by convention, lives on ports 80 and 443.

@@ -6,11 +6,13 @@ import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import type { SidebarNode } from "@/lib/content/meta";
 import { useHasMounted } from "@/lib/use-has-mounted";
+import type { Dictionary } from "@/lib/i18n/types";
 import { SidebarTree } from "./sidebar-tree";
 import { LogoMark } from "./logo-mark";
 
 interface Props {
   tree: SidebarNode[];
+  dict: Dictionary;
 }
 
 /**
@@ -29,7 +31,7 @@ interface Props {
  * header instead of the viewport, so the drawer only ever occupies the top
  * sliver of the screen instead of the full height.
  */
-export function MobileNav({ tree }: Props) {
+export function MobileNav({ tree, dict }: Props) {
   const [open, setOpen] = useState(false);
   const mounted = useHasMounted();
   const pathname = usePathname();
@@ -39,7 +41,7 @@ export function MobileNav({ tree }: Props) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label="Open navigation"
+        aria-label={dict.nav.openNavigation}
         className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-text-secondary transition-colors hover:bg-electric-blue/10 hover:text-electric-blue md:hidden"
       >
         <Menu className="h-4 w-4" />
@@ -65,7 +67,7 @@ export function MobileNav({ tree }: Props) {
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  aria-label="Close navigation"
+                  aria-label={dict.nav.closeNavigation}
                   className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-text-secondary hover:bg-background hover:text-text-primary"
                 >
                   <X className="h-4 w-4" />

@@ -1,4 +1,5 @@
 import { getAllPages } from "./loader";
+import type { Locale } from "@/lib/i18n/config";
 
 /** A node in the document sidebar, derived purely from the content tree. */
 export interface SidebarNode {
@@ -11,8 +12,8 @@ export interface SidebarNode {
   children: SidebarNode[];
 }
 
-export function slugToHref(slug: string[]): string {
-  return slug.length === 0 ? "/" : "/" + slug.join("/");
+export function slugToHref(locale: Locale, slug: string[]): string {
+  return slug.length === 0 ? `/${locale}` : `/${locale}/${slug.join("/")}`;
 }
 
 /**
@@ -20,8 +21,8 @@ export function slugToHref(slug: string[]): string {
  * the sidebar tree), or `null` if `slug` is the last page. Used to render the
  * "Next" navigation card at the bottom of each content page.
  */
-export function getNextPage(slug: string[]): SidebarNode | null {
-  const tree = getSidebarTree();
+export function getNextPage(locale: Locale, slug: string[]): SidebarNode | null {
+  const tree = getSidebarTree(locale);
   const flat: SidebarNode[] = [];
   const walk = (nodes: SidebarNode[]) => {
     for (const n of nodes) {
@@ -38,18 +39,20 @@ export function getNextPage(slug: string[]): SidebarNode | null {
 }
 
 /**
- * Build a nested sidebar tree from the flat list of content pages.
- * Adding a new category or page automatically appears here — no routing code
- * to maintain.
+ * Build a nested sidebar tree from the flat list of content pages in one
+ * locale. Adding a new category or page automatically appears here — no
+ * routing code to maintain. A locale with no content yet simply yields an
+ * empty tree (by design — see the i18n plan's "don't generate untranslated
+ * routes" decision).
  */
-export function getSidebarTree(): SidebarNode[] {
-  const pages = getAllPages();
+export function getSidebarTree(locale: Locale): SidebarNode[] {
+  const pages = getAllPages(locale);
   const map = new Map<string, SidebarNode>();
   for (const p of pages) {
     map.set(JSON.stringify(p.slug), {
       title: p.frontmatter.title,
       description: p.frontmatter.description,
-      href: slugToHref(p.slug),
+      href: slugToHref(locale, p.slug),
       slug: p.slug,
       weight: p.frontmatter.weight ?? 0,
       interactive: !!p.frontmatter.interactive,

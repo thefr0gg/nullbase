@@ -1,0 +1,135 @@
+---
+title: 3xx Redirection Status Codes
+description: Status codes 300–399 — the client needs to take further action to complete the request, usually by following a redirect to a new URL.
+category: HTTP
+weight: 2
+interactive: true
+interactiveType: ["MermaidDiagram"]
+---
+
+A `3xx` status tells the client the resource has moved, or that another step is needed before the request is complete — most commonly, a `Location` header pointing at the URL to follow next.
+
+## Most Common 3xx Codes
+
+| Code | Name | Temporary or Permanent? |
+|------|------|------------------------|
+| 301 | Moved Permanently | Permanent redirect |
+| 302 | Found | Temporary redirect |
+| 304 | Not Modified | Use your cached copy |
+| 307 | Temporary Redirect | Temporary, preserve method |
+| 308 | Permanent Redirect | Permanent, preserve method |
+
+---
+
+## Understanding 301 vs 302 vs 307 vs 308
+
+### 301 Moved Permanently
+The resource has moved to a new URL **permanently**. Caches and browsers remember this.
+
+```http
+HTTP/1.1 301 Moved Permanently
+Location: /new/path
+```
+
+**Use:** The old URL is gone forever. Search engines will update their index. Browsers will cache this.
+
+---
+
+### 302 Found
+The resource is at a different URL **right now**, but might move back later.
+
+```http
+HTTP/1.1 302 Found
+Location: /temporary/path
+```
+
+**Use:** Temporary redirects (maintenance, A/B testing, load balancing).
+
+**Gotcha:** Some old HTTP clients might change POST to GET after 302 (not standard, but it happens).
+
+---
+
+### 307 Temporary Redirect
+Like 302, but **guaranteed** to preserve the method.
+
+```http
+HTTP/1.1 307 Temporary Redirect
+Location: /temporary/path
+```
+
+**Use:** Temporary redirect when you need POST to stay POST.
+
+---
+
+### 308 Permanent Redirect
+Like 301, but **guaranteed** to preserve the method.
+
+```http
+HTTP/1.1 308 Permanent Redirect
+Location: /new/path
+```
+
+**Use:** Permanent redirect when you need POST to stay POST.
+
+---
+
+## 304 Not Modified
+
+The resource hasn't changed since you last checked. Use your cached copy.
+
+```http
+GET /api/data HTTP/1.1
+If-None-Match: "abc123"
+
+HTTP/1.1 304 Not Modified
+```
+
+**Use:** Conditional requests (with `If-Modified-Since` or `If-None-Match`). Saves bandwidth.
+
+---
+
+## How Redirects Work
+
+1. Client sends a request
+2. Server responds with 301/302/307/308 and a `Location` header
+3. Client (browser) automatically follows the redirect to the new URL
+4. Server at new URL returns the resource
+
+<MermaidDiagram
+  title="Redirect Flow"
+  chart={`sequenceDiagram
+    participant Client
+    participant Server
+    Client->>Server: GET /old
+    Server-->>Client: 301 Moved, Location: /new
+    Client->>Server: GET /new
+    Server-->>Client: 200 OK`}
+/>
+
+---
+
+## Other 3xx Codes
+
+- **300 Multiple Choices** — Multiple resources available (rare).
+- **303 See Other** — Like 302, but always use GET (even if you sent POST).
+- **305 Use Proxy** — Go through a proxy (obsolete).
+- **306** — Reserved (not used).
+
+---
+
+## Common Mistakes
+
+**Avoid:** Using 302 when you need 307 — 302 can change POST to GET. Use 307 if it matters.
+
+**Avoid:** Using 301 for everything — Only use 301 if the URL is gone forever. Most redirects are 302 or 307.
+
+**Avoid:** Not including Location header — 3xx responses MUST have a Location header.
+
+---
+
+## See Also
+
+- **[Status Codes Reference](/en/web-fundamentals/http/status-codes)** — All codes at a glance.
+- **[2xx Success](/en/web-fundamentals/http/status-codes/2xx)** — Request succeeded.
+- **[4xx Client Errors](/en/web-fundamentals/http/status-codes/4xx)** — Client did something wrong.
+- **[5xx Server Errors](/en/web-fundamentals/http/status-codes/5xx)** — Server failed.

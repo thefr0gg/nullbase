@@ -1,0 +1,42 @@
+---
+title: Content-Length
+description: The Content-Length header states the exact size of the message body, in bytes.
+category: HTTP
+weight: 52
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+The `Content-Length` header states the exact size of the message body, in **bytes** — not characters (a multi-byte UTF-8 string has more bytes than characters). The receiving side uses it to know exactly where the body ends, especially important when the connection stays open for more than one message.
+
+<HttpRequest
+  defaultMethod="POST"
+  defaultPath="/api/users"
+  defaultHeaders="Content-Type: application/json
+Accept: application/json"
+  defaultBody='{"name":"Alice"}'
+/>
+
+Send that request and check the **Headers** tab on the response — `content-length` is computed from the actual response body, not hardcoded, so it always matches what's really being sent.
+
+## Why it has to be correct
+
+A `Content-Length` that's too small truncates the body — the receiver stops reading early and the rest of the bytes get interpreted as the start of the *next* message on the same connection (a classic source of request-smuggling bugs). Too large, and the receiver hangs waiting for bytes that never arrive.
+
+## When you don't know the size upfront
+
+If a response is generated incrementally (streaming a large file, server-sent events) the exact byte count may not be known before the first bytes go out. `Transfer-Encoding: chunked` is the alternative for that case — the body is sent in a series of length-prefixed chunks instead of one length declared upfront. The two headers are mutually exclusive on the same message.
+
+## Example
+
+```http
+POST /api/users HTTP/1.1
+Content-Type: application/json
+Content-Length: 16
+
+{"name":"Alice"}
+```
+
+## See Also
+
+- **[Content-Type](/en/web-fundamentals/http/headers/content-type)** — what format those bytes are in.

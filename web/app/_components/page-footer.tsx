@@ -5,8 +5,9 @@ import { PageActions } from "./page-actions";
 
 interface Props {
   next: SidebarNode | null;
-  /** Canonical page path (e.g. "/http/status-codes/404") used by the API. */
+  /** Canonical page path (e.g. "/en/http/status-codes/404") used by the API. */
   page: string;
+  nextLabel: string;
 }
 
 /**
@@ -14,7 +15,7 @@ interface Props {
  * card (full width) and, below it, the interactive Like + Feedback cards
  * side by side (stacked on mobile).
  */
-export function PageFooter({ next, page }: Props) {
+export function PageFooter({ next, page, nextLabel }: Props) {
   return (
     <div className="mt-12 rounded-2xl border border-border bg-surface/40 p-4 sm:p-5">
       <div className="flex flex-col gap-4">
@@ -26,11 +27,15 @@ export function PageFooter({ next, page }: Props) {
           >
             <div>
               <span className="text-xs font-medium uppercase tracking-wide text-text-secondary">
-                Next
+                {nextLabel}
               </span>
-              <h3 className="mt-1 text-lg font-semibold text-text-primary group-hover:text-electric-blue transition-colors">
+              {/* Not a heading: this card is UI chrome rendered inside the
+                  article, not part of the page's own content outline — a
+                  real heading tag here would inject an unrelated "next page
+                  title" into the document's heading hierarchy. */}
+              <p className="mt-1 text-lg font-semibold text-text-primary group-hover:text-electric-blue transition-colors">
                 {next.title}
-              </h3>
+              </p>
               {next.description && (
                 <p className="mt-1 text-sm text-text-secondary">
                   {next.description}

@@ -7,9 +7,14 @@ import { usePathname, useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import clsx from "clsx";
 import type { SearchEntry } from "@/lib/content/loader";
+import type { Locale } from "@/lib/i18n/config";
+import type { Dictionary } from "@/lib/i18n/types";
+import { format } from "@/lib/i18n/format";
 
 interface Props {
   index: SearchEntry[];
+  locale: Locale;
+  dict: Dictionary;
 }
 
 interface IndexedEntry {
@@ -84,7 +89,7 @@ function scoreMatch(e: IndexedEntry, q: string): number {
  * Results are shown in a dropdown, ranked by where the match was found, with
  * the matched text highlighted; fully keyboard-navigable (arrows/Enter/Esc).
  */
-export function SearchBar({ index }: Props) {
+export function SearchBar({ index, locale, dict }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -92,7 +97,9 @@ export function SearchBar({ index }: Props) {
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const topic = pathname.split("/").filter(Boolean)[0] ?? null;
+  // pathname[0] is the locale segment ("/en/...") — the topic is the
+  // segment after it.
+  const topic = pathname.split("/").filter(Boolean)[1] ?? null;
   // The privacy page isn't part of the searchable content tree — searching
   // from it wouldn't scope to anything meaningful, so it's disabled there.
   const disabled = topic === "privacy";
@@ -103,12 +110,12 @@ export function SearchBar({ index }: Props) {
     () =>
       index.map((entry) => ({
         entry,
-        href: "/" + entry.slug.join("/"),
+        href: `/${locale}/${entry.slug.join("/")}`,
         titleLower: entry.title.toLowerCase(),
         descLower: (entry.description ?? "").toLowerCase(),
         contentLower: entry.content.toLowerCase(),
       })),
-    [index],
+    [index, locale],
   );
 
   const results = useMemo(() => {
@@ -171,7 +178,13 @@ export function SearchBar({ index }: Props) {
           onBlur={() => setTimeout(() => setFocused(false), 150)}
           onKeyDown={onKeyDown}
           disabled={disabled}
-          placeholder={disabled ? "Search unavailable on this page" : topic ? `Search ${topic}…` : "Search topics…"}
+          placeholder={
+            disabled
+              ? dict.search.placeholderDisabled
+              : topic
+                ? format(dict.search.placeholderTopic, { topic })
+                : dict.search.placeholderGeneric
+          }
           role="combobox"
           aria-expanded={showDropdown}
           aria-controls="search-results"
@@ -191,7 +204,7 @@ export function SearchBar({ index }: Props) {
         >
           {results.length === 0 ? (
             <li className="px-3 py-6 text-center text-sm text-text-secondary">
-              No results for &ldquo;{query.trim()}&rdquo;.
+              {format(dict.search.noResults, { query: query.trim() })}
             </li>
           ) : (
             results.map((r, i) => {

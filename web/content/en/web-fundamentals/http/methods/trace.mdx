@@ -1,0 +1,63 @@
+---
+title: TRACE
+description: Echo the received request back to the client, for diagnostics. Disabled on most servers for security.
+category: HTTP
+weight: 9
+---
+
+**TRACE** asks the server to echo back exactly what it received, so the client can see how the request looked after passing through any intermediate proxies. It's a diagnostic tool for inspecting whether something along the way rewrote headers, added tracking data, or otherwise altered the request.
+
+## Request and Response
+
+```http
+TRACE /api/users/42 HTTP/1.1
+Host: api.example.com
+X-Custom-Header: test
+```
+
+A server that implements TRACE responds with a body of type `message/http` containing the request it received, verbatim:
+
+```http
+HTTP/1.1 200 OK
+Content-Type: message/http
+
+TRACE /api/users/42 HTTP/1.1
+Host: api.example.com
+X-Custom-Header: test
+Via: 1.1 proxy.example.com
+```
+
+Comparing what you sent to what came back shows exactly what a proxy in between changed.
+
+---
+
+## Why It's Usually Disabled
+
+TRACE has a well-known security problem: **Cross-Site Tracing (XST)**. If a server has TRACE enabled, a script running in a browser (via `XMLHttpRequest`, in older browsers that allowed it) could issue a TRACE request and read back headers — including cookies — that JavaScript would normally never have access to, bypassing the `HttpOnly` cookie flag.
+
+Because of this, most production servers and browsers disable or block TRACE entirely. It has largely been superseded by dedicated diagnostic tooling that doesn't carry the same risk.
+
+---
+
+## Properties
+
+- **Safe:** Yes — doesn't modify server state, just echoes
+- **Idempotent:** Yes — calling it repeatedly has the same effect
+- **Cacheable:** No — a diagnostic echo has no meaningful cached representation
+
+---
+
+## Common Mistakes
+
+**Avoid:** Enabling TRACE in production — it's a known XST attack vector; leave it disabled unless you have a specific, controlled diagnostic need.
+
+**Avoid:** Assuming browsers will send it — modern browsers block script-initiated TRACE requests entirely.
+
+**Avoid:** Confusing TRACE with request logging — TRACE echoes back what the *server* received; it isn't a substitute for proper server-side request logging.
+
+---
+
+## See Also
+
+- **[Methods Reference](/en/web-fundamentals/http/methods)** — All HTTP methods.
+- **[CONNECT](/en/web-fundamentals/http/methods/connect)** — Another tunnel/diagnostic-only method.

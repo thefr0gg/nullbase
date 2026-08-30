@@ -1,0 +1,70 @@
+---
+title: CONNECT
+description: Establish a tunnel to a server through a proxy. Used for HTTPS traffic through HTTP proxies.
+category: HTTP
+weight: 8
+---
+
+**CONNECT** asks a proxy to open a raw TCP tunnel to a destination host and port, then get out of the way. Once the tunnel is up, the proxy just forwards bytes in both directions without looking at them.
+
+It's almost always used to carry **HTTPS through an HTTP proxy** — the client needs an end-to-end encrypted TLS connection to the origin server, so the proxy can't terminate TLS itself; it can only open the pipe and forward the encrypted traffic through it.
+
+## Request Format
+
+The target is `host:port`, not a path:
+
+```http
+CONNECT example.com:443 HTTP/1.1
+Host: example.com:443
+Proxy-Authorization: Basic dXNlcjpwYXNz
+```
+
+## Proxy Response
+
+If the proxy agrees to open the tunnel:
+
+```http
+HTTP/1.1 200 Connection Established
+```
+
+From this point on, the proxy stops interpreting the bytes it forwards as HTTP — everything sent over the connection is opaque to it, including the TLS handshake and every encrypted request/response that follows.
+
+If the proxy refuses (unauthorized, destination not allowed, etc.), it responds with a normal status code and closes the tunnel attempt:
+
+```http
+HTTP/1.1 407 Proxy Authentication Required
+Proxy-Authenticate: Basic realm="proxy"
+```
+
+---
+
+## Why It Exists
+
+Without CONNECT, an HTTP proxy would need to terminate TLS itself to forward HTTPS traffic — decrypting the client's traffic, then re-encrypting it to the origin server. That breaks end-to-end encryption and requires the client to trust the proxy's certificate.
+
+CONNECT sidesteps this: the proxy only sees `host:port`, never the encrypted contents. The TLS handshake happens directly between the client and the origin server, through the tunnel.
+
+---
+
+## Properties
+
+- **Safe:** No — opens a network connection, a side effect
+- **Idempotent:** No — repeated calls open separate tunnels
+- **Cacheable:** No — there's no representation to cache, just a byte pipe
+
+---
+
+## Common Mistakes
+
+**Avoid:** Trying to send a body — CONNECT has no meaningful request body; the target goes in the request line.
+
+**Avoid:** Expecting the proxy to inspect tunneled traffic — once the tunnel is established, the proxy can't see method, headers, or status codes inside it (that's the point).
+
+**Avoid:** Using CONNECT for plain HTTP — it exists specifically for opaque tunneling; a plain HTTP request through a proxy just uses a normal absolute-form request, no CONNECT needed.
+
+---
+
+## See Also
+
+- **[Methods Reference](/en/web-fundamentals/http/methods)** — All HTTP methods.
+- **[TRACE](/en/web-fundamentals/http/methods/trace)** — Another diagnostic-only method.
