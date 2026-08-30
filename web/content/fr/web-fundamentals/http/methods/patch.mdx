@@ -1,0 +1,112 @@
+---
+title: PATCH
+description: Mises à jour partielles d'une ressource sans remplacer la représentation entière.
+category: HTTP
+weight: 4
+---
+
+**PATCH** modifie une ressource avec des **mises à jour partielles**. Contrairement à PUT (qui remplace la ressource entière), PATCH vous permet de ne mettre à jour que les champs que vous voulez changer.
+
+## Quand utiliser PATCH
+
+- Mettre à jour un ou deux champs d'une ressource
+- Ne pas vouloir envoyer l'objet entier
+- La ressource complète est volumineuse ou change fréquemment
+
+**Exemple :** Mettre à jour l'e-mail d'un utilisateur sans envoyer tout son profil.
+
+```json
+PATCH /api/users/42 HTTP/1.1
+Host: api.example.com
+Content-Type: application/json
+
+{
+  "email": "newemail@example.com"
+}
+```
+
+---
+
+## PATCH contre PUT
+
+| Aspect | PUT | PATCH |
+|--------|-----|-------|
+| **Mises à jour** | Remplacement complet | Mise à jour partielle |
+| **Corps** | Ressource complète | Champs modifiés seulement |
+| **Idempotente** | Oui | Non (généralement) |
+| **Sûre** | Non | Non |
+
+**PUT :**
+```json
+PUT /api/users/42 HTTP/1.1
+
+{
+  "id": 42,
+  "name": "Alice",
+  "email": "alice@example.com",
+  "phone": "+1-555-0123"
+}
+```
+
+**PATCH (même résultat, moins de données) :**
+```json
+PATCH /api/users/42 HTTP/1.1
+
+{
+  "email": "alice@example.com"
+}
+```
+
+---
+
+## Content-Type est important
+
+Quand vous faites un PATCH avec du JSON, utilisez `application/json` :
+
+```http
+PATCH /api/users/42 HTTP/1.1
+Content-Type: application/json
+```
+
+Pour le **RFC 6902 JSON Patch** (un format standard pour décrire des changements), utilisez `application/json-patch+json` :
+
+```json
+PATCH /api/users/42 HTTP/1.1
+Content-Type: application/json-patch+json
+
+[
+  { "op": "replace", "path": "/email", "value": "newemail@example.com" },
+  { "op": "add", "path": "/phone", "value": "+1-555-0199" }
+]
+```
+
+---
+
+## Codes de statut de réponse
+
+- **200 OK** — Le correctif a été appliqué avec succès, le corps contient la ressource mise à jour
+- **204 No Content** — Le correctif a été appliqué, mais le serveur ne retourne pas la ressource
+- **400 Bad Request** — Le format du correctif est invalide
+- **404 Not Found** — La ressource n'existe pas
+- **409 Conflict** — Le correctif ne peut pas être appliqué (changements en conflit, incohérence de version)
+- **422 Unprocessable Entity** — Le correctif est un JSON valide mais les données sont rejetées
+
+---
+
+## Erreurs courantes
+
+**Évitez :** La confusion PATCH contre PUT — PATCH est pour les mises à jour partielles, PUT est un remplacement complet.
+
+**Évitez :** Ne pas envoyer Content-Type — Spécifiez toujours le format de votre correctif.
+
+**Évitez :** Supposer que PATCH est idempotente — Généralement, elle ne l'est pas. Appeler PATCH deux fois pourrait produire des résultats différents que de l'appeler une fois.
+
+**Évitez :** PATCH sans vérifier le statut de la réponse — Vérifiez toujours si le correctif a réussi.
+
+---
+
+## Voir aussi
+
+- **[PUT](/fr/web-fundamentals/http/methods/put)** — Remplacement complet de ressource.
+- **[POST](/fr/web-fundamentals/http/methods/post)** — Créer des ressources ou déclencher des actions.
+- **[Référence des méthodes HTTP](/fr/web-fundamentals/http/methods)** — Toutes les méthodes en un coup d'œil.

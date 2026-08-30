@@ -1,0 +1,40 @@
+---
+title: Accept
+description: L'en-tête Accept indique au serveur quels types de contenu le client peut gérer.
+category: HTTP
+weight: 54
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+L'en-tête de requête `Accept` indique au serveur quels types de médias le client est prêt à gérer dans la réponse — c'est la **négociation de contenu**. Un serveur pouvant retourner la même ressource en JSON, HTML, ou XML utilise `Accept` pour décider lequel envoyer réellement.
+
+<ItemExplorer
+  title="Valeurs Accept courantes"
+  layout="pills"
+  defaultId="json"
+  items={[
+    { id: "json", label: "application/json", color: "green", detail: "Le défaut pour les API. Presque tous les points de terminaison retournant du JSON traitent ceci comme leur format natif." },
+    { id: "html", label: "text/html", color: "blue", detail: "Ce qu'un navigateur envoie en naviguant vers une page — le serveur répond avec du HTML rendu plutôt que des données brutes." },
+    { id: "xml", label: "application/xml", color: "orange", detail: "Courant dans les API plus anciennes/d'entreprise (SOAP, certains services REST hérités) qui précèdent la domination de JSON." },
+    { id: "any", label: "*/*", color: "purple", detail: "« Je prendrai n'importe quoi. » Le défaut que la plupart des clients HTTP envoient quand vous ne définissez pas Accept explicitement." },
+  ]}
+/>
+
+## Comment c'est structuré
+
+`Accept` peut lister plusieurs types avec une valeur `q` (qualité) indiquant la préférence, `1` étant la plus haute :
+
+```http
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+```
+
+Cela signifie : préférer HTML, puis XHTML, puis XML brut à 90% de préférence, puis n'importe quoi d'autre en dernier recours.
+
+## Quand le serveur ne peut pas se conformer
+
+Si le serveur ne peut réellement produire aucun des types que le client acceptera, il doit répondre avec `406 Not Acceptable` plutôt que d'envoyer silencieusement un format que le client n'a pas demandé.
+
+## Voir aussi
+
+- **[Content-Type](/fr/web-fundamentals/http/headers/content-type)** — le miroir d'`Accept` : ce que le serveur *envoie* réellement, par rapport à ce que le client dit pouvoir *recevoir*.

@@ -1,0 +1,42 @@
+---
+title: Content-Length
+description: L'en-tête Content-Length indique la taille exacte du corps du message, en octets.
+category: HTTP
+weight: 52
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+L'en-tête `Content-Length` indique la taille exacte du corps du message, en **octets** — pas en caractères (une chaîne UTF-8 multi-octets a plus d'octets que de caractères). Le côté récepteur l'utilise pour savoir exactement où se termine le corps, ce qui est particulièrement important quand la connexion reste ouverte pour plus d'un message.
+
+<HttpRequest
+  defaultMethod="POST"
+  defaultPath="/api/users"
+  defaultHeaders="Content-Type: application/json
+Accept: application/json"
+  defaultBody='{"name":"Alice"}'
+/>
+
+Envoyez cette requête et vérifiez l'onglet **Headers** de la réponse — `content-length` est calculé à partir du corps de réponse réel, pas codé en dur, il correspond donc toujours à ce qui est réellement envoyé.
+
+## Pourquoi elle doit être correcte
+
+Un `Content-Length` trop petit tronque le corps — le récepteur arrête de lire trop tôt et le reste des octets est interprété comme le début du message *suivant* sur la même connexion (une source classique de bugs de request smuggling). Trop grand, et le récepteur reste bloqué à attendre des octets qui n'arriveront jamais.
+
+## Quand vous ne connaissez pas la taille à l'avance
+
+Si une réponse est générée de manière incrémentale (diffusion d'un gros fichier, événements envoyés par le serveur), le nombre exact d'octets peut ne pas être connu avant que les premiers octets ne partent. `Transfer-Encoding: chunked` est l'alternative pour ce cas — le corps est envoyé en une série de blocs préfixés par leur longueur au lieu d'une longueur unique déclarée à l'avance. Les deux en-têtes s'excluent mutuellement sur le même message.
+
+## Exemple
+
+```http
+POST /api/users HTTP/1.1
+Content-Type: application/json
+Content-Length: 16
+
+{"name":"Alice"}
+```
+
+## Voir aussi
+
+- **[Content-Type](/fr/web-fundamentals/http/headers/content-type)** — dans quel format sont ces octets.

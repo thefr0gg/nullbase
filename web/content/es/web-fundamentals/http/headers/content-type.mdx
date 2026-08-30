@@ -1,0 +1,38 @@
+---
+title: Content-Type
+description: El encabezado Content-Type indica el tipo de medio del recurso.
+category: HTTP
+weight: 51
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+El encabezado `Content-Type` indica el **tipo de medio** (anteriormente tipo MIME) del recurso: el formato de los bytes enviados en el cuerpo del mensaje. El servidor lo usa para indicar al cliente cómo interpretar la carga útil.
+
+<HttpRequest
+  defaultMethod="POST"
+  defaultPath="/api/http/echo"
+  defaultHeaders="Content-Type: application/json
+Accept: application/json"
+  defaultBody='{"hello":"world"}'
+/>
+
+## Tipos de medios comunes
+
+| Tipo | Ejemplo |
+|---|---|
+| JSON | `application/json` |
+| Formulario | `application/x-www-form-urlencoded` |
+| Formulario (multipart) | `multipart/form-data` |
+| HTML | `text/html` |
+| CSS | `text/css` |
+| Texto plano | `text/plain` |
+| PNG | `image/png` |
+
+## Ejemplo
+
+```http
+POST /api/http/echo HTTP/1.1
+Content-Type: application/json
+
+{"hello":"world"}

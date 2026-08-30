@@ -1,0 +1,112 @@
+---
+title: PATCH
+description: Actualizaciones parciales de un recurso sin reemplazar la representación completa.
+category: HTTP
+weight: 4
+---
+
+**PATCH** modifica un recurso con **actualizaciones parciales**. A diferencia de PUT (que reemplaza el recurso completo), PATCH te permite actualizar solo los campos que quieres cambiar.
+
+## Cuándo usar PATCH
+
+- Actualizar uno o dos campos de un recurso
+- No querer enviar el objeto completo
+- El recurso completo es grande o cambia con frecuencia
+
+**Ejemplo:** Actualizar el correo de un usuario sin enviar todo su perfil.
+
+```json
+PATCH /api/users/42 HTTP/1.1
+Host: api.example.com
+Content-Type: application/json
+
+{
+  "email": "newemail@example.com"
+}
+```
+
+---
+
+## PATCH frente a PUT
+
+| Aspecto | PUT | PATCH |
+|--------|-----|-------|
+| **Actualizaciones** | Reemplazo completo | Actualización parcial |
+| **Cuerpo** | Recurso completo | Solo campos modificados |
+| **Idempotente** | Sí | No (normalmente) |
+| **Seguro** | No | No |
+
+**PUT:**
+```json
+PUT /api/users/42 HTTP/1.1
+
+{
+  "id": 42,
+  "name": "Alice",
+  "email": "alice@example.com",
+  "phone": "+1-555-0123"
+}
+```
+
+**PATCH (mismo resultado, menos datos):**
+```json
+PATCH /api/users/42 HTTP/1.1
+
+{
+  "email": "alice@example.com"
+}
+```
+
+---
+
+## Content-Type importa
+
+Cuando hagas un PATCH con JSON, usa `application/json`:
+
+```http
+PATCH /api/users/42 HTTP/1.1
+Content-Type: application/json
+```
+
+Para **RFC 6902 JSON Patch** (un formato estándar para describir cambios), usa `application/json-patch+json`:
+
+```json
+PATCH /api/users/42 HTTP/1.1
+Content-Type: application/json-patch+json
+
+[
+  { "op": "replace", "path": "/email", "value": "newemail@example.com" },
+  { "op": "add", "path": "/phone", "value": "+1-555-0199" }
+]
+```
+
+---
+
+## Códigos de estado de respuesta
+
+- **200 OK** — El parche se aplicó con éxito, el cuerpo contiene el recurso actualizado
+- **204 No Content** — El parche se aplicó, pero el servidor no devuelve el recurso
+- **400 Bad Request** — El formato del parche es inválido
+- **404 Not Found** — El recurso no existe
+- **409 Conflict** — El parche no puede aplicarse (cambios en conflicto, discrepancia de versión)
+- **422 Unprocessable Entity** — El parche es JSON válido pero los datos son rechazados
+
+---
+
+## Errores comunes
+
+**Evita:** La confusión entre PATCH y PUT — PATCH es para actualizaciones parciales, PUT es reemplazo completo.
+
+**Evita:** No enviar Content-Type — Especifica siempre el formato de tu parche.
+
+**Evita:** Suponer que PATCH es idempotente — Normalmente no lo es. Llamar a PATCH dos veces podría producir resultados diferentes que llamarlo una vez.
+
+**Evita:** PATCH sin comprobar el estado de la respuesta — Comprueba siempre si el parche tuvo éxito.
+
+---
+
+## Ver también
+
+- **[PUT](/es/web-fundamentals/http/methods/put)** — Reemplazo completo de recurso.
+- **[POST](/es/web-fundamentals/http/methods/post)** — Crear recursos o disparar acciones.
+- **[Referencia de métodos HTTP](/es/web-fundamentals/http/methods)** — Todos los métodos de un vistazo.

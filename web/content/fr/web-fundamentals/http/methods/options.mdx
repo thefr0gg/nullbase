@@ -1,0 +1,117 @@
+---
+title: OPTIONS
+description: Décrire les options de communication pour une ressource ou un serveur. Utilisée pour les vérifications préliminaires CORS.
+category: HTTP
+weight: 7
+---
+
+**OPTIONS** demande à un serveur : « Quelles méthodes et en-têtes sont autorisés pour cette ressource ? »
+
+Elle est souvent utilisée comme **requête préliminaire CORS** (quand le navigateur vérifie si une requête cross-origin est autorisée avant d'envoyer la requête réelle).
+
+## Quand le navigateur envoie OPTIONS
+
+Quand vous faites une requête depuis une page web vers un domaine différent, et que cette requête est « complexe » (pas un GET ou POST simple), le navigateur envoie d'abord OPTIONS pour vérifier si c'est autorisé :
+
+```http
+OPTIONS /api/users HTTP/1.1
+Host: api.example.com
+Origin: https://example.com
+Access-Control-Request-Method: POST
+Access-Control-Request-Headers: Content-Type
+```
+
+Le serveur répond :
+
+```http
+HTTP/1.1 200 OK
+Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
+Access-Control-Allow-Headers: Content-Type, Authorization
+Access-Control-Max-Age: 86400
+```
+
+Si le serveur dit « oui, POST est autorisé », le navigateur envoie la vraie requête POST. S'il dit « non », le navigateur la bloque.
+
+---
+
+## Requête OPTIONS manuelle
+
+Vous pouvez aussi demander manuellement quelles méthodes sont autorisées :
+
+```http
+OPTIONS /api/users HTTP/1.1
+Host: api.example.com
+```
+
+Réponse du serveur :
+
+```http
+HTTP/1.1 200 OK
+Allow: GET, POST, OPTIONS
+```
+
+Ou avec plus de détails :
+
+```http
+HTTP/1.1 200 OK
+Allow: GET, POST, OPTIONS
+Content-Type: text/plain
+
+Cette ressource prend en charge :
+- GET : Récupérer la liste des utilisateurs
+- POST : Créer un nouvel utilisateur
+- OPTIONS : Décrire ces options
+```
+
+---
+
+## En-têtes de réponse pour CORS
+
+En répondant à une requête préliminaire CORS OPTIONS, incluez :
+
+| En-tête | Objectif | Exemple |
+|--------|---------|---------|
+| `Access-Control-Allow-Methods` | Quelles méthodes sont autorisées | `GET, POST, PUT, OPTIONS` |
+| `Access-Control-Allow-Headers` | Quels en-têtes peuvent être envoyés | `Content-Type, Authorization` |
+| `Access-Control-Allow-Origin` | Quelles origines sont autorisées | `https://example.com` ou `*` |
+| `Access-Control-Max-Age` | Mettre cette réponse en Cache pour (secondes) | `86400` |
+
+---
+
+## Propriétés
+
+- **Sûre :** Oui — ne change pas l'état du serveur
+- **Idempotente :** Oui — l'appeler plusieurs fois a le même effet
+- **Pouvant être mise en Cache :** En quelque sorte — la réponse préliminaire peut être mise en Cache via Access-Control-Max-Age
+- **A un corps ?** Généralement non, mais les serveurs peuvent inclure du texte descriptif
+
+---
+
+## Requêtes simples contre préliminaires
+
+**Requête simple** (le navigateur l'envoie directement, pas de vérification préliminaire) :
+- Méthode : GET, POST, HEAD
+- Pas d'en-têtes personnalisés
+- Content-Type est text/plain, application/x-www-form-urlencoded, ou multipart/form-data
+
+**Requête complexe** (le navigateur envoie d'abord OPTIONS) :
+- Méthode : PUT, PATCH, DELETE
+- En-têtes personnalisés comme Authorization
+- Content-Type : application/json
+
+---
+
+## Erreurs courantes
+
+**Évitez :** Oublier de gérer les requêtes OPTIONS — Si vous n'implémentez que GET et POST, retourner un 405 Method Not Allowed pour OPTIONS casse CORS.
+
+**Évitez :** Ne pas inclure Access-Control-Allow-Headers — Si le navigateur envoie un en-tête personnalisé et que le serveur ne le liste pas dans la réponse, la requête échoue.
+
+**Évitez :** Utiliser `Access-Control-Allow-Origin: *` avec des identifiants — Vous ne pouvez pas autoriser toutes les origines si des cookies/une authentification sont impliqués. Soyez spécifique.
+
+---
+
+## Voir aussi
+
+- **[CORS](/fr/web-fundamentals/http/cors)** — Partage de ressources entre origines : l'histoire complète.
+- **[Référence des méthodes](/fr/web-fundamentals/http/methods)** — Toutes les méthodes HTTP.

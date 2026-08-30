@@ -1,0 +1,81 @@
+---
+title: DELETE
+description: Supprimer une ressource du serveur.
+category: HTTP
+weight: 5
+---
+
+**DELETE** supprime une ressource. Après un DELETE réussi, la ressource a disparu.
+
+## DELETE basique
+
+```http
+DELETE /api/users/42 HTTP/1.1
+Host: api.example.com
+```
+
+**Réponse :**
+```http
+HTTP/1.1 204 No Content
+```
+
+---
+
+## Codes de statut de réponse
+
+- **200 OK** — Supprimée, le corps de la réponse contient des détails
+- **202 Accepted** — La suppression est mise en file d'attente/en cours
+- **204 No Content** — Supprimée avec succès, pas de corps
+- **404 Not Found** — La ressource n'existe pas
+- **410 Gone** — La ressource était déjà supprimée
+
+---
+
+## DELETE avec paramètres de requête
+
+Supprimer des éléments spécifiques ou avec conditions :
+
+```http
+DELETE /api/sessions/current HTTP/1.1
+
+DELETE /api/files?older_than=2023-01-01 HTTP/1.1
+```
+
+---
+
+## Idempotente et sûre ?
+
+- **Idempotente :** Oui — appeler DELETE deux fois a le même effet qu'une fois (c'est supprimé).
+- **Sûre :** Non — elle change l'état du serveur (supprime des données).
+
+---
+
+## Motifs courants
+
+**Suppression en cascade :**
+```http
+DELETE /api/users/42?cascade=true HTTP/1.1
+```
+
+**Suppression douce (marquer comme supprimé, ne pas réellement retirer) :**
+```http
+DELETE /api/users/42 HTTP/1.1
+```
+Le serveur pourrait renvoyer 200 avec `{ deleted: true, id: 42 }` plutôt que de le retirer réellement.
+
+---
+
+## Erreurs courantes
+
+**Évitez :** Supposer que DELETE est toujours instantané — Elle pourrait être mise en file d'attente (202 Accepted).
+
+**Évitez :** Ne pas utiliser 404 pour les ressources manquantes — Si la ressource a déjà disparu, retournez 404.
+
+**Évitez :** DELETE avec un corps — DELETE n'a généralement pas de corps. Incluez les conditions dans l'URL ou les en-têtes si nécessaire.
+
+---
+
+## Voir aussi
+
+- **[Référence des méthodes](/fr/web-fundamentals/http/methods)** — Toutes les méthodes HTTP.
+- **[Codes de statut](/fr/web-fundamentals/http/status-codes)** — Ce que signifie chaque code de réponse.

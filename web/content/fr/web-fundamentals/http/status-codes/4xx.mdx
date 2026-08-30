@@ -1,0 +1,196 @@
+---
+title: Codes de statut d'erreur client 4xx
+description: Codes de statut 400–499 — la requête elle-même est le problème, couvrant 400 Bad Request, 401 Unauthorized, 404 Not Found, et plus.
+category: HTTP
+weight: 3
+---
+
+Un statut `4xx` signifie que le serveur ne peut pas satisfaire la requête telle qu'envoyée — syntaxe mal formée, identifiants manquants, ou une ressource qui n'existe vraiment pas. Contrairement à un `5xx`, retenter exactement la même requête n'aidera pas tant que quelque chose n'y change pas.
+
+## Codes 4xx les plus courants
+
+| Code | Nom | Signification |
+|------|------|---------|
+| 400 | Bad Request | Le format de la requête est invalide. |
+| 401 | Unauthorized | Vous devez vous authentifier (vous connecter). |
+| 403 | Forbidden | Vous êtes authentifié mais non autorisé. |
+| 404 | Not Found | La ressource n'existe pas. |
+| 409 | Conflict | La requête entre en conflit avec l'état du serveur. |
+| 422 | Unprocessable Entity | Le format est valide mais les données sont rejetées. |
+| 429 | Too Many Requests | Vous envoyez trop de requêtes (limitation de débit). |
+
+---
+
+## Détail
+
+### 400 Bad Request
+Le format de la requête est invalide ou mal formé.
+
+```http
+POST /api/users HTTP/1.1
+Content-Type: application/json
+
+{ invalid json }
+
+HTTP/1.1 400 Bad Request
+{
+  "error": "Invalid JSON syntax"
+}
+```
+
+**Utilisation :** Quand le client envoie :
+- Du JSON invalide
+- Des champs requis manquants
+- Un mauvais type de contenu
+- Des paramètres de requête mal formés
+
+---
+
+### 401 Unauthorized
+Vous devez vous authentifier (fournir des identifiants comme un nom d'utilisateur/mot de passe ou une clé API).
+
+```http
+GET /api/admin HTTP/1.1
+
+HTTP/1.1 401 Unauthorized
+WWW-Authenticate: Bearer realm="api"
+{
+  "error": "No authentication provided"
+}
+```
+
+**Utilisation :** Quand le client ne s'est pas authentifié ou que son jeton a expiré.
+
+---
+
+### 403 Forbidden
+Vous êtes authentifié, mais vous n'avez pas la permission d'accéder à cette ressource.
+
+```http
+GET /api/admin HTTP/1.1
+Authorization: Bearer valid-token
+
+HTTP/1.1 403 Forbidden
+{
+  "error": "Insufficient permissions"
+}
+```
+
+**Utilisation :** Quand le client est connecté mais n'a pas le rôle/la permission nécessaire.
+
+---
+
+### 404 Not Found
+La ressource demandée n'existe pas.
+
+```http
+GET /api/users/999999 HTTP/1.1
+
+HTTP/1.1 404 Not Found
+{
+  "error": "User not found"
+}
+```
+
+**Utilisation :** Quand une ressource n'a jamais existé, ou a été supprimée.
+
+---
+
+### 409 Conflict
+La requête entre en conflit avec l'état actuel du serveur.
+
+```http
+PUT /api/documents/42 HTTP/1.1
+If-Match: "old-version"
+
+HTTP/1.1 409 Conflict
+{
+  "error": "The document was modified by someone else"
+}
+```
+
+**Utilisation :** Quand la version du client est périmée ou qu'une contrainte d'unicité échoue.
+
+---
+
+### 422 Unprocessable Entity
+Le format de la requête est valide (JSON valide), mais les données sont rejetées.
+
+```http
+POST /api/users HTTP/1.1
+Content-Type: application/json
+
+{
+  "name": "Alice",
+  "email": "invalid-email"
+}
+
+HTTP/1.1 422 Unprocessable Entity
+{
+  "error": "Invalid email format"
+}
+```
+
+**Utilisation :** Quand :
+- L'e-mail est invalide
+- Le numéro de téléphone a un mauvais format
+- L'âge est hors de la plage autorisée
+- L'e-mail existe déjà (violation de la logique métier)
+
+---
+
+### 429 Too Many Requests
+Vous envoyez trop de requêtes. Ralentissez.
+
+```http
+POST /api/login HTTP/1.1
+
+HTTP/1.1 429 Too Many Requests
+Retry-After: 60
+{
+  "error": "Rate limit exceeded. Try again in 60 seconds."
+}
+```
+
+**Utilisation :** Quand le client fait des requêtes trop rapidement.
+
+---
+
+## Autres codes 4xx importants
+
+- **405 Method Not Allowed** — La méthode (GET, POST, etc.) n'est pas autorisée pour cette ressource.
+- **408 Request Timeout** — Le client a pris trop de temps pour envoyer la requête.
+- **410 Gone** — La ressource a été supprimée et ne reviendra pas.
+- **415 Unsupported Media Type** — Le Content-Type n'est pas supporté.
+- **418 I'm a Teapot** — Le serveur est une théière (blague issue de la RFC 2324).
+
+---
+
+## 401 contre 403 : la différence
+
+| 401 Unauthorized | 403 Forbidden |
+|-----------------|---------------|
+| Vous devez vous connecter | Vous êtes connecté, mais pas de permission |
+| Aucun identifiant fourni ou identifiants invalides | Identifiants valides, mais rôle/permission insuffisant |
+| Inclure l'en-tête `WWW-Authenticate` | Ne pas inclure `WWW-Authenticate` |
+
+---
+
+## Erreurs courantes
+
+**Évitez :** Utiliser 404 pour des problèmes de permission — Utilisez 403, pas 404. Ne cachez pas que la ressource existe.
+
+**Évitez :** Utiliser 400 pour toutes les erreurs client — Utilisez des codes plus spécifiques : 401, 403, 404, 409, 422.
+
+**Évitez :** Ne pas inclure `Retry-After` sur 429 — Indiquez au client combien de temps attendre avant de réessayer.
+
+**Évitez :** Utiliser 401 quand vous voulez dire 403 — 401 signifie « connectez-vous », 403 signifie « pas de permission ».
+
+---
+
+## Voir aussi
+
+- **[Référence des codes de statut](/fr/web-fundamentals/http/status-codes)** — Tous les codes en un coup d'œil.
+- **[2xx Succès](/fr/web-fundamentals/http/status-codes/2xx)** — La requête a réussi.
+- **[3xx Redirection](/fr/web-fundamentals/http/status-codes/3xx)** — Le client doit faire quelque chose.
+- **[5xx Erreurs serveur](/fr/web-fundamentals/http/status-codes/5xx)** — Le serveur a échoué.

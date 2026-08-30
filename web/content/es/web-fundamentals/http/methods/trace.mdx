@@ -1,0 +1,63 @@
+---
+title: TRACE
+description: Devolver en eco al cliente la solicitud recibida, con fines de diagnóstico. Desactivada en la mayoría de los servidores por seguridad.
+category: HTTP
+weight: 9
+---
+
+**TRACE** pide al servidor que devuelva en eco exactamente lo que recibió, para que el cliente pueda ver cómo lucía la solicitud tras pasar por cualquier Proxy intermedio. Es una herramienta de diagnóstico para comprobar si algo en el camino reescribió encabezados, añadió datos de seguimiento, o alteró la solicitud de otra forma.
+
+## Solicitud y respuesta
+
+```http
+TRACE /api/users/42 HTTP/1.1
+Host: api.example.com
+X-Custom-Header: test
+```
+
+Un servidor que implementa TRACE responde con un cuerpo de tipo `message/http` que contiene la solicitud que recibió, textualmente:
+
+```http
+HTTP/1.1 200 OK
+Content-Type: message/http
+
+TRACE /api/users/42 HTTP/1.1
+Host: api.example.com
+X-Custom-Header: test
+Via: 1.1 proxy.example.com
+```
+
+Comparar lo que enviaste con lo que volvió muestra exactamente qué cambió un Proxy en el medio.
+
+---
+
+## Por qué normalmente está desactivada
+
+TRACE tiene un problema de seguridad bien conocido: **Cross-Site Tracing (XST)**. Si TRACE está activada en un servidor, un script ejecutándose en un navegador (vía `XMLHttpRequest`, en navegadores más antiguos que lo permitían) podría emitir una solicitud TRACE y leer de vuelta los encabezados devueltos — incluidas las cookies — a los que JavaScript normalmente nunca tendría acceso, saltándose el atributo de cookie `HttpOnly`.
+
+Por esto, la mayoría de servidores de producción y navegadores desactivan o bloquean TRACE por completo. Ha sido en gran parte sustituida por herramientas de diagnóstico dedicadas que no conllevan el mismo riesgo.
+
+---
+
+## Propiedades
+
+- **Segura:** Sí — no modifica el estado del servidor, solo devuelve un eco
+- **Idempotente:** Sí — llamarla repetidamente tiene el mismo efecto
+- **Cacheable:** No — un eco de diagnóstico no tiene una representación cacheable significativa
+
+---
+
+## Errores comunes
+
+**Evita:** Activar TRACE en producción — es un vector de ataque XST conocido; déjala desactivada a menos que tengas una necesidad de diagnóstico específica y controlada.
+
+**Evita:** Suponer que los navegadores la enviarán — los navegadores modernos bloquean por completo las solicitudes TRACE iniciadas por scripts.
+
+**Evita:** Confundir TRACE con el registro de solicitudes — TRACE devuelve en eco lo que el *servidor* recibió; no es un sustituto de un registro adecuado del lado del servidor.
+
+---
+
+## Ver también
+
+- **[Referencia de métodos](/es/web-fundamentals/http/methods)** — Todos los métodos HTTP.
+- **[CONNECT](/es/web-fundamentals/http/methods/connect)** — Otro método de Tunnel/diagnóstico únicamente.

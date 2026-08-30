@@ -1,0 +1,34 @@
+---
+title: Authorization
+description: L'en-tête Authorization contient les identifiants pour l'authentification HTTP.
+category: HTTP
+weight: 53
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+L'en-tête de requête `Authorization` contient les **identifiants** pour l'authentification HTTP. Le serveur valide ces identifiants et sert soit la ressource, soit répond avec `401 Unauthorized`.
+
+<HttpRequest
+  defaultMethod="GET"
+  defaultPath="/api/profile"
+  defaultHeaders="Accept: application/json
+Authorization: Bearer nullbase-demo-token"
+/>
+
+## Schémas courants
+
+| Schéma | Utilisation |
+|---|---|
+| `Basic` | `Authorization: Basic <base64(user:pass)>` |
+| `Bearer` | `Authorization: Bearer <token>` (OAuth, JWT, etc.) |
+| `Digest` | Défi-réponse avec un nonce serveur |
+
+## Exemple
+
+```http
+GET /api/http/echo HTTP/1.1
+Authorization: Bearer nullbase-demo-token
+```
+
+La valeur est envoyée sur le réseau, alors **utilisez toujours HTTPS** pour transmettre des identifiants — jamais en HTTP non chiffré.

@@ -1,0 +1,35 @@
+---
+title: DNS
+description: Cómo los nombres de dominio se convierten en direcciones IP.
+category: Web Fundamentals
+weight: 3
+interactive: true
+interactiveType: ["StepFlow", "ItemExplorer"]
+---
+
+import { resolutionSteps } from "./resolution-steps";
+import { dnsRecordItems } from "./record-types";
+
+El **DNS (Domain Name System)** es la guía telefónica de Internet. Los ordenadores se dirigen unos a otros por dirección IP, pero las personas se refieren a los sitios web por su nombre — el DNS es lo que traduce `www.example.com` a algo como `93.184.216.34`.
+
+## La resolución, paso a paso
+
+Sigue lo que ocurre la primera vez que tu navegador busca un dominio, sin nada en Cache en ningún lugar:
+
+<StepFlow title="Resolución DNS" steps={resolutionSteps} />
+
+## Tipos de registros
+
+La configuración DNS de un dominio es un conjunto de **registros**. Elige uno para ver para qué sirve:
+
+<ItemExplorer title="Tipos de registros DNS" items={dnsRecordItems} layout="grid" />
+
+## Por qué es rápido en la práctica
+
+El recorrido completo de arriba puede sonar lento, pero casi nunca ocurre realmente así — cada paso del camino cachea su respuesta durante el **TTL** (tiempo de vida) del registro. La mayoría de las búsquedas encuentran una respuesta en Cache a nivel de navegador, sistema operativo, o Resolver, y nunca llegan a un servidor raíz o de dominio de nivel superior.
+
+## Ver también
+
+- **[URL y URI](/es/web-fundamentals/urls)** — el nombre de host que resuelve el DNS es solo una parte de una URL.
+- **[TLS y HTTPS](/es/web-fundamentals/tls)** — una vez que el DNS resuelve una IP, TLS suele ser el siguiente Handshake.
+- **[HTTP](/es/web-fundamentals/http)** — una vez que el DNS resuelve una IP y se abre una conexión, HTTP es el protocolo que se transporta sobre ella.

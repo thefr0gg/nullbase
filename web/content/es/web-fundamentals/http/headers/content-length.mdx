@@ -1,0 +1,42 @@
+---
+title: Content-Length
+description: El encabezado Content-Length indica el tamaño exacto del cuerpo del mensaje, en bytes.
+category: HTTP
+weight: 52
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+El encabezado `Content-Length` indica el tamaño exacto del cuerpo del mensaje, en **bytes** — no en caracteres (una cadena UTF-8 multibyte tiene más bytes que caracteres). El lado receptor lo usa para saber exactamente dónde termina el cuerpo, algo especialmente importante cuando la conexión permanece abierta para más de un mensaje.
+
+<HttpRequest
+  defaultMethod="POST"
+  defaultPath="/api/users"
+  defaultHeaders="Content-Type: application/json
+Accept: application/json"
+  defaultBody='{"name":"Alice"}'
+/>
+
+Envía esa solicitud y comprueba la pestaña **Headers** de la respuesta — `content-length` se calcula a partir del cuerpo de respuesta real, no está fijado, así que siempre coincide con lo que realmente se envía.
+
+## Por qué tiene que ser correcto
+
+Un `Content-Length` demasiado pequeño trunca el cuerpo — el receptor deja de leer antes de tiempo y el resto de los bytes se interpretan como el inicio del *siguiente* mensaje en la misma conexión (una fuente clásica de errores de request smuggling). Demasiado grande, y el receptor queda esperando bytes que nunca llegarán.
+
+## Cuando no conoces el tamaño de antemano
+
+Si una respuesta se genera de forma incremental (transmitiendo un archivo grande, eventos enviados por el servidor), el número exacto de bytes puede no conocerse antes de que salgan los primeros bytes. `Transfer-Encoding: chunked` es la alternativa para ese caso — el cuerpo se envía en una serie de fragmentos con prefijo de longitud en lugar de una longitud única declarada de antemano. Los dos encabezados son mutuamente excluyentes en el mismo mensaje.
+
+## Ejemplo
+
+```http
+POST /api/users HTTP/1.1
+Content-Type: application/json
+Content-Length: 16
+
+{"name":"Alice"}
+```
+
+## Ver también
+
+- **[Content-Type](/es/web-fundamentals/http/headers/content-type)** — en qué formato están esos bytes.

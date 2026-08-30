@@ -1,0 +1,57 @@
+---
+title: URL et URI
+description: L'anatomie d'une URL et comment ses parties s'assemblent.
+category: Web Fundamentals
+weight: 2
+interactive: true
+interactiveType: ["UrlAnatomy", "RequestPlayground", "ItemExplorer"]
+---
+
+Une **URL** (Uniform Resource Locator) identifie une ressource et la manière d'y accéder. Chaque partie a un rôle :
+
+<UrlAnatomy
+  parts={[
+    { text: "https://", label: "schéma", color: "blue" },
+    { text: "api.example.com", label: "hôte", color: "green" },
+    { text: ":443", label: "port", color: "orange" },
+    { text: "/v1/users", label: "chemin", color: "purple" },
+    { text: "?active=true", label: "requête", color: "red" },
+    { text: "#profile", label: "fragment", color: "default" },
+  ]}
+/>
+
+- **`https`** — protocole/schéma. Indique au navigateur quel protocole utiliser pour parler à l'hôte.
+- **`api.example.com`** — hôte. Le domaine (ou l'IP) que le DNS résout pour trouver le serveur.
+- **`443`** — port. Généralement omis puisque 80 (HTTP) et 443 (HTTPS) sont les valeurs par défaut.
+- **`/v1/users`** — chemin. Quelle ressource sur le serveur vous voulez.
+- **`?active=true`** — chaîne de requête. Paramètres supplémentaires, sous forme de paires clé-valeur.
+- **`#profile`** — fragment. Côté client uniquement — jamais envoyé au serveur.
+
+## Schémas
+
+<ItemExplorer
+  title="Schémas d'URL courants"
+  layout="pills"
+  defaultId="https"
+  items={[
+    { id: "https", label: "https", color: "green", detail: "HTTP sur TLS — chiffré, le standard moderne du web." },
+    { id: "http", label: "http", color: "orange", detail: "HTTP en clair, non chiffré — tout ce qui y transite peut être lu ou altéré." },
+    { id: "ftp", label: "ftp", color: "blue", detail: "File Transfer Protocol — largement supplanté aujourd'hui par le transfert de fichiers basé sur HTTPS." },
+    { id: "mailto", label: "mailto", color: "purple", detail: "Ce n'est pas du tout une requête réseau — ouvre le client de messagerie de l'utilisateur avec un destinataire pré-rempli." },
+  ]}
+/>
+
+## Essayez
+
+Composez une requête et voyez exactement comment son URL cible est analysée :
+
+<RequestPlayground
+  protocol="http"
+  defaultTarget="/v1/users?active=true"
+  defaultHeaders="Accept: application/json"
+/>
+
+## Voir aussi
+
+- **[DNS](/fr/web-fundamentals/dns)** — comment la partie hôte d'une URL devient une adresse IP.
+- **[HTTP](/fr/web-fundamentals/http)** — le protocole sur lequel la plupart des URL du web sont récupérées.

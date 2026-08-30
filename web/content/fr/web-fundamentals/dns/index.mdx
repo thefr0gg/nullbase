@@ -1,0 +1,35 @@
+---
+title: DNS
+description: Comment les noms de domaine deviennent des adresses IP.
+category: Web Fundamentals
+weight: 3
+interactive: true
+interactiveType: ["StepFlow", "ItemExplorer"]
+---
+
+import { resolutionSteps } from "./resolution-steps";
+import { dnsRecordItems } from "./record-types";
+
+Le **DNS (Domain Name System)** est l'annuaire téléphonique d'Internet. Les ordinateurs s'adressent les uns aux autres par adresse IP, mais les gens désignent les sites par leur nom — le DNS traduit `www.example.com` en quelque chose comme `93.184.216.34`.
+
+## La résolution, étape par étape
+
+Suivez ce qui se passe la première fois que votre navigateur recherche un domaine, sans rien de mis en Cache nulle part :
+
+<StepFlow title="Résolution DNS" steps={resolutionSteps} />
+
+## Types d'enregistrements
+
+La configuration DNS d'un domaine est un ensemble d'**enregistrements**. Choisissez-en un pour voir à quoi il sert :
+
+<ItemExplorer title="Types d'enregistrements DNS" items={dnsRecordItems} layout="grid" />
+
+## Pourquoi c'est rapide en pratique
+
+Le parcours complet ci-dessus peut sembler lent, mais il ne se produit presque jamais réellement ainsi — chaque étape en chemin met sa réponse en Cache pour la durée **TTL** de l'enregistrement. La plupart des recherches trouvent une réponse en Cache au niveau du navigateur, du système d'exploitation ou du Resolver, et n'atteignent jamais un serveur racine ou un serveur de domaine de premier niveau.
+
+## Voir aussi
+
+- **[URL et URI](/fr/web-fundamentals/urls)** — le nom d'hôte que le DNS résout n'est qu'une partie d'une URL.
+- **[TLS et HTTPS](/fr/web-fundamentals/tls)** — une fois que le DNS a résolu une IP, TLS est généralement la Handshake suivante.
+- **[HTTP](/fr/web-fundamentals/http)** — une fois que le DNS a résolu une IP et qu'une connexion s'ouvre, HTTP est le protocole transporté par-dessus.

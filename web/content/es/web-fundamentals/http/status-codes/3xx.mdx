@@ -1,0 +1,135 @@
+---
+title: Códigos de estado de redirección 3xx
+description: Códigos de estado 300–399 — el cliente necesita tomar una acción adicional para completar la solicitud, normalmente siguiendo una redirección a una nueva URL.
+category: HTTP
+weight: 2
+interactive: true
+interactiveType: ["MermaidDiagram"]
+---
+
+Un estado `3xx` indica al cliente que el recurso se ha movido, o que se necesita otro paso antes de que la solicitud se complete — lo más común, un encabezado `Location` apuntando a la URL a seguir a continuación.
+
+## Códigos 3xx más comunes
+
+| Código | Nombre | ¿Temporal o permanente? |
+|------|------|------------------------|
+| 301 | Moved Permanently | Redirección permanente |
+| 302 | Found | Redirección temporal |
+| 304 | Not Modified | Usa tu copia en Cache |
+| 307 | Temporary Redirect | Temporal, se preserva el método |
+| 308 | Permanent Redirect | Permanente, se preserva el método |
+
+---
+
+## Entendiendo 301 frente a 302 frente a 307 frente a 308
+
+### 301 Moved Permanently
+El recurso se ha movido a una nueva URL **de forma permanente**. Las Caches y navegadores lo recuerdan.
+
+```http
+HTTP/1.1 301 Moved Permanently
+Location: /new/path
+```
+
+**Uso:** La URL antigua ha desaparecido para siempre. Los motores de búsqueda actualizarán su índice. Los navegadores cachearán esto.
+
+---
+
+### 302 Found
+El recurso está en una URL diferente **en este momento**, pero podría volver más tarde.
+
+```http
+HTTP/1.1 302 Found
+Location: /temporary/path
+```
+
+**Uso:** Redirecciones temporales (mantenimiento, pruebas A/B, balanceo de carga).
+
+**Cuidado:** Algunos clientes HTTP antiguos podrían cambiar POST a GET tras un 302 (no estándar, pero ocurre).
+
+---
+
+### 307 Temporary Redirect
+Como 302, pero **garantiza** preservar el método.
+
+```http
+HTTP/1.1 307 Temporary Redirect
+Location: /temporary/path
+```
+
+**Uso:** Redirección temporal cuando necesitas que POST siga siendo POST.
+
+---
+
+### 308 Permanent Redirect
+Como 301, pero **garantiza** preservar el método.
+
+```http
+HTTP/1.1 308 Permanent Redirect
+Location: /new/path
+```
+
+**Uso:** Redirección permanente cuando necesitas que POST siga siendo POST.
+
+---
+
+## 304 Not Modified
+
+El recurso no ha cambiado desde tu última comprobación. Usa tu copia en Cache.
+
+```http
+GET /api/data HTTP/1.1
+If-None-Match: "abc123"
+
+HTTP/1.1 304 Not Modified
+```
+
+**Uso:** Solicitudes condicionales (con `If-Modified-Since` o `If-None-Match`). Ahorra ancho de banda.
+
+---
+
+## Cómo funcionan las redirecciones
+
+1. El cliente envía una solicitud
+2. El servidor responde con 301/302/307/308 y un encabezado `Location`
+3. El cliente (navegador) sigue automáticamente la redirección a la nueva URL
+4. El servidor en la nueva URL devuelve el recurso
+
+<MermaidDiagram
+  title="Flujo de redirección"
+  chart={`sequenceDiagram
+    participant Client
+    participant Server
+    Client->>Server: GET /old
+    Server-->>Client: 301 Moved, Location: /new
+    Client->>Server: GET /new
+    Server-->>Client: 200 OK`}
+/>
+
+---
+
+## Otros códigos 3xx
+
+- **300 Multiple Choices** — Varios recursos disponibles (raro).
+- **303 See Other** — Como 302, pero siempre usa GET (incluso si enviaste POST).
+- **305 Use Proxy** — Pasar por un Proxy (obsoleto).
+- **306** — Reservado (no usado).
+
+---
+
+## Errores comunes
+
+**Evita:** Usar 302 cuando necesitas 307 — 302 puede cambiar POST a GET. Usa 307 si eso importa.
+
+**Evita:** Usar 301 para todo — Usa 301 solo si la URL ha desaparecido para siempre. La mayoría de las redirecciones son 302 o 307.
+
+**Evita:** No incluir el encabezado Location — Las respuestas 3xx DEBEN tener un encabezado Location.
+
+---
+
+## Ver también
+
+- **[Referencia de códigos de estado](/es/web-fundamentals/http/status-codes)** — Todos los códigos de un vistazo.
+- **[2xx Éxito](/es/web-fundamentals/http/status-codes/2xx)** — La solicitud tuvo éxito.
+- **[4xx Errores del cliente](/es/web-fundamentals/http/status-codes/4xx)** — El cliente hizo algo mal.
+- **[5xx Errores del servidor](/es/web-fundamentals/http/status-codes/5xx)** — El servidor falló.

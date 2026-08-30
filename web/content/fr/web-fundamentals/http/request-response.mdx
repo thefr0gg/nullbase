@@ -1,0 +1,24 @@
+---
+title: Modèle requête–réponse
+description: Comment une transaction HTTP circule du client au serveur et retour.
+category: HTTP
+weight: 10
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+Chaque interaction HTTP est une seule **requête** d'un client suivie d'une seule **réponse** d'un serveur. Le protocole est sans état : chaque requête est indépendante, et le serveur ne se souvient pas des requêtes précédentes (l'état est porté par le client, par exemple dans des cookies ou des jetons).
+
+<HttpRequest defaultMethod="GET" defaultPath="/api/http/echo" />
+
+## Le cycle de vie
+
+1. **Client → Requête** — Le client construit une requête : une *méthode*, la *cible de la requête* (généralement un URI), des *champs d'en-tête*, et un *corps* optionnel.
+2. **Transport** — La requête voyage sur le réseau (généralement TCP, souvent chiffré via TLS comme HTTPS).
+3. **Serveur → Réponse** — Le serveur traite la requête et retourne une réponse : un *code de statut*, des *champs d'en-tête*, et un *corps* optionnel.
+
+## Pourquoi c'est important
+
+- **Sans état** — n'importe quelle machine qui comprend HTTP peut agir comme serveur ; aucun état de session n'est supposé.
+- **Idempotence** — certaines méthodes (`GET`, `PUT`) sont idempotentes : les répéter est sûr.
+- **Possibilité de mise en Cache** — les réponses peuvent être mises en Cache (par le client, un CDN, ou un intermédiaire) pour éviter du travail redondant.

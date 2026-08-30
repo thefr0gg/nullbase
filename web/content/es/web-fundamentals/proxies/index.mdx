@@ -1,0 +1,45 @@
+---
+title: Proxies
+description: La diferencia entre un Forward Proxy y un Reverse Proxy, y cómo un Reverse Proxy enruta una solicitud.
+category: Web Fundamentals
+weight: 7
+interactive: true
+interactiveType: ["ItemExplorer", "StepFlow"]
+---
+
+import { proxyComparisonItems } from "./comparison";
+import { reverseProxySteps } from "./reverse-proxy-steps";
+
+Un **Proxy** es un servidor que se sitúa entre un cliente y el servidor al que realmente intenta llegar, reenviando tráfico en nombre de alguien. El bando que representa marca toda la diferencia:
+
+<ItemExplorer
+  title="Forward Proxy frente a Reverse Proxy"
+  layout="table"
+  tableColumns={[
+    { key: "sits", label: "Se sitúa" },
+    { key: "hides", label: "Oculta" },
+    { key: "knows", label: "Quién es consciente de él" },
+    { key: "examples", label: "Ejemplos" },
+  ]}
+  items={proxyComparisonItems}
+/>
+
+- Un **Forward Proxy** actúa en nombre del *cliente* — por eso el departamento de informática de tu empresa puede bloquear ciertos sitios, o una VPN puede hacer que tu tráfico parezca venir de otro lugar.
+- Un **Reverse Proxy** actúa en nombre del *servidor* — por eso nullbase.wiki puede estar respaldado por cualquier número de servidores reales sin que tú lo sepas nunca.
+
+## Cómo un Reverse Proxy enruta una solicitud
+
+<StepFlow title="Solicitud a través de un Reverse Proxy" steps={reverseProxySteps} />
+
+## Por qué usar uno
+
+- **Enrutamiento** — un solo nombre de host, muchos servicios backend, divididos por ruta o subdominio.
+- **Balanceo de carga** — repartir solicitudes entre varias instancias backend idénticas.
+- **Terminación TLS** — el Proxy gestiona HTTPS, así que los servicios backend solo necesitan hablar HTTP simple internamente.
+- **Cache** — servir solicitudes repetidas desde el Proxy sin llegar nunca al backend.
+- **Seguridad** — los servidores backend reales nunca son accesibles directamente desde Internet.
+
+## Ver también
+
+- **[CDN](/es/web-fundamentals/cdns)** — la Cache de un Reverse Proxy llevada a una escala global y distribuida.
+- **[TLS y HTTPS](/es/web-fundamentals/tls)** — comúnmente terminado en el Reverse Proxy en lugar de en el backend.

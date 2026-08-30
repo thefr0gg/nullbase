@@ -1,0 +1,40 @@
+---
+title: Accept
+description: El encabezado Accept indica al servidor qué tipos de contenido puede manejar el cliente.
+category: HTTP
+weight: 54
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+El encabezado de solicitud `Accept` indica al servidor qué tipos de medios está dispuesto a manejar el cliente en la respuesta — esto es **negociación de contenido**. Un servidor que puede devolver el mismo recurso como JSON, HTML, o XML usa `Accept` para decidir cuál enviar realmente.
+
+<ItemExplorer
+  title="Valores de Accept comunes"
+  layout="pills"
+  defaultId="json"
+  items={[
+    { id: "json", label: "application/json", color: "green", detail: "El predeterminado para las API. Casi todos los puntos de conexión que devuelven JSON tratan esto como su formato nativo." },
+    { id: "html", label: "text/html", color: "blue", detail: "Lo que envía un navegador al navegar a una página — el servidor responde con HTML renderizado en lugar de datos crudos." },
+    { id: "xml", label: "application/xml", color: "orange", detail: "Común en API más antiguas/empresariales (SOAP, algunos servicios REST heredados) anteriores al dominio de JSON." },
+    { id: "any", label: "*/*", color: "purple", detail: "«Aceptaré cualquier cosa.» El predeterminado que envían la mayoría de los clientes HTTP cuando no defines Accept explícitamente." },
+  ]}
+/>
+
+## Cómo se estructura
+
+`Accept` puede listar varios tipos con un valor `q` (calidad) que indica preferencia, siendo `1` el más alto:
+
+```http
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+```
+
+Esto dice: preferir HTML, luego XHTML, luego XML plano al 90% de preferencia, luego cualquier otra cosa como último recurso.
+
+## Cuando el servidor no puede cumplir
+
+Si el servidor realmente no puede producir ninguno de los tipos que el cliente aceptará, debe responder con `406 Not Acceptable` en lugar de enviar silenciosamente un formato que el cliente no pidió.
+
+## Ver también
+
+- **[Content-Type](/es/web-fundamentals/http/headers/content-type)** — el espejo de `Accept`: lo que el servidor *envía* realmente, frente a lo que el cliente dice poder *recibir*.

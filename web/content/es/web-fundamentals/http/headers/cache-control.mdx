@@ -1,0 +1,38 @@
+---
+title: Cache-Control
+description: El encabezado Cache-Control dirige cómo (y si) se cachea una respuesta.
+category: HTTP
+weight: 55
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+El encabezado `Cache-Control` transporta directivas que controlan el comportamiento de Cache — para navegadores, y para cualquier cosa entre el cliente y el servidor de origen, como una [CDN](/es/web-fundamentals/cdns). Puede aparecer tanto en solicitudes como en respuestas; es en las respuestas donde más importa.
+
+<ItemExplorer
+  title="Directivas comunes"
+  layout="grid"
+  items={[
+    { id: "no-store", label: "no-store", color: "red", detail: "Nunca cachear esta respuesta en ningún lugar, punto. Se usa para cualquier cosa sensible — tokens de autenticación, datos personales." },
+    { id: "no-cache", label: "no-cache", color: "orange", detail: "Puede cachearse, pero debe revalidarse con el origen antes de cada uso — no es «no cachear» a pesar del nombre." },
+    { id: "private", label: "private", color: "orange", detail: "Cacheable solo en el propio navegador del usuario final, no por una Cache compartida como una CDN o Proxy intermedio." },
+    { id: "public", label: "public", color: "green", detail: "Cacheable por cualquier Cache en el camino, incluidas las Caches compartidas/CDN — el caso común para los recursos estáticos." },
+    { id: "max-age", label: "max-age=N", color: "blue", detail: "Cuántos segundos se considera fresca la respuesta antes de necesitar revalidación. max-age=3600 = 1 hora." },
+    { id: "must-revalidate", label: "must-revalidate", color: "purple", detail: "Una vez que la respuesta está obsoleta, debe revalidarse con el origen antes de reutilizarse — sin servir una versión obsoleta mientras se comprueba." },
+  ]}
+/>
+
+## Una respuesta típica
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+Cache-Control: public, max-age=3600, must-revalidate
+```
+
+Cacheable por cualquiera, fresca durante una hora, y una vez pasada esa hora, no se sirve de nuevo sin comprobar primero con el origen.
+
+## Ver también
+
+- **[CDN](/es/web-fundamentals/cdns)** — el flujo de «Cache Hit / Cache Miss» que dirige este encabezado desde el lado de la respuesta.
+- **[Códigos de estado 3xx](/es/web-fundamentals/http/status-codes/3xx)** — `304 Not Modified` es lo que parece una revalidación exitosa.

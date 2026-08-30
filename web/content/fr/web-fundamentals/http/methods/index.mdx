@@ -1,0 +1,179 @@
+---
+title: Référence des méthodes HTTP
+description: Toutes les méthodes HTTP, leurs propriétés, et quand utiliser chacune.
+category: HTTP
+weight: 3
+---
+
+Chaque requête HTTP nomme une **méthode** — GET, POST, PUT, et les autres — qui indique au serveur quel type d'opération effectuer sur une ressource. Le choix compte au-delà de la sémantique : il détermine si une requête est sûre à retenter, si un Cache peut stocker la réponse, et si un Proxy intermédiaire est même autorisé à transmettre un corps.
+
+## Toutes les méthodes en un coup d'œil
+
+| Méthode | Objectif | A un corps ? | Sûre ? | Idempotente ? | Pouvant être mise en Cache ? |
+|--------|---------|-----------|-------|------------|-----------|
+| GET | Récupérer une ressource | Non | Oui | Oui | Oui |
+| HEAD | Obtenir les en-têtes seulement (pas de corps) | Non | Oui | Oui | Oui |
+| POST | Créer une ressource ou déclencher une action | Oui | Non | Non | Peut-être |
+| PUT | Remplacer une ressource | Oui | Non | Oui | Non |
+| PATCH | Mettre à jour partiellement une ressource | Oui | Non | Non | Non |
+| DELETE | Supprimer une ressource | Non | Non | Oui | Non |
+| OPTIONS | Décrire les options de communication | Non | Oui | Oui | Non |
+| CONNECT | Établir un tunnel (Proxies) | Non | Non | Non | Non |
+| TRACE | Renvoyer la requête en écho (débogage) | Non | Oui | Oui | Non |
+
+---
+
+## Explication des propriétés clés
+
+### Sûre
+Une méthode **sûre** ne modifie pas les données sur le serveur. Elle est en lecture seule. GET, HEAD, et OPTIONS sont sûres. POST, PUT, PATCH, DELETE ne le sont pas.
+
+Les serveurs ne doivent jamais modifier des données en réponse à une requête sûre.
+
+### Idempotente
+Appeler une méthode **idempotente** plusieurs fois a le même effet que l'appeler une seule fois.
+
+- **GET** : Appelez-la 1000 fois, même résultat.
+- **PUT** : Appelez-la 1000 fois, même résultat (la ressource finit dans le même état).
+- **DELETE** : Appelez-la 1000 fois, même résultat (elle reste supprimée).
+- **POST** : **N'est pas** idempotente. Appelez-la deux fois, vous pourriez créer deux ressources.
+
+Les méthodes idempotentes sont sûres pour les nouvelles tentatives. Si votre réseau échoue et que vous réessayez, vous ne ferez pas accidentellement quelque chose deux fois.
+
+### Pouvant être mise en Cache
+La réponse peut-elle être **mise en Cache** par le navigateur ou des Caches intermédiaires ?
+
+- Réponses GET : Généralement mises en Cache.
+- Réponses POST : Seulement si des en-têtes de Cache explicites le disent.
+- PUT, PATCH, DELETE : Non mises en Cache (elles modifient des données).
+
+---
+
+## Méthodes les plus courantes
+
+### [GET](/fr/web-fundamentals/http/methods/get)
+Récupérer une ressource. C'est la méthode par défaut que votre navigateur utilise.
+
+```http
+GET /api/users/42 HTTP/1.1
+Host: api.example.com
+```
+
+### [POST](/fr/web-fundamentals/http/methods/post)
+Créer une ressource ou déclencher une action. Nécessite un corps.
+
+```http
+POST /api/users HTTP/1.1
+Host: api.example.com
+Content-Type: application/json
+
+{
+  "name": "Alice",
+  "email": "alice@example.com"
+}
+```
+
+### [PUT](/fr/web-fundamentals/http/methods/put)
+Remplacer une ressource entièrement. Nécessite la ressource complète dans le corps.
+
+```http
+PUT /api/users/42 HTTP/1.1
+Host: api.example.com
+Content-Type: application/json
+
+{
+  "id": 42,
+  "name": "Alice",
+  "email": "alice@example.com"
+}
+```
+
+### [DELETE](/fr/web-fundamentals/http/methods/delete)
+Supprimer une ressource.
+
+```http
+DELETE /api/users/42 HTTP/1.1
+Host: api.example.com
+```
+
+### [PATCH](/fr/web-fundamentals/http/methods/patch)
+Mettre à jour partiellement une ressource (n'envoyer que les champs que vous changez).
+
+```http
+PATCH /api/users/42 HTTP/1.1
+Host: api.example.com
+Content-Type: application/json
+
+{
+  "email": "alice@example.com"
+}
+```
+
+---
+
+## Méthodes moins courantes
+
+### [HEAD](/fr/web-fundamentals/http/methods/head)
+Comme GET, mais le serveur n'envoie pas le corps de la réponse. Utile pour vérifier si une ressource existe ou sa taille sans la télécharger.
+
+### [OPTIONS](/fr/web-fundamentals/http/methods/options)
+Demande au serveur quelles méthodes sont autorisées. Utilisée pour les vérifications préliminaires CORS (quand votre navigateur vérifie si une requête cross-origin est autorisée).
+
+### [CONNECT](/fr/web-fundamentals/http/methods/connect)
+Établit un tunnel à travers un Proxy. Utilisée pour HTTPS à travers des Proxies. Vous l'utilisez rarement directement.
+
+### [TRACE](/fr/web-fundamentals/http/methods/trace)
+Vous renvoie la requête en écho (pour le débogage). La plupart des serveurs désactivent ceci pour des raisons de sécurité.
+
+---
+
+## Créer contre mettre à jour
+
+**Créer (POST) :**
+- Le client ne connaît pas l'identifiant
+- Le serveur génère l'identifiant
+- Requête : `/api/users` avec un corps
+- Réponse : `201 Created` avec la nouvelle ressource
+
+**Remplacer (PUT) :**
+- Le client connaît l'identifiant (dans l'URL)
+- Le client envoie la ressource complète
+- Requête : `/api/users/42` avec un corps complet
+- Réponse : `200 OK` ou `204 No Content`
+
+**Mettre à jour partiellement (PATCH) :**
+- Le client connaît l'identifiant
+- Le client n'envoie que les champs modifiés
+- Requête : `/api/users/42` avec un corps partiel
+- Réponse : `200 OK` ou `204 No Content`
+
+---
+
+## Essayez
+
+<HttpRequest 
+  defaultMethod="GET" 
+  defaultPath="/api/data"
+  defaultHeaders="Accept: application/json"
+/>
+
+---
+
+## Erreurs courantes
+
+**Évitez :** Utiliser GET pour des données sensibles — Les paramètres de requête sont visibles dans les URL. Utilisez POST.
+
+**Évitez :** Penser que GET peut avoir un corps — La plupart des serveurs l'ignorent. Utilisez POST à la place.
+
+**Évitez :** Utiliser POST pour tout — POST n'est pas idempotente. Utilisez GET pour juste récupérer, PUT/PATCH pour les mises à jour, DELETE pour la suppression.
+
+**Évitez :** Ne pas vérifier si une méthode est idempotente — Avant de retenter une requête, vérifiez si la méthode est sûre pour les nouvelles tentatives.
+
+**Évitez :** La confusion PUT contre PATCH — PUT remplace tout, PATCH ne met à jour que ce que vous envoyez.
+
+---
+
+## Voir aussi
+
+- **[Fondamentaux](/fr/web-fundamentals/http/fundamentals)** — Introduction à HTTP.
+- **[Codes de statut](/fr/web-fundamentals/http/status-codes)** — Ce que le serveur répond.

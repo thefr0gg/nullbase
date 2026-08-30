@@ -1,0 +1,117 @@
+---
+title: OPTIONS
+description: Describir las opciones de comunicación para un recurso o servidor. Se usa para las comprobaciones preliminares de CORS.
+category: HTTP
+weight: 7
+---
+
+**OPTIONS** pregunta a un servidor: «¿Qué métodos y encabezados están permitidos para este recurso?»
+
+A menudo se usa como una **solicitud preliminar de CORS** (cuando el navegador comprueba si una solicitud de origen cruzado está permitida antes de enviar la solicitud real).
+
+## Cuándo el navegador envía OPTIONS
+
+Cuando haces una solicitud desde una página web a un dominio diferente, y esa solicitud es «compleja» (no un GET o POST simple), el navegador primero envía OPTIONS para comprobar si está permitida:
+
+```http
+OPTIONS /api/users HTTP/1.1
+Host: api.example.com
+Origin: https://example.com
+Access-Control-Request-Method: POST
+Access-Control-Request-Headers: Content-Type
+```
+
+El servidor responde:
+
+```http
+HTTP/1.1 200 OK
+Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
+Access-Control-Allow-Headers: Content-Type, Authorization
+Access-Control-Max-Age: 86400
+```
+
+Si el servidor dice «sí, POST está permitido», el navegador envía la solicitud POST real. Si dice «no», el navegador la bloquea.
+
+---
+
+## Solicitud OPTIONS manual
+
+También puedes preguntar manualmente qué métodos están permitidos:
+
+```http
+OPTIONS /api/users HTTP/1.1
+Host: api.example.com
+```
+
+Respuesta del servidor:
+
+```http
+HTTP/1.1 200 OK
+Allow: GET, POST, OPTIONS
+```
+
+O con más detalle:
+
+```http
+HTTP/1.1 200 OK
+Allow: GET, POST, OPTIONS
+Content-Type: text/plain
+
+Este recurso soporta:
+- GET: Obtener la lista de usuarios
+- POST: Crear un nuevo usuario
+- OPTIONS: Describir estas opciones
+```
+
+---
+
+## Encabezados de respuesta para CORS
+
+Al responder a una solicitud preliminar CORS OPTIONS, incluye:
+
+| Encabezado | Propósito | Ejemplo |
+|--------|---------|---------|
+| `Access-Control-Allow-Methods` | Qué métodos están permitidos | `GET, POST, PUT, OPTIONS` |
+| `Access-Control-Allow-Headers` | Qué encabezados pueden enviarse | `Content-Type, Authorization` |
+| `Access-Control-Allow-Origin` | Qué orígenes están permitidos | `https://example.com` o `*` |
+| `Access-Control-Max-Age` | Cachear esta respuesta durante (segundos) | `86400` |
+
+---
+
+## Propiedades
+
+- **Segura:** Sí — no cambia el estado del servidor
+- **Idempotente:** Sí — llamarla varias veces tiene el mismo efecto
+- **Cacheable:** En cierto modo — la respuesta preliminar puede cachearse vía Access-Control-Max-Age
+- **¿Tiene cuerpo?** Normalmente no, pero los servidores pueden incluir texto descriptivo
+
+---
+
+## Solicitudes simples frente a preliminares
+
+**Solicitud simple** (el navegador la envía directamente, sin comprobación preliminar):
+- Método: GET, POST, HEAD
+- Sin encabezados personalizados
+- Content-Type es text/plain, application/x-www-form-urlencoded, o multipart/form-data
+
+**Solicitud compleja** (el navegador envía OPTIONS primero):
+- Método: PUT, PATCH, DELETE
+- Encabezados personalizados como Authorization
+- Content-Type: application/json
+
+---
+
+## Errores comunes
+
+**Evita:** Olvidar gestionar las solicitudes OPTIONS — Si solo implementas GET y POST, devolver un 405 Method Not Allowed para OPTIONS rompe CORS.
+
+**Evita:** No incluir Access-Control-Allow-Headers — Si el navegador envía un encabezado personalizado y el servidor no lo lista en la respuesta, la solicitud falla.
+
+**Evita:** Usar `Access-Control-Allow-Origin: *` con credenciales — No puedes permitir todos los orígenes si hay cookies/autenticación implicadas. Sé específico.
+
+---
+
+## Ver también
+
+- **[CORS](/es/web-fundamentals/http/cors)** — Compartición de recursos de origen cruzado: la historia completa.
+- **[Referencia de métodos](/es/web-fundamentals/http/methods)** — Todos los métodos HTTP.

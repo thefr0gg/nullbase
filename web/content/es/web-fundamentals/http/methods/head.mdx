@@ -1,0 +1,95 @@
+---
+title: HEAD
+description: Como GET, pero sin el cuerpo de la respuesta. Obtiene solo los encabezados.
+category: HTTP
+weight: 6
+---
+
+**HEAD** es idéntico a **GET**, salvo que el servidor devuelve solo los encabezados — **sin cuerpo de respuesta**.
+
+Usa HEAD cuando quieras metadatos sobre un recurso sin descargar el contenido completo.
+
+## HEAD frente a GET
+
+| Aspecto | GET | HEAD |
+|--------|-----|------|
+| **Cuerpo de la respuesta** | Sí | No |
+| **Encabezados** | Sí | Sí |
+| **Caso de uso** | Descargar recurso | Comprobar propiedades del recurso |
+| **Ancho de banda** | Tamaño completo | Mínimo |
+
+---
+
+## Usos comunes
+
+**Comprobar si un recurso existe:**
+```http
+HEAD /api/users/42 HTTP/1.1
+```
+
+Si devuelve `200 OK`, el recurso existe. Si `404`, no existe.
+
+**Comprobar el tamaño de un archivo antes de descargarlo:**
+```http
+HEAD /downloads/large-file.zip HTTP/1.1
+```
+
+Mira el encabezado `Content-Length` para ver su tamaño, y luego decide si descargarlo.
+
+**Comprobar si un recurso fue modificado:**
+```http
+HEAD /api/data HTTP/1.1
+```
+
+Mira los encabezados `Last-Modified` o `ETag`. Si coinciden con tu Cache, no necesitas descargarlo.
+
+---
+
+## Códigos de estado de respuesta
+
+Igual que GET:
+- **200 OK** — El recurso existe
+- **404 Not Found** — El recurso no existe
+- **410 Gone** — El recurso fue eliminado
+- **304 Not Modified** — El recurso no ha cambiado (si enviaste If-Modified-Since o If-None-Match)
+
+---
+
+## Encabezados de respuesta
+
+Los mismos encabezados que GET:
+
+```http
+HEAD /api/users/42 HTTP/1.1
+
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 256
+Last-Modified: Mon, 28 Aug 2023 12:00:00 GMT
+ETag: "abc123"
+```
+
+Fíjate: no sigue ningún cuerpo.
+
+---
+
+## Propiedades
+
+- **Segura:** Sí — no cambia el estado del servidor
+- **Idempotente:** Sí — llamarla varias veces tiene el mismo efecto
+- **Cacheable:** Sí — las respuestas pueden cachearse como GET
+
+---
+
+## Errores comunes
+
+**Evita:** Suponer que HEAD y GET devuelven encabezados idénticos — Algunos servidores son perezosos y no implementan HEAD correctamente.
+
+**Evita:** No esperar la ausencia de cuerpo — Si envías HEAD y obtienes un cuerpo, tu cliente HTTP podría estar defectuoso (o el servidor lo está).
+
+---
+
+## Ver también
+
+- **[GET](/es/web-fundamentals/http/methods/get)** — Obtener un recurso.
+- **[Solicitudes condicionales](/es/web-fundamentals/http/conditional)** — Usar HEAD con If-Modified-Since e If-None-Match.

@@ -1,0 +1,34 @@
+---
+title: POST
+description: La méthode POST soumet des données à traiter par la ressource identifiée.
+category: HTTP
+weight: 32
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+La méthode `POST` soumet des données à la ressource identifiée pour traitement. Les données voyagent dans le **corps du message**, `POST` est donc la méthode à utiliser pour envoyer une charge utile (typiquement du JSON, des données de formulaire, ou des envois de fichiers).
+
+<HttpRequest
+  defaultMethod="POST"
+  defaultPath="/api/http/echo"
+  defaultHeaders="Content-Type: application/json
+Accept: application/json"
+  defaultBody='{ "hello": "world" }'
+/>
+
+## Propriétés
+
+- **Pas sûre** — `POST` est destinée à provoquer un changement (créer une ressource, déclencher une action).
+- **Pas idempotente** — répéter un `POST` peut créer des ressources dupliquées.
+- **Pas pouvant être mise en Cache** — les réponses `POST` mises en Cache ont une utilité limitée.
+
+## Exemple
+
+```http
+POST /api/http/echo HTTP/1.1
+Host: nullbase.local
+Content-Type: application/json
+Accept: application/json
+
+{ "hello": "world" }

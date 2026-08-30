@@ -1,0 +1,35 @@
+---
+title: GET
+description: El método GET solicita una representación del recurso especificado.
+category: HTTP
+weight: 31
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+El método `GET` solicita una representación del recurso especificado. Los datos se envían al servidor mediante **parámetros de consulta** en la URL (la línea de solicitud y los encabezados). Una solicitud `GET` no tiene **ningún cuerpo** según la especificación.
+
+<HttpRequest defaultMethod="GET" defaultPath="/api/http/echo?hello=world" />
+
+## Propiedades
+
+- **Segura** — las solicitudes `GET` no deberían cambiar el estado del servidor.
+- **Idempotente** — hacer la misma solicitud `GET` muchas veces produce el mismo resultado.
+- **Cacheable** — las respuestas son cacheables (a menos que los encabezados indiquen lo contrario).
+
+## Ejemplo
+
+```http
+GET /api/http/echo?hello=world HTTP/1.1
+Host: nullbase.local
+Accept: application/json
+```
+
+### `GET` frente a `POST`
+
+| Aspecto | GET | POST |
+|---|---|---|
+| Ubicación de los datos | Cadena de consulta (`?key=value`) | Cuerpo |
+| Cuerpo | Ninguno | Sí |
+| Cacheable | Sí | No (por defecto) |
+| Se puede marcar como favorito | Sí | No |

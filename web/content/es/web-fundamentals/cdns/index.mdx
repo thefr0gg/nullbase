@@ -1,0 +1,38 @@
+---
+title: CDN
+description: Cómo una red de distribución de contenido (CDN) sirve contenido desde servidores cercanos al usuario en lugar de un único origen lejano.
+category: Web Fundamentals
+weight: 8
+interactive: true
+interactiveType: ["StepFlow", "ItemExplorer"]
+---
+
+import { cacheFlowSteps } from "./cache-flow-steps";
+import { cdnGlossaryItems } from "./glossary";
+
+Una **CDN (Content Delivery Network)** es un conjunto distribuido globalmente de servidores de Cache que se sitúan entre los clientes y tu servidor de origen. En lugar de que cada solicitud del mundo viaje toda la distancia hasta donde reside tu único backend, la mayoría de las solicitudes se sirven desde un servidor físicamente cercano a quien las hace.
+
+Es un Reverse Proxy especializado, ver la página de [Proxies](/es/web-fundamentals/proxies) — el mismo modelo de "se sitúa delante del servidor, lo oculta del cliente", solo que replicado en cientos de ubicaciones en todo el mundo con la Cache como tarea principal.
+
+## Cache Miss, luego Cache Hit
+
+<StepFlow title="Flujo de una solicitud CDN" steps={cacheFlowSteps} />
+
+## Por qué es más rápido
+
+- **La distancia** — un viaje de ida y vuelta a un servidor a 15 ms de distancia en lugar de 150 ms es la mayor ganancia, especialmente para cualquier cosa con varias solicitudes secuenciales (como cargar una página con muchos recursos).
+- **La carga del origen** — el servidor de origen solo tiene que manejar los Cache Miss y las solicitudes verdaderamente dinámicas, no cada solicitud de cada usuario en todas partes.
+- **La absorción de picos de tráfico** — un aumento repentino de solicitudes de un recurso en Cache es absorbido por la red Edge; el origen nunca ve la mayor parte.
+
+## Para qué son buenas — y malas — las CDN
+
+Las CDN destacan en **contenido estático y cacheable**: imágenes, CSS, paquetes JS, vídeo. Encajan mucho peor con **contenido muy dinámico y propio de cada usuario** (un saldo de cuenta en vivo, un panel personalizado) — que o bien evita el Cache por completo o necesita reglas de Cache cuidadosas y estrechas (por ejemplo, mantener en Cache solo brevemente por usuario, o no cachear en absoluto el cuerpo de la respuesta mientras se siguen cacheando los recursos estáticos de la misma página).
+
+## Glosario
+
+<ItemExplorer title="Términos de CDN" layout="grid" items={cdnGlossaryItems} />
+
+## Ver también
+
+- **[Proxies](/es/web-fundamentals/proxies)** — el patrón general de Reverse Proxy que especializa una CDN.
+- **[DNS](/es/web-fundamentals/dns)** — cómo una CDN te enruta a tu servidor Edge más cercano, desde el principio.

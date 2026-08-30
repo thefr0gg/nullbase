@@ -1,0 +1,34 @@
+---
+title: TCP/IP
+description: Le modèle en couches sous chaque connexion Internet, et comment TCP transforme un réseau non fiable en réseau fiable.
+category: Web Fundamentals
+weight: 5
+interactive: true
+interactiveType: ["ItemExplorer", "StepFlow"]
+---
+
+import { tcpIpLayerItems } from "./layers";
+import { tcpLifecycleSteps } from "./handshake-steps";
+
+**TCP/IP** est l'ensemble de protocoles en couches sur lequel Internet fonctionne réellement. Chaque couche résout un problème et transmet le résultat à la couche au-dessus — votre navigateur n'a jamais à penser aux trames Ethernet, et Ethernet n'a jamais à penser à HTTP.
+
+## Les quatre couches
+
+<ItemExplorer title="Modèle TCP/IP" layout="grid" items={tcpIpLayerItems} />
+
+Les données qui descendent à travers ces couches sont encapsulées à chaque étape — une requête HTTP devient la charge utile d'un segment TCP, qui devient la charge utile d'un paquet IP, qui devient la charge utile d'une trame Ethernet. Le côté récepteur défait cet encapsulage dans l'ordre inverse.
+
+## Ce que TCP ajoute réellement
+
+IP seule est de type « best effort » — les paquets peuvent arriver dans le désordre, être dupliqués, ou simplement disparaître, et IP elle-même n'y fait rien. **TCP** se place au-dessus d'IP et transforme cela en un flux fiable, ordonné, orienté connexion : chaque octet est numéroté, acquitté, et retransmis s'il n'arrive pas.
+
+<StepFlow title="Cycle de vie d'une connexion TCP" steps={tcpLifecycleSteps} />
+
+## TCP contre UDP, en une ligne
+
+TCP garantit la livraison et l'ordre au prix de la latence et de la surcharge (accusés de réception, retransmission, la Handshake ci-dessus). **UDP** évite tout cela — pas de Handshake, aucune garantie, il envoie simplement le paquet — c'est pourquoi il est utilisé là où la vitesse compte plus que la fiabilité : les recherches DNS, les appels vidéo, les jeux en ligne.
+
+## Voir aussi
+
+- **[Ports et sockets](/fr/web-fundamentals/ports-sockets)** — comment TCP et UDP permettent à plusieurs applications de partager une seule adresse IP.
+- **[HTTP](/fr/web-fundamentals/http)** — le protocole de couche applicative qui circule généralement sur une connexion TCP.

@@ -1,0 +1,36 @@
+---
+title: Mensajes HTTP
+description: Estructura de los mensajes de solicitud y respuesta HTTP.
+category: HTTP
+weight: 20
+interactive: false
+---
+
+Los mensajes HTTP son de dos tipos: **solicitudes** (enviadas por un cliente) y **respuestas** (enviadas por un servidor). Ambos comparten la misma estructura genérica: una **línea de inicio**, campos de **encabezado**, una línea en blanco opcional, y un **cuerpo de mensaje** opcional.
+
+## Mensaje de solicitud
+
+```http
+GET /api/http/echo?hello=world HTTP/1.1
+Host: nullbase.local
+User-Agent: nullbase/1.0
+Accept: application/json
+```
+
+La **línea de solicitud** es `Method SP request-target SP HTTP-version CRLF`.
+
+## Mensaje de respuesta
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 87
+
+{"method":"GET","path":"/api/http/echo","status":200}
+```
+
+La **línea de estado** es `HTTP-version SP status-code SP reason-phrase CRLF`. La `reason-phrase` es legible para humanos y opcional en la práctica; el `status-code` es sobre lo que actúan los programas — ver [Códigos de estado](/es/web-fundamentals/http/status-codes/200).
+
+## Campos de encabezado
+
+Los encabezados son pares `Nombre: valor` que transportan metadatos: negociación de contenido, directivas de Cache, autenticación, cookies, y más. Ver [Encabezados](/es/web-fundamentals/http/headers/content-type) para los más importantes.

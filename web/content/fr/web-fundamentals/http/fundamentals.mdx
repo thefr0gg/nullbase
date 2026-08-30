@@ -1,0 +1,190 @@
+---
+title: Fondamentaux HTTP
+description: Qu'est-ce que HTTP, comment il fonctionne, et pourquoi c'est important. Le fondement de tout le reste.
+category: HTTP
+weight: 1
+interactive: true
+interactiveType: ["MermaidDiagram"]
+---
+
+Le **protocole de transfert hypertexte (HTTP)** est le protocole utilisé pour transférer des données à travers le World Wide Web. C'est ainsi que votre navigateur récupère des pages web, que votre téléphone envoie des données aux serveurs, que les API communiquent.
+
+## Ce qui rend HTTP spécial
+
+### Sans état
+Chaque requête est indépendante. Le serveur ne se souvient pas des requêtes précédentes sauf si vous le lui indiquez explicitement (via des cookies, des sessions, etc.). Cela garde le serveur simple et évolutif.
+
+### Requête–réponse
+La communication est toujours initiée par le **client**. Le serveur n'envoie jamais de données sans qu'on le lui demande. Le motif est :
+
+1. Le client envoie une requête
+2. Le serveur la traite
+3. Le serveur envoie une réponse
+4. La connexion peut se fermer ou rester ouverte pour être réutilisée
+
+### Basé sur du texte (pour l'essentiel)
+Les messages HTTP sont en grande partie du texte lisible (contrairement aux protocoles binaires). Cela les rend faciles à déboguer et à inspecter.
+
+```http
+GET /api/users HTTP/1.1
+Host: example.com
+Content-Type: application/json
+
+```
+
+---
+
+## Le flux de base
+
+<MermaidDiagram
+  title="Requête / Réponse"
+  chart={`sequenceDiagram
+    participant Client
+    participant Server
+    Client->>Server: HTTP Request (GET, POST...)
+    Note over Server: Process request
+    Server-->>Client: HTTP Response (200, 404...)`}
+/>
+
+Chaque requête possède :
+- Une **méthode** (GET, POST, PUT, DELETE, etc.)
+- Une **URL** (quelle ressource)
+- Des **en-têtes** (métadonnées)
+- Un **corps** (optionnel, les données envoyées)
+
+Chaque réponse possède :
+- Un **code de statut** (200, 404, 500, etc.)
+- Des **en-têtes** (métadonnées sur la réponse)
+- Un **corps** (le contenu réel)
+
+---
+
+## URL
+
+Une URL identifie la ressource que vous voulez :
+
+```text
+https://api.example.com/v1/users/42?sort=name#details
+```
+
+- **https** — protocole (schéma)
+- **api.example.com** — hôte
+- **/v1/users/42** — chemin (la ressource)
+- **?sort=name** — chaîne de requête (paramètres)
+- **#details** — fragment (côté client uniquement)
+
+---
+
+## Méthodes
+
+La **méthode** indique au serveur ce que vous voulez faire :
+
+| Méthode | Objectif | A un corps ? | Idempotente ? |
+|--------|---------|-----------|------------|
+| GET | Récupérer une ressource | Non | Oui |
+| POST | Créer une ressource ou déclencher une action | Oui | Non |
+| PUT | Remplacer une ressource | Oui | Oui |
+| PATCH | Mettre à jour partiellement une ressource | Oui | Non |
+| DELETE | Supprimer une ressource | Non | Oui |
+| HEAD | Comme GET, mais les en-têtes seulement | Non | Oui |
+| OPTIONS | Décrire les options de communication | Non | Oui |
+
+**Idempotente** signifie que l'appeler plusieurs fois a le même effet que l'appeler une seule fois. Sûre pour les nouvelles tentatives.
+
+---
+
+## Codes de statut
+
+Le serveur répond avec un code à 3 chiffres qui indique ce qui s'est passé :
+
+| Plage | Signification | Exemples |
+|-------|---------|----------|
+| 1xx | Informationnel | 100 Continue |
+| 2xx | Succès | 200 OK, 201 Created, 204 No Content |
+| 3xx | Redirection | 301 Moved, 302 Found, 304 Not Modified |
+| 4xx | Erreur client | 400 Bad Request, 401 Unauthorized, 404 Not Found |
+| 5xx | Erreur serveur | 500 Internal Server Error, 502 Bad Gateway |
+
+---
+
+## En-têtes
+
+Les en-têtes sont des paires clé-valeur qui transportent des métadonnées sur la requête ou la réponse.
+
+**En-têtes de requête courants :**
+- `Authorization` — qui vous êtes (nom d'utilisateur, clé API, jeton)
+- `Content-Type` — format du corps (application/json, form-data, etc.)
+- `Accept` — quels formats vous pouvez comprendre
+- `User-Agent` — quel client fait la requête
+
+**En-têtes de réponse courants :**
+- `Content-Type` — format du corps de la réponse
+- `Cache-Control` — combien de temps mettre ceci en Cache
+- `Set-Cookie` — stocker des données côté client
+- `Location` — rediriger ici (pour les réponses 3xx)
+
+---
+
+## Corps
+
+Le **corps** est la donnée réelle transférée. Les requêtes peuvent avoir un corps (généralement POST, PUT, PATCH). Les réponses en ont presque toujours un.
+
+**Exemple de requête avec corps :**
+```json
+POST /api/users HTTP/1.1
+Host: api.example.com
+Content-Type: application/json
+
+{
+  "name": "Alice",
+  "email": "alice@example.com"
+}
+```
+
+**Exemple de réponse avec corps :**
+```json
+HTTP/1.1 201 Created
+Content-Type: application/json
+
+{
+  "id": 42,
+  "name": "Alice",
+  "email": "alice@example.com"
+}
+```
+
+---
+
+## Versions
+
+HTTP a évolué. Les différences comptent :
+
+- **HTTP/1.0** (1991) — Simple, une requête par connexion.
+- **HTTP/1.1** (1997–présent) — Keep-Alive, pipelining, encodage par blocs.
+- **HTTP/2** (2015) — Multiplexage, server push, encapsulage binaire.
+- **HTTP/3** (2022) — Construit sur QUIC pour la vitesse et la fiabilité.
+
+La plupart des navigateurs et serveurs modernes utilisent HTTP/1.1 ou HTTP/2. HTTP/3 est en croissance.
+
+---
+
+## Erreurs courantes
+
+**Évitez :** Penser que les requêtes GET peuvent avoir un corps — Certains serveurs l'acceptent, mais ce n'est pas standard. Utilisez POST à la place.
+
+**Évitez :** Utiliser GET pour des données sensibles — Les paramètres de requête sont visibles dans les URL. Utilisez POST avec un corps et HTTPS.
+
+**Évitez :** Ne pas lire le code de statut — 200 signifie succès, mais 201, 202, 204 signifient aussi succès (avec des significations différentes).
+
+**Évitez :** Oublier Content-Type — Certains serveurs ne pourront pas analyser votre corps sans lui.
+
+**Évitez :** Ne pas gérer les redirections 3xx — Votre client doit suivre les redirections automatiquement (la plupart le font).
+
+---
+
+## Prochaines étapes
+
+- **[Modèle requête–réponse](/fr/web-fundamentals/http/request-response)** — Voyez un flux complet visualisé.
+- **[Méthodes](/fr/web-fundamentals/http/methods)** — Approfondissez GET, POST, PUT, PATCH, DELETE.
+- **[Codes de statut](/fr/web-fundamentals/http/status-codes)** — Plus de 60 codes et quand les utiliser.
+- **[En-têtes](/fr/web-fundamentals/http/headers)** — Les en-têtes qui font fonctionner HTTP.

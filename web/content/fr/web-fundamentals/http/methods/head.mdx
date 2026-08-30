@@ -1,0 +1,95 @@
+---
+title: HEAD
+description: Comme GET, mais sans le corps de la réponse. Récupère les en-têtes seulement.
+category: HTTP
+weight: 6
+---
+
+**HEAD** est identique à **GET**, sauf que le serveur ne retourne que les en-têtes — **pas de corps de réponse**.
+
+Utilisez HEAD quand vous voulez des métadonnées sur une ressource sans télécharger le contenu complet.
+
+## HEAD contre GET
+
+| Aspect | GET | HEAD |
+|--------|-----|------|
+| **Corps de la réponse** | Oui | Non |
+| **En-têtes** | Oui | Oui |
+| **Cas d'usage** | Télécharger une ressource | Vérifier les propriétés d'une ressource |
+| **Bande passante** | Taille complète | Minimale |
+
+---
+
+## Utilisations courantes
+
+**Vérifier si une ressource existe :**
+```http
+HEAD /api/users/42 HTTP/1.1
+```
+
+Si elle retourne `200 OK`, la ressource existe. Si `404`, elle n'existe pas.
+
+**Vérifier la taille d'un fichier avant de le télécharger :**
+```http
+HEAD /downloads/large-file.zip HTTP/1.1
+```
+
+Regardez l'en-tête `Content-Length` pour voir sa taille, puis décidez de le télécharger ou non.
+
+**Vérifier si une ressource a été modifiée :**
+```http
+HEAD /api/data HTTP/1.1
+```
+
+Regardez les en-têtes `Last-Modified` ou `ETag`. S'ils correspondent à votre Cache, vous n'avez pas besoin de la télécharger.
+
+---
+
+## Codes de statut de réponse
+
+Identiques à GET :
+- **200 OK** — La ressource existe
+- **404 Not Found** — La ressource n'existe pas
+- **410 Gone** — La ressource a été supprimée
+- **304 Not Modified** — La ressource n'a pas changé (si vous avez envoyé If-Modified-Since ou If-None-Match)
+
+---
+
+## En-têtes de réponse
+
+Les mêmes en-têtes que GET :
+
+```http
+HEAD /api/users/42 HTTP/1.1
+
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 256
+Last-Modified: Mon, 28 Aug 2023 12:00:00 GMT
+ETag: "abc123"
+```
+
+Remarquez : aucun corps ne suit.
+
+---
+
+## Propriétés
+
+- **Sûre :** Oui — ne change pas l'état du serveur
+- **Idempotente :** Oui — l'appeler plusieurs fois a le même effet
+- **Pouvant être mise en Cache :** Oui — les réponses peuvent être mises en Cache comme GET
+
+---
+
+## Erreurs courantes
+
+**Évitez :** Supposer que HEAD et GET retournent des en-têtes identiques — Certains serveurs sont paresseux et n'implémentent pas HEAD correctement.
+
+**Évitez :** Ne pas vous attendre à l'absence de corps — Si vous envoyez HEAD et obtenez un corps, votre client HTTP pourrait être défaillant (ou le serveur l'est).
+
+---
+
+## Voir aussi
+
+- **[GET](/fr/web-fundamentals/http/methods/get)** — Récupérer une ressource.
+- **[Requêtes conditionnelles](/fr/web-fundamentals/http/conditional)** — Utiliser HEAD avec If-Modified-Since et If-None-Match.

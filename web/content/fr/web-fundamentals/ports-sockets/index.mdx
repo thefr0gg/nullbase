@@ -1,0 +1,33 @@
+---
+title: Ports et sockets
+description: Comment une seule adresse IP sert des centaines d'applications différentes à la fois.
+category: Web Fundamentals
+weight: 6
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+import { commonPortItems } from "./common-ports";
+
+Une adresse IP identifie une *machine*. Un **port** identifie *quelle application sur cette machine* est concernée par un morceau de trafic. Sans les ports, un serveur ne pourrait pas exécuter un serveur web, une base de données et un démon SSH sur la même IP en même temps — chaque connexion entrante n'aurait nulle part où aller sans ambiguïté.
+
+## Plages de ports
+
+Les ports sont des nombres sur 16 bits, de 0 à 65535, répartis en trois plages conventionnelles :
+
+- **0–1023 — Ports bien connus.** Réservés aux services standards (HTTP, HTTPS, SSH, DNS...). S'y attacher nécessite généralement des privilèges élevés sur le système d'exploitation hôte.
+- **1024–49151 — Ports enregistrés.** Attribués à des applications spécifiques par l'IANA sur demande, mais non restreints par le système d'exploitation (le 3306 de MySQL, le 5432 de PostgreSQL).
+- **49152–65535 — Ports dynamiques/éphémères.** Non attribués à un service — le système d'exploitation les distribue temporairement comme côté *client* d'une connexion sortante.
+
+<ItemExplorer title="Ports bien connus et enregistrés courants" layout="pills" defaultId="443" items={commonPortItems} />
+
+## Ce qu'est réellement un Socket
+
+Un **Socket** est la combinaison d'une adresse IP, d'un port, et d'un protocole (TCP ou UDP) — c'est le point de terminaison réel qu'un système d'exploitation utilise pour suivre une connexion. Une connexion TCP complète est identifiée de manière unique par une paire de Sockets : `(IP client, port client, IP serveur, port serveur)`.
+
+C'est ce qui permet à un serveur écoutant sur le port 443 de gérer des milliers de connexions HTTPS simultanées provenant de clients différents — chaque client utilise un port source *éphémère* différent, si bien que chaque paire `(Socket client, Socket serveur)` est unique même si le Socket côté serveur (son IP et le 443) ne change jamais.
+
+## Voir aussi
+
+- **[TCP/IP](/fr/web-fundamentals/tcp-ip)** — la couche protocolaire à laquelle appartiennent les ports.
+- **[HTTP](/fr/web-fundamentals/http)** — le protocole applicatif qui réside, par convention, sur les ports 80 et 443.

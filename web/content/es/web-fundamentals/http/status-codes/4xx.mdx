@@ -1,0 +1,196 @@
+---
+title: Códigos de estado de error del cliente 4xx
+description: Códigos de estado 400–499 — la solicitud en sí es el problema, cubriendo 400 Bad Request, 401 Unauthorized, 404 Not Found, y más.
+category: HTTP
+weight: 3
+---
+
+Un estado `4xx` significa que el servidor no puede satisfacer la solicitud tal como se envió — sintaxis mal formada, credenciales faltantes, o un recurso que realmente no está ahí. A diferencia de un `5xx`, reintentar exactamente la misma solicitud no ayudará hasta que algo en ella cambie.
+
+## Códigos 4xx más comunes
+
+| Código | Nombre | Significado |
+|------|------|---------|
+| 400 | Bad Request | El formato de la solicitud es inválido. |
+| 401 | Unauthorized | Necesitas autenticarte (iniciar sesión). |
+| 403 | Forbidden | Estás autenticado pero no tienes permitido acceder. |
+| 404 | Not Found | El recurso no existe. |
+| 409 | Conflict | La solicitud entra en conflicto con el estado del servidor. |
+| 422 | Unprocessable Entity | El formato es válido pero los datos son rechazados. |
+| 429 | Too Many Requests | Estás enviando demasiadas solicitudes (límite de velocidad). |
+
+---
+
+## Desglose detallado
+
+### 400 Bad Request
+El formato de la solicitud es inválido o está mal formado.
+
+```http
+POST /api/users HTTP/1.1
+Content-Type: application/json
+
+{ invalid json }
+
+HTTP/1.1 400 Bad Request
+{
+  "error": "Invalid JSON syntax"
+}
+```
+
+**Uso:** Cuando el cliente envía:
+- JSON inválido
+- Campos requeridos faltantes
+- Tipo de contenido incorrecto
+- Parámetros de consulta mal formados
+
+---
+
+### 401 Unauthorized
+Necesitas autenticarte (proporcionar credenciales como nombre de usuario/contraseña o clave de API).
+
+```http
+GET /api/admin HTTP/1.1
+
+HTTP/1.1 401 Unauthorized
+WWW-Authenticate: Bearer realm="api"
+{
+  "error": "No authentication provided"
+}
+```
+
+**Uso:** Cuando el cliente no se ha autenticado o su token ha expirado.
+
+---
+
+### 403 Forbidden
+Estás autenticado, pero no tienes permiso para acceder a este recurso.
+
+```http
+GET /api/admin HTTP/1.1
+Authorization: Bearer valid-token
+
+HTTP/1.1 403 Forbidden
+{
+  "error": "Insufficient permissions"
+}
+```
+
+**Uso:** Cuando el cliente ha iniciado sesión pero carece del rol/permiso necesario.
+
+---
+
+### 404 Not Found
+El recurso solicitado no existe.
+
+```http
+GET /api/users/999999 HTTP/1.1
+
+HTTP/1.1 404 Not Found
+{
+  "error": "User not found"
+}
+```
+
+**Uso:** Cuando un recurso nunca existió, o fue eliminado.
+
+---
+
+### 409 Conflict
+La solicitud entra en conflicto con el estado actual del servidor.
+
+```http
+PUT /api/documents/42 HTTP/1.1
+If-Match: "old-version"
+
+HTTP/1.1 409 Conflict
+{
+  "error": "The document was modified by someone else"
+}
+```
+
+**Uso:** Cuando la versión del cliente está desactualizada o falla una restricción de unicidad.
+
+---
+
+### 422 Unprocessable Entity
+El formato de la solicitud es válido (JSON válido), pero los datos son rechazados.
+
+```http
+POST /api/users HTTP/1.1
+Content-Type: application/json
+
+{
+  "name": "Alice",
+  "email": "invalid-email"
+}
+
+HTTP/1.1 422 Unprocessable Entity
+{
+  "error": "Invalid email format"
+}
+```
+
+**Uso:** Cuando:
+- El correo es inválido
+- El número de teléfono tiene un formato incorrecto
+- La edad está fuera del rango permitido
+- El correo ya existe (violación de la lógica de negocio)
+
+---
+
+### 429 Too Many Requests
+Estás enviando demasiadas solicitudes. Reduce la velocidad.
+
+```http
+POST /api/login HTTP/1.1
+
+HTTP/1.1 429 Too Many Requests
+Retry-After: 60
+{
+  "error": "Rate limit exceeded. Try again in 60 seconds."
+}
+```
+
+**Uso:** Cuando el cliente está haciendo solicitudes demasiado rápido.
+
+---
+
+## Otros códigos 4xx importantes
+
+- **405 Method Not Allowed** — El método (GET, POST, etc.) no está permitido para este recurso.
+- **408 Request Timeout** — El cliente tardó demasiado en enviar la solicitud.
+- **410 Gone** — El recurso fue eliminado y no volverá.
+- **415 Unsupported Media Type** — El Content-Type no es compatible.
+- **418 I'm a Teapot** — El servidor es una tetera (broma de la RFC 2324).
+
+---
+
+## 401 frente a 403: la diferencia
+
+| 401 Unauthorized | 403 Forbidden |
+|-----------------|---------------|
+| Necesitas iniciar sesión | Has iniciado sesión, pero sin permiso |
+| No se proporcionaron credenciales o son inválidas | Credenciales válidas, pero rol/permiso insuficiente |
+| Incluye el encabezado `WWW-Authenticate` | No incluye `WWW-Authenticate` |
+
+---
+
+## Errores comunes
+
+**Evita:** Usar 404 para problemas de permisos — Usa 403, no 404. No ocultes que el recurso existe.
+
+**Evita:** Usar 400 para todos los errores del cliente — Usa códigos más específicos: 401, 403, 404, 409, 422.
+
+**Evita:** No incluir `Retry-After` en 429 — Indica al cliente cuánto esperar antes de reintentar.
+
+**Evita:** Usar 401 cuando quieres decir 403 — 401 significa «inicia sesión», 403 significa «sin permiso».
+
+---
+
+## Ver también
+
+- **[Referencia de códigos de estado](/es/web-fundamentals/http/status-codes)** — Todos los códigos de un vistazo.
+- **[2xx Éxito](/es/web-fundamentals/http/status-codes/2xx)** — La solicitud tuvo éxito.
+- **[3xx Redirección](/es/web-fundamentals/http/status-codes/3xx)** — El cliente necesita hacer algo.
+- **[5xx Errores del servidor](/es/web-fundamentals/http/status-codes/5xx)** — El servidor falló.

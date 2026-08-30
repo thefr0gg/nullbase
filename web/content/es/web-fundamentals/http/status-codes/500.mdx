@@ -1,0 +1,27 @@
+---
+title: "500 Internal Server Error"
+description: El servidor encontró una situación que no sabe cómo manejar.
+category: HTTP
+weight: 49
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+El código de estado de respuesta `500 Internal Server Error` indica que **el servidor encontró una situación que no sabe cómo manejar**.
+
+<StatusCodeExplorer defaultCode={500} />
+
+## Detalles
+
+- **Clase:** 5xx (Error del servidor)
+- **Cuándo usarlo:** se encontró una condición inesperada y ningún mensaje más específico es apropiado.
+- **No reintentes** a ciegas — `500` no es idempotente por garantía, pero la solicitud podría haber tenido éxito parcial en el servidor.
+
+## Ejemplo
+
+```http
+HTTP/1.1 500 Internal Server Error
+Content-Type: text/html
+
+<h1>500 Internal Server Error</h1>
+<p>Something went wrong on our end.</p>

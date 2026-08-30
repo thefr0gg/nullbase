@@ -1,0 +1,26 @@
+---
+title: "200 OK"
+description: Le serveur a traité la requête avec succès.
+category: HTTP
+weight: 41
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+Le code de statut de réponse `200 OK` indique que **la requête a réussi**. C'est le code de statut le plus courant sur le web.
+
+<StatusCodeExplorer defaultCode={200} />
+
+## Détails
+
+- **Classe :** 2xx (Succès)
+- **Typique avec :** `GET`, `PUT`, `PATCH`, `DELETE`, `POST`
+- **Mise en Cache :** une réponse `200` est pouvant être mise en Cache par défaut.
+
+## Exemple
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{ "status": 200, "message": "OK" }

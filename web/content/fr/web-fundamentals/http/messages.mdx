@@ -1,0 +1,36 @@
+---
+title: Messages HTTP
+description: Structure des messages de requête et de réponse HTTP.
+category: HTTP
+weight: 20
+interactive: false
+---
+
+Les messages HTTP sont de deux types : les **requêtes** (envoyées par un client) et les **réponses** (envoyées par un serveur). Les deux partagent la même structure générique : une **ligne de départ**, des champs **d'en-tête**, une ligne vide optionnelle, et un **corps de message** optionnel.
+
+## Message de requête
+
+```http
+GET /api/http/echo?hello=world HTTP/1.1
+Host: nullbase.local
+User-Agent: nullbase/1.0
+Accept: application/json
+```
+
+La **ligne de requête** est `Method SP request-target SP HTTP-version CRLF`.
+
+## Message de réponse
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 87
+
+{"method":"GET","path":"/api/http/echo","status":200}
+```
+
+La **ligne de statut** est `HTTP-version SP status-code SP reason-phrase CRLF`. La `reason-phrase` est lisible par un humain et optionnelle en pratique ; c'est le `status-code` sur lequel les programmes agissent — voir [Codes de statut](/fr/web-fundamentals/http/status-codes/200).
+
+## Champs d'en-tête
+
+Les en-têtes sont des paires `Nom: valeur` qui transportent des métadonnées : négociation de contenu, directives de Cache, authentification, cookies, et plus. Voir [En-têtes](/fr/web-fundamentals/http/headers/content-type) pour les plus importants.

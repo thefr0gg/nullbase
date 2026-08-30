@@ -1,0 +1,45 @@
+---
+title: Proxies
+description: La différence entre un Forward Proxy et un Reverse Proxy, et comment un Reverse Proxy route une requête.
+category: Web Fundamentals
+weight: 7
+interactive: true
+interactiveType: ["ItemExplorer", "StepFlow"]
+---
+
+import { proxyComparisonItems } from "./comparison";
+import { reverseProxySteps } from "./reverse-proxy-steps";
+
+Un **Proxy** est un serveur qui se place entre un client et le serveur qu'il essaie réellement d'atteindre, transmettant le trafic pour le compte de quelqu'un. Le camp qu'il représente fait toute la distinction :
+
+<ItemExplorer
+  title="Forward Proxy contre Reverse Proxy"
+  layout="table"
+  tableColumns={[
+    { key: "sits", label: "Se place" },
+    { key: "hides", label: "Cache" },
+    { key: "knows", label: "Qui en a conscience" },
+    { key: "examples", label: "Exemples" },
+  ]}
+  items={proxyComparisonItems}
+/>
+
+- Un **Forward Proxy** agit pour le compte du *client* — c'est pourquoi le service informatique de votre entreprise peut bloquer certains sites, ou un VPN peut faire croire que votre trafic vient d'ailleurs.
+- Un **Reverse Proxy** agit pour le compte du *serveur* — c'est pourquoi nullbase.wiki peut être soutenu par n'importe quel nombre de serveurs réels sans que vous le sachiez jamais.
+
+## Comment un Reverse Proxy route une requête
+
+<StepFlow title="Requête à travers un Reverse Proxy" steps={reverseProxySteps} />
+
+## Pourquoi en utiliser un
+
+- **Le routage** — un seul nom d'hôte, de nombreux services backend, répartis par chemin ou sous-domaine.
+- **L'équilibrage de charge** — répartir les requêtes entre plusieurs instances backend identiques.
+- **La terminaison TLS** — le Proxy gère HTTPS, si bien que les services backend n'ont besoin de parler qu'en HTTP simple en interne.
+- **Le Cache** — servir les requêtes répétées depuis le Proxy sans jamais atteindre le backend.
+- **La sécurité** — les vrais serveurs backend ne sont jamais directement accessibles depuis Internet.
+
+## Voir aussi
+
+- **[CDN](/fr/web-fundamentals/cdns)** — le Cache d'un Reverse Proxy poussé à une échelle mondiale et distribuée.
+- **[TLS et HTTPS](/fr/web-fundamentals/tls)** — généralement terminé au niveau du Reverse Proxy plutôt qu'au backend.

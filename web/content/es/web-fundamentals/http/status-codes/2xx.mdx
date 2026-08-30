@@ -1,0 +1,114 @@
+---
+title: Códigos de estado de éxito 2xx
+description: Códigos de estado 200–299 — la solicitud tuvo éxito, cubriendo 200 OK, 201 Created, 204 No Content, y más.
+category: HTTP
+weight: 1
+---
+
+Un estado `2xx` significa que el servidor recibió, entendió, y aceptó la solicitud. Cuál vuelve — un `200` simple, un `201` tras crear algo, un `204` sin nada que mostrar — depende de lo que la solicitud realmente pedía.
+
+## Códigos 2xx más comunes
+
+| Código | Nombre | Cuándo usarlo |
+|------|------|------------|
+| 200 | OK | Éxito genérico. Todo funcionó. |
+| 201 | Created | El recurso se creó con éxito (POST). |
+| 202 | Accepted | Solicitud aceptada pero el procesamiento es asíncrono. |
+| 204 | No Content | Éxito, pero no hay cuerpo que devolver (DELETE, PATCH). |
+
+---
+
+## Desglose detallado
+
+### 200 OK
+La solicitud tuvo éxito. Incluye el resultado en el cuerpo de la respuesta.
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "id": 42,
+  "name": "Alice"
+}
+```
+
+**Úsalo para:** GET, PUT (al devolver el recurso actualizado), PATCH.
+
+---
+
+### 201 Created
+La solicitud tuvo éxito y se creó un nuevo recurso.
+
+```http
+HTTP/1.1 201 Created
+Content-Type: application/json
+Location: /api/users/42
+
+{
+  "id": 42,
+  "name": "Alice"
+}
+```
+
+**Úsalo para:** POST (al crear un nuevo recurso).
+
+**Importante:** Incluye un encabezado `Location` con la URL del nuevo recurso.
+
+---
+
+### 202 Accepted
+La solicitud fue aceptada y está siendo procesada, pero no está completa aún.
+
+```http
+HTTP/1.1 202 Accepted
+Content-Type: application/json
+
+{
+  "status": "processing",
+  "job_id": "abc-123"
+}
+```
+
+**Úsalo para:** Operaciones de larga duración (subidas de archivos, transcodificación, informes).
+
+El cliente debería comprobar el estado del trabajo más tarde usando el identificador del trabajo.
+
+---
+
+### 204 No Content
+La solicitud tuvo éxito, pero no hay contenido que devolver.
+
+```http
+HTTP/1.1 204 No Content
+```
+
+**Úsalo para:** DELETE, PATCH (cuando no necesitas devolver el recurso actualizado).
+
+**Importante:** La respuesta NO tiene cuerpo (ni siquiera `{}`).
+
+---
+
+## Otros códigos 2xx
+
+- **205 Reset Content** — Éxito, y el cliente debería reiniciar el formulario / la interfaz.
+- **206 Partial Content** — Devuelve solo parte de un recurso (solicitud por rango).
+
+---
+
+## Errores comunes
+
+**Evita:** Usar 200 cuando deberías usar 201 — Un POST que crea un recurso debería devolver 201, no 200.
+
+**Evita:** Usar 204 pero enviar un cuerpo de todas formas — Si envías 204, no incluyas un cuerpo.
+
+**Evita:** Olvidar el encabezado Location en 201 — Incluye dónde se puede acceder al nuevo recurso.
+
+---
+
+## Ver también
+
+- **[Referencia de códigos de estado](/es/web-fundamentals/http/status-codes)** — Todos los códigos de un vistazo.
+- **[3xx Redirección](/es/web-fundamentals/http/status-codes/3xx)** — Cuando el cliente necesita hacer algo.
+- **[4xx Errores del cliente](/es/web-fundamentals/http/status-codes/4xx)** — Cuando el cliente hizo algo mal.
+- **[5xx Errores del servidor](/es/web-fundamentals/http/status-codes/5xx)** — Cuando el servidor falló.

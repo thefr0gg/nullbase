@@ -1,0 +1,168 @@
+---
+title: HTTP
+description: Référence HTTP complète et interactive. Apprenez grâce à des constructeurs de requêtes en direct, des explorateurs de codes de statut, et des exemples concrets.
+category: HTTP
+weight: 0
+interactive: true
+---
+
+Le **protocole de transfert hypertexte (HTTP)** est le fondement de la communication web. Chaque requête de votre navigateur, chaque appel d'API, chaque interaction avec un serveur passe par HTTP.
+
+Cette référence enseigne HTTP non pas à travers des faits isolés, mais à travers des **outils interactifs** — composez de vraies requêtes, explorez les codes de statut, inspectez les en-têtes, et comprenez pourquoi HTTP se comporte comme il le fait.
+
+---
+
+## Commencez ici
+
+- **[Fondamentaux](/fr/web-fundamentals/http/fundamentals)** — Qu'est-ce que HTTP, comment il fonctionne, un aperçu des versions.
+- **[Modèle requête–réponse](/fr/web-fundamentals/http/request-response)** — Le flux complet du client au serveur et retour.
+- **[Messages HTTP](/fr/web-fundamentals/http/messages)** — L'anatomie des requêtes et des réponses.
+
+**[← Essayez le constructeur de requêtes interactif](#tools)** — Composez de vraies requêtes HTTP et voyez les réponses en direct.
+
+---
+
+## Concepts fondamentaux
+
+### Méthodes (verbes)
+Chaque requête utilise une méthode. Voici les plus importantes :
+
+- **[GET](/fr/web-fundamentals/http/methods/get)** — Récupérer une ressource.
+- **[POST](/fr/web-fundamentals/http/methods/post)** — Soumettre des données, créer des ressources, déclencher des actions.
+- **[PUT](/fr/web-fundamentals/http/methods/put)** — Remplacer ou créer une ressource entièrement.
+- **[PATCH](/fr/web-fundamentals/http/methods/patch)** — Mises à jour partielles.
+- **[DELETE](/fr/web-fundamentals/http/methods/delete)** — Supprimer une ressource.
+- **[HEAD](/fr/web-fundamentals/http/methods/head)** — Comme GET, mais les en-têtes seulement (pas de corps).
+- **[OPTIONS](/fr/web-fundamentals/http/methods/options)** — Décrire les options de communication pour une ressource.
+- **[Référence de toutes les méthodes](/fr/web-fundamentals/http/methods)** — Propriétés sûre, idempotente, pouvant être mise en Cache.
+
+### Codes de statut
+Chaque réponse commence par un code. Maîtrisez-les tous :
+
+- **[2xx Succès](/fr/web-fundamentals/http/status-codes/2xx)** — 200 OK, 201 Created, 204 No Content, etc.
+- **[3xx Redirection](/fr/web-fundamentals/http/status-codes/3xx)** — 301 Moved, 302 Found, 304 Not Modified, etc.
+- **[4xx Erreur client](/fr/web-fundamentals/http/status-codes/4xx)** — 400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found, etc.
+- **[5xx Erreur serveur](/fr/web-fundamentals/http/status-codes/5xx)** — 500 Internal Server Error, 502 Bad Gateway, 503 Service Unavailable, etc.
+
+**[Explorateur de codes de statut en direct](/fr/web-fundamentals/http/status-codes)** — Découvrez ce que signifie chaque code et quand les serveurs l'utilisent.
+
+### En-têtes
+Des métadonnées qui contrôlent le comportement. L'essentiel :
+
+**En-têtes de requête :**
+- **[Authorization](/fr/web-fundamentals/http/headers/authorization)** — Prouver qui vous êtes (Basic, Bearer, clés API).
+- **[Content-Type](/fr/web-fundamentals/http/headers/content-type)** — Format du corps de la requête (application/json, form-data, etc.).
+- **[Accept](/fr/web-fundamentals/http/headers/accept)** — Quels formats de réponse vous pouvez comprendre.
+- **[User-Agent](/fr/web-fundamentals/http/headers/user-agent)** — Identifier le client.
+
+**En-têtes de réponse :**
+- **[Content-Type](/fr/web-fundamentals/http/headers/content-type)** — Format du corps de la réponse.
+- **[Cache-Control](/fr/web-fundamentals/http/headers/cache-control)** — Combien de temps mettre en Cache cette réponse.
+- **[Set-Cookie](/fr/web-fundamentals/http/headers/set-cookie)** — Stocker des données côté client.
+- **[Location](/fr/web-fundamentals/http/headers/location)** — Où rediriger (réponses 3xx).
+
+**[Référence de tous les en-têtes](/fr/web-fundamentals/http/headers)** — Plus de 50 en-têtes avec exemples et cas d'usage.
+
+### URL et ressources
+- **[URL et URI](/fr/web-fundamentals/http/urls)** — Comment les ressources sont identifiées et demandées.
+- **[Chaînes de requête](/fr/web-fundamentals/http/urls)** — Paramètres dans l'URL.
+- **[Encodage d'URL](/fr/web-fundamentals/http/urls)** — Caractères spéciaux et encodage.
+
+---
+
+## Corps de requête et de réponse
+
+- **[Corps et contenu](/fr/web-fundamentals/http/body)** — Texte, JSON, données de formulaire, binaire.
+- **[Négociation de contenu](/fr/web-fundamentals/http/content-negotiation)** — Accept, Content-Type : comment clients et serveurs s'accordent sur les formats.
+- **[Compression](/fr/web-fundamentals/http/compression)** — gzip, brotli, deflate : des réponses plus petites et plus rapides.
+- **[Données multipart](/fr/web-fundamentals/http/body)** — Envois de fichiers et soumissions de formulaires avec des délimiteurs.
+
+---
+
+## État et identité
+
+- **[Cookies](/fr/web-fundamentals/http/cookies)** — HTTP avec état via les en-têtes Set-Cookie et Cookie.
+- **[Authentification et autorisation](/fr/web-fundamentals/http/auth)** — Authentification Basic, jetons Bearer, clés API, bases d'OAuth.
+- **[CORS](/fr/web-fundamentals/http/cors)** — Partage de ressources entre origines : pourquoi et comment ça marche.
+
+---
+
+## Performance et optimisation
+
+- **[Mise en Cache](/fr/web-fundamentals/http/caching)** — Cache-Control, ETag, Last-Modified, expires : réduire les requêtes et la charge serveur.
+- **[Requêtes conditionnelles](/fr/web-fundamentals/http/conditional)** — If-Match, If-None-Match, If-Modified-Since : n'envoyer que ce qui a changé.
+- **[Requêtes par plage](/fr/web-fundamentals/http/ranges)** — Reprendre des téléchargements, diffuser des plages d'octets spécifiques.
+- **[Gestion de connexion](/fr/web-fundamentals/http/connections)** — Keep-Alive, pipelining, regroupement de connexions.
+
+---
+
+## Réseau et intermédiaires
+
+- **[Proxies et passerelles](/fr/web-fundamentals/http/proxies)** — Forward Proxies, Reverse Proxies, équilibreurs de charge.
+- **[Redirections](/fr/web-fundamentals/http/redirects)** — 301, 302, 307, 308 : permanentes et temporaires.
+
+---
+
+## Versions du protocole
+
+Comprendre l'évolution est important — les fonctionnalités ont changé, les performances se sont améliorées.
+
+- **[HTTP/1.0](/fr/web-fundamentals/http/http1-0)** — L'original (1991). Sans état, simple.
+- **[HTTP/1.1](/fr/web-fundamentals/http/http1-1)** — Le standard (1997–aujourd'hui). Keep-Alive, pipelining, mise en Cache.
+- **[HTTP/2](/fr/web-fundamentals/http/http2)** — Multiplexage et server push (2015). Plus rapide avec une seule connexion.
+- **[HTTP/3](/fr/web-fundamentals/http/http3)** — Basé sur QUIC, encore plus rapide (2022).
+
+---
+
+## Sécurité
+
+- **[HTTPS et TLS](/fr/web-fundamentals/http/https)** — Communication chiffrée.
+- **[En-têtes de sécurité](/fr/web-fundamentals/http/security-headers)** — CSP, X-Frame-Options, HSTS, et compagnie.
+- **[Sécurité des cookies](/fr/web-fundamentals/http/cookies)** — Attributs Secure, HttpOnly, SameSite.
+
+---
+
+## Comportement dans le monde réel
+
+- **[Comportement du navigateur](/fr/web-fundamentals/http/browser)** — Pourquoi les navigateurs font ce qu'ils font : politique de même origine, requêtes préliminaires, limites de redirection.
+- **[Bonnes pratiques serveur](/fr/web-fundamentals/http/server)** — Codes de statut, gestion des erreurs, performance, fiabilité.
+- **[Exemples pratiques](/fr/web-fundamentals/http/examples)** — Soumissions de formulaires, envois de fichiers, motifs d'API, flux d'authentification.
+
+---
+
+<h2 id="tools">Outils interactifs</h2>
+
+### Envoyez une vraie requête HTTP
+
+Essayez : changez la méthode, l'URL, les en-têtes, ou le corps. Voyez la réponse complète.
+
+<HttpRequest 
+  defaultMethod="GET" 
+  defaultPath="/api/data"
+  defaultHeaders="Accept: application/json"
+/>
+
+### Explorez tous les codes de statut
+
+Que signifie 418 ? Quand les serveurs renvoient-ils 307 plutôt que 302 ? Utilisez l'explorateur.
+
+<StatusCodeExplorer defaultCode={200} />
+
+---
+
+## Pourquoi cette référence ?
+
+La plupart des documentations HTTP sont éparpillées ou incomplètes. **nullbase est différent :**
+
+- **Interactif d'abord** — Ne vous contentez pas de lire sur HTTP. Composez des requêtes, voyez les réponses, expérimentez.
+- **Complet** — Les 29 sujets, des fondamentaux à la sécurité en passant par les motifs concrets.
+- **Pratique** — Des exemples de code que vous pouvez modifier. Des motifs que vous pouvez utiliser demain.
+- **Honnête** — Explique non seulement le quoi, mais le pourquoi, le quand, et les erreurs courantes.
+
+---
+
+## Standards et lectures complémentaires
+
+- [RFC 9110 — Sémantique HTTP](https://www.rfc-editor.org/rfc/rfc9110) — La spécification officielle.
+- [MDN : HTTP](https://developer.mozilla.org/fr/docs/Web/HTTP) — L'excellente référence de Mozilla.
+- [httpwg.org](https://httpwg.org/) — Le groupe de travail HTTP.

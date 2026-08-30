@@ -1,0 +1,74 @@
+---
+title: TLS et HTTPS
+description: Comment TLS chiffre une connexion, et ce que HTTPS ajoute réellement par-dessus HTTP.
+category: Web Fundamentals
+weight: 4
+interactive: true
+interactiveType: ["StepFlow", "ItemExplorer"]
+---
+
+import { handshakeSteps } from "./handshake-steps";
+
+**HTTPS** est simplement **HTTP** envoyé sur une connexion chiffrée par **TLS** — le modèle requête/réponse ne change absolument pas, seul le transport en dessous change. TLS (Transport Layer Security) est ce qui fournit :
+
+- **Le chiffrement** — personne entre le client et le serveur ne peut lire le trafic.
+- **L'intégrité** — personne entre les deux ne peut modifier le trafic sans que les deux côtés ne le remarquent.
+- **L'authentification** — le client obtient une preuve cryptographique qu'il parle bien au serveur qu'il croit (via le certificat du serveur).
+
+## La Handshake
+
+Avant qu'aucun trafic HTTP ne puisse circuler, le client et le serveur doivent se mettre d'accord sur des clés de chiffrement — sans jamais envoyer la clé elle-même sur le fil. Voici une Handshake TLS 1.3 simplifiée :
+
+<StepFlow title="Handshake TLS (1 aller-retour)" steps={handshakeSteps} />
+
+## TLS 1.2 contre TLS 1.3
+
+TLS 1.3 (2018) a considérablement simplifié et renforcé la Handshake par rapport à TLS 1.2 :
+
+<ItemExplorer
+  title="TLS 1.2 contre TLS 1.3"
+  layout="table"
+  tableColumns={[
+    { key: "roundtrips", label: "Allers-retours de la Handshake" },
+    { key: "resumption", label: "Reprise de session" },
+    { key: "forwardSecrecy", label: "Confidentialité persistante" },
+    { key: "weakCiphers", label: "Autorise des chiffrements faibles/anciens" },
+  ]}
+  items={[
+    {
+      id: "tls12",
+      label: "TLS 1.2",
+      color: "orange",
+      columns: {
+        roundtrips: "2 (première connexion plus lente)",
+        resumption: "Identifiants de session / tickets",
+        forwardSecrecy: "Optionnelle, selon la suite de chiffrement",
+        weakCiphers: "Oui — RC4 et l'échange de clés RSA statique sont encore autorisés",
+      },
+    },
+    {
+      id: "tls13",
+      label: "TLS 1.3",
+      color: "green",
+      columns: {
+        roundtrips: "1 (0 avec reprise de session)",
+        resumption: "Reprise 0-RTT basée sur PSK",
+        forwardSecrecy: "Obligatoire — chaque Handshake utilise des clés éphémères",
+        weakCiphers: "Non — les suites de chiffrement faibles/anciennes ont été entièrement supprimées",
+      },
+    },
+  ]}
+/>
+
+## Ce que HTTPS ne protège pas
+
+TLS sécurise la connexion, pas les deux extrémités. Il n'empêche pas :
+
+- Un serveur compromis de divulguer des données qu'il détient en clair.
+- Un logiciel malveillant sur le client de lire les données avant qu'elles ne soient chiffrées ou après qu'elles ont été déchiffrées.
+- Un utilisateur trompé par hameçonnage pour visiter `paypa1.com` au lieu de `paypal.com` — c'est une connexion HTTPS valide vers un serveur *erroné mais réel*.
+
+## Voir aussi
+
+- **[DNS](/fr/web-fundamentals/dns)** — résout le nom d'hôte avant même qu'une Handshake TLS puisse commencer.
+- **[HTTP](/fr/web-fundamentals/http)** — le protocole réellement transporté une fois la connexion chiffrée établie.

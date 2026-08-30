@@ -1,0 +1,70 @@
+---
+title: CONNECT
+description: Establecer un túnel (Tunnel) hacia un servidor a través de un Proxy. Se usa para el tráfico HTTPS a través de Proxies HTTP.
+category: HTTP
+weight: 8
+---
+
+**CONNECT** solicita a un Proxy que abra un Tunnel TCP crudo hacia un host y puerto de destino, y luego se aparte del camino. Una vez establecido el Tunnel, el Proxy simplemente reenvía los bytes en ambas direcciones sin examinarlos.
+
+Casi siempre se usa para transportar **HTTPS a través de un Proxy HTTP** — el cliente necesita una conexión TLS cifrada de extremo a extremo con el servidor de origen, así que el Proxy no puede terminar TLS por sí mismo; solo puede abrir el tubo y reenviar el tráfico cifrado a través de él.
+
+## Formato de la solicitud
+
+El objetivo es `host:port`, no una ruta:
+
+```http
+CONNECT example.com:443 HTTP/1.1
+Host: example.com:443
+Proxy-Authorization: Basic dXNlcjpwYXNz
+```
+
+## Respuesta del Proxy
+
+Si el Proxy acepta abrir el Tunnel:
+
+```http
+HTTP/1.1 200 Connection Established
+```
+
+A partir de este punto, el Proxy deja de interpretar los bytes que reenvía como HTTP — todo lo enviado por la conexión le resulta opaco, incluyendo el Handshake de TLS y cada solicitud/respuesta cifrada que sigue.
+
+Si el Proxy rechaza (no autorizado, destino no permitido, etc.), responde con un código de estado normal y cierra el intento de Tunnel:
+
+```http
+HTTP/1.1 407 Proxy Authentication Required
+Proxy-Authenticate: Basic realm="proxy"
+```
+
+---
+
+## Por qué existe
+
+Sin CONNECT, un Proxy HTTP necesitaría terminar TLS por sí mismo para reenviar tráfico HTTPS — descifrando el tráfico del cliente, y volviéndolo a cifrar hacia el servidor de origen. Eso rompe el cifrado de extremo a extremo y requiere que el cliente confíe en el certificado del Proxy.
+
+CONNECT evita esto: el Proxy solo ve `host:port`, nunca el contenido cifrado. El Handshake de TLS ocurre directamente entre el cliente y el servidor de origen, a través del Tunnel.
+
+---
+
+## Propiedades
+
+- **Segura:** No — abre una conexión de red, un efecto secundario
+- **Idempotente:** No — las llamadas repetidas abren Tunnels separados
+- **Cacheable:** No — no hay representación que cachear, solo un tubo de bytes
+
+---
+
+## Errores comunes
+
+**Evita:** Intentar enviar un cuerpo — CONNECT no tiene un cuerpo de solicitud significativo; el objetivo va en la línea de solicitud.
+
+**Evita:** Esperar que el Proxy inspeccione el tráfico dentro del Tunnel — una vez establecido, el Proxy no puede ver el método, los encabezados, ni los códigos de estado dentro (ese es el propósito).
+
+**Evita:** Usar CONNECT para HTTP normal — existe específicamente para el Tunnel opaco; una solicitud HTTP normal a través de un Proxy simplemente usa la forma absoluta habitual, sin necesidad de CONNECT.
+
+---
+
+## Ver también
+
+- **[Referencia de métodos](/es/web-fundamentals/http/methods)** — Todos los métodos HTTP.
+- **[TRACE](/es/web-fundamentals/http/methods/trace)** — Otro método solo de diagnóstico.

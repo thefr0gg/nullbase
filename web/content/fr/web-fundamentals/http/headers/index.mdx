@@ -1,0 +1,23 @@
+---
+title: En-têtes
+description: Champs d'en-tête HTTP pour les requêtes et les réponses.
+category: HTTP
+weight: 50
+interactive: false
+---
+
+Les **champs d'en-tête HTTP** sont des paires `Nom: valeur` qui transportent des métadonnées sur la requête ou la réponse : le type et la taille de la ressource, des directives de Cache, des identifiants d'authentification, des cookies, et plus.
+
+Les en-têtes sont insensibles à la casse par convention. Plusieurs en-têtes peuvent partager un nom, et plusieurs en-têtes peuvent être combinés en une seule ligne `Nom: valeur, valeur`.
+
+## Index des en-têtes
+
+- [Content-Type](/fr/web-fundamentals/http/headers/content-type) — déclare le type de média du corps.
+- [Content-Length](/fr/web-fundamentals/http/headers/content-length) — la taille du corps en octets.
+- [Authorization](/fr/web-fundamentals/http/headers/authorization) — les identifiants pour l'authentification.
+- [Accept](/fr/web-fundamentals/http/headers/accept) — quels types de réponse le client peut gérer.
+- [Cache-Control](/fr/web-fundamentals/http/headers/cache-control) — les directives de Cache.
+
+## Requête contre réponse
+
+Certains en-têtes s'appliquent aux requêtes, d'autres aux réponses, et d'autres aux deux. Un nom d'en-tête donné peut apparaître dans une requête ou une réponse, mais sa signification reste limitée à ce message.

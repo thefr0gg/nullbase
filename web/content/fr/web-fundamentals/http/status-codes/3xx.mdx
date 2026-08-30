@@ -1,0 +1,135 @@
+---
+title: Codes de statut de redirection 3xx
+description: Codes de statut 300–399 — le client doit prendre une action supplémentaire pour compléter la requête, généralement en suivant une redirection vers une nouvelle URL.
+category: HTTP
+weight: 2
+interactive: true
+interactiveType: ["MermaidDiagram"]
+---
+
+Un statut `3xx` indique au client que la ressource a bougé, ou qu'une autre étape est nécessaire avant que la requête soit terminée — le plus souvent, un en-tête `Location` pointant vers l'URL à suivre ensuite.
+
+## Codes 3xx les plus courants
+
+| Code | Nom | Temporaire ou permanent ? |
+|------|------|------------------------|
+| 301 | Moved Permanently | Redirection permanente |
+| 302 | Found | Redirection temporaire |
+| 304 | Not Modified | Utilisez votre copie en Cache |
+| 307 | Temporary Redirect | Temporaire, méthode préservée |
+| 308 | Permanent Redirect | Permanente, méthode préservée |
+
+---
+
+## Comprendre 301 contre 302 contre 307 contre 308
+
+### 301 Moved Permanently
+La ressource a été déplacée vers une nouvelle URL **de manière permanente**. Les Caches et navigateurs s'en souviennent.
+
+```http
+HTTP/1.1 301 Moved Permanently
+Location: /new/path
+```
+
+**Utilisation :** L'ancienne URL a disparu pour toujours. Les moteurs de recherche mettront à jour leur index. Les navigateurs mettront ceci en Cache.
+
+---
+
+### 302 Found
+La ressource est à une URL différente **en ce moment**, mais pourrait revenir plus tard.
+
+```http
+HTTP/1.1 302 Found
+Location: /temporary/path
+```
+
+**Utilisation :** Redirections temporaires (maintenance, tests A/B, équilibrage de charge).
+
+**Piège :** Certains anciens clients HTTP pourraient changer POST en GET après un 302 (non standard, mais ça arrive).
+
+---
+
+### 307 Temporary Redirect
+Comme 302, mais **garantie** de préserver la méthode.
+
+```http
+HTTP/1.1 307 Temporary Redirect
+Location: /temporary/path
+```
+
+**Utilisation :** Redirection temporaire quand vous avez besoin que POST reste POST.
+
+---
+
+### 308 Permanent Redirect
+Comme 301, mais **garantie** de préserver la méthode.
+
+```http
+HTTP/1.1 308 Permanent Redirect
+Location: /new/path
+```
+
+**Utilisation :** Redirection permanente quand vous avez besoin que POST reste POST.
+
+---
+
+## 304 Not Modified
+
+La ressource n'a pas changé depuis votre dernière vérification. Utilisez votre copie en Cache.
+
+```http
+GET /api/data HTTP/1.1
+If-None-Match: "abc123"
+
+HTTP/1.1 304 Not Modified
+```
+
+**Utilisation :** Requêtes conditionnelles (avec `If-Modified-Since` ou `If-None-Match`). Économise de la bande passante.
+
+---
+
+## Comment fonctionnent les redirections
+
+1. Le client envoie une requête
+2. Le serveur répond avec 301/302/307/308 et un en-tête `Location`
+3. Le client (navigateur) suit automatiquement la redirection vers la nouvelle URL
+4. Le serveur à la nouvelle URL retourne la ressource
+
+<MermaidDiagram
+  title="Flux de redirection"
+  chart={`sequenceDiagram
+    participant Client
+    participant Server
+    Client->>Server: GET /old
+    Server-->>Client: 301 Moved, Location: /new
+    Client->>Server: GET /new
+    Server-->>Client: 200 OK`}
+/>
+
+---
+
+## Autres codes 3xx
+
+- **300 Multiple Choices** — Plusieurs ressources disponibles (rare).
+- **303 See Other** — Comme 302, mais utilisez toujours GET (même si vous avez envoyé POST).
+- **305 Use Proxy** — Passer par un Proxy (obsolète).
+- **306** — Réservé (non utilisé).
+
+---
+
+## Erreurs courantes
+
+**Évitez :** Utiliser 302 quand vous avez besoin de 307 — 302 peut changer POST en GET. Utilisez 307 si c'est important.
+
+**Évitez :** Utiliser 301 pour tout — N'utilisez 301 que si l'URL a disparu pour toujours. La plupart des redirections sont 302 ou 307.
+
+**Évitez :** Ne pas inclure l'en-tête Location — Les réponses 3xx DOIVENT avoir un en-tête Location.
+
+---
+
+## Voir aussi
+
+- **[Référence des codes de statut](/fr/web-fundamentals/http/status-codes)** — Tous les codes en un coup d'œil.
+- **[2xx Succès](/fr/web-fundamentals/http/status-codes/2xx)** — La requête a réussi.
+- **[4xx Erreurs client](/fr/web-fundamentals/http/status-codes/4xx)** — Le client a fait quelque chose de mal.
+- **[5xx Erreurs serveur](/fr/web-fundamentals/http/status-codes/5xx)** — Le serveur a échoué.

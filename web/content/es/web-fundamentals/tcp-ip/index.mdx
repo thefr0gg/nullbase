@@ -1,0 +1,34 @@
+---
+title: TCP/IP
+description: El modelo por capas sobre el que se sustenta cada conexión a Internet, y cómo TCP convierte una red poco fiable en una fiable.
+category: Web Fundamentals
+weight: 5
+interactive: true
+interactiveType: ["ItemExplorer", "StepFlow"]
+---
+
+import { tcpIpLayerItems } from "./layers";
+import { tcpLifecycleSteps } from "./handshake-steps";
+
+**TCP/IP** es el conjunto de protocolos por capas sobre el que realmente funciona Internet. Cada capa resuelve un problema y entrega el resultado a la capa de encima — tu navegador nunca tiene que pensar en tramas Ethernet, y Ethernet nunca tiene que pensar en HTTP.
+
+## Las cuatro capas
+
+<ItemExplorer title="Modelo TCP/IP" layout="grid" items={tcpIpLayerItems} />
+
+Los datos que fluyen hacia abajo por estas capas se encapsulan en cada paso — una solicitud HTTP se convierte en la carga útil de un segmento TCP, que se convierte en la carga útil de un paquete IP, que se convierte en la carga útil de una trama Ethernet. El extremo receptor deshace este encapsulado en orden inverso.
+
+## Lo que TCP realmente añade
+
+IP por sí sola es de «mejor esfuerzo» — los paquetes pueden llegar desordenados, duplicarse, o simplemente desaparecer, y IP en sí misma no hace nada al respecto. **TCP** se sitúa encima de IP y convierte eso en un flujo fiable, ordenado, orientado a conexión: cada byte está numerado, confirmado, y retransmitido si no llega.
+
+<StepFlow title="Ciclo de vida de una conexión TCP" steps={tcpLifecycleSteps} />
+
+## TCP frente a UDP, en una línea
+
+TCP garantiza la entrega y el orden a costa de latencia y sobrecarga (confirmaciones, retransmisión, el Handshake anterior). **UDP** se salta todo eso — sin Handshake, sin garantías, simplemente envía el paquete — por eso se usa donde la velocidad importa más que la fiabilidad: búsquedas DNS, videollamadas, juegos en línea.
+
+## Ver también
+
+- **[Puertos y sockets](/es/web-fundamentals/ports-sockets)** — cómo TCP y UDP permiten que varias aplicaciones compartan una sola dirección IP.
+- **[HTTP](/es/web-fundamentals/http)** — el protocolo de capa de aplicación que normalmente viaja sobre una conexión TCP.

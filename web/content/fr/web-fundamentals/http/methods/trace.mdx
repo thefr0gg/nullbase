@@ -1,0 +1,63 @@
+---
+title: TRACE
+description: Renvoyer en écho au client la requête reçue, à des fins de diagnostic. Désactivée sur la plupart des serveurs pour des raisons de sécurité.
+category: HTTP
+weight: 9
+---
+
+**TRACE** demande au serveur de renvoyer en écho exactement ce qu'il a reçu, afin que le client puisse voir à quoi ressemblait la requête après être passée par d'éventuels Proxies intermédiaires. C'est un outil de diagnostic pour vérifier si quelque chose en chemin a réécrit des en-têtes, ajouté des données de suivi, ou autrement altéré la requête.
+
+## Requête et réponse
+
+```http
+TRACE /api/users/42 HTTP/1.1
+Host: api.example.com
+X-Custom-Header: test
+```
+
+Un serveur qui implémente TRACE répond avec un corps de type `message/http` contenant la requête qu'il a reçue, telle quelle :
+
+```http
+HTTP/1.1 200 OK
+Content-Type: message/http
+
+TRACE /api/users/42 HTTP/1.1
+Host: api.example.com
+X-Custom-Header: test
+Via: 1.1 proxy.example.com
+```
+
+Comparer ce que vous avez envoyé à ce qui est revenu montre exactement ce qu'un Proxy intermédiaire a modifié.
+
+---
+
+## Pourquoi elle est généralement désactivée
+
+TRACE a un problème de sécurité bien connu : le **Cross-Site Tracing (XST)**. Si TRACE est activée sur un serveur, un script s'exécutant dans un navigateur (via `XMLHttpRequest`, dans d'anciens navigateurs qui le permettaient) pourrait émettre une requête TRACE et relire les en-têtes retournés — y compris les cookies — auxquels JavaScript n'aurait normalement jamais accès, contournant l'attribut de cookie `HttpOnly`.
+
+À cause de cela, la plupart des serveurs de production et navigateurs désactivent ou bloquent entièrement TRACE. Elle a largement été supplantée par des outils de diagnostic dédiés qui ne portent pas le même risque.
+
+---
+
+## Propriétés
+
+- **Sûre :** Oui — ne modifie pas l'état du serveur, renvoie juste en écho
+- **Idempotente :** Oui — l'appeler de manière répétée a le même effet
+- **Pouvant être mise en Cache :** Non — un écho de diagnostic n'a pas de représentation en Cache significative
+
+---
+
+## Erreurs courantes
+
+**Évitez :** Activer TRACE en production — c'est un vecteur d'attaque XST connu ; laissez-la désactivée sauf besoin de diagnostic spécifique et contrôlé.
+
+**Évitez :** Supposer que les navigateurs l'enverront — les navigateurs modernes bloquent entièrement les requêtes TRACE initiées par script.
+
+**Évitez :** Confondre TRACE avec la journalisation des requêtes — TRACE renvoie en écho ce que le *serveur* a reçu ; ce n'est pas un substitut à une journalisation appropriée côté serveur.
+
+---
+
+## Voir aussi
+
+- **[Référence des méthodes](/fr/web-fundamentals/http/methods)** — Toutes les méthodes HTTP.
+- **[CONNECT](/fr/web-fundamentals/http/methods/connect)** — Une autre méthode de Tunnel/diagnostic uniquement.

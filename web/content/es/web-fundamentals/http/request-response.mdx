@@ -1,0 +1,24 @@
+---
+title: Modelo solicitud–respuesta
+description: Cómo fluye una transacción HTTP del cliente al servidor y de vuelta.
+category: HTTP
+weight: 10
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+Cada interacción HTTP es una única **solicitud** de un cliente seguida de una única **respuesta** de un servidor. El protocolo no tiene estado: cada solicitud es independiente, y el servidor no recuerda solicitudes anteriores (el estado lo lleva el cliente, por ejemplo en cookies o tokens).
+
+<HttpRequest defaultMethod="GET" defaultPath="/api/http/echo" />
+
+## El ciclo de vida
+
+1. **Cliente → Solicitud** — El cliente construye una solicitud: un *método*, el *objetivo de la solicitud* (normalmente un URI), *campos de encabezado*, y un *cuerpo* opcional.
+2. **Transporte** — La solicitud viaja por la red (típicamente TCP, a menudo cifrado con TLS como HTTPS).
+3. **Servidor → Respuesta** — El servidor procesa la solicitud y devuelve una respuesta: un *código de estado*, *campos de encabezado*, y un *cuerpo* opcional.
+
+## Por qué importa
+
+- **Sin estado** — cualquier máquina que entienda HTTP puede actuar como servidor; no se asume ningún estado de sesión.
+- **Idempotencia** — algunos métodos (`GET`, `PUT`) son idempotentes: repetirlos es seguro.
+- **Cacheabilidad** — las respuestas pueden cachearse (por el cliente, una CDN, o un intermediario) para evitar trabajo redundante.

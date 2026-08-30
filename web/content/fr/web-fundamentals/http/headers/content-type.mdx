@@ -1,0 +1,38 @@
+---
+title: Content-Type
+description: L'en-tête Content-Type indique le type de média de la ressource.
+category: HTTP
+weight: 51
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+L'en-tête `Content-Type` indique le **type de média** (anciennement type MIME) de la ressource : le format des octets envoyés dans le corps du message. Le serveur l'utilise pour indiquer au client comment interpréter la charge utile.
+
+<HttpRequest
+  defaultMethod="POST"
+  defaultPath="/api/http/echo"
+  defaultHeaders="Content-Type: application/json
+Accept: application/json"
+  defaultBody='{"hello":"world"}'
+/>
+
+## Types de médias courants
+
+| Type | Exemple |
+|---|---|
+| JSON | `application/json` |
+| Formulaire | `application/x-www-form-urlencoded` |
+| Formulaire (multipart) | `multipart/form-data` |
+| HTML | `text/html` |
+| CSS | `text/css` |
+| Texte brut | `text/plain` |
+| PNG | `image/png` |
+
+## Exemple
+
+```http
+POST /api/http/echo HTTP/1.1
+Content-Type: application/json
+
+{"hello":"world"}

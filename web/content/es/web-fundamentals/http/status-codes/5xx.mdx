@@ -1,0 +1,158 @@
+---
+title: Códigos de estado de error del servidor 5xx
+description: Códigos de estado 500–599 — el servidor falló al procesar una solicitud válida, cubriendo 500 Internal Server Error, 502 Bad Gateway, 503 Service Unavailable, y más.
+category: HTTP
+weight: 4
+---
+
+Un estado `5xx` significa que la solicitud era válida, pero el servidor falló al procesarla — una excepción no controlada, un servicio ascendente que no respondió, o capacidad agotada. A diferencia de un `4xx`, el cliente normalmente no hizo nada mal, así que reintentar más tarde puede tener éxito.
+
+## Códigos 5xx más comunes
+
+| Código | Nombre | Significado |
+|------|------|---------|
+| 500 | Internal Server Error | Error genérico del servidor (algo se rompió). |
+| 502 | Bad Gateway | El servidor actúa como Proxy y recibió una respuesta inválida. |
+| 503 | Service Unavailable | El servidor está temporalmente caído (mantenimiento, sobrecarga). |
+| 504 | Gateway Timeout | El servidor actúa como Proxy y no recibió una respuesta a tiempo. |
+
+---
+
+## Desglose detallado
+
+### 500 Internal Server Error
+Un error genérico del servidor. Algo se rompió, y el servidor no quiere decir qué.
+
+```http
+POST /api/users HTTP/1.1
+Content-Type: application/json
+
+{
+  "name": "Alice",
+  "email": "alice@example.com"
+}
+
+HTTP/1.1 500 Internal Server Error
+{
+  "error": "Internal server error"
+}
+```
+
+**Uso:** Cuando:
+- Se lanzó una excepción inesperada
+- Falló una consulta a la base de datos
+- El código tiene un bug
+- Un servicio externo falló
+
+**Buena práctica:** No expongas detalles internos en respuestas 500 (sin stack traces a los clientes). Regístralos en el servidor para depuración.
+
+---
+
+### 502 Bad Gateway
+El servidor actúa como Proxy (o balanceador de carga) y recibió una respuesta inválida del servidor backend.
+
+```http
+GET /api/data HTTP/1.1
+
+HTTP/1.1 502 Bad Gateway
+{
+  "error": "Bad gateway"
+}
+```
+
+**Uso:** Cuando:
+- Un Reverse Proxy no puede conectar con el backend
+- El backend envía HTTP mal formado
+- El servidor backend colapsó
+
+---
+
+### 503 Service Unavailable
+El servidor no puede manejar la solicitud temporalmente. Normalmente es temporal (mantenimiento, sobrecarga, reinicio).
+
+```http
+GET /api/data HTTP/1.1
+
+HTTP/1.1 503 Service Unavailable
+Retry-After: 120
+{
+  "error": "Service temporarily unavailable"
+}
+```
+
+**Uso:** Cuando:
+- El servidor está en mantenimiento
+- La base de datos está caída
+- El servidor está sobrecargado
+- El servidor se está reiniciando
+
+**Buena práctica:** Incluye un encabezado `Retry-After` para que el cliente sepa cuándo reintentar.
+
+---
+
+### 504 Gateway Timeout
+El servidor actúa como Proxy y el backend tardó demasiado en responder.
+
+```http
+GET /api/expensive-query HTTP/1.1
+
+HTTP/1.1 504 Gateway Timeout
+{
+  "error": "Gateway timeout"
+}
+```
+
+**Uso:** Cuando:
+- Un Reverse Proxy espera demasiado tiempo al backend
+- Una llamada a una API backend tarda demasiado
+- Una consulta a la base de datos tarda demasiado
+
+---
+
+## Otros códigos 5xx
+
+- **501 Not Implemented** — El método o funcionalidad aún no está implementado.
+- **505 HTTP Version Not Supported** — El servidor no soporta la versión de HTTP.
+
+---
+
+## Cuándo usar 5xx frente a 4xx
+
+| Escenario | Código |
+|----------|------|
+| El cliente envió JSON inválido | 400 |
+| La base de datos falló al guardar los datos | 500 |
+| El cliente no ha iniciado sesión | 401 |
+| El servidor colapsó | 500 |
+| El recurso no existe | 404 |
+| El servidor está caído por mantenimiento | 503 |
+
+---
+
+## Cómo deberían manejar los clientes los errores 5xx
+
+- **Reintentar con retroceso** — Espera y vuelve a intentar (usa `Retry-After` si se proporciona).
+- **No reintentes 500 inmediatamente** — Retroceso exponencial (1s, 2s, 4s, 8s...).
+- **Reintenta 503 después del tiempo especificado** — El servidor te dijo cuándo volver a intentarlo.
+- **No reintentes 501** — La funcionalidad no está implementada; prueba otro enfoque.
+
+---
+
+## Errores comunes
+
+**Evita:** Devolver 500 para errores del cliente — Usa 4xx para errores del cliente (400, 401, 403, 404, etc.).
+
+**Evita:** Exponer stack traces a los clientes — Registra los errores en el servidor, pero envía mensajes genéricos a los clientes.
+
+**Evita:** No incluir Retry-After en 503 — Indica al cliente cuándo reintentar.
+
+**Evita:** No registrar los errores 5xx — Son bugs. Regístralos para poder arreglarlos.
+
+---
+
+## Ver también
+
+- **[Referencia de códigos de estado](/es/web-fundamentals/http/status-codes)** — Todos los códigos de un vistazo.
+- **[2xx Éxito](/es/web-fundamentals/http/status-codes/2xx)** — La solicitud tuvo éxito.
+- **[3xx Redirección](/es/web-fundamentals/http/status-codes/3xx)** — El cliente necesita hacer algo.
+- **[4xx Errores del cliente](/es/web-fundamentals/http/status-codes/4xx)** — El cliente hizo algo mal.

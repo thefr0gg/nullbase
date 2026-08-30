@@ -1,0 +1,190 @@
+---
+title: Fundamentos de HTTP
+description: Qué es HTTP, cómo funciona, y por qué importa. La base para todo lo demás.
+category: HTTP
+weight: 1
+interactive: true
+interactiveType: ["MermaidDiagram"]
+---
+
+El **protocolo de transferencia de hipertexto (HTTP)** es el protocolo usado para transferir datos a través de la World Wide Web. Es cómo tu navegador obtiene páginas web, cómo tu teléfono envía datos a servidores, cómo se comunican las API.
+
+## Qué hace especial a HTTP
+
+### Sin estado
+Cada solicitud es independiente. El servidor no recuerda solicitudes anteriores a menos que se lo indiques explícitamente (mediante cookies, sesiones, etc.). Esto mantiene al servidor simple y escalable.
+
+### Solicitud–respuesta
+La comunicación siempre la inicia el **cliente**. El servidor nunca envía datos a menos que se le pida. El patrón es:
+
+1. El cliente envía una solicitud
+2. El servidor la procesa
+3. El servidor envía una respuesta
+4. La conexión puede cerrarse o permanecer abierta para reutilizarse
+
+### Basado en texto (en su mayor parte)
+Los mensajes HTTP son en su mayoría texto legible (a diferencia de los protocolos binarios). Esto los hace depurables e inspeccionables.
+
+```http
+GET /api/users HTTP/1.1
+Host: example.com
+Content-Type: application/json
+
+```
+
+---
+
+## El flujo básico
+
+<MermaidDiagram
+  title="Solicitud / Respuesta"
+  chart={`sequenceDiagram
+    participant Client
+    participant Server
+    Client->>Server: HTTP Request (GET, POST...)
+    Note over Server: Process request
+    Server-->>Client: HTTP Response (200, 404...)`}
+/>
+
+Cada solicitud tiene:
+- Un **método** (GET, POST, PUT, DELETE, etc.)
+- Una **URL** (qué recurso)
+- **Encabezados** (metadatos)
+- Un **cuerpo** (opcional, los datos enviados)
+
+Cada respuesta tiene:
+- Un **código de estado** (200, 404, 500, etc.)
+- **Encabezados** (metadatos sobre la respuesta)
+- Un **cuerpo** (el contenido real)
+
+---
+
+## URL
+
+Una URL identifica el recurso que quieres:
+
+```text
+https://api.example.com/v1/users/42?sort=name#details
+```
+
+- **https** — protocolo (esquema)
+- **api.example.com** — host
+- **/v1/users/42** — ruta (el recurso)
+- **?sort=name** — cadena de consulta (parámetros)
+- **#details** — fragmento (solo del lado del cliente)
+
+---
+
+## Métodos
+
+El **método** indica al servidor qué quieres hacer:
+
+| Método | Propósito | ¿Tiene cuerpo? | ¿Idempotente? |
+|--------|---------|-----------|------------|
+| GET | Obtener un recurso | No | Sí |
+| POST | Crear un recurso o disparar una acción | Sí | No |
+| PUT | Reemplazar un recurso | Sí | Sí |
+| PATCH | Actualizar parcialmente un recurso | Sí | No |
+| DELETE | Eliminar un recurso | No | Sí |
+| HEAD | Como GET, pero solo encabezados | No | Sí |
+| OPTIONS | Describir las opciones de comunicación | No | Sí |
+
+**Idempotente** significa que llamarlo varias veces tiene el mismo efecto que llamarlo una vez. Seguro para reintentos.
+
+---
+
+## Códigos de estado
+
+El servidor responde con un código de 3 dígitos que indica qué ocurrió:
+
+| Rango | Significado | Ejemplos |
+|-------|---------|----------|
+| 1xx | Informativo | 100 Continue |
+| 2xx | Éxito | 200 OK, 201 Created, 204 No Content |
+| 3xx | Redirección | 301 Moved, 302 Found, 304 Not Modified |
+| 4xx | Error del cliente | 400 Bad Request, 401 Unauthorized, 404 Not Found |
+| 5xx | Error del servidor | 500 Internal Server Error, 502 Bad Gateway |
+
+---
+
+## Encabezados
+
+Los encabezados son pares clave-valor que transportan metadatos sobre la solicitud o la respuesta.
+
+**Encabezados de solicitud comunes:**
+- `Authorization` — quién eres (nombre de usuario, clave de API, token)
+- `Content-Type` — formato del cuerpo (application/json, form-data, etc.)
+- `Accept` — qué formatos puedes entender
+- `User-Agent` — qué cliente está haciendo la solicitud
+
+**Encabezados de respuesta comunes:**
+- `Content-Type` — formato del cuerpo de la respuesta
+- `Cache-Control` — cuánto tiempo cachear esto
+- `Set-Cookie` — almacenar datos en el cliente
+- `Location` — redirigir aquí (para respuestas 3xx)
+
+---
+
+## Cuerpos
+
+El **cuerpo** es el dato real que se transfiere. Las solicitudes pueden tener cuerpo (normalmente POST, PUT, PATCH). Las respuestas casi siempre lo tienen.
+
+**Ejemplo de solicitud con cuerpo:**
+```json
+POST /api/users HTTP/1.1
+Host: api.example.com
+Content-Type: application/json
+
+{
+  "name": "Alice",
+  "email": "alice@example.com"
+}
+```
+
+**Ejemplo de respuesta con cuerpo:**
+```json
+HTTP/1.1 201 Created
+Content-Type: application/json
+
+{
+  "id": 42,
+  "name": "Alice",
+  "email": "alice@example.com"
+}
+```
+
+---
+
+## Versiones
+
+HTTP ha evolucionado. Las diferencias importan:
+
+- **HTTP/1.0** (1991) — Simple, una solicitud por conexión.
+- **HTTP/1.1** (1997–presente) — Keep-Alive, pipelining, codificación por fragmentos.
+- **HTTP/2** (2015) — Multiplexación, server push, entramado binario.
+- **HTTP/3** (2022) — Construido sobre QUIC para velocidad y fiabilidad.
+
+La mayoría de navegadores y servidores modernos usan HTTP/1.1 o HTTP/2. HTTP/3 está creciendo.
+
+---
+
+## Errores comunes
+
+**Evita:** Pensar que las solicitudes GET pueden tener cuerpo — Algunos servidores lo aceptan, pero no es estándar. Usa POST en su lugar.
+
+**Evita:** Usar GET para datos sensibles — Los parámetros de consulta son visibles en las URL. Usa POST con un cuerpo y HTTPS.
+
+**Evita:** No leer el código de estado — 200 significa éxito, pero 201, 202, 204 también significan éxito (con significados diferentes).
+
+**Evita:** Olvidar Content-Type — Algunos servidores no podrán analizar tu cuerpo sin él.
+
+**Evita:** No manejar las redirecciones 3xx — Tu cliente necesita seguir las redirecciones automáticamente (la mayoría lo hace).
+
+---
+
+## Próximos pasos
+
+- **[Modelo solicitud–respuesta](/es/web-fundamentals/http/request-response)** — Observa un flujo completo visualizado.
+- **[Métodos](/es/web-fundamentals/http/methods)** — Profundiza en GET, POST, PUT, PATCH, DELETE.
+- **[Códigos de estado](/es/web-fundamentals/http/status-codes)** — Más de 60 códigos y cuándo usarlos.
+- **[Encabezados](/es/web-fundamentals/http/headers)** — Los encabezados que hacen funcionar a HTTP.

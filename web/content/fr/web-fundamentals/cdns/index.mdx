@@ -1,0 +1,38 @@
+---
+title: CDN
+description: Comment un réseau de diffusion de contenu (CDN) sert du contenu depuis des serveurs proches de l'utilisateur plutôt qu'une seule origine lointaine.
+category: Web Fundamentals
+weight: 8
+interactive: true
+interactiveType: ["StepFlow", "ItemExplorer"]
+---
+
+import { cacheFlowSteps } from "./cache-flow-steps";
+import { cdnGlossaryItems } from "./glossary";
+
+Un **CDN (Content Delivery Network)** est un ensemble mondialement distribué de serveurs de Cache qui se placent entre les clients et votre serveur d'origine. Plutôt que chaque requête dans le monde parcoure toute la distance jusqu'à l'endroit où réside votre unique backend, la plupart des requêtes sont servies par un serveur physiquement proche de la personne qui les fait.
+
+C'est un Reverse Proxy spécialisé, voir la page [Proxies](/fr/web-fundamentals/proxies) — le même modèle « se place devant le serveur, le cache au client », mais répliqué dans des centaines d'emplacements à travers le monde avec le Cache comme mission principale.
+
+## Cache Miss, puis Cache Hit
+
+<StepFlow title="Flux d'une requête CDN" steps={cacheFlowSteps} />
+
+## Pourquoi c'est plus rapide
+
+- **La distance** — un aller-retour vers un serveur à 15 ms plutôt qu'à 150 ms est le gain le plus important, surtout pour tout ce qui implique plusieurs requêtes séquentielles (comme charger une page avec de nombreux actifs).
+- **La charge de l'origine** — le serveur d'origine ne gère que les Cache Miss et les requêtes vraiment dynamiques, pas chaque requête de chaque utilisateur partout.
+- **L'absorption des pics de trafic** — une hausse soudaine de requêtes sur un actif en Cache est absorbée par le réseau de périphérie (Edge) ; l'origine n'en voit jamais la majeure partie.
+
+## Ce pour quoi les CDN sont bons — et mauvais
+
+Les CDN excellent pour le **contenu statique et pouvant être mis en Cache** : images, CSS, bundles JS, vidéo. Ils sont bien moins adaptés au **contenu très dynamique et propre à chaque utilisateur** (un solde de compte en direct, un tableau de bord personnalisé) — qui doit soit contourner entièrement le Cache, soit nécessiter des règles de Cache précises et étroites (par exemple, ne mettre en Cache que brièvement par utilisateur, ou ne jamais mettre en Cache le corps de la réponse tout en continuant à mettre en Cache les actifs statiques de la même page).
+
+## Glossaire
+
+<ItemExplorer title="Termes CDN" layout="grid" items={cdnGlossaryItems} />
+
+## Voir aussi
+
+- **[Proxies](/fr/web-fundamentals/proxies)** — le modèle général de Reverse Proxy que spécialise un CDN.
+- **[DNS](/fr/web-fundamentals/dns)** — comment un CDN vous route vers votre serveur Edge le plus proche.

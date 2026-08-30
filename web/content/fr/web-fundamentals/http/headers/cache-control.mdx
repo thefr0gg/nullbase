@@ -1,0 +1,38 @@
+---
+title: Cache-Control
+description: L'en-tête Cache-Control dirige comment (et si) une réponse est mise en Cache.
+category: HTTP
+weight: 55
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+L'en-tête `Cache-Control` transporte des directives qui contrôlent le comportement de mise en Cache — pour les navigateurs, et pour tout ce qui se trouve entre le client et le serveur d'origine, comme un [CDN](/fr/web-fundamentals/cdns). Il peut apparaître à la fois dans les requêtes et les réponses ; c'est dans les réponses qu'il compte le plus.
+
+<ItemExplorer
+  title="Directives courantes"
+  layout="grid"
+  items={[
+    { id: "no-store", label: "no-store", color: "red", detail: "Ne jamais mettre cette réponse en Cache nulle part, point final. Utilisé pour tout ce qui est sensible — jetons d'authentification, données personnelles." },
+    { id: "no-cache", label: "no-cache", color: "orange", detail: "Peut être mis en Cache, mais doit être revalidé avec l'origine avant chaque utilisation — ce n'est pas « ne pas mettre en Cache » malgré le nom." },
+    { id: "private", label: "private", color: "orange", detail: "Pouvant être mis en Cache uniquement dans le propre navigateur de l'utilisateur final, pas par un Cache partagé comme un CDN ou un Proxy intermédiaire." },
+    { id: "public", label: "public", color: "green", detail: "Pouvant être mis en Cache par n'importe quel Cache en chemin, y compris les Caches partagés/CDN — le cas courant pour les actifs statiques." },
+    { id: "max-age", label: "max-age=N", color: "blue", detail: "Combien de secondes la réponse est considérée fraîche avant de nécessiter une revalidation. max-age=3600 = 1 heure." },
+    { id: "must-revalidate", label: "must-revalidate", color: "purple", detail: "Une fois la réponse périmée, elle doit être revalidée avec l'origine avant d'être réutilisée — pas de service d'une version périmée pendant la vérification." },
+  ]}
+/>
+
+## Une réponse typique
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+Cache-Control: public, max-age=3600, must-revalidate
+```
+
+Pouvant être mise en Cache par tout le monde, fraîche pendant une heure, et une fois cette heure écoulée, ne pas la resservir sans vérifier d'abord avec l'origine.
+
+## Voir aussi
+
+- **[CDN](/fr/web-fundamentals/cdns)** — le flux « Cache Hit / Cache Miss » que cet en-tête dirige du côté de la réponse.
+- **[Codes de statut 3xx](/fr/web-fundamentals/http/status-codes/3xx)** — `304 Not Modified` est à quoi ressemble une revalidation réussie.

@@ -1,0 +1,81 @@
+---
+title: DELETE
+description: Eliminar un recurso del servidor.
+category: HTTP
+weight: 5
+---
+
+**DELETE** elimina un recurso. Tras un DELETE exitoso, el recurso desaparece.
+
+## DELETE básico
+
+```http
+DELETE /api/users/42 HTTP/1.1
+Host: api.example.com
+```
+
+**Respuesta:**
+```http
+HTTP/1.1 204 No Content
+```
+
+---
+
+## Códigos de estado de respuesta
+
+- **200 OK** — Eliminado, el cuerpo de la respuesta contiene detalles
+- **202 Accepted** — La eliminación está en cola/en proceso
+- **204 No Content** — Eliminado con éxito, sin cuerpo
+- **404 Not Found** — El recurso no existe
+- **410 Gone** — El recurso ya estaba eliminado
+
+---
+
+## DELETE con parámetros de consulta
+
+Eliminar elementos específicos o con condiciones:
+
+```http
+DELETE /api/sessions/current HTTP/1.1
+
+DELETE /api/files?older_than=2023-01-01 HTTP/1.1
+```
+
+---
+
+## ¿Idempotente y seguro?
+
+- **Idempotente:** Sí — llamar a DELETE dos veces tiene el mismo efecto que una vez (desapareció).
+- **Seguro:** No — cambia el estado del servidor (elimina datos).
+
+---
+
+## Patrones comunes
+
+**Eliminación en cascada:**
+```http
+DELETE /api/users/42?cascade=true HTTP/1.1
+```
+
+**Eliminación suave (marcar como eliminado, no eliminarlo realmente):**
+```http
+DELETE /api/users/42 HTTP/1.1
+```
+El servidor podría devolver 200 con `{ deleted: true, id: 42 }` en lugar de eliminarlo realmente.
+
+---
+
+## Errores comunes
+
+**Evita:** Suponer que DELETE es siempre instantáneo — Podría estar en cola (202 Accepted).
+
+**Evita:** No usar 404 para recursos faltantes — Si el recurso ya desapareció, devuelve 404.
+
+**Evita:** DELETE con cuerpo — DELETE normalmente no tiene cuerpo. Incluye las condiciones en la URL o encabezados si es necesario.
+
+---
+
+## Ver también
+
+- **[Referencia de métodos](/es/web-fundamentals/http/methods)** — Todos los métodos HTTP.
+- **[Códigos de estado](/es/web-fundamentals/http/status-codes)** — Qué significa cada código de respuesta.

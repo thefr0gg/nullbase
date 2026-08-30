@@ -1,0 +1,176 @@
+---
+title: Códigos de estado HTTP
+description: Referencia completa de todos los códigos de estado HTTP, agrupados por clase, con explicaciones y ejemplos.
+category: HTTP
+weight: 4
+interactive: true
+---
+
+Cada respuesta HTTP comienza con un **código de estado** — un número de 3 dígitos que indica al cliente qué ocurrió.
+
+## Explorador de códigos de estado en vivo
+
+Prueba a hacer clic en cualquier código para ver qué significa y cuándo lo usan los servidores.
+
+<StatusCodeExplorer defaultCode={200} />
+
+---
+
+## Las clases de un vistazo
+
+| Clase | Rango | Significado | Enlace |
+|-------|-------|---------|------|
+| 1xx | 100–199 | Informativo (continuar procesando) | — |
+| 2xx | 200–299 | Éxito (solicitud recibida, entendida, aceptada) | [→ Explorar](/es/web-fundamentals/http/status-codes/2xx) |
+| 3xx | 300–399 | Redirección (se necesita acción adicional) | [→ Explorar](/es/web-fundamentals/http/status-codes/3xx) |
+| 4xx | 400–499 | Error del cliente (el cliente hizo algo mal) | [→ Explorar](/es/web-fundamentals/http/status-codes/4xx) |
+| 5xx | 500–599 | Error del servidor (el servidor falló) | [→ Explorar](/es/web-fundamentals/http/status-codes/5xx) |
+
+---
+
+## Códigos de éxito 2xx
+
+La solicitud tuvo éxito. El recurso fue obtenido, creado, actualizado, o eliminado.
+
+| Código | Nombre | Caso de uso |
+|------|------|----------|
+| **200** | OK | Éxito genérico. Recurso obtenido o procesado. |
+| **201** | Created | Nuevo recurso creado con éxito (POST). |
+| **202** | Accepted | Solicitud aceptada pero el procesamiento es asíncrono. |
+| **204** | No Content | Éxito sin cuerpo (DELETE, PATCH). |
+
+[→ Referencia 2xx completa](/es/web-fundamentals/http/status-codes/2xx)
+
+---
+
+## Códigos de redirección 3xx
+
+El recurso se ha movido, o el cliente necesita hacer algo más.
+
+| Código | Nombre | Caso de uso |
+|------|------|----------|
+| **301** | Moved Permanently | Recurso movido para siempre. Actualiza tus favoritos. |
+| **302** | Found | Recurso movido temporalmente. |
+| **304** | Not Modified | Usa tu copia en Cache. |
+| **307** | Temporary Redirect | Movimiento temporal, se preserva el método HTTP. |
+| **308** | Permanent Redirect | Movimiento permanente, se preserva el método HTTP. |
+
+[→ Referencia 3xx completa](/es/web-fundamentals/http/status-codes/3xx)
+
+---
+
+## Códigos de error del cliente 4xx
+
+La solicitud del cliente tenía un problema. Corrige la solicitud e inténtalo de nuevo.
+
+| Código | Nombre | Significado |
+|------|------|---------|
+| **400** | Bad Request | Formato de solicitud inválido (JSON mal formado, campos faltantes). |
+| **401** | Unauthorized | No estás autenticado. Inicia sesión primero. |
+| **403** | Forbidden | Estás autenticado pero no tienes permiso. |
+| **404** | Not Found | El recurso no existe. |
+| **409** | Conflict | La solicitud entra en conflicto con el estado del servidor. |
+| **422** | Unprocessable Entity | El formato es válido pero los datos son rechazados. |
+| **429** | Too Many Requests | Límite de velocidad. Estás haciendo solicitudes demasiado rápido. |
+
+[→ Referencia 4xx completa](/es/web-fundamentals/http/status-codes/4xx)
+
+---
+
+## Códigos de error del servidor 5xx
+
+El servidor falló. No es culpa del cliente.
+
+| Código | Nombre | Significado |
+|------|------|---------|
+| **500** | Internal Server Error | Algo se rompió en el servidor. |
+| **502** | Bad Gateway | El Proxy no puede alcanzar el backend. |
+| **503** | Service Unavailable | El servidor está caído o sobrecargado. Reinténtalo más tarde. |
+| **504** | Gateway Timeout | El backend tardó demasiado en responder. |
+
+[→ Referencia 5xx completa](/es/web-fundamentals/http/status-codes/5xx)
+
+---
+
+## Cuándo ves cada estado
+
+### Crear un recurso
+
+```http
+POST /api/users HTTP/1.1
+Content-Type: application/json
+
+{ "name": "Alice" }
+
+HTTP/1.1 201 Created
+Location: /api/users/42
+```
+
+### Recurso no encontrado
+
+```http
+GET /api/users/999999 HTTP/1.1
+
+HTTP/1.1 404 Not Found
+```
+
+### Autenticación requerida
+
+```http
+GET /api/admin HTTP/1.1
+
+HTTP/1.1 401 Unauthorized
+WWW-Authenticate: Bearer realm="api"
+```
+
+### Error del servidor
+
+```http
+POST /api/users HTTP/1.1
+
+HTTP/1.1 500 Internal Server Error
+```
+
+---
+
+## Guía de decisión rápida
+
+**¿La solicitud tuvo éxito?**
+- Sí → **2xx** (normalmente 200 o 201)
+- No → Continúa abajo
+
+**¿Hay algo más que el cliente necesite hacer?**
+- Sí, seguir una redirección → **3xx** (normalmente 301, 302, 307)
+- No → Continúa abajo
+
+**¿El cliente hizo algo mal?**
+- Sí → **4xx** (400, 401, 403, 404, 422, 429, etc.)
+- No → El servidor falló
+
+**¿El servidor falló?**
+- Sí → **5xx** (500, 502, 503, 504)
+
+---
+
+## Errores comunes
+
+**Evita:** Devolver 404 para problemas de permisos — Usa 403, no 404.
+
+**Evita:** Confundir 401 y 403 — 401 = inicia sesión, 403 = sin permiso.
+
+**Evita:** Devolver 500 para errores del cliente — Usa 4xx para problemas del cliente, 5xx para problemas del servidor.
+
+**Evita:** No incluir el encabezado Location en 201 — 201 Created debería incluir dónde está el nuevo recurso.
+
+**Evita:** No incluir Retry-After en 429/503 — Indica al cliente cuándo reintentar.
+
+---
+
+## Ver también
+
+- **[Fundamentos](/es/web-fundamentals/http/fundamentals)** — ¿Qué es HTTP?
+- **[Métodos](/es/web-fundamentals/http/methods)** — GET, POST, PUT, PATCH, DELETE.
+- **[Encabezados](/es/web-fundamentals/http/headers)** — Los metadatos que controlan el comportamiento.
+
+- [404 Not Found](/es/web-fundamentals/http/status-codes/404)
+- [500 Internal Server Error](/es/web-fundamentals/http/status-codes/500)

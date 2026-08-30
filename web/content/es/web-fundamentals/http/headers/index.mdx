@@ -1,0 +1,23 @@
+---
+title: Encabezados
+description: Campos de encabezado HTTP para solicitudes y respuestas.
+category: HTTP
+weight: 50
+interactive: false
+---
+
+Los **campos de encabezado HTTP** son pares `Nombre: valor` que transportan metadatos sobre la solicitud o la respuesta: el tipo y tamaño del recurso, directivas de Cache, credenciales de autenticación, cookies, y más.
+
+Los encabezados no distinguen mayúsculas de minúsculas por convención. Varios encabezados pueden compartir un nombre, y varios encabezados pueden combinarse en una sola línea `Nombre: valor, valor`.
+
+## Índice de encabezados
+
+- [Content-Type](/es/web-fundamentals/http/headers/content-type) — declara el tipo de medio del cuerpo.
+- [Content-Length](/es/web-fundamentals/http/headers/content-length) — el tamaño del cuerpo en bytes.
+- [Authorization](/es/web-fundamentals/http/headers/authorization) — credenciales para la autenticación.
+- [Accept](/es/web-fundamentals/http/headers/accept) — qué tipos de respuesta puede manejar el cliente.
+- [Cache-Control](/es/web-fundamentals/http/headers/cache-control) — directivas de Cache.
+
+## Solicitud frente a respuesta
+
+Algunos encabezados se aplican a solicitudes, algunos a respuestas, y algunos a ambos. Un nombre de encabezado dado puede aparecer en una solicitud o en una respuesta, pero su significado se limita a ese mensaje.

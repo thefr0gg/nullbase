@@ -1,0 +1,32 @@
+---
+title: PUT
+description: El método PUT reemplaza todas las representaciones actuales del recurso objetivo con la carga útil de la solicitud.
+category: HTTP
+weight: 33
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+El método `PUT` reemplaza todas las representaciones actuales del recurso objetivo con la carga útil de la solicitud. Es **idempotente**: enviar el mismo `PUT` repetidamente tiene el mismo efecto que enviarlo una vez.
+
+<HttpRequest
+  defaultMethod="PUT"
+  defaultPath="/api/http/echo"
+  defaultHeaders="Content-Type: application/json"
+  defaultBody='{ "resource": "updated" }'
+/>
+
+## Propiedades
+
+- **No es segura**, pero es **idempotente**.
+- La solicitud es **autodescriptiva**: el cuerpo describe por completo el nuevo estado del recurso.
+- A menudo se usa para crear o actualizar un recurso conocido: `PUT /users/123` reemplaza al usuario 123.
+
+## Ejemplo
+
+```http
+PUT /api/http/echo HTTP/1.1
+Host: nullbase.local
+Content-Type: application/json
+
+{ "resource": "updated" }

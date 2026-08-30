@@ -1,0 +1,114 @@
+---
+title: Codes de statut de succès 2xx
+description: Codes de statut 200–299 — la requête a réussi, couvrant 200 OK, 201 Created, 204 No Content, et plus.
+category: HTTP
+weight: 1
+---
+
+Un statut `2xx` signifie que le serveur a reçu, compris, et accepté la requête. Celui qui revient — un `200` simple, un `201` après avoir créé quelque chose, un `204` sans rien à montrer — dépend de ce que la requête demandait réellement.
+
+## Codes 2xx les plus courants
+
+| Code | Nom | Quand l'utiliser |
+|------|------|------------|
+| 200 | OK | Succès générique. Tout a fonctionné. |
+| 201 | Created | La ressource a été créée avec succès (POST). |
+| 202 | Accepted | Requête acceptée mais traitement asynchrone. |
+| 204 | No Content | Succès, mais aucun corps à retourner (DELETE, PATCH). |
+
+---
+
+## Détail
+
+### 200 OK
+La requête a réussi. Incluez le résultat dans le corps de la réponse.
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "id": 42,
+  "name": "Alice"
+}
+```
+
+**Utilisez pour :** GET, PUT (en retournant la ressource mise à jour), PATCH.
+
+---
+
+### 201 Created
+La requête a réussi et une nouvelle ressource a été créée.
+
+```http
+HTTP/1.1 201 Created
+Content-Type: application/json
+Location: /api/users/42
+
+{
+  "id": 42,
+  "name": "Alice"
+}
+```
+
+**Utilisez pour :** POST (en créant une nouvelle ressource).
+
+**Important :** Incluez un en-tête `Location` avec l'URL de la nouvelle ressource.
+
+---
+
+### 202 Accepted
+La requête a été acceptée et est en cours de traitement, mais n'est pas terminée.
+
+```http
+HTTP/1.1 202 Accepted
+Content-Type: application/json
+
+{
+  "status": "processing",
+  "job_id": "abc-123"
+}
+```
+
+**Utilisez pour :** Les opérations longues (envois de fichiers, transcodage, rapports).
+
+Le client devrait vérifier le statut du job plus tard en utilisant l'identifiant du job.
+
+---
+
+### 204 No Content
+La requête a réussi, mais il n'y a pas de contenu à retourner.
+
+```http
+HTTP/1.1 204 No Content
+```
+
+**Utilisez pour :** DELETE, PATCH (quand vous n'avez pas besoin de retourner la ressource mise à jour).
+
+**Important :** La réponse n'a AUCUN corps (pas même `{}`).
+
+---
+
+## Autres codes 2xx
+
+- **205 Reset Content** — Succès, et le client devrait réinitialiser le formulaire / l'interface.
+- **206 Partial Content** — Ne retourne qu'une partie d'une ressource (requête par plage).
+
+---
+
+## Erreurs courantes
+
+**Évitez :** Utiliser 200 quand vous devriez utiliser 201 — Un POST qui crée une ressource devrait retourner 201, pas 200.
+
+**Évitez :** Utiliser 204 tout en envoyant quand même un corps — Si vous envoyez 204, n'incluez pas de corps.
+
+**Évitez :** Oublier l'en-tête Location sur 201 — Incluez où la nouvelle ressource peut être accédée.
+
+---
+
+## Voir aussi
+
+- **[Référence des codes de statut](/fr/web-fundamentals/http/status-codes)** — Tous les codes en un coup d'œil.
+- **[3xx Redirection](/fr/web-fundamentals/http/status-codes/3xx)** — Quand le client doit faire quelque chose.
+- **[4xx Erreurs client](/fr/web-fundamentals/http/status-codes/4xx)** — Quand le client a fait quelque chose de mal.
+- **[5xx Erreurs serveur](/fr/web-fundamentals/http/status-codes/5xx)** — Quand le serveur a échoué.
