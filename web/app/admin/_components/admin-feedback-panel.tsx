@@ -1,11 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Star } from "lucide-react";
-import { Badge, Card } from "@/app/_components/ui";
+import { createPortal } from "react-dom";
+import { Star, Trash2, TriangleAlert, X } from "lucide-react";
+import { Badge, Button, Card } from "@/app/_components/ui";
 import { ApiError } from "@/lib/api";
-import { adminListFeedback, adminUpdateFeedbackStatus, type FeedbackRow } from "@/lib/admin-api";
+import { adminDeleteFeedback, adminListFeedback, adminUpdateFeedbackStatus, type FeedbackRow } from "@/lib/admin-api";
 import { FEEDBACK_TYPES, FEEDBACK_TYPE_LABELS, type FeedbackType } from "@/lib/feedback-types";
+import { useHasMounted } from "@/lib/use-has-mounted";
 import { AdminLoading } from "./admin-loading";
 import { AdminPagination } from "./admin-pagination";
 import { AdminDropdown } from "./admin-dropdown";
@@ -34,6 +36,9 @@ export function AdminFeedbackPanel({ pageTitles }: { pageTitles: Record<string, 
   const [loading, setLoading] = useState(true); // true until the first fetch resolves
   const [error, setError] = useState<string | null>(null);
   const [updating, setUpdating] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState<number | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<FeedbackRow | null>(null);
+  const mounted = useHasMounted();
 
   // No setState before this — every update below happens after `await`, so
   // calling this from an effect never triggers a synchronous render loop.
@@ -108,6 +113,22 @@ export function AdminFeedbackPanel({ pageTitles }: { pageTitles: Record<string, 
     }
   }
 
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+    const { id } = pendingDelete;
+    setDeleting(id);
+    setPendingDelete(null);
+    try {
+      await adminDeleteFeedback(id);
+      setItems((prev) => prev.filter((item) => item.id !== id));
+      setTotal((prev) => Math.max(0, prev - 1));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Could not delete that item.");
+    } finally {
+      setDeleting(null);
+    }
+  }
+
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
@@ -176,20 +197,30 @@ export function AdminFeedbackPanel({ pageTitles }: { pageTitles: Record<string, 
                   {item.email ? `${item.email} · ` : ""}
                   {new Date(item.created_at).toLocaleString()}
                 </span>
-                <div className="flex shrink-0 flex-wrap gap-1.5">
+                <div className="flex shrink-0 flex-wrap items-center gap-1.5">
                   {(["new", "resolved", "dismissed"] as const)
                     .filter((s) => s !== item.status)
                     .map((s) => (
                       <button
                         key={s}
                         type="button"
-                        disabled={updating === item.id}
+                        disabled={updating === item.id || deleting === item.id}
                         onClick={() => updateStatus(item.id, s)}
                         className="rounded-md border border-border px-2 py-0.5 text-text-secondary transition-colors hover:border-electric-blue/40 hover:text-electric-blue disabled:opacity-50"
                       >
                         Mark {STATUS_BADGE[s].label.toLowerCase()}
                       </button>
                     ))}
+                  <button
+                    type="button"
+                    disabled={deleting === item.id}
+                    onClick={() => setPendingDelete(item)}
+                    aria-label="Delete feedback"
+                    title="Delete feedback"
+                    className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-border text-text-secondary transition-colors hover:border-danger/40 hover:text-danger disabled:opacity-50"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               </div>
             </Card>
@@ -198,6 +229,54 @@ export function AdminFeedbackPanel({ pageTitles }: { pageTitles: Record<string, 
       )}
 
       <AdminPagination page={page} totalPages={totalPages} onChange={goToPage} disabled={loading} />
+
+      {/* Portaled, custom confirm — matches the sessions panel's pattern of
+          never using browser confirm() for a destructive action. */}
+      {pendingDelete &&
+        mounted &&
+        createPortal(
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/40" onClick={() => setPendingDelete(null)} aria-hidden="true" />
+            <Card className="relative w-full max-w-sm text-start shadow-card">
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-danger/15 text-danger">
+                    <TriangleAlert className="h-4 w-4" />
+                  </span>
+                  <h3 className="text-sm font-semibold text-text-primary">Delete feedback</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPendingDelete(null)}
+                  aria-label="Close"
+                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-text-secondary hover:bg-background hover:text-text-primary"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <p className="text-sm text-text-secondary">
+                This permanently deletes the feedback for{" "}
+                <span className="font-medium text-text-primary">
+                  {pageTitles[pendingDelete.page_path] ?? pendingDelete.page_path}
+                </span>
+                . This can&apos;t be undone.
+              </p>
+              <div className="mt-4 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={confirmDelete}
+                  className="inline-flex items-center justify-center rounded-xl bg-danger px-3.5 py-1.5 text-sm font-medium text-white transition-opacity hover:opacity-90"
+                >
+                  Delete
+                </button>
+                <Button type="button" variant="ghost" onClick={() => setPendingDelete(null)}>
+                  Cancel
+                </Button>
+              </div>
+            </Card>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

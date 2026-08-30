@@ -70,6 +70,10 @@ export class FeedbackService {
   async updateStatus(id: number, status: FeedbackStatus): Promise<boolean> {
     return this.repo.updateStatus(id, status);
   }
+
+  async delete(id: number): Promise<boolean> {
+    return this.repo.delete(id);
+  }
 }
 
 export class FeedbackValidationError extends Error {}

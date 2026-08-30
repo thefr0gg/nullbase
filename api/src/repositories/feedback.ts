@@ -138,4 +138,14 @@ export class FeedbackRepository {
       .first<{ id: number }>();
     return row !== null;
   }
+
+  async delete(id: number): Promise<boolean> {
+    const existing = await this.db
+      .prepare("SELECT id FROM feedback WHERE id = ?")
+      .bind(id)
+      .first<{ id: number }>();
+    if (!existing) return false;
+    await this.db.prepare("DELETE FROM feedback WHERE id = ?").bind(id).run();
+    return true;
+  }
 }

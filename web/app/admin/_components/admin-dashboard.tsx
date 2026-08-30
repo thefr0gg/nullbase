@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogOut, MessageSquare, ThumbsUp, Monitor } from "lucide-react";
+import { Home, LogOut, MessageSquare, ThumbsUp, Monitor } from "lucide-react";
 import { Button } from "@/app/_components/ui";
 import { LogoMark } from "@/app/_components/logo-mark";
 import { ThemeToggle } from "@/app/_components/theme-toggle";
@@ -24,6 +24,8 @@ const THEME_DICT = {
   theme: { enableDark: "Enable dark mode", enableLight: "Enable light mode" },
 };
 
+const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1"]);
+
 export function AdminDashboard({ pageTitles }: { pageTitles: Record<string, string> }) {
   const { admin, loading } = useAdminAuth();
   const router = useRouter();
@@ -37,6 +39,14 @@ export function AdminDashboard({ pageTitles }: { pageTitles: Record<string, stri
   if (loading || !admin) {
     return <p className="py-16 text-center text-sm text-text-secondary">Loading…</p>;
   }
+
+  // The admin panel only lives on its own admin.nullbase.wiki subdomain in
+  // production (see web/src/worker.ts's Host-based rewrite) — locally,
+  // next dev doesn't run that rewrite, so it's just /admin on the same
+  // localhost origin as the main site. Same reasoning as AdminPanelLink,
+  // just pointed the other direction.
+  const isLocalDev = LOCAL_HOSTNAMES.has(window.location.hostname);
+  const homeHref = isLocalDev ? "/" : "https://nullbase.wiki";
 
   return (
     <div className="flex flex-col gap-6">
@@ -53,6 +63,14 @@ export function AdminDashboard({ pageTitles }: { pageTitles: Record<string, stri
         </Link>
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <span className="hidden text-xs text-text-secondary sm:inline">{admin.email}</span>
+          <a
+            href={homeHref}
+            aria-label="Back to site"
+            title="Back to site"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-surface text-text-secondary transition-colors hover:bg-electric-blue/10 hover:text-electric-blue"
+          >
+            <Home className="h-4 w-4" />
+          </a>
           <ThemeToggle dict={THEME_DICT} />
           <Button variant="ghost" onClick={logout} aria-label="Sign out">
             <LogOut className="h-4 w-4" />

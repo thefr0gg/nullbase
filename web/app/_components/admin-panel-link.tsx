@@ -30,10 +30,11 @@ export function AdminPanelLink() {
   return (
     <a
       href={href}
-      className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-electric-blue/10 px-2.5 text-xs font-medium text-electric-blue transition-colors hover:bg-electric-blue/15"
+      aria-label="Admin panel"
+      title="Admin panel"
+      className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-surface text-text-secondary transition-colors hover:bg-electric-blue/10 hover:text-electric-blue"
     >
-      <ShieldCheck className="h-3.5 w-3.5" />
-      <span className="hidden sm:inline">Admin panel</span>
+      <ShieldCheck className="h-4 w-4" />
     </a>
   );
 }

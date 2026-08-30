@@ -168,6 +168,17 @@ export function adminRoutes(
     return c.json({ ok: true });
   });
 
+  // DELETE /v1/admin/feedback/:id — permanently remove a feedback entry.
+  routes.delete("/feedback/:id", async (c) => {
+    const id = Number(c.req.param("id"));
+    if (!Number.isInteger(id) || id <= 0) {
+      return c.json({ error: "Invalid feedback id." }, 400);
+    }
+    const deleted = await services.feedback.delete(id);
+    if (!deleted) return c.json({ error: "Feedback not found." }, 404);
+    return c.json({ ok: true });
+  });
+
   // GET /v1/admin/likes?limit=&offset= — per-page like counts, most-liked first.
   routes.get("/likes", async (c) => {
     const limit = Math.min(Number(c.req.query("limit") ?? 50) || 50, 200);

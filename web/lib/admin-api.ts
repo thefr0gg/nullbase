@@ -175,6 +175,10 @@ export async function adminUpdateFeedbackStatus(
   });
 }
 
+export async function adminDeleteFeedback(id: number): Promise<void> {
+  await adminApiFetch(`/v1/admin/feedback/${id}`, { method: "DELETE" });
+}
+
 // --- Likes --------------------------------------------------------------
 
 const likesRowSchema = z.object({

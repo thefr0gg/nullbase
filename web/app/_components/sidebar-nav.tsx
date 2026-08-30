@@ -33,19 +33,14 @@ export function SidebarNav({ tree, locale, dict }: Props) {
         >
           <div className="flex items-center gap-3">
             <LogoMark className="h-9 w-9" />
-            <div className="min-w-0">
-              <div className="font-mono text-lg font-semibold text-text-primary">
-                nullbase
-              </div>
-              <div className="text-[0.68rem] uppercase tracking-[0.16em] text-text-secondary">
-                {dict.nav.tagline}
-              </div>
+            <div className="min-w-0 font-mono text-lg font-semibold text-text-primary">
+              nullbase
             </div>
           </div>
         </Link>
       </div>
       <div className="px-3 pb-10 pt-2">
-        <SidebarTree tree={tree} pathname={pathname} />
+        <SidebarTree tree={tree} pathname={pathname} dict={dict.nav} />
       </div>
     </nav>
   );
