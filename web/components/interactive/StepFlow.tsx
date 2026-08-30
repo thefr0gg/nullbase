@@ -20,6 +20,59 @@ import { DetailPanel, EyebrowLabel, PlaygroundSection, PlaygroundShell } from ".
  * convention in the interactive-learning-system plan.
  */
 
+// A broad, curated set spanning every language a step's `detail` snippet
+// actually uses across the site's content — HTTP request lines, JSON, JS
+// (Service/Web Worker callbacks), CSS rules, and the occasional SQL
+// migration statement. Case-sensitive on purpose: these are static,
+// author-written snippets in a known casing, not arbitrary user input, so
+// there's no need to risk false-positives against ordinary prose ("Return",
+// "Class") the way a case-insensitive match would.
+const DETAIL_KEYWORDS = [
+  "GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS", "TRACE", "CONNECT",
+  "HTTP", "Bearer", "SYN", "ACK", "FIN",
+  "SELECT", "INSERT", "INTO", "VALUES", "UPDATE", "SET", "CREATE", "TABLE",
+  "ALTER", "ADD", "COLUMN", "DROP", "WHERE", "PRIMARY", "KEY",
+  "const", "let", "var", "function", "return", "if", "else", "async", "await",
+  "new", "class", "extends", "typeof", "true", "false", "null", "undefined", "self",
+];
+
+const DETAIL_TOKEN_RE = new RegExp(
+  [
+    "(\\/\\/[^\\n]*)", // line comment
+    "(\\/\\*[\\s\\S]*?\\*\\/)", // block comment
+    "(^--[^\\n]*$)", // SQL-style "-- comment", only at the start of a line
+    "('[^']*'|\"[^\"]*\")", // string
+    "(\\b\\d+(?:\\.\\d+)?\\b)", // number
+    `(\\b(?:${DETAIL_KEYWORDS.join("|")})\\b)`, // keyword
+    "(\\b[\\w-]+(?=:))", // a header/property name immediately before a colon
+  ].join("|"),
+  "gm",
+);
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/** Same regex-tokenize-the-escaped-string approach as `_shared.tsx`'s
+ *  `highlightJson` and `SqlPlayground.tsx`'s `highlightSql`, generalized to
+ *  the mixed-language snippets a StepFlow step's `detail` panel shows. */
+function highlightDetail(raw: string): string {
+  const escaped = escapeHtml(raw);
+  return escaped.replace(
+    DETAIL_TOKEN_RE,
+    (match, lineComment, blockComment, sqlComment, string, number, keyword, property) => {
+      if (lineComment || blockComment || sqlComment) {
+        return `<span class="text-text-secondary italic">${match}</span>`;
+      }
+      if (string) return `<span class="text-success">${match}</span>`;
+      if (number) return `<span class="text-tangerine">${match}</span>`;
+      if (keyword) return `<span class="text-electric-blue font-semibold">${match}</span>`;
+      if (property) return `<span class="text-violet">${match}</span>`;
+      return match;
+    },
+  );
+}
+
 export interface StepFlowStep {
   title: string;
   description: string;
@@ -84,7 +137,10 @@ export default function StepFlow({ steps, title }: StepFlowProps) {
           <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">{step.description}</p>
           {step.detail && (
             <DetailPanel className="mt-3 overflow-x-auto bg-background p-3">
-              <pre className="font-mono text-xs leading-6 text-text-primary">{step.detail}</pre>
+              <pre
+                className="font-mono text-xs leading-6 text-text-primary"
+                dangerouslySetInnerHTML={{ __html: highlightDetail(step.detail) }}
+              />
             </DetailPanel>
           )}
         </div>
