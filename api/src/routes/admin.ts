@@ -6,6 +6,7 @@ import type { Services } from "../services";
 import type { AppEnv } from "../types";
 import { requireAuth } from "../middleware/auth";
 import type { AuthResult } from "../services/admin-service";
+import { isFeedbackType } from "../lib/feedback-types";
 
 const loginSchema = z.object({
   email: z.email(),
@@ -138,11 +139,13 @@ export function adminRoutes(
   routes.get("/feedback", async (c) => {
     const status = c.req.query("status");
     const pagePath = c.req.query("page") || undefined;
+    const type = c.req.query("type");
     const limit = Math.min(Number(c.req.query("limit") ?? 50) || 50, 200);
     const offset = Math.max(Number(c.req.query("offset") ?? 0) || 0, 0);
     const result = await services.feedback.list({
       status: status === "new" || status === "resolved" || status === "dismissed" ? status : undefined,
       pagePath,
+      type: isFeedbackType(type) ? type : undefined,
       limit,
       offset,
     });

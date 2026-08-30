@@ -88,7 +88,7 @@ export function LanguageSwitcher({ currentLocale, localesForSlug, dict }: Props)
                       aria-selected={active}
                       onClick={() => go(l)}
                       className={clsx(
-                        "flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-left text-sm transition-colors",
+                        "flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-start text-sm transition-colors",
                         active ? "bg-electric-blue/10 text-electric-blue" : "text-text-primary hover:bg-background",
                       )}
                     >
@@ -117,7 +117,7 @@ export function LanguageSwitcher({ currentLocale, localesForSlug, dict }: Props)
  *  switcher only ever lives in one place (the sticky header). */
 function PanelAnchor({ children }: { children: ReactNode }) {
   return (
-    <div className="absolute right-3 top-14 sm:right-6" onClick={(e) => e.stopPropagation()}>
+    <div className="absolute end-3 top-14 sm:end-6" onClick={(e) => e.stopPropagation()}>
       {children}
     </div>
   );

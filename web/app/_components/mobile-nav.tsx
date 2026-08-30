@@ -56,7 +56,7 @@ export function MobileNav({ tree, dict }: Props) {
               onClick={() => setOpen(false)}
               aria-hidden="true"
             />
-            <div className="absolute inset-y-0 left-0 flex w-72 max-w-[80vw] flex-col border-r border-border bg-surface/95 shadow-card backdrop-blur-md">
+            <div className="absolute inset-y-0 start-0 flex w-72 max-w-[80vw] flex-col border-e border-border bg-surface/95 shadow-card backdrop-blur-md">
               <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
                 <div className="flex items-center gap-2">
                   <LogoMark className="h-8 w-8" />

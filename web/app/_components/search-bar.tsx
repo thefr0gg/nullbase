@@ -165,7 +165,7 @@ export function SearchBar({ index, locale, dict }: Props) {
   return (
     <div className="relative w-full max-w-md">
       <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" />
+        <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" />
         <input
           ref={inputRef}
           type="text"
@@ -192,7 +192,7 @@ export function SearchBar({ index, locale, dict }: Props) {
           aria-activedescendant={
             showDropdown && results[safeActiveIndex] ? `search-result-${safeActiveIndex}` : undefined
           }
-          className="w-full rounded-full border border-border bg-background/80 py-2.5 pl-9 pr-3 text-sm text-text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] transition-colors placeholder:text-text-secondary focus:border-electric-blue/60 focus:bg-surface focus:outline-none focus:ring-3 focus:ring-electric-blue/12 disabled:cursor-not-allowed disabled:opacity-50"
+          className="w-full rounded-full border border-border bg-background/80 py-2.5 ps-9 pe-3 text-sm text-text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] transition-colors placeholder:text-text-secondary focus:border-electric-blue/60 focus:bg-surface focus:outline-none focus:ring-3 focus:ring-electric-blue/12 disabled:cursor-not-allowed disabled:opacity-50"
         />
       </div>
 

@@ -1,0 +1,74 @@
+---
+title: TLS و HTTPS
+description: كيف تشفّر TLS اتصالاً، وما الذي تضيفه HTTPS فعلياً فوق HTTP.
+category: Web Fundamentals
+weight: 4
+interactive: true
+interactiveType: ["StepFlow", "ItemExplorer"]
+---
+
+import { handshakeSteps } from "./handshake-steps";
+
+**HTTPS** هي ببساطة **HTTP** مُرسلة عبر اتصال مشفّر بـ **TLS** — لا يتغير نموذج الطلب/الاستجابة إطلاقاً، بل النقل الذي تحته فقط هو ما يتغير. TLS (أمان طبقة النقل) هو ما يوفّر:
+
+- **التشفير** — لا يستطيع أي طرف بين العميل والخادم قراءة حركة المرور.
+- **السلامة** — لا يستطيع أي طرف بينهما تعديل حركة المرور دون أن يلاحظ الطرفان ذلك.
+- **المصادقة** — يحصل العميل على إثبات تشفيري بأنه يتحدث فعلاً مع الخادم الذي يظنه (عبر شهادة الخادم).
+
+## الـ Handshake
+
+قبل أن تتدفق أي حركة HTTP، يجب أن يتفق العميل والخادم على مفاتيح التشفير — دون إرسال المفتاح نفسه عبر السلك إطلاقاً. هذه Handshake مبسّطة لـ TLS 1.3:
+
+<StepFlow title="TLS Handshake (رحلة واحدة ذهاباً وإياباً)" steps={handshakeSteps} />
+
+## TLS 1.2 مقابل TLS 1.3
+
+بسّطت TLS 1.3 (عام 2018) الـ Handshake وعزّزتها كثيراً مقارنة بـ TLS 1.2:
+
+<ItemExplorer
+  title="TLS 1.2 مقابل TLS 1.3"
+  layout="table"
+  tableColumns={[
+    { key: "roundtrips", label: "رحلات الـ Handshake ذهاباً وإياباً" },
+    { key: "resumption", label: "استئناف الجلسة" },
+    { key: "forwardSecrecy", label: "السرية التامة الأمامية" },
+    { key: "weakCiphers", label: "يسمح بشيفرات ضعيفة/قديمة" },
+  ]}
+  items={[
+    {
+      id: "tls12",
+      label: "TLS 1.2",
+      color: "orange",
+      columns: {
+        roundtrips: "2 (اتصال أول أبطأ)",
+        resumption: "معرّفات الجلسة / التذاكر",
+        forwardSecrecy: "اختيارية، تعتمد على جناح التشفير",
+        weakCiphers: "نعم — لا يزال RC4 وتبادل مفاتيح RSA الثابت مسموحين",
+      },
+    },
+    {
+      id: "tls13",
+      label: "TLS 1.3",
+      color: "green",
+      columns: {
+        roundtrips: "1 (0 مع استئناف الجلسة)",
+        resumption: "استئناف بلا رحلة (0-RTT) قائم على PSK",
+        forwardSecrecy: "إلزامية — تستخدم كل Handshake مفاتيح عابرة",
+        weakCiphers: "لا — أُزيلت أجنحة التشفير الضعيفة/القديمة كلياً",
+      },
+    },
+  ]}
+/>
+
+## ما لا تحميه HTTPS
+
+تؤمّن TLS الاتصال، لا نقطتيه النهائيتين. لا توقف:
+
+- خادماً مخترقاً من تسريب بيانات يحتفظ بها بنص صريح.
+- برمجية خبيثة على العميل تقرأ البيانات قبل تشفيرها أو بعد فك تشفيرها.
+- مستخدماً يُخدَع بالتصيّد لزيارة `paypa1.com` بدلاً من `paypal.com` — ذلك اتصال HTTPS صالح مع خادم *خاطئ لكنه حقيقي*.
+
+## طالع أيضاً
+
+- **[DNS](/ar/web-fundamentals/dns)** — يحلّ اسم المضيف قبل أن تبدأ Handshake الـ TLS أصلاً.
+- **[HTTP](/ar/web-fundamentals/http)** — البروتوكول المحمول فعلياً بمجرد إنشاء الاتصال المشفّر.

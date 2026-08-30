@@ -1,0 +1,32 @@
+---
+title: PUT
+description: تستبدل طريقة PUT كل التمثيلات الحالية للمورد الهدف بحمولة الطلب.
+category: HTTP
+weight: 33
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+تستبدل طريقة `PUT` كل التمثيلات الحالية للمورد الهدف بحمولة الطلب. وهي **تكرارية**: إرسال نفس `PUT` بشكل متكرر له نفس أثر إرسالها مرة واحدة.
+
+<HttpRequest
+  defaultMethod="PUT"
+  defaultPath="/api/http/echo"
+  defaultHeaders="Content-Type: application/json"
+  defaultBody='{ "resource": "updated" }'
+/>
+
+## الخصائص
+
+- **غير آمنة**، لكنها **تكرارية**.
+- الطلب **موصوف ذاتياً**: يصف النص كلياً الحالة الجديدة للمورد.
+- تُستخدم غالباً لإنشاء أو تحديث مورد معروف: `PUT /users/123` تستبدل المستخدم 123.
+
+## مثال
+
+```http
+PUT /api/http/echo HTTP/1.1
+Host: nullbase.local
+Content-Type: application/json
+
+{ "resource": "updated" }

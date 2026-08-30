@@ -1,5 +1,6 @@
 import type { Database } from "../db/port";
 import { now } from "../db/port";
+import type { FeedbackType } from "../lib/feedback-types";
 
 export interface FeedbackRow {
   id: number;
@@ -8,6 +9,7 @@ export interface FeedbackRow {
   comment: string | null;
   email: string | null;
   status: "new" | "resolved" | "dismissed";
+  type: FeedbackType | null;
   created_at: string;
 }
 
@@ -18,6 +20,7 @@ export interface FeedbackInput {
   rating?: number;
   comment?: string;
   email?: string;
+  type?: FeedbackType;
   visitorHash: string;
   ipHash: string;
 }
@@ -28,14 +31,15 @@ export class FeedbackRepository {
   async insert(input: FeedbackInput): Promise<FeedbackRow> {
     await this.db
       .prepare(
-        `INSERT INTO feedback (page_path, rating, comment, email, visitor_hash, ip_hash, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO feedback (page_path, rating, comment, email, type, visitor_hash, ip_hash, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .bind(
         input.pagePath,
         input.rating ?? null,
         input.comment ?? null,
         input.email ?? null,
+        input.type ?? null,
         input.visitorHash,
         input.ipHash,
         now(),
@@ -69,10 +73,11 @@ export class FeedbackRepository {
   async list(options: {
     status?: FeedbackStatus;
     pagePath?: string;
+    type?: FeedbackType;
     limit: number;
     offset: number;
   }): Promise<FeedbackRow[]> {
-    const { status, pagePath, limit, offset } = options;
+    const { status, pagePath, type, limit, offset } = options;
     const conditions: string[] = [];
     const params: (string | number)[] = [];
     if (status) {
@@ -83,6 +88,10 @@ export class FeedbackRepository {
       conditions.push("page_path = ?");
       params.push(pagePath);
     }
+    if (type) {
+      conditions.push("type = ?");
+      params.push(type);
+    }
     const where = conditions.length ? ` WHERE ${conditions.join(" AND ")}` : "";
     const stmt = this.db.prepare(
       `SELECT * FROM feedback${where} ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?`,
@@ -90,7 +99,7 @@ export class FeedbackRepository {
     return stmt.bind(...params, limit, offset).all<FeedbackRow>();
   }
 
-  async count(status?: FeedbackStatus, pagePath?: string): Promise<number> {
+  async count(status?: FeedbackStatus, pagePath?: string, type?: FeedbackType): Promise<number> {
     const conditions: string[] = [];
     const params: string[] = [];
     if (status) {
@@ -100,6 +109,10 @@ export class FeedbackRepository {
     if (pagePath) {
       conditions.push("page_path = ?");
       params.push(pagePath);
+    }
+    if (type) {
+      conditions.push("type = ?");
+      params.push(type);
     }
     const where = conditions.length ? ` WHERE ${conditions.join(" AND ")}` : "";
     const stmt = this.db.prepare(`SELECT COUNT(*) AS n FROM feedback${where}`);

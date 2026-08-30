@@ -1,0 +1,34 @@
+---
+title: POST
+description: ترسل طريقة POST بيانات لمعالجتها بواسطة المورد المحدَّد.
+category: HTTP
+weight: 32
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+ترسل طريقة `POST` بيانات إلى المورد المحدَّد لمعالجتها. تنتقل البيانات في **نص الرسالة**، لذا فإن `POST` هي الطريقة المستخدَمة عند إرسال حمولة (عادةً JSON، أو بيانات نموذج، أو رفعيات).
+
+<HttpRequest
+  defaultMethod="POST"
+  defaultPath="/api/http/echo"
+  defaultHeaders="Content-Type: application/json
+Accept: application/json"
+  defaultBody='{ "hello": "world" }'
+/>
+
+## الخصائص
+
+- **غير آمنة** — الغرض من `POST` إحداث تغيير (إنشاء مورد، تشغيل إجراء).
+- **غير تكرارية** — تكرار `POST` قد ينشئ موارد مكررة.
+- **غير قابلة للتخزين المؤقت** — استجابات `POST` المخزَّنة مؤقتاً محدودة الفائدة.
+
+## مثال
+
+```http
+POST /api/http/echo HTTP/1.1
+Host: nullbase.local
+Content-Type: application/json
+Accept: application/json
+
+{ "hello": "world" }

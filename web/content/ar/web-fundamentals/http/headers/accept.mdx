@@ -1,0 +1,40 @@
+---
+title: Accept
+description: تخبر ترويسة Accept الخادم بأنواع المحتوى التي يمكن للعميل التعامل معها.
+category: HTTP
+weight: 54
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+تخبر ترويسة الطلب `Accept` الخادم بأنواع الوسائط التي يرغب العميل في التعامل معها في الاستجابة — هذا هو **التفاوض على المحتوى**. الخادم القادر على إعادة نفس المورد كـ JSON أو HTML أو XML يستخدم `Accept` ليقرر أيها يرسل فعلياً.
+
+<ItemExplorer
+  title="قيم Accept الشائعة"
+  layout="pills"
+  defaultId="json"
+  items={[
+    { id: "json", label: "application/json", color: "green", detail: "الافتراضي لواجهات برمجة التطبيقات. تعامل كل نقطة نهاية تقريباً تُعيد JSON مع هذا كتنسيقها الأصلي." },
+    { id: "html", label: "text/html", color: "blue", detail: "ما يرسله المتصفح عند التنقل إلى صفحة — يستجيب الخادم بـ HTML مُصيَّر بدلاً من بيانات خام." },
+    { id: "xml", label: "application/xml", color: "orange", detail: "شائع في واجهات برمجة التطبيقات القديمة/المؤسساتية (SOAP، وبعض خدمات REST القديمة) التي سبقت هيمنة JSON." },
+    { id: "any", label: "*/*", color: "purple", detail: "\"سآخذ أي شيء.\" الافتراضي الذي ترسله معظم عملاء HTTP عندما لا تحدد Accept صراحةً." },
+  ]}
+/>
+
+## كيف تُبنى
+
+يمكن لـ `Accept` سرد أنواع متعددة بقيمة `q` (الجودة) تشير إلى الأفضلية، حيث `1` هي الأعلى:
+
+```http
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+```
+
+هذا يعني: تفضيل HTML، ثم XHTML، ثم XML عادي بأفضلية 90٪، ثم أي شيء آخر كملاذ أخير.
+
+## عندما لا يستطيع الخادم الامتثال
+
+إذا لم يستطع الخادم فعلاً إنتاج أي من الأنواع التي سيقبلها العميل، يجب أن يستجيب بـ `406 Not Acceptable` بدلاً من إرسال تنسيق لم يطلبه العميل بصمت.
+
+## طالع أيضاً
+
+- **[Content-Type](/ar/web-fundamentals/http/headers/content-type)** — مرآة `Accept`: ما *يرسله* الخادم فعلياً، مقابل ما يقول العميل إنه *يستطيع* استقباله.

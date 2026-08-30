@@ -9,8 +9,12 @@ import type { Dictionary } from "@/lib/i18n/types";
  * Light / dark toggle backed by a `data-theme` attribute on `<html>`.
  * A one-time inline script in `<head>` (see root layout) applies the theme
  * before the first paint to avoid a flash of incorrect colors.
+ *
+ * Takes only `dict.theme` (not the full `Dictionary`) so non-i18n route
+ * trees (the admin panel) can pass a plain `{ theme: {...} }` object
+ * without needing the whole locale dictionary system.
  */
-export function ThemeToggle({ dict }: { dict: Dictionary }) {
+export function ThemeToggle({ dict }: { dict: Pick<Dictionary, "theme"> }) {
   const theme = useTheme();
 
   const toggle = useCallback(() => {

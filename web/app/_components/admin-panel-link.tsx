@@ -4,20 +4,32 @@ import { ShieldCheck } from "lucide-react";
 import { useHasMounted } from "@/lib/use-has-mounted";
 import { hasAdminFlag } from "@/lib/admin-session";
 
+const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1"]);
+
 /**
  * Site-wide navbar link to the admin panel, visible only when an admin is
  * (probably) logged in — see `lib/admin-session.ts`. `useHasMounted()`
- * guards the `document.cookie` read so this never mismatches between the
- * static server render (which has no cookie context) and the client,
- * same pattern as `<ThemeToggle>`/`<MobileNav>`.
+ * guards the `document.cookie`/`window.location` reads so this never
+ * mismatches between the static server render (which has neither) and the
+ * client, same pattern as `<ThemeToggle>`/`<MobileNav>`.
+ *
+ * The admin panel only lives on its own `admin.nullbase.wiki` subdomain in
+ * production (see `web/src/worker.ts`'s Host-based rewrite) — locally,
+ * `next dev` doesn't run that Worker rewrite at all, so the admin routes
+ * are just `/admin` on the same `localhost` origin. Linking to the real
+ * production subdomain from a local dev session would take you clean out
+ * of your local environment.
  */
 export function AdminPanelLink() {
   const mounted = useHasMounted();
   if (!mounted || !hasAdminFlag()) return null;
 
+  const isLocalDev = LOCAL_HOSTNAMES.has(window.location.hostname);
+  const href = isLocalDev ? "/admin" : "https://admin.nullbase.wiki";
+
   return (
     <a
-      href="https://admin.nullbase.wiki"
+      href={href}
       className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-electric-blue/10 px-2.5 text-xs font-medium text-electric-blue transition-colors hover:bg-electric-blue/15"
     >
       <ShieldCheck className="h-3.5 w-3.5" />

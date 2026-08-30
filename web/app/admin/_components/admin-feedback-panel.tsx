@@ -2,11 +2,16 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Star } from "lucide-react";
-import { Badge, Button, Card } from "@/app/_components/ui";
+import { Badge, Card } from "@/app/_components/ui";
 import { ApiError } from "@/lib/api";
 import { adminListFeedback, adminUpdateFeedbackStatus, type FeedbackRow } from "@/lib/admin-api";
+import { FEEDBACK_TYPES, FEEDBACK_TYPE_LABELS, type FeedbackType } from "@/lib/feedback-types";
+import { AdminLoading } from "./admin-loading";
+import { AdminPagination } from "./admin-pagination";
+import { AdminDropdown } from "./admin-dropdown";
 
 type StatusFilter = "all" | "new" | "resolved" | "dismissed";
+type TypeFilter = "all" | FeedbackType;
 const PAGE_SIZE = 20;
 
 const STATUS_BADGE: Record<FeedbackRow["status"], { color: "blue" | "green" | "default"; label: string }> = {
@@ -15,34 +20,46 @@ const STATUS_BADGE: Record<FeedbackRow["status"], { color: "blue" | "green" | "d
   dismissed: { color: "default", label: "Dismissed" },
 };
 
-export function AdminFeedbackPanel() {
+const TYPE_OPTIONS = [
+  { value: "all", label: "All types" },
+  ...FEEDBACK_TYPES.map((t) => ({ value: t, label: FEEDBACK_TYPE_LABELS[t] })),
+];
+
+export function AdminFeedbackPanel({ pageTitles }: { pageTitles: Record<string, string> }) {
   const [status, setStatus] = useState<StatusFilter>("new");
+  const [type, setType] = useState<TypeFilter>("all");
   const [items, setItems] = useState<FeedbackRow[]>([]);
   const [total, setTotal] = useState(0);
-  const [offset, setOffset] = useState(0);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true); // true until the first fetch resolves
   const [error, setError] = useState<string | null>(null);
   const [updating, setUpdating] = useState<number | null>(null);
 
   // No setState before this — every update below happens after `await`, so
   // calling this from an effect never triggers a synchronous render loop.
-  const fetchPage = useCallback(async (statusFilter: StatusFilter, nextOffset: number, replace: boolean) => {
-    try {
-      const result = await adminListFeedback({
-        status: statusFilter === "all" ? undefined : statusFilter,
-        limit: PAGE_SIZE,
-        offset: nextOffset,
-      });
-      setItems((prev) => (replace ? result.items : [...prev, ...result.items]));
-      setTotal(result.total);
-      setOffset(nextOffset);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Could not load feedback.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // Always replaces `items` (never appends) — each page is its own chunk,
+  // not accumulated onto the previous ones.
+  const fetchPage = useCallback(
+    async (statusFilter: StatusFilter, typeFilter: TypeFilter, nextPage: number) => {
+      try {
+        const result = await adminListFeedback({
+          status: statusFilter === "all" ? undefined : statusFilter,
+          type: typeFilter === "all" ? undefined : typeFilter,
+          limit: PAGE_SIZE,
+          offset: (nextPage - 1) * PAGE_SIZE,
+        });
+        setItems(result.items);
+        setTotal(result.total);
+        setPage(nextPage);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof ApiError ? err.message : "Could not load feedback.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   // Initial load only, inlined rather than calling `fetchPage` — the
   // lint rule can't see through an intermediate function reference, only
@@ -52,25 +69,31 @@ export function AdminFeedbackPanel() {
       .then((result) => {
         setItems(result.items);
         setTotal(result.total);
-        setOffset(0);
+        setPage(1);
         setError(null);
       })
       .catch((err: unknown) => {
         setError(err instanceof ApiError ? err.message : "Could not load feedback.");
       })
       .finally(() => setLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only fetch; filter changes go through selectStatus below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only fetch; filter changes go through selectStatus/selectType below.
   }, []);
 
   function selectStatus(next: StatusFilter) {
     setStatus(next);
     setLoading(true);
-    void fetchPage(next, 0, true);
+    void fetchPage(next, type, 1);
   }
 
-  function loadMore() {
+  function selectType(next: TypeFilter) {
+    setType(next);
     setLoading(true);
-    void fetchPage(status, offset + PAGE_SIZE, false);
+    void fetchPage(status, next, 1);
+  }
+
+  function goToPage(next: number) {
+    setLoading(true);
+    void fetchPage(status, type, next);
   }
 
   async function updateStatus(id: number, next: FeedbackRow["status"]) {
@@ -84,6 +107,8 @@ export function AdminFeedbackPanel() {
       setUpdating(null);
     }
   }
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <div className="flex flex-col gap-4">
@@ -102,19 +127,33 @@ export function AdminFeedbackPanel() {
             {s === "all" ? "All" : STATUS_BADGE[s].label}
           </button>
         ))}
+        <AdminDropdown
+          value={type}
+          options={TYPE_OPTIONS}
+          onChange={(v) => selectType(v as TypeFilter)}
+          ariaLabel="Filter by feedback type"
+          className="w-44"
+        />
       </div>
 
       {error && <p className="text-sm text-danger">{error}</p>}
 
-      {items.length === 0 && !loading ? (
+      {loading && items.length === 0 ? (
+        <AdminLoading />
+      ) : items.length === 0 ? (
         <p className="text-sm text-text-secondary">Nothing here.</p>
       ) : (
         <div className="flex flex-col gap-3">
           {items.map((item) => (
             <Card key={item.id} className="flex flex-col gap-2 p-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="font-mono text-xs text-text-secondary">{item.page_path}</span>
-                <Badge color={STATUS_BADGE[item.status].color}>{STATUS_BADGE[item.status].label}</Badge>
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <p className="min-w-0 truncate text-sm font-medium text-text-primary">
+                  {pageTitles[item.page_path] ?? item.page_path}
+                </p>
+                <div className="flex shrink-0 items-center gap-1.5">
+                  {item.type && <Badge color="purple">{FEEDBACK_TYPE_LABELS[item.type]}</Badge>}
+                  <Badge color={STATUS_BADGE[item.status].color}>{STATUS_BADGE[item.status].label}</Badge>
+                </div>
               </div>
               {item.rating != null && (
                 <div className="flex items-center gap-0.5">
@@ -153,11 +192,7 @@ export function AdminFeedbackPanel() {
         </div>
       )}
 
-      {items.length < total && (
-        <Button variant="secondary" disabled={loading} onClick={loadMore}>
-          {loading ? "Loading…" : `Load more (${items.length}/${total})`}
-        </Button>
-      )}
+      <AdminPagination page={page} totalPages={totalPages} onChange={goToPage} disabled={loading} />
     </div>
   );
 }

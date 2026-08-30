@@ -1,0 +1,38 @@
+---
+title: Cache-Control
+description: توجّه ترويسة Cache-Control كيفية (وهل) تُحفظ استجابة في الـ Cache.
+category: HTTP
+weight: 55
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+تحمل ترويسة `Cache-Control` توجيهات تتحكم في سلوك الـ Cache — للمتصفحات، ولأي شيء بين العميل والـ Origin Server، مثل [CDN](/ar/web-fundamentals/cdns). يمكن أن تظهر في كل من الطلبات والاستجابات؛ وأهميتها الأكبر في الاستجابات.
+
+<ItemExplorer
+  title="التوجيهات الشائعة"
+  layout="grid"
+  items={[
+    { id: "no-store", label: "no-store", color: "red", detail: "لا تحفظ هذه الاستجابة في أي Cache إطلاقاً. تُستخدم لأي شيء حساس — رموز المصادقة، والبيانات الشخصية." },
+    { id: "no-cache", label: "no-cache", color: "orange", detail: "يمكن حفظها في الـ Cache، لكن يجب إعادة التحقق منها مع الـ Origin Server قبل كل استخدام — ليست \"بلا Cache\" رغم الاسم." },
+    { id: "private", label: "private", color: "orange", detail: "قابلة للحفظ فقط في Cache متصفح المستخدم النهائي الخاص، وليس بواسطة Cache مشترك مثل CDN أو Proxy بينهما." },
+    { id: "public", label: "public", color: "green", detail: "قابلة للحفظ بواسطة أي Cache على الطريق، بما في ذلك الـ Cache المشترك/CDN — الحالة الشائعة للأصول الثابتة." },
+    { id: "max-age", label: "max-age=N", color: "blue", detail: "كم عدد الثواني التي تُعتبر فيها الاستجابة طازجة قبل حاجتها لإعادة التحقق. max-age=3600 = ساعة واحدة." },
+    { id: "must-revalidate", label: "must-revalidate", color: "purple", detail: "بمجرد أن تصبح الاستجابة قديمة، يجب إعادة التحقق منها مع الـ Origin Server قبل إعادة استخدامها — لا تقديم نسخة قديمة أثناء التحقق." },
+  ]}
+/>
+
+## استجابة نموذجية
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+Cache-Control: public, max-age=3600, must-revalidate
+```
+
+قابلة للحفظ في الـ Cache من الجميع، طازجة لمدة ساعة، وبمجرد انتهاء تلك الساعة، لا تُقدَّم مجدداً دون التحقق مع الـ Origin Server أولاً.
+
+## طالع أيضاً
+
+- **[شبكات CDN](/ar/web-fundamentals/cdns)** — تدفق "Cache Hit / Cache Miss" الذي توجّهه هذه الترويسة من جانب الاستجابة.
+- **[رموز حالة 3xx](/ar/web-fundamentals/http/status-codes/3xx)** — `304 Not Modified` هو ما تبدو عليه إعادة التحقق الناجحة.

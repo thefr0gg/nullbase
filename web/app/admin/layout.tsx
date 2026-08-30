@@ -25,10 +25,15 @@ export const metadata: Metadata = {
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" data-theme="dark" className={`${jakarta.variable} ${geistMono.variable} font-sans`}>
+    <html
+      lang="en"
+      data-theme="dark"
+      suppressHydrationWarning
+      className={`${jakarta.variable} ${geistMono.variable} font-sans`}
+    >
       <head>
         {/* Defaults to dark — only an explicit prior choice (saved by
-            <ThemeToggle>) overrides it. */}
+            <ThemeToggle>, on the dashboard) overrides it. */}
         <script
           dangerouslySetInnerHTML={{
             __html:
@@ -37,7 +42,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         />
       </head>
       <body className="min-h-screen bg-background text-text-primary antialiased">
-        <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 sm:py-10">{children}</div>
+        <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-4 py-8 sm:px-6 sm:py-10">
+          {children}
+        </div>
       </body>
     </html>
   );

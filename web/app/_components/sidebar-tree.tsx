@@ -98,7 +98,7 @@ function SidebarTreeItem({
         )}
       </div>
       {hasChildren && open && (
-        <ul className="mt-1 ml-4 space-y-1 border-l border-border pl-3">
+        <ul className="mt-1 ms-4 space-y-1 border-s border-border ps-3">
           {node.children.map((child) => (
             <SidebarTreeItem key={child.href} node={child} pathname={pathname} onNavigate={onNavigate} />
           ))}

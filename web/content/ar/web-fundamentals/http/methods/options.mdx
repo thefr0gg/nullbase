@@ -1,0 +1,117 @@
+---
+title: OPTIONS
+description: وصف خيارات التواصل لمورد أو خادم. تُستخدم للفحص التمهيدي لـ CORS.
+category: HTTP
+weight: 7
+---
+
+تسأل **OPTIONS** الخادم: "ما الطرق والترويسات المسموحة لهذا المورد؟"
+
+تُستخدم غالباً كـ **طلب تمهيدي لـ CORS** (عندما يتحقق المتصفح مما إذا كان طلب عابر للأصول مسموحاً قبل إرسال الطلب الفعلي).
+
+## متى يرسل المتصفح OPTIONS
+
+عندما تُجري طلباً من صفحة ويب إلى نطاق مختلف، وكان ذلك الطلب "معقداً" (ليس GET أو POST بسيطاً)، يرسل المتصفح أولاً OPTIONS للتحقق مما إذا كان مسموحاً:
+
+```http
+OPTIONS /api/users HTTP/1.1
+Host: api.example.com
+Origin: https://example.com
+Access-Control-Request-Method: POST
+Access-Control-Request-Headers: Content-Type
+```
+
+يستجيب الخادم:
+
+```http
+HTTP/1.1 200 OK
+Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
+Access-Control-Allow-Headers: Content-Type, Authorization
+Access-Control-Max-Age: 86400
+```
+
+إذا قال الخادم "نعم، POST مسموحة"، يرسل المتصفح طلب POST الفعلي. إذا قال "لا"، يحظره المتصفح.
+
+---
+
+## طلب OPTIONS يدوي
+
+يمكنك أيضاً السؤال يدوياً عن الطرق المسموحة:
+
+```http
+OPTIONS /api/users HTTP/1.1
+Host: api.example.com
+```
+
+استجابة الخادم:
+
+```http
+HTTP/1.1 200 OK
+Allow: GET, POST, OPTIONS
+```
+
+أو بمزيد من التفصيل:
+
+```http
+HTTP/1.1 200 OK
+Allow: GET, POST, OPTIONS
+Content-Type: text/plain
+
+This resource supports:
+- GET: Retrieve the user list
+- POST: Create a new user
+- OPTIONS: Describe these options
+```
+
+---
+
+## ترويسات الاستجابة لـ CORS
+
+عند الاستجابة لطلب OPTIONS التمهيدي لـ CORS، أدرج:
+
+| الترويسة | الغرض | مثال |
+|--------|---------|---------|
+| `Access-Control-Allow-Methods` | الطرق المسموحة | `GET, POST, PUT, OPTIONS` |
+| `Access-Control-Allow-Headers` | الترويسات التي يمكن إرسالها | `Content-Type, Authorization` |
+| `Access-Control-Allow-Origin` | الأصول المسموحة | `https://example.com` أو `*` |
+| `Access-Control-Max-Age` | تخزين هذه الإجابة مؤقتاً لمدة (ثوانٍ) | `86400` |
+
+---
+
+## الخصائص
+
+- **آمنة:** نعم — لا تغيّر حالة الخادم
+- **تكرارية:** نعم — استدعاؤها عدة مرات له نفس الأثر
+- **قابلة للتخزين المؤقت:** إلى حد ما — يمكن تخزين استجابة الفحص التمهيدي مؤقتاً عبر Access-Control-Max-Age
+- **لديها نص؟** عادةً لا، لكن يمكن للخوادم تضمين نص وصفي
+
+---
+
+## الطلبات البسيطة مقابل التمهيدية
+
+**الطلب البسيط** (يرسله المتصفح مباشرة، بلا فحص تمهيدي):
+- الطريقة: GET، وPOST، وHEAD
+- بلا ترويسات مخصصة
+- Content-Type هو text/plain، أو application/x-www-form-urlencoded، أو multipart/form-data
+
+**الطلب المعقد** (يرسل المتصفح OPTIONS أولاً):
+- الطريقة: PUT، وPATCH، وDELETE
+- ترويسات مخصصة مثل Authorization
+- Content-Type: application/json
+
+---
+
+## أخطاء شائعة
+
+**تجنّب:** نسيان معالجة طلبات OPTIONS — إذا نفّذت GET وPOST فقط، فإن إعادة 405 Method Not Allowed لـ OPTIONS تكسر CORS.
+
+**تجنّب:** عدم تضمين Access-Control-Allow-Headers — إذا أرسل المتصفح ترويسة مخصصة ولم يدرجها الخادم في الاستجابة، يفشل الطلب.
+
+**تجنّب:** استخدام `Access-Control-Allow-Origin: *` مع بيانات الاعتماد — لا يمكنك السماح بكل الأصول إذا كانت ملفات تعريف الارتباط/المصادقة متضمَّنة. كن محدداً.
+
+---
+
+## طالع أيضاً
+
+- **[CORS](/ar/web-fundamentals/http/cors)** — مشاركة الموارد عبر الأصول: القصة الكاملة.
+- **[مرجع الطرق](/ar/web-fundamentals/http/methods)** — كل طرق HTTP.

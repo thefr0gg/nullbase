@@ -1,0 +1,196 @@
+---
+title: رموز حالة خطأ العميل 4xx
+description: رموز الحالة 400–499 — الطلب نفسه هو المشكلة، وتشمل 400 Bad Request، و401 Unauthorized، و404 Not Found، وغيرها.
+category: HTTP
+weight: 3
+---
+
+تعني حالة `4xx` أن الخادم لا يستطيع تلبية الطلب كما أُرسل — بنية غير صحيحة، أو بيانات اعتماد ناقصة، أو مورد غير موجود فعلاً. خلافاً لـ `5xx`، لن تفيد إعادة نفس الطلب تماماً حتى يتغيّر شيء فيه.
+
+## أكثر رموز 4xx شيوعاً
+
+| الرمز | الاسم | المعنى |
+|------|------|---------|
+| 400 | Bad Request | تنسيق الطلب غير صالح. |
+| 401 | Unauthorized | تحتاج للمصادقة (تسجيل الدخول). |
+| 403 | Forbidden | أنت مصادَق لكن غير مسموح لك. |
+| 404 | Not Found | المورد غير موجود. |
+| 409 | Conflict | يتعارض الطلب مع حالة الخادم. |
+| 422 | Unprocessable Entity | التنسيق صالح لكن البيانات مرفوضة. |
+| 429 | Too Many Requests | ترسل طلبات كثيرة جداً (محدود المعدل). |
+
+---
+
+## تفصيل شامل
+
+### 400 Bad Request
+تنسيق الطلب غير صالح أو مشوَّه.
+
+```http
+POST /api/users HTTP/1.1
+Content-Type: application/json
+
+{ invalid json }
+
+HTTP/1.1 400 Bad Request
+{
+  "error": "Invalid JSON syntax"
+}
+```
+
+**الاستخدام:** عندما يرسل العميل:
+- JSON غير صالح
+- حقول مطلوبة ناقصة
+- نوع محتوى خاطئ
+- معاملات استعلام مشوَّهة
+
+---
+
+### 401 Unauthorized
+تحتاج للمصادقة (تقديم بيانات اعتماد مثل اسم مستخدم/كلمة مرور أو مفتاح API).
+
+```http
+GET /api/admin HTTP/1.1
+
+HTTP/1.1 401 Unauthorized
+WWW-Authenticate: Bearer realm="api"
+{
+  "error": "No authentication provided"
+}
+```
+
+**الاستخدام:** عندما لم يصادق العميل أو انتهت صلاحية رمزه.
+
+---
+
+### 403 Forbidden
+أنت مصادَق، لكن ليس لديك إذن للوصول إلى هذا المورد.
+
+```http
+GET /api/admin HTTP/1.1
+Authorization: Bearer valid-token
+
+HTTP/1.1 403 Forbidden
+{
+  "error": "Insufficient permissions"
+}
+```
+
+**الاستخدام:** عندما يكون العميل مسجَّل الدخول لكنه يفتقر إلى الدور/الإذن اللازم.
+
+---
+
+### 404 Not Found
+المورد المطلوب غير موجود.
+
+```http
+GET /api/users/999999 HTTP/1.1
+
+HTTP/1.1 404 Not Found
+{
+  "error": "User not found"
+}
+```
+
+**الاستخدام:** عندما لم يوجد مورد أبداً، أو حُذف.
+
+---
+
+### 409 Conflict
+يتعارض الطلب مع حالة الخادم الحالية.
+
+```http
+PUT /api/documents/42 HTTP/1.1
+If-Match: "old-version"
+
+HTTP/1.1 409 Conflict
+{
+  "error": "The document was modified by someone else"
+}
+```
+
+**الاستخدام:** عندما تكون نسخة العميل قديمة أو يفشل قيد فريد.
+
+---
+
+### 422 Unprocessable Entity
+تنسيق الطلب صالح (JSON صالح)، لكن البيانات مرفوضة.
+
+```http
+POST /api/users HTTP/1.1
+Content-Type: application/json
+
+{
+  "name": "Alice",
+  "email": "invalid-email"
+}
+
+HTTP/1.1 422 Unprocessable Entity
+{
+  "error": "Invalid email format"
+}
+```
+
+**الاستخدام:** عندما:
+- البريد الإلكتروني غير صالح
+- رقم الهاتف بتنسيق خاطئ
+- العمر خارج النطاق المسموح
+- البريد الإلكتروني موجود بالفعل (انتهاك منطق العمل)
+
+---
+
+### 429 Too Many Requests
+ترسل طلبات كثيرة جداً. أبطئ.
+
+```http
+POST /api/login HTTP/1.1
+
+HTTP/1.1 429 Too Many Requests
+Retry-After: 60
+{
+  "error": "Rate limit exceeded. Try again in 60 seconds."
+}
+```
+
+**الاستخدام:** عندما يرسل العميل طلبات بسرعة كبيرة.
+
+---
+
+## رموز 4xx مهمة أخرى
+
+- **405 Method Not Allowed** — الطريقة (GET، وPOST، وغيرها) غير مسموحة لهذا المورد.
+- **408 Request Timeout** — استغرق العميل وقتاً طويلاً لإرسال الطلب.
+- **410 Gone** — حُذف المورد ولن يعود.
+- **415 Unsupported Media Type** — نوع Content-Type غير مدعوم.
+- **418 I'm a Teapot** — الخادم إبريق شاي (مزحة من RFC 2324).
+
+---
+
+## 401 مقابل 403: الفرق
+
+| 401 Unauthorized | 403 Forbidden |
+|-----------------|---------------|
+| تحتاج لتسجيل الدخول | مسجَّل الدخول، لكن لا إذن |
+| لم تُقدَّم بيانات اعتماد أو أنها غير صالحة | بيانات اعتماد صالحة، لكن دور/إذن غير كافٍ |
+| أدرج ترويسة `WWW-Authenticate` | لا تُدرج `WWW-Authenticate` |
+
+---
+
+## أخطاء شائعة
+
+**تجنّب:** استخدام 404 لمشاكل الأذونات — استخدم 403، وليس 404. لا تُخفِ أن المورد موجود.
+
+**تجنّب:** استخدام 400 لكل أخطاء العميل — استخدم رموزاً أكثر تحديداً: 401، و403، و404، و409، و422.
+
+**تجنّب:** عدم تضمين `Retry-After` في 429 — أخبر العميل كم يجب أن ينتظر قبل إعادة المحاولة.
+
+**تجنّب:** استخدام 401 عندما تقصد 403 — 401 تعني "سجّل الدخول"، و403 تعني "لا إذن".
+
+---
+
+## طالع أيضاً
+
+- **[مرجع رموز الحالة](/ar/web-fundamentals/http/status-codes)** — كل الرموز بلمحة.
+- **[2xx نجاح](/ar/web-fundamentals/http/status-codes/2xx)** — نجح الطلب.
+- **[3xx إعادة التوجيه](/ar/web-fundamentals/http/status-codes/3xx)** — يحتاج العميل لفعل شيء.
+- **[5xx أخطاء الخادم](/ar/web-fundamentals/http/status-codes/5xx)** — فشل الخادم.

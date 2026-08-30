@@ -1,0 +1,35 @@
+---
+title: DNS
+description: كيف تتحول أسماء النطاقات إلى عناوين IP.
+category: Web Fundamentals
+weight: 3
+interactive: true
+interactiveType: ["StepFlow", "ItemExplorer"]
+---
+
+import { resolutionSteps } from "./resolution-steps";
+import { dnsRecordItems } from "./record-types";
+
+**نظام أسماء النطاقات (DNS)** هو دليل هاتف الإنترنت. تتخاطب الحواسيب فيما بينها بعنوان IP، لكن الناس يخاطبون المواقع بالاسم — و DNS هو ما يترجم `www.example.com` إلى شيء مثل `93.184.216.34`.
+
+## الحل خطوة بخطوة
+
+تتبّع ما يحدث في المرة الأولى التي يبحث فيها متصفحك عن نطاق، دون أي شيء في الـ Cache في أي مكان:
+
+<StepFlow title="حل DNS" steps={resolutionSteps} />
+
+## أنواع السجلات
+
+إعدادات DNS لنطاق ما هي مجموعة من **السجلات**. اختر واحداً لترى وظيفته:
+
+<ItemExplorer title="أنواع سجلات DNS" items={dnsRecordItems} layout="grid" />
+
+## لماذا هو سريع عملياً
+
+قد يبدو المسار الكامل أعلاه بطيئاً، لكنه لا يحدث فعلياً بهذا الشكل تقريباً أبداً — كل خطوة على الطريق تحفظ إجابتها في الـ Cache لمدة **TTL** (مدة البقاء) الخاصة بالسجل. تصيب معظم عمليات البحث الـ Cache على مستوى المتصفح أو نظام التشغيل أو الـ Resolver، ولا تصل إطلاقاً إلى خادم جذر أو خادم نطاق من المستوى الأعلى.
+
+## طالع أيضاً
+
+- **[عناوين URL و URI](/ar/web-fundamentals/urls)** — اسم المضيف الذي يحلّه DNS ليس سوى قطعة واحدة من عنوان URL.
+- **[TLS و HTTPS](/ar/web-fundamentals/tls)** — بمجرد أن يحلّ DNS عنوان IP، تكون TLS عادةً الـ Handshake التالية.
+- **[HTTP](/ar/web-fundamentals/http)** — بمجرد أن يحلّ DNS عنوان IP ويُفتح اتصال، يكون HTTP هو البروتوكول المحمول عبره.

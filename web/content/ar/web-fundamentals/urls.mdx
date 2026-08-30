@@ -1,0 +1,57 @@
+---
+title: عناوين URL و URI
+description: تشريح عنوان URL وكيف تتلاءم أجزاؤه معاً.
+category: Web Fundamentals
+weight: 2
+interactive: true
+interactiveType: ["UrlAnatomy", "RequestPlayground", "ItemExplorer"]
+---
+
+**عنوان URL** (محدد موقع الموارد الموحد) يحدد مورداً وكيفية الوصول إليه. لكل جزء منه وظيفة:
+
+<UrlAnatomy
+  parts={[
+    { text: "https://", label: "المخطط", color: "blue" },
+    { text: "api.example.com", label: "المضيف", color: "green" },
+    { text: ":443", label: "المنفذ", color: "orange" },
+    { text: "/v1/users", label: "المسار", color: "purple" },
+    { text: "?active=true", label: "الاستعلام", color: "red" },
+    { text: "#profile", label: "الجزء", color: "default" },
+  ]}
+/>
+
+- **`https`** — البروتوكول/المخطط. يخبر المتصفح بالبروتوكول الذي سيستخدمه للتحدث مع المضيف.
+- **`api.example.com`** — المضيف. النطاق (أو عنوان IP) الذي يترجمه DNS للعثور على الخادم.
+- **`443`** — المنفذ. يُحذف عادةً لأن 80 (HTTP) و443 (HTTPS) هما الافتراضيان.
+- **`/v1/users`** — المسار. أي مورد على الخادم تريده.
+- **`?active=true`** — سلسلة الاستعلام. معاملات إضافية، على شكل أزواج مفتاح-قيمة.
+- **`#profile`** — الجزء (Fragment). من جانب العميل فقط — لا يُرسل إلى الخادم إطلاقاً.
+
+## المخططات
+
+<ItemExplorer
+  title="مخططات URL الشائعة"
+  layout="pills"
+  defaultId="https"
+  items={[
+    { id: "https", label: "https", color: "green", detail: "HTTP عبر TLS — مشفّر، وهو الخيار الافتراضي الحديث للويب." },
+    { id: "http", label: "http", color: "orange", detail: "HTTP عادي غير مشفّر — أي شيء يُرسل عبره يمكن قراءته أو تعديله أثناء النقل." },
+    { id: "ftp", label: "ftp", color: "blue", detail: "بروتوكول نقل الملفات — تجاوزه إلى حد كبير نقل الملفات القائم على HTTPS اليوم." },
+    { id: "mailto", label: "mailto", color: "purple", detail: "ليس طلب شبكة على الإطلاق — يفتح عميل البريد الإلكتروني للمستخدم مع مستلم مُعبّأ مسبقاً." },
+  ]}
+/>
+
+## جرّب بنفسك
+
+أنشئ طلباً وشاهد بالضبط كيف يُحلَّل عنوان URL الهدف الخاص به:
+
+<RequestPlayground
+  protocol="http"
+  defaultTarget="/v1/users?active=true"
+  defaultHeaders="Accept: application/json"
+/>
+
+## طالع أيضاً
+
+- **[DNS](/ar/web-fundamentals/dns)** — كيف يتحول جزء المضيف من عنوان URL إلى عنوان IP.
+- **[HTTP](/ar/web-fundamentals/http)** — البروتوكول الذي يُجلب عبره معظم عناوين URL على الويب.

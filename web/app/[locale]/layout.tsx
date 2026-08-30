@@ -1,6 +1,6 @@
 import "../globals.css";
 import "../mdx.css";
-import { Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
+import { Geist_Mono, Noto_Kufi_Arabic, Noto_Sans_Arabic, Plus_Jakarta_Sans } from "next/font/google";
 import Link from "next/link";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
@@ -22,6 +22,19 @@ const jakarta = Plus_Jakarta_Sans({
   display: "swap",
 });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+// Arabic-script fonts — only ever selected by the `:lang(ar)` rules in
+// globals.css, but loaded unconditionally here since every locale shares
+// this one layout; unused font files simply aren't referenced for en/fr/es.
+const notoSansArabic = Noto_Sans_Arabic({
+  variable: "--font-noto-sans-arabic",
+  subsets: ["arabic"],
+  display: "swap",
+});
+const notoKufiArabic = Noto_Kufi_Arabic({
+  variable: "--font-noto-kufi-arabic",
+  subsets: ["arabic"],
+  display: "swap",
+});
 
 // Only the locales registered in lib/i18n/config.ts get a built route —
 // everything else 404s (same `output: "export"` + `dynamicParams` contract
@@ -93,7 +106,8 @@ export default async function LocaleLayout({
       lang={locale}
       dir={dir}
       data-theme="dark"
-      className={`${jakarta.variable} ${geistMono.variable} font-sans`}
+      suppressHydrationWarning
+      className={`${jakarta.variable} ${geistMono.variable} ${notoSansArabic.variable} ${notoKufiArabic.variable} font-sans`}
     >
       <head>
         {/*

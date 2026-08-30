@@ -7,6 +7,7 @@ import { JsonLd } from "@/app/_components/json-ld";
 import { SITE_URL } from "@/lib/site";
 import { locales, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
+import { StepFlowLabelsProvider } from "@/lib/i18n/step-flow-context";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { buildBreadcrumbList, buildTechArticle } from "@/lib/seo/structured-data";
 
@@ -66,6 +67,7 @@ export default async function SlugPage({
       next={next}
       pagePath={slugToHref(locale, page.slug)}
       nextLabel={dict.pageFooter.next}
+      stepFlowLabels={dict.stepFlow}
     />
   );
 }
@@ -76,12 +78,14 @@ async function ContentRenderer({
   next,
   pagePath,
   nextLabel,
+  stepFlowLabels,
 }: {
   page: CollectedPage;
   locale: Locale;
   next: ReturnType<typeof getNextPage>;
   pagePath: string;
   nextLabel: string;
+  stepFlowLabels: { previous: string; next: string };
 }) {
   // Dynamic import of the compiled `.mdx` (resolved by @next/mdx's loader).
   const mod = (await import(`../../../content/${locale}/${page.fileRel}.mdx`)) as {
@@ -97,7 +101,9 @@ async function ContentRenderer({
       <h1 className="mdx-h1">
         <span className="mdx-heading-text">{page.frontmatter.title}</span>
       </h1>
-      <MDX />
+      <StepFlowLabelsProvider value={stepFlowLabels}>
+        <MDX />
+      </StepFlowLabelsProvider>
       <PageFooter next={next} page={pagePath} nextLabel={nextLabel} />
       <JsonLd data={buildBreadcrumbList(locale, page.slug)} />
       <JsonLd data={buildTechArticle(locale, page, `${SITE_URL}${pagePath}`)} />

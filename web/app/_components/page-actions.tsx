@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 import { MessageSquare, Star, ThumbsUp, X } from "lucide-react";
 import { ApiError, getPageLikes, likePage, submitFeedback } from "@/lib/api";
 import { useHasMounted } from "@/lib/use-has-mounted";
+import { FEEDBACK_TYPES, FEEDBACK_TYPE_LABELS, type FeedbackType } from "@/lib/feedback-types";
 import { Button, Card } from "./ui";
 
 /**
@@ -194,6 +195,7 @@ function FeedbackCard({ page }: { page: string }) {
   const [open, setOpen] = useState(false);
   const [alreadySent, setAlreadySent] = useState(() => readFlag(`nullbase:sent-feedback:${page}`));
   const [rating, setRating] = useState<number | null>(null);
+  const [type, setType] = useState<FeedbackType | "">("");
   const [comment, setComment] = useState("");
   const [email, setEmail] = useState("");
   const [state, setState] = useState<FeedbackState>("idle");
@@ -227,6 +229,7 @@ function FeedbackCard({ page }: { page: string }) {
           rating: rating ?? undefined,
           comment: comment.trim() || undefined,
           email: email.trim() || undefined,
+          type: type || undefined,
         });
         setState("sent");
         setAlreadySent(true);
@@ -245,7 +248,7 @@ function FeedbackCard({ page }: { page: string }) {
         }
       }
     },
-    [page, rating, comment, email, commentWordCount, cooldown],
+    [page, rating, type, comment, email, commentWordCount, cooldown],
   );
 
   const mounted = useHasMounted();
@@ -286,7 +289,7 @@ function FeedbackCard({ page }: { page: string }) {
               onClick={() => setOpen(false)}
               aria-hidden="true"
             />
-            <Card className="relative max-h-[90vh] w-full max-w-md overflow-y-auto p-6 text-left shadow-card">
+            <Card className="relative max-h-[90vh] w-full max-w-md overflow-y-auto p-6 text-start shadow-card">
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-text-primary">Feedback</h3>
                 <button
@@ -319,10 +322,23 @@ function FeedbackCard({ page }: { page: string }) {
                       />
                     </button>
                   ))}
-                  <span className="ml-2 text-xs text-text-secondary">
+                  <span className="ms-2 text-xs text-text-secondary">
                     {rating ? `${rating}/5` : "Rating (optional)"}
                   </span>
                 </div>
+                <select
+                  value={type}
+                  onChange={(e) => setType(e.target.value as FeedbackType | "")}
+                  aria-label="Feedback type"
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-electric-blue"
+                >
+                  <option value="">What&apos;s wrong? (optional)</option>
+                  {FEEDBACK_TYPES.map((t) => (
+                    <option key={t} value={t}>
+                      {FEEDBACK_TYPE_LABELS[t]}
+                    </option>
+                  ))}
+                </select>
                 <textarea
                   value={comment}
                   onChange={(e) => {

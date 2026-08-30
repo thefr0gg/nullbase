@@ -27,6 +27,10 @@ export const en: Dictionary = {
   pageFooter: {
     next: "Next",
   },
+  stepFlow: {
+    previous: "Previous",
+    next: "Next",
+  },
   notFound: {
     badge: "4xx Client Error",
     heading: "Not Found",

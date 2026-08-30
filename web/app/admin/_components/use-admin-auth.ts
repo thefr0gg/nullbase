@@ -4,6 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { adminRefresh, type AdminIdentity } from "@/lib/admin-api";
 
+// The access token is 15 minutes (see api/src/services/admin-service.ts) —
+// refresh a few minutes ahead of that so an active session's token is
+// essentially never actually stale, rather than relying solely on the
+// reactive refresh-on-401 in `adminApiFetch` (which still works as a
+// fallback, e.g. across a laptop sleep longer than this interval).
+const BACKGROUND_REFRESH_MS = 10 * 60 * 1000;
+
 /**
  * The access token lives only in memory (see `lib/admin-api.ts`), so every
  * full page load starts with none — this silently exchanges the httpOnly
@@ -31,6 +38,16 @@ export function useAdminAuth(): { admin: AdminIdentity | null; loading: boolean 
       cancelled = true;
     };
   }, [router]);
+
+  useEffect(() => {
+    if (!admin) return;
+    const interval = setInterval(() => {
+      adminRefresh().then((result) => {
+        if (!result) router.replace("/admin/login");
+      });
+    }, BACKGROUND_REFRESH_MS);
+    return () => clearInterval(interval);
+  }, [admin, router]);
 
   return { admin, loading };
 }

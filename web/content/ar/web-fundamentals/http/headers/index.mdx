@@ -1,0 +1,23 @@
+---
+title: الترويسات
+description: حقول ترويسة HTTP للطلبات والاستجابات.
+category: HTTP
+weight: 50
+interactive: false
+---
+
+**حقول ترويسة HTTP** هي أزواج `Name: value` تحمل بيانات وصفية عن الطلب أو الاستجابة: نوع المورد وطوله، وتوجيهات التخزين المؤقت، وبيانات اعتماد المصادقة، وملفات تعريف الارتباط، والمزيد.
+
+الترويسات غير حساسة لحالة الأحرف بحسب العرف. يمكن أن تتشارك عدة ترويسات نفس الاسم، ويمكن دمج عدة ترويسات في سطر واحد `Name: value, value`.
+
+## فهرس الترويسات
+
+- [Content-Type](/ar/web-fundamentals/http/headers/content-type) — يعلن نوع الوسائط الخاص بالنص.
+- [Content-Length](/ar/web-fundamentals/http/headers/content-length) — حجم النص بالبايتات.
+- [Authorization](/ar/web-fundamentals/http/headers/authorization) — بيانات اعتماد المصادقة.
+- [Accept](/ar/web-fundamentals/http/headers/accept) — أنواع الاستجابة التي يمكن للعميل التعامل معها.
+- [Cache-Control](/ar/web-fundamentals/http/headers/cache-control) — توجيهات التخزين المؤقت.
+
+## الطلب مقابل الاستجابة
+
+تنطبق بعض الترويسات على الطلبات، وبعضها على الاستجابات، وبعضها على كليهما. قد يظهر اسم ترويسة معين في طلب أو استجابة، لكن معناه يبقى محصوراً بتلك الرسالة.

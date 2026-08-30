@@ -1,0 +1,36 @@
+---
+title: رسائل HTTP
+description: بنية رسائل طلب واستجابة HTTP.
+category: HTTP
+weight: 20
+interactive: false
+---
+
+رسائل HTTP نوعان: **الطلبات** (يرسلها العميل) و**الاستجابات** (يرسلها الخادم). يشترك النوعان في نفس البنية العامة: **سطر بداية**، وحقول **ترويسة**، وسطر فارغ اختياري، و**نص رسالة** اختياري.
+
+## رسالة الطلب
+
+```http
+GET /api/http/echo?hello=world HTTP/1.1
+Host: nullbase.local
+User-Agent: nullbase/1.0
+Accept: application/json
+```
+
+**سطر الطلب** هو `Method SP request-target SP HTTP-version CRLF`.
+
+## رسالة الاستجابة
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 87
+
+{"method":"GET","path":"/api/http/echo","status":200}
+```
+
+**سطر الحالة** هو `HTTP-version SP status-code SP reason-phrase CRLF`. `reason-phrase` قابل للقراءة البشرية واختياري عملياً؛ `status-code` هو ما تتصرف البرامج بناءً عليه — انظر [رموز الحالة](/ar/web-fundamentals/http/status-codes/200).
+
+## حقول الترويسة
+
+الترويسات هي أزواج `Name: value` تحمل بيانات وصفية: التفاوض على المحتوى، وتوجيهات التخزين المؤقت، والمصادقة، وملفات تعريف الارتباط، والمزيد. انظر [الترويسات](/ar/web-fundamentals/http/headers/content-type) للأهم منها.

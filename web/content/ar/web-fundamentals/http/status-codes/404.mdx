@@ -1,0 +1,27 @@
+---
+title: "404 Not Found"
+description: لم يجد الخادم تمثيلاً حالياً للمورد الهدف.
+category: HTTP
+weight: 45
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+يشير رمز حالة الاستجابة `404 Not Found` إلى أن **الخادم لم يجد تمثيلاً حالياً** للمورد الهدف، أو أن الخادم لا يرغب في إتاحة هذه المعلومة، فما كان ليرسل هذا الرمز.
+
+<StatusCodeExplorer defaultCode={404} />
+
+## التفاصيل
+
+- **الفئة:** 4xx (خطأ من جهة العميل)
+- **متى تُستخدم:** عنوان URL غير معروف للخادم، أو أُزيل المورد عمداً.
+- **ملاحظة SEO:** رمز `404` الناعم (إعادة `200` مع محتوى "غير موجود") يضر بفهرسة محركات البحث — أعد `404` الحقيقي دائماً.
+
+## مثال
+
+```http
+HTTP/1.1 404 Not Found
+Content-Type: text/html
+
+<h1>404 Not Found</h1>
+<p>The requested resource does not exist.</p>

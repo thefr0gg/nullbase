@@ -1,4 +1,5 @@
 import type { FeedbackInput, FeedbackRepository, FeedbackRow, FeedbackStatus } from "../repositories/feedback";
+import type { FeedbackType } from "../lib/feedback-types";
 import { RATE_LIMITS, DAY_AGO, HOUR_AGO, secondsUntilNextHour, secondsUntilUtcMidnight } from "../config";
 import { hashWithSecret } from "../lib/crypto";
 import { RateLimitedError } from "./errors";
@@ -45,6 +46,7 @@ export class FeedbackService {
       rating: input.rating,
       comment: input.comment?.trim() || undefined,
       email: input.email?.trim() || undefined,
+      type: input.type,
       visitorHash,
       ipHash,
     });
@@ -53,12 +55,13 @@ export class FeedbackService {
   async list(options: {
     status?: FeedbackStatus;
     pagePath?: string;
+    type?: FeedbackType;
     limit: number;
     offset: number;
   }): Promise<{ items: FeedbackRow[]; total: number; limit: number; offset: number }> {
     const [items, total] = await Promise.all([
       this.repo.list(options),
-      this.repo.count(options.status, options.pagePath),
+      this.repo.count(options.status, options.pagePath, options.type),
     ]);
     return { items, total, limit: options.limit, offset: options.offset };
   }

@@ -44,6 +44,10 @@ export interface Dictionary {
   pageFooter: {
     next: string;
   };
+  stepFlow: {
+    previous: string;
+    next: string;
+  };
   notFound: {
     badge: string;
     heading: string;
@@ -57,13 +61,15 @@ export interface Dictionary {
     heroSubtext: string;
     /** `{topic}` */
     startWith: string;
-    /** `{count}` — one/other CLDR plural forms, see `lib/i18n/format.ts`'s `pluralize`. */
-    pagesAndCounting: { one: string; other: string };
+    /** `{count}` — CLDR plural forms, see `lib/i18n/format.ts`'s `pluralize`.
+     *  `other` is required; a locale may add `zero`/`one`/`two`/`few`/`many`
+     *  as needed (e.g. Arabic uses all six). */
+    pagesAndCounting: Partial<Record<Intl.LDMLPluralRule, string>> & { other: string };
     browseByTopic: string;
     /** `{topic}` */
     explore: string;
     comingSoon: string;
-    /** `{count}` — one/other CLDR plural forms. */
-    pageCount: { one: string; other: string };
+    /** `{count}` — CLDR plural forms, see above. */
+    pageCount: Partial<Record<Intl.LDMLPluralRule, string>> & { other: string };
   };
 }

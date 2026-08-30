@@ -217,13 +217,13 @@ function TableLayout({
         <table className="w-full min-w-max border-collapse text-sm">
           <thead>
             <tr className="bg-background/60">
-              <th className="border-b border-border px-4 py-2.5 text-left text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-text-secondary">
+              <th className="border-b border-border px-4 py-2.5 text-start text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-text-secondary">
                 &nbsp;
               </th>
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  className="whitespace-nowrap border-b border-border px-4 py-2.5 text-left text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-text-secondary"
+                  className="whitespace-nowrap border-b border-border px-4 py-2.5 text-start text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-text-secondary"
                 >
                   {col.label}
                 </th>
@@ -277,7 +277,7 @@ function GridLayout({ items, title }: { items: ItemExplorerItem[]; title?: strin
                 type="button"
                 onClick={() => setOpenId(active ? null : item.id)}
                 aria-expanded={active}
-                className="flex w-full items-center justify-between gap-2 p-4 text-left"
+                className="flex w-full items-center justify-between gap-2 p-4 text-start"
               >
                 <Badge color={item.color ?? "default"}>{item.label}</Badge>
                 {item.detail && (

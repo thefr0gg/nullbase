@@ -26,7 +26,7 @@ try {
 Write-Host ("4 me with-token: " + (Invoke-RestMethod "$base/admin/me" -Headers $auth -TimeoutSec 10 | ConvertTo-Json -Compress))
 
 # 5 public feedback: valid + invalid
-Write-Host ("5 feedback post: " + (Invoke-RestMethod "$base/feedback" -Method Post -ContentType "application/json" -Headers $frontend -Body '{"page":"/http","rating":4}' -TimeoutSec 10 | ConvertTo-Json -Compress))
+Write-Host ("5 feedback post: " + (Invoke-RestMethod "$base/feedback" -Method Post -ContentType "application/json" -Headers $frontend -Body '{"page":"/http","rating":4,"type":"unclear"}' -TimeoutSec 10 | ConvertTo-Json -Compress))
 try {
   Invoke-WebRequest "$base/feedback" -Method Post -ContentType "application/json" -Body '{"page":"/http"}' -TimeoutSec 10 | Out-Null
   Write-Host "5 feedback invalid: FAIL"

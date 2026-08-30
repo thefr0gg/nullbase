@@ -1,0 +1,112 @@
+---
+title: PATCH
+description: تحديثات جزئية لمورد دون استبدال التمثيل الكامل.
+category: HTTP
+weight: 4
+---
+
+تعدّل **PATCH** مورداً بـ **تحديثات جزئية**. خلافاً لـ PUT (التي تستبدل المورد كاملاً)، تتيح لك PATCH تحديث الحقول التي تريد تغييرها فقط.
+
+## متى تستخدم PATCH
+
+- تحديث حقل أو حقلين على مورد
+- لا تريد إرسال الكائن كاملاً
+- المورد الكامل كبير أو يتغيّر بكثرة
+
+**مثال:** تحديث بريد مستخدم إلكتروني دون إرسال ملفه الشخصي كاملاً.
+
+```json
+PATCH /api/users/42 HTTP/1.1
+Host: api.example.com
+Content-Type: application/json
+
+{
+  "email": "newemail@example.com"
+}
+```
+
+---
+
+## PATCH مقابل PUT
+
+| الجانب | PUT | PATCH |
+|--------|-----|-------|
+| **التحديثات** | استبدال كامل | تحديث جزئي |
+| **النص** | المورد كاملاً | الحقول المتغيّرة فقط |
+| **تكرارية** | نعم | لا (عادةً) |
+| **آمنة** | لا | لا |
+
+**PUT:**
+```json
+PUT /api/users/42 HTTP/1.1
+
+{
+  "id": 42,
+  "name": "Alice",
+  "email": "alice@example.com",
+  "phone": "+1-555-0123"
+}
+```
+
+**PATCH (نفس النتيجة، بيانات أقل):**
+```json
+PATCH /api/users/42 HTTP/1.1
+
+{
+  "email": "alice@example.com"
+}
+```
+
+---
+
+## أهمية Content-Type
+
+عند إرسال PATCH بـ JSON، استخدم `application/json`:
+
+```http
+PATCH /api/users/42 HTTP/1.1
+Content-Type: application/json
+```
+
+لـ **RFC 6902 JSON Patch** (تنسيق معياري لوصف التغييرات)، استخدم `application/json-patch+json`:
+
+```json
+PATCH /api/users/42 HTTP/1.1
+Content-Type: application/json-patch+json
+
+[
+  { "op": "replace", "path": "/email", "value": "newemail@example.com" },
+  { "op": "add", "path": "/phone", "value": "+1-555-0199" }
+]
+```
+
+---
+
+## رموز حالة الاستجابة
+
+- **200 OK** — طُبّق التحديث بنجاح، ويحتوي النص على المورد المحدَّث
+- **204 No Content** — طُبّق التحديث، لكن الخادم لا يعيد المورد
+- **400 Bad Request** — تنسيق التحديث غير صالح
+- **404 Not Found** — المورد غير موجود
+- **409 Conflict** — لا يمكن تطبيق التحديث (تغييرات متعارضة، عدم تطابق إصدار)
+- **422 Unprocessable Entity** — التحديث JSON صالح لكن البيانات مرفوضة
+
+---
+
+## أخطاء شائعة
+
+**تجنّب:** الخلط بين PATCH وPUT — PATCH للتحديثات الجزئية، وPUT للاستبدال الكامل.
+
+**تجنّب:** عدم إرسال Content-Type — حدّد دائماً تنسيق تحديثك.
+
+**تجنّب:** افتراض أن PATCH تكرارية — عادةً ليست كذلك. قد ينتج عن استدعاء PATCH مرتين نتائج مختلفة عن استدعائها مرة واحدة.
+
+**تجنّب:** PATCH دون التحقق من حالة الاستجابة — تحقق دائماً مما إذا نجح التحديث.
+
+---
+
+## طالع أيضاً
+
+- **[PUT](/ar/web-fundamentals/http/methods/put)** — استبدال المورد كاملاً.
+- **[POST](/ar/web-fundamentals/http/methods/post)** — إنشاء موارد أو تشغيل إجراءات.
+- **[مرجع طرق HTTP](/ar/web-fundamentals/http/methods)** — كل الطرق بلمحة.

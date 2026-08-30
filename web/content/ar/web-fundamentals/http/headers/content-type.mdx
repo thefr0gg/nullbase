@@ -1,0 +1,38 @@
+---
+title: Content-Type
+description: تشير ترويسة Content-Type إلى نوع الوسائط الخاص بالمورد.
+category: HTTP
+weight: 51
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+تشير ترويسة `Content-Type` إلى **نوع الوسائط** (نوع MIME سابقاً) للمورد: تنسيق البايتات المرسلة في نص الرسالة. يستخدمها الخادم ليخبر العميل كيف يفسّر الحمولة.
+
+<HttpRequest
+  defaultMethod="POST"
+  defaultPath="/api/http/echo"
+  defaultHeaders="Content-Type: application/json
+Accept: application/json"
+  defaultBody='{"hello":"world"}'
+/>
+
+## أنواع الوسائط الشائعة
+
+| النوع | مثال |
+|---|---|
+| JSON | `application/json` |
+| نموذج | `application/x-www-form-urlencoded` |
+| نموذج (متعدد الأجزاء) | `multipart/form-data` |
+| HTML | `text/html` |
+| CSS | `text/css` |
+| نص عادي | `text/plain` |
+| PNG | `image/png` |
+
+## مثال
+
+```http
+POST /api/http/echo HTTP/1.1
+Content-Type: application/json
+
+{"hello":"world"}

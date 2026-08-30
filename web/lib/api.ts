@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { getVisitorId } from "./visitor";
+import type { FeedbackType } from "./feedback-types";
 
 /**
  * Single source of truth for the API base URL.
@@ -102,6 +103,7 @@ export interface FeedbackInput {
   rating?: number;
   comment?: string;
   email?: string;
+  type?: FeedbackType;
 }
 
 export async function submitFeedback(input: FeedbackInput): Promise<void> {

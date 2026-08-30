@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { apiFetch, ApiError } from "./api";
+import { FEEDBACK_TYPES, type FeedbackType } from "./feedback-types";
 
 /**
  * Admin API client. Mirrors `lib/api.ts`'s `apiFetch`/`ApiError`/zod
@@ -48,23 +49,45 @@ export async function adminLogin(email: string, password: string): Promise<Admin
   return data.admin;
 }
 
-/** Silently exchanges the httpOnly refresh cookie for a new access token.
- *  Returns `null` (never throws) when there's no valid session — callers
- *  redirect to `/admin/login` in that case. */
-export async function adminRefresh(): Promise<AdminIdentity | null> {
-  try {
-    const data = authResponseSchema.parse(
-      await apiFetch<unknown>("/v1/admin/refresh", {
-        method: "POST",
-        credentials: "include",
-      }),
-    );
-    setAccessToken(data.accessToken);
-    return data.admin;
-  } catch {
-    setAccessToken(null);
-    return null;
-  }
+/**
+ * Silently exchanges the httpOnly refresh cookie for a new access token.
+ * Returns `null` (never throws) when there's no valid session — callers
+ * redirect to `/admin/login` in that case.
+ *
+ * Deduplicated: the refresh token rotates on every use (the old one is
+ * revoked server-side the instant a new one is issued), so two concurrent
+ * calls racing on the SAME still-valid cookie would have the second one
+ * arrive after the first already rotated it away — the server reads that
+ * as token reuse (a theft signal) and revokes the whole session, logging
+ * the admin straight back out. This happens for real in dev, where React's
+ * Strict Mode double-invokes effects (so `useAdminAuth`'s mount effect
+ * fires `adminRefresh()` twice back to back). Sharing one in-flight
+ * promise across every caller — effects, the 401 retry in
+ * `adminApiFetch`, the background timer — makes concurrent calls collapse
+ * into a single request instead of racing.
+ */
+let refreshPromise: Promise<AdminIdentity | null> | null = null;
+
+export function adminRefresh(): Promise<AdminIdentity | null> {
+  if (refreshPromise) return refreshPromise;
+  refreshPromise = (async () => {
+    try {
+      const data = authResponseSchema.parse(
+        await apiFetch<unknown>("/v1/admin/refresh", {
+          method: "POST",
+          credentials: "include",
+        }),
+      );
+      setAccessToken(data.accessToken);
+      return data.admin;
+    } catch {
+      setAccessToken(null);
+      return null;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+  return refreshPromise;
 }
 
 export async function adminLogout(): Promise<void> {
@@ -110,6 +133,7 @@ const feedbackRowSchema = z.object({
   comment: z.string().nullable(),
   email: z.string().nullable(),
   status: z.enum(["new", "resolved", "dismissed"]),
+  type: z.enum(FEEDBACK_TYPES).nullable(),
   created_at: z.string(),
 });
 export type FeedbackRow = z.infer<typeof feedbackRowSchema>;
@@ -125,12 +149,14 @@ export type FeedbackList = z.infer<typeof feedbackListSchema>;
 export async function adminListFeedback(options: {
   status?: "new" | "resolved" | "dismissed";
   page?: string;
+  type?: FeedbackType;
   limit?: number;
   offset?: number;
 }): Promise<FeedbackList> {
   const params = new URLSearchParams();
   if (options.status) params.set("status", options.status);
   if (options.page) params.set("page", options.page);
+  if (options.type) params.set("type", options.type);
   params.set("limit", String(options.limit ?? 50));
   params.set("offset", String(options.offset ?? 0));
   return feedbackListSchema.parse(

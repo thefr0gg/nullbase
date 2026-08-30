@@ -1,9 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Laptop, Smartphone, Tablet } from "lucide-react";
 import { Badge, Card } from "@/app/_components/ui";
 import { ApiError } from "@/lib/api";
 import { adminListSessions, adminRevokeSession, type AdminSession } from "@/lib/admin-api";
+import { parseUserAgent } from "@/lib/user-agent";
+import { AdminLoading } from "./admin-loading";
+
+const DEVICE_ICON = { desktop: Laptop, mobile: Smartphone, tablet: Tablet };
 
 export function AdminSessionsPanel() {
   const [sessions, setSessions] = useState<AdminSession[]>([]);
@@ -25,7 +30,10 @@ export function AdminSessionsPanel() {
       .finally(() => setLoading(false));
   }, []);
 
-  async function revoke(id: number) {
+  async function revoke(id: number, label: string) {
+    if (!window.confirm(`Revoke the session on ${label}? That device will be signed out immediately.`)) {
+      return;
+    }
     setRevoking(id);
     try {
       await adminRevokeSession(id);
@@ -44,33 +52,42 @@ export function AdminSessionsPanel() {
       </p>
       {error && <p className="text-sm text-danger">{error}</p>}
       {loading ? (
-        <p className="text-sm text-text-secondary">Loading…</p>
+        <AdminLoading />
       ) : (
-        sessions.map((session) => (
-          <Card key={session.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2">
-                <span className="max-w-xs truncate text-sm text-text-primary">
-                  {session.userAgent ?? "Unknown device"}
+        sessions.map((session) => {
+          const { os, device, icon } = parseUserAgent(session.userAgent);
+          const Icon = DEVICE_ICON[icon];
+          return (
+            <Card key={session.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
+              <div className="flex items-center gap-3">
+                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-electric-blue/10 text-electric-blue">
+                  <Icon className="h-4 w-4" />
                 </span>
-                {session.current && <Badge color="blue">This device</Badge>}
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-text-primary" title={session.userAgent ?? undefined}>
+                      {os} · {device}
+                    </span>
+                    {session.current && <Badge color="blue">This device</Badge>}
+                  </div>
+                  <span className="text-xs text-text-secondary">
+                    Last active {new Date(session.lastUsedAt).toLocaleString()}
+                  </span>
+                </div>
               </div>
-              <span className="text-xs text-text-secondary">
-                Last active {new Date(session.lastUsedAt).toLocaleString()}
-              </span>
-            </div>
-            {!session.current && (
-              <button
-                type="button"
-                disabled={revoking === session.id}
-                onClick={() => revoke(session.id)}
-                className="rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-text-secondary transition-colors hover:border-danger/40 hover:text-danger disabled:opacity-50"
-              >
-                {revoking === session.id ? "Revoking…" : "Revoke"}
-              </button>
-            )}
-          </Card>
-        ))
+              {!session.current && (
+                <button
+                  type="button"
+                  disabled={revoking === session.id}
+                  onClick={() => revoke(session.id, `${os} · ${device}`)}
+                  className="rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-text-secondary transition-colors hover:border-danger/40 hover:text-danger disabled:opacity-50"
+                >
+                  {revoking === session.id ? "Revoking…" : "Revoke"}
+                </button>
+              )}
+            </Card>
+          );
+        })
       )}
     </div>
   );

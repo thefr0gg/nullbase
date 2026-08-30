@@ -1,0 +1,168 @@
+---
+title: HTTP
+description: مرجع HTTP كامل وتفاعلي. تعلّم من خلال أدوات بناء طلبات حية، ومستكشفات رموز الحالة، وأمثلة من العالم الحقيقي.
+category: HTTP
+weight: 0
+interactive: true
+---
+
+**بروتوكول نقل النص التشعبي (HTTP)** هو أساس التواصل عبر الويب. كل طلب من متصفحك، وكل استدعاء API، وكل تفاعل مع خادم يمر عبر HTTP.
+
+يعلّمك هذا المرجع HTTP ليس عبر حقائق منعزلة، بل عبر **أدوات تفاعلية** — أنشئ طلبات حقيقية، واستكشف رموز الحالة، وافحص الترويسات، وافهم لماذا يتصرف HTTP بالطريقة التي يتصرف بها.
+
+---
+
+## ابدأ من هنا
+
+- **[الأساسيات](/ar/web-fundamentals/http/fundamentals)** — ما هو HTTP، وكيف يعمل، ونظرة سريعة على إصداراته.
+- **[نموذج الطلب–الاستجابة](/ar/web-fundamentals/http/request-response)** — التدفق الكامل من العميل إلى الخادم ثم العودة.
+- **[رسائل HTTP](/ar/web-fundamentals/http/messages)** — تشريح الطلبات والاستجابات.
+
+**[← جرّب أداة بناء الطلبات التفاعلية](#tools)** — أنشئ طلبات HTTP حقيقية وشاهد الاستجابات مباشرةً.
+
+---
+
+## المفاهيم الأساسية
+
+### الطرق (الأفعال)
+يستخدم كل طلب طريقة. إليك أهمها:
+
+- **[GET](/ar/web-fundamentals/http/methods/get)** — استرجاع مورد.
+- **[POST](/ar/web-fundamentals/http/methods/post)** — إرسال بيانات، وإنشاء موارد، وتشغيل إجراءات.
+- **[PUT](/ar/web-fundamentals/http/methods/put)** — استبدال مورد أو إنشاؤه كاملاً.
+- **[PATCH](/ar/web-fundamentals/http/methods/patch)** — تحديثات جزئية.
+- **[DELETE](/ar/web-fundamentals/http/methods/delete)** — حذف مورد.
+- **[HEAD](/ar/web-fundamentals/http/methods/head)** — مثل GET، لكن الترويسات فقط (بلا نص).
+- **[OPTIONS](/ar/web-fundamentals/http/methods/options)** — وصف خيارات التواصل مع مورد.
+- **[مرجع كل الطرق](/ar/web-fundamentals/http/methods)** — خصائص الأمان، والتكرارية، والقابلية للتخزين المؤقت.
+
+### رموز الحالة
+تبدأ كل استجابة برمز. أتقنها جميعاً:
+
+- **[2xx نجاح](/ar/web-fundamentals/http/status-codes/2xx)** — 200 OK، و201 Created، و204 No Content، وغيرها.
+- **[3xx إعادة توجيه](/ar/web-fundamentals/http/status-codes/3xx)** — 301 Moved، و302 Found، و304 Not Modified، وغيرها.
+- **[4xx خطأ من جهة العميل](/ar/web-fundamentals/http/status-codes/4xx)** — 400 Bad Request، و401 Unauthorized، و403 Forbidden، و404 Not Found، وغيرها.
+- **[5xx خطأ من جهة الخادم](/ar/web-fundamentals/http/status-codes/5xx)** — 500 Internal Server Error، و502 Bad Gateway، و503 Service Unavailable، وغيرها.
+
+**[مستكشف رموز الحالة الحي](/ar/web-fundamentals/http/status-codes)** — شاهد ماذا يعني كل رمز ومتى تستخدمه الخوادم.
+
+### الترويسات
+بيانات وصفية تتحكم في السلوك. الأساسيات:
+
+**ترويسات الطلب:**
+- **[Authorization](/ar/web-fundamentals/http/headers/authorization)** — إثبات هويتك (Basic، وBearer، ومفاتيح API).
+- **[Content-Type](/ar/web-fundamentals/http/headers/content-type)** — تنسيق نص الطلب (application/json، وform-data، وغيرها).
+- **[Accept](/ar/web-fundamentals/http/headers/accept)** — تنسيقات الاستجابة التي يمكنك فهمها.
+- **[User-Agent](/ar/web-fundamentals/http/headers/user-agent)** — تحديد هوية العميل.
+
+**ترويسات الاستجابة:**
+- **[Content-Type](/ar/web-fundamentals/http/headers/content-type)** — تنسيق نص الاستجابة.
+- **[Cache-Control](/ar/web-fundamentals/http/headers/cache-control)** — مدة تخزين هذه الاستجابة مؤقتاً.
+- **[Set-Cookie](/ar/web-fundamentals/http/headers/set-cookie)** — تخزين بيانات على العميل.
+- **[Location](/ar/web-fundamentals/http/headers/location)** — إلى أين تُعاد التوجيه (استجابات 3xx).
+
+**[مرجع كل الترويسات](/ar/web-fundamentals/http/headers)** — أكثر من 50 ترويسة مع أمثلة وحالات استخدام.
+
+### عناوين URL والموارد
+- **[عناوين URL و URI](/ar/web-fundamentals/http/urls)** — كيف تُحدَّد الموارد وتُطلب.
+- **[سلاسل الاستعلام](/ar/web-fundamentals/http/urls)** — المعاملات في عنوان URL.
+- **[ترميز URL](/ar/web-fundamentals/http/urls)** — الأحرف الخاصة والترميز.
+
+---
+
+## نصوص الطلب والاستجابة
+
+- **[النصوص والمحتوى](/ar/web-fundamentals/http/body)** — نص، وJSON، وبيانات نموذج، وثنائيات.
+- **[التفاوض على المحتوى](/ar/web-fundamentals/http/content-negotiation)** — Accept، وContent-Type: كيف يتفق العملاء والخوادم على التنسيقات.
+- **[الضغط](/ar/web-fundamentals/http/compression)** — gzip، وbrotli، وdeflate: جعل الاستجابات أصغر وأسرع.
+- **[بيانات متعددة الأجزاء](/ar/web-fundamentals/http/body)** — رفع الملفات وإرسال النماذج بالحدود الفاصلة.
+
+---
+
+## الحالة والهوية
+
+- **[ملفات تعريف الارتباط](/ar/web-fundamentals/http/cookies)** — HTTP ذو حالة عبر ترويستي Set-Cookie وCookie.
+- **[المصادقة والتفويض](/ar/web-fundamentals/http/auth)** — المصادقة الأساسية، ورموز Bearer، ومفاتيح API، وأساسيات OAuth.
+- **[CORS](/ar/web-fundamentals/http/cors)** — مشاركة الموارد عبر الأصول: لماذا وكيف تعمل.
+
+---
+
+## الأداء والتحسين
+
+- **[التخزين المؤقت](/ar/web-fundamentals/http/caching)** — Cache-Control، وETag، وLast-Modified، وexpires: تقليل الطلبات وحمل الخادم.
+- **[الطلبات الشرطية](/ar/web-fundamentals/http/conditional)** — If-Match، وIf-None-Match، وIf-Modified-Since: أرسل فقط ما تغيّر.
+- **[طلبات النطاق](/ar/web-fundamentals/http/ranges)** — استئناف التنزيلات، وبث نطاقات بايت محددة.
+- **[إدارة الاتصال](/ar/web-fundamentals/http/connections)** — Keep-Alive، وخط الأنابيب، وتجميع الاتصالات.
+
+---
+
+## الشبكة والوسطاء
+
+- **[الـ Proxies والبوابات](/ar/web-fundamentals/http/proxies)** — Forward Proxies، وReverse Proxies، وموازنات الحمل.
+- **[إعادة التوجيه](/ar/web-fundamentals/http/redirects)** — 301، و302، و307، و308: دائمة ومؤقتة.
+
+---
+
+## إصدارات البروتوكول
+
+فهم التطور مهم — تغيّرت الميزات، وتحسّن الأداء.
+
+- **[HTTP/1.0](/ar/web-fundamentals/http/http1-0)** — الأصلي (1991). عديم الحالة، بسيط.
+- **[HTTP/1.1](/ar/web-fundamentals/http/http1-1)** — المعيار (1997–اليوم). Keep-Alive، وخط الأنابيب، والتخزين المؤقت.
+- **[HTTP/2](/ar/web-fundamentals/http/http2)** — تعدد الإرسال ودفع الخادم (2015). أسرع باتصال واحد.
+- **[HTTP/3](/ar/web-fundamentals/http/http3)** — قائم على QUIC، أسرع (2022).
+
+---
+
+## الأمان
+
+- **[HTTPS و TLS](/ar/web-fundamentals/http/https)** — تواصل مشفّر.
+- **[ترويسات الأمان](/ar/web-fundamentals/http/security-headers)** — CSP، وX-Frame-Options، وHSTS، وأخواتها.
+- **[أمان ملفات تعريف الارتباط](/ar/web-fundamentals/http/cookies)** — أعلام Secure، وHttpOnly، وSameSite.
+
+---
+
+## السلوك في العالم الحقيقي
+
+- **[سلوك المتصفح](/ar/web-fundamentals/http/browser)** — لماذا تتصرف المتصفحات كما تفعل: سياسة نفس الأصل، والطلبات التمهيدية، وحدود إعادة التوجيه.
+- **[أفضل ممارسات الخادم](/ar/web-fundamentals/http/server)** — رموز الحالة، ومعالجة الأخطاء، والأداء، والموثوقية.
+- **[أمثلة عملية](/ar/web-fundamentals/http/examples)** — إرسال النماذج، ورفع الملفات، وأنماط API، وتدفقات المصادقة.
+
+---
+
+<h2 id="tools">أدوات تفاعلية</h2>
+
+### أرسل طلب HTTP حقيقياً
+
+جرّبها: غيّر الطريقة أو عنوان URL أو الترويسات أو النص. شاهد الاستجابة الكاملة.
+
+<HttpRequest 
+  defaultMethod="GET" 
+  defaultPath="/api/data"
+  defaultHeaders="Accept: application/json"
+/>
+
+### استكشف كل رموز الحالة
+
+ماذا يعني 418؟ متى تعيد الخوادم 307 مقابل 302؟ استخدم المستكشف.
+
+<StatusCodeExplorer defaultCode={200} />
+
+---
+
+## لماذا هذا المرجع؟
+
+معظم وثائق HTTP متناثرة أو غير مكتملة. **nullbase مختلف:**
+
+- **التفاعل أولاً** — لا تكتفِ بقراءة HTTP. أنشئ طلبات، وشاهد الاستجابات، وجرّب.
+- **الاكتمال** — كل الـ29 موضوعاً من الأساسيات إلى الأمان إلى الأنماط الواقعية.
+- **العملية** — أمثلة كود يمكنك تعديلها. أنماط يمكنك استخدامها غداً.
+- **الصدق** — يشرح ليس فقط ماذا، بل لماذا، ومتى، والأخطاء الشائعة.
+
+---
+
+## المعايير ومزيد من القراءة
+
+- [RFC 9110 — دلالات HTTP](https://www.rfc-editor.org/rfc/rfc9110) — المواصفة الرسمية.
+- [MDN: HTTP](https://developer.mozilla.org/en-US/docs/Web/HTTP) — مرجع Mozilla الممتاز.
+- [httpwg.org](https://httpwg.org/) — مجموعة عمل HTTP.

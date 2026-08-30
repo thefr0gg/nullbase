@@ -18,6 +18,19 @@
   --mdx-code-inline-text: color-mix(in oklch, var(--color-violet) 58%, var(--text-primary) 42%);
   --mdx-table-header-bg: color-mix(in oklch, var(--text-primary) 5%, var(--surface));
   --mdx-table-stripe-bg: color-mix(in oklch, var(--text-primary) 2.5%, transparent);
+
+  /* Body/heading font, overridden per-script below — Arabic pages need a
+     dedicated Arabic-script family (Latin fonts don't cover Arabic glyphs),
+     with a separate, more geometric family for headings only. */
+  --font-body: var(--font-jakarta);
+  --font-heading: var(--font-jakarta);
+}
+
+/* `lang="ar"` is set on <html> by app/[locale]/layout.tsx — this cascades
+   to every element on an Arabic page without needing a class per component. */
+:lang(ar) {
+  --font-body: var(--font-noto-sans-arabic);
+  --font-heading: var(--font-noto-kufi-arabic);
 }
 
 :root[data-theme="light"] {
@@ -65,9 +78,17 @@
   }
   body {
     min-height: 100vh;
-    font-family: var(--font-jakarta), sans-serif;
+    font-family: var(--font-body), sans-serif;
     line-height: 1.7;
     letter-spacing: -0.01em;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading), sans-serif;
   }
   a {
     color: inherit;
@@ -78,7 +99,7 @@
   input,
   select,
   textarea {
-    font-family: var(--font-jakarta), sans-serif;
+    font-family: var(--font-body), sans-serif;
     transition: border-color 0.15s ease, background-color 0.15s ease,
       box-shadow 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
   }
@@ -98,7 +119,7 @@
   li,
   td,
   th {
-    font-family: var(--font-jakarta), sans-serif;
+    font-family: var(--font-body), sans-serif;
   }
 
   code {

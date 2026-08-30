@@ -1,0 +1,26 @@
+---
+title: "200 OK"
+description: عالج الخادم الطلب بنجاح.
+category: HTTP
+weight: 41
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+يشير رمز حالة الاستجابة `200 OK` إلى أن **الطلب نجح**. إنه أكثر رموز الحالة شيوعاً على الويب.
+
+<StatusCodeExplorer defaultCode={200} />
+
+## التفاصيل
+
+- **الفئة:** 2xx (نجاح)
+- **شائع مع:** `GET`، و`PUT`، و`PATCH`، و`DELETE`، و`POST`
+- **التخزين المؤقت:** استجابة `200` قابلة للتخزين المؤقت افتراضياً.
+
+## مثال
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{ "status": 200, "message": "OK" }

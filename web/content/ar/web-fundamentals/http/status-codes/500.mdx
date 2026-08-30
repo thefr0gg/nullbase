@@ -1,0 +1,27 @@
+---
+title: "500 Internal Server Error"
+description: واجه الخادم حالة لا يعرف كيف يتعامل معها.
+category: HTTP
+weight: 49
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+يشير رمز حالة الاستجابة `500 Internal Server Error` إلى أن **الخادم واجه حالة لا يعرف كيف يتعامل معها**.
+
+<StatusCodeExplorer defaultCode={500} />
+
+## التفاصيل
+
+- **الفئة:** 5xx (خطأ من جهة الخادم)
+- **متى تُستخدم:** واجهت حالة غير متوقعة ولا توجد رسالة أكثر تحديداً مناسبة.
+- **لا تعد المحاولة** بشكل أعمى — `500` ليست تكرارية بشكل مضمون، لكن الطلب قد يكون نجح جزئياً على الخادم.
+
+## مثال
+
+```http
+HTTP/1.1 500 Internal Server Error
+Content-Type: text/html
+
+<h1>500 Internal Server Error</h1>
+<p>Something went wrong on our end.</p>

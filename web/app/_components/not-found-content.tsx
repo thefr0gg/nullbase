@@ -36,7 +36,7 @@ export function NotFoundContent({
         <p className="max-w-md text-text-secondary">{t.description}</p>
       </div>
 
-      <div className="w-full max-w-md overflow-hidden rounded-3xl border border-border bg-surface text-left shadow-card">
+      <div className="w-full max-w-md overflow-hidden rounded-3xl border border-border bg-surface text-start shadow-card">
         <div className="flex items-center justify-between border-b border-border bg-background/60 px-5 py-3">
           <EyebrowLabel as="span" className="mb-0">
             {t.responseLabel}

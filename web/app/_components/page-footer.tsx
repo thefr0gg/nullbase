@@ -42,7 +42,7 @@ export function PageFooter({ next, page, nextLabel }: Props) {
                 </p>
               )}
             </div>
-            <ArrowRight className="h-5 w-5 shrink-0 text-text-secondary transition-transform group-hover:translate-x-1 group-hover:text-electric-blue" />
+            <ArrowRight className="h-5 w-5 shrink-0 rtl:rotate-180 text-text-secondary transition-transform group-hover:translate-x-1 group-hover:text-electric-blue" />
           </Link>
         )}
 

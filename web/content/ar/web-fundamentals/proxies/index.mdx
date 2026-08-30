@@ -1,0 +1,45 @@
+---
+title: الـ Proxies
+description: الفرق بين الـ Forward Proxy والـ Reverse Proxy، وكيف يوجّه الـ Reverse Proxy طلباً.
+category: Web Fundamentals
+weight: 7
+interactive: true
+interactiveType: ["ItemExplorer", "StepFlow"]
+---
+
+import { proxyComparisonItems } from "./comparison";
+import { reverseProxySteps } from "./reverse-proxy-steps";
+
+**الـ Proxy** هو خادم يقف بين عميل والخادم الذي يحاول الوصول إليه فعلياً، وينقل حركة المرور نيابة عن طرف ما. الجانب الذي يمثله هو الفارق الجوهري:
+
+<ItemExplorer
+  title="الـ Forward Proxy مقابل الـ Reverse Proxy"
+  layout="table"
+  tableColumns={[
+    { key: "sits", label: "يقف" },
+    { key: "hides", label: "يخفي" },
+    { key: "knows", label: "من يدرك وجوده" },
+    { key: "examples", label: "أمثلة" },
+  ]}
+  items={proxyComparisonItems}
+/>
+
+- يعمل **الـ Forward Proxy** نيابة عن *العميل* — لهذا يستطيع قسم تقنية المعلومات في شركتك حظر مواقع معينة، أو تجعل شبكة VPN حركة مرورك تبدو وكأنها قادمة من مكان آخر.
+- يعمل **الـ Reverse Proxy** نيابة عن *الخادم* — لهذا يمكن أن يقف خلف nullbase.wiki أي عدد من الخوادم الفعلية دون أن تعرف ذلك إطلاقاً.
+
+## كيف يوجّه الـ Reverse Proxy طلباً
+
+<StepFlow title="طلب عبر Reverse Proxy" steps={reverseProxySteps} />
+
+## لماذا نستخدم واحداً
+
+- **التوجيه** — اسم مضيف واحد، وخدمات خلفية عديدة، مقسَّمة حسب المسار أو النطاق الفرعي.
+- **موازنة الحمل (Load Balancing)** — توزيع الطلبات عبر عدة نسخ متطابقة من الخدمة الخلفية.
+- **إنهاء TLS** — يتولى الـ Proxy HTTPS، لذا تحتاج الخدمات الخلفية فقط للتحدث بـ HTTP عادي داخلياً.
+- **الـ Cache** — خدمة الطلبات المتكررة من الـ Proxy دون الوصول إلى الخلفية إطلاقاً.
+- **الأمان** — لا يمكن الوصول إلى خوادم الخلفية الحقيقية مباشرة من الإنترنت أبداً.
+
+## طالع أيضاً
+
+- **[شبكات CDN](/ar/web-fundamentals/cdns)** — Cache الـ Reverse Proxy مأخوذ إلى نطاق عالمي وموزَّع.
+- **[TLS و HTTPS](/ar/web-fundamentals/tls)** — يُنهى عادةً عند الـ Reverse Proxy بدلاً من الخلفية.

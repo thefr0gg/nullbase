@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/app/_components/ui";
+import { useStepFlowLabels } from "@/lib/i18n/step-flow-context";
 import { DetailPanel, EyebrowLabel, PlaygroundSection, PlaygroundShell } from "./_shared";
 
 /**
@@ -34,6 +35,7 @@ export interface StepFlowProps {
 
 export default function StepFlow({ steps, title }: StepFlowProps) {
   const [index, setIndex] = useState(0);
+  const labels = useStepFlowLabels();
   const total = steps.length;
   const step = steps[index];
   if (!step) return null;
@@ -94,8 +96,8 @@ export default function StepFlow({ steps, title }: StepFlowProps) {
           disabled={atStart}
           className="text-sm"
         >
-          <ChevronLeft className="h-4 w-4" />
-          Previous
+          <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
+          {labels.previous}
         </Button>
         <Button
           variant="primary"
@@ -103,8 +105,8 @@ export default function StepFlow({ steps, title }: StepFlowProps) {
           disabled={atEnd}
           className="text-sm"
         >
-          Next
-          <ChevronRight className="h-4 w-4" />
+          {labels.next}
+          <ChevronRight className="h-4 w-4 rtl:rotate-180" />
         </Button>
       </PlaygroundSection>
     </PlaygroundShell>

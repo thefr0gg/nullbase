@@ -48,7 +48,7 @@
 .mdx-h5,
 .mdx-h6 {
   position: relative;
-  font-family: var(--font-jakarta), sans-serif;
+  font-family: var(--font-heading), sans-serif;
   color: var(--text-primary);
   scroll-margin-top: 5rem;
 }
@@ -69,7 +69,7 @@
 .mdx-h1::after {
   content: "";
   position: absolute;
-  left: 0;
+  inset-inline-start: 0;
   bottom: 0;
   width: 3rem;
   height: 3px;
@@ -124,7 +124,7 @@
 }
 
 .mdx-anchor {
-  margin-left: 0.5rem;
+  margin-inline-start: 0.5rem;
   opacity: 0;
   color: var(--color-electric-blue);
   font-weight: 500;
@@ -211,6 +211,10 @@
   padding: 0.15em 0.4em;
   white-space: break-spaces;
   overflow-wrap: break-word;
+  /* Code/identifiers must never mirror under an RTL (e.g. Arabic) page —
+     force left-to-right regardless of the document's `dir`. */
+  direction: ltr;
+  unicode-bidi: isolate;
 }
 
 /* ------------------------------------------------------------------ */
@@ -227,6 +231,11 @@
   background: var(--surface);
   box-shadow: var(--shadow-card);
   overflow: hidden;
+  /* Code blocks must never mirror under an RTL (e.g. Arabic) page — force
+     left-to-right regardless of the document's `dir`. */
+  direction: ltr;
+  text-align: left;
+  unicode-bidi: isolate;
 }
 
 .mdx-pre-plain {
@@ -277,7 +286,7 @@
 .mdx-code-lang {
   position: absolute;
   top: 0.75rem;
-  right: 0.75rem;
+  inset-inline-end: 0.75rem;
   display: inline-flex;
   align-items: center;
   border: 1px solid var(--border);
@@ -307,7 +316,7 @@
 .mdx-blockquote {
   margin: 1.5rem 0;
   padding: 0.9rem 1.25rem;
-  border-left: 3px solid var(--border);
+  border-inline-start: 3px solid var(--border);
   border-radius: 0.5rem;
   background: color-mix(in oklch, var(--text-primary) 3%, var(--surface));
   color: var(--text-secondary);
@@ -335,7 +344,7 @@
   margin: 1.5rem 0;
   padding: 1rem 1.25rem;
   border-radius: 0.75rem;
-  border-left: 4px solid transparent;
+  border-inline-start: 4px solid transparent;
   background: var(--surface);
 }
 
@@ -357,7 +366,7 @@
 
 .mdx-callout {
   background: color-mix(in oklch, var(--mdx-tone) 8%, var(--surface));
-  border-left-color: color-mix(in oklch, var(--mdx-tone) 45%, transparent);
+  border-inline-start-color: color-mix(in oklch, var(--mdx-tone) 45%, transparent);
 }
 
 .mdx-callout-icon {
@@ -403,14 +412,14 @@
 .mdx-ul,
 .mdx-ol {
   margin: 1.25rem 0;
-  padding-left: 1.5rem;
+  padding-inline-start: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
 .mdx-li {
-  padding-left: 0.25rem;
+  padding-inline-start: 0.25rem;
   line-height: 1.7;
 }
 
@@ -468,7 +477,7 @@
 
 .mdx-th {
   padding: 0.75rem 1rem;
-  text-align: left;
+  text-align: start;
   font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;

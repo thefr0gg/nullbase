@@ -35,7 +35,7 @@ export default function AdminLoginPage() {
         <LogoMark className="h-9 w-9" />
         <div>
           <h1 className="font-mono text-lg font-semibold text-text-primary">nullbase</h1>
-          <p className="text-[0.68rem] uppercase tracking-[0.16em] text-text-secondary">admin</p>
+          <p className="text-[0.68rem] uppercase tracking-[0.16em] text-text-secondary">Admin Panel</p>
         </div>
       </div>
 

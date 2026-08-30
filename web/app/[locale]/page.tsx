@@ -126,7 +126,7 @@ export default async function HomePage({
               className="inline-flex items-center gap-2 rounded-xl bg-electric-blue px-4 py-2 text-sm font-medium text-white shadow-[0_4px_0_0_rgba(23,23,26,0.15)] transition-all hover:translate-y-[-1px] hover:shadow-[0_6px_0_0_rgba(23,23,26,0.15)] active:translate-y-[1px] active:shadow-[0_2px_0_0_rgba(23,23,26,0.15)]"
             >
               {format(dict.home.startWith, { topic: roots[0].title })}
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="h-4 w-4 rtl:rotate-180" />
             </Link>
             <span className="text-sm text-text-secondary">
               {pluralize(
@@ -195,7 +195,7 @@ export default async function HomePage({
                     className="inline-flex w-fit items-center gap-1 text-sm font-medium text-electric-blue hover:underline"
                   >
                     {format(dict.home.explore, { topic: node.title })}
-                    <ArrowRight className="h-3.5 w-3.5" />
+                    <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" />
                   </Link>
                 </Card>
               );

@@ -1,0 +1,34 @@
+---
+title: Authorization
+description: تحتوي ترويسة Authorization على بيانات اعتماد مصادقة HTTP.
+category: HTTP
+weight: 53
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+تحتوي ترويسة الطلب `Authorization` على **بيانات الاعتماد** لمصادقة HTTP. يتحقق الخادم من صحة بيانات الاعتماد هذه ثم إما يقدّم المورد أو يستجيب بـ `401 Unauthorized`.
+
+<HttpRequest
+  defaultMethod="GET"
+  defaultPath="/api/profile"
+  defaultHeaders="Accept: application/json
+Authorization: Bearer nullbase-demo-token"
+/>
+
+## المخططات الشائعة
+
+| المخطط | الاستخدام |
+|---|---|
+| `Basic` | `Authorization: Basic <base64(user:pass)>` |
+| `Bearer` | `Authorization: Bearer <token>` (OAuth، وJWT، وغيرها) |
+| `Digest` | استجابة-تحدٍّ باستخدام nonce من الخادم |
+
+## مثال
+
+```http
+GET /api/http/echo HTTP/1.1
+Authorization: Bearer nullbase-demo-token
+```
+
+تُرسل القيمة عبر الشبكة، لذا **استخدم HTTPS دائماً** عند نقل بيانات الاعتماد — لا تنقلها أبداً عبر HTTP بنص صريح.

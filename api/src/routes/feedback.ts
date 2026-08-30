@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { readIdentity } from "../lib/identity";
+import { FEEDBACK_TYPES } from "../lib/feedback-types";
 import type { Services } from "../services";
 import type { AppEnv } from "../types";
 import { FeedbackValidationError } from "../services/feedback-service";
@@ -11,6 +12,7 @@ const submitSchema = z
     rating: z.number().int().min(1).max(5).optional(),
     comment: z.string().max(2000).optional(),
     email: z.email().optional(),
+    type: z.enum(FEEDBACK_TYPES).optional(),
   })
   .refine((v) => v.rating != null || (v.comment != null && v.comment.trim() !== ""), {
     message: "A rating or a comment is required.",
@@ -33,6 +35,7 @@ export function feedbackRoutes(services: Services): Hono<AppEnv> {
           rating: parsed.data.rating,
           comment: parsed.data.comment,
           email: parsed.data.email,
+          type: parsed.data.type,
         },
         readIdentity(c),
       );
