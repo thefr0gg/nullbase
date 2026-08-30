@@ -1,4 +1,5 @@
 import type { Database } from "../db/port";
+import { AdminSessionRepository } from "../repositories/admin-sessions";
 import { AdminUserRepository } from "../repositories/admin-users";
 import { FeedbackRepository } from "../repositories/feedback";
 import { LikesRepository } from "../repositories/likes";
@@ -15,7 +16,7 @@ export interface Services {
 
 export function createServices(db: Database, tokenSecret: string): Services {
   return {
-    admin: new AdminService(new AdminUserRepository(db), tokenSecret),
+    admin: new AdminService(new AdminUserRepository(db), new AdminSessionRepository(db), tokenSecret),
     feedback: new FeedbackService(new FeedbackRepository(db), tokenSecret),
     likes: new LikesService(new LikesRepository(db), tokenSecret),
   };

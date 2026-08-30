@@ -14,6 +14,15 @@ export interface AppConfig {
   /** Comma-separated list came from env; parsed by the runtime entrypoints. */
   allowedOrigins: string[];
   tokenSecret: string;
+  /**
+   * `Domain` attribute for the admin refresh/hint cookies. `undefined` in
+   * dev (cookies scope to the exact host — a mismatched `Domain` attribute
+   * is rejected by the browser); "nullbase.wiki" in production, so the
+   * cookies are shared across admin.nullbase.wiki and nullbase.wiki.
+   */
+  cookieDomain?: string;
+  /** `false` in dev (plain HTTP) — see adminRoutes' `secureCookies` param. */
+  secureCookies?: boolean;
 }
 
 /**
@@ -49,7 +58,7 @@ export function createApp(config: AppConfig): Hono<AppEnv> {
   app.notFound((c) => c.json({ error: "Not found." }, 404));
 
   app.route("/health", healthRoutes());
-  app.route("/admin", adminRoutes(services, config.tokenSecret));
+  app.route("/admin", adminRoutes(services, config.tokenSecret, config.cookieDomain, config.secureCookies ?? true));
   app.route("/feedback", feedbackRoutes(services));
   app.route("/likes", likesRoutes(services));
 

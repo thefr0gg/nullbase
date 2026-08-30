@@ -1,4 +1,4 @@
-import type { LikesRepository } from "../repositories/likes";
+import type { LikesRepository, LikesRow } from "../repositories/likes";
 import { RATE_LIMITS, DAY_AGO, secondsUntilUtcMidnight } from "../config";
 import { hashWithSecret } from "../lib/crypto";
 import { RateLimitedError } from "./errors";
@@ -12,6 +12,17 @@ export class LikesService {
 
   async count(pagePath: string): Promise<number> {
     return this.repo.getCount(pagePath);
+  }
+
+  async listAll(options: {
+    limit: number;
+    offset: number;
+  }): Promise<{ items: LikesRow[]; total: number; limit: number; offset: number }> {
+    const [items, total] = await Promise.all([
+      this.repo.listAll(options),
+      this.repo.countAll(),
+    ]);
+    return { items, total, limit: options.limit, offset: options.offset };
   }
 
   /**

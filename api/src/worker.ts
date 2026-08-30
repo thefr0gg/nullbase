@@ -15,6 +15,7 @@ interface Env {
   DB: D1Binding;
   ALLOWED_ORIGINS?: string;
   ADMIN_TOKEN_SECRET?: string;
+  COOKIE_DOMAIN?: string;
 }
 
 const DEFAULT_ALLOWED_ORIGINS = [
@@ -43,6 +44,7 @@ export default {
       db: new D1Database(env.DB),
       allowedOrigins: (env.ALLOWED_ORIGINS ?? DEFAULT_ALLOWED_ORIGINS).split(",").map((s) => s.trim()),
       tokenSecret: env.ADMIN_TOKEN_SECRET,
+      cookieDomain: env.COOKIE_DOMAIN,
     };
     // The D1 binding is per-isolate, so the app is built per request — it is
     // a cheap object graph (no connections are opened per request).

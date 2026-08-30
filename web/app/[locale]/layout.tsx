@@ -14,6 +14,7 @@ import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { locales, localeMeta, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { LanguageSwitcher } from "@/app/_components/language-switcher";
+import { AdminPanelLink } from "@/app/_components/admin-panel-link";
 
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
@@ -128,6 +129,7 @@ export default async function LocaleLayout({
                   <SearchBar index={searchIndex} locale={locale} dict={dict} />
                 </div>
                 <div className="flex shrink-0 items-center gap-1.5">
+                  <AdminPanelLink />
                   <LanguageSwitcher currentLocale={locale} localesForSlug={localesForSlug} dict={dict} />
                   <ThemeToggle dict={dict} />
                 </div>

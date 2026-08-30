@@ -12,10 +12,11 @@ try {
   Write-Host "2 wrong pw: FAIL (no 401)"
 } catch { Write-Host ("2 wrong pw -> " + $_.Exception.Response.StatusCode.value__) }
 
-# 3 correct login -> token
-$login = Invoke-RestMethod "$base/admin/login" -Method Post -ContentType "application/json" -Body '{"email":"admin@nullbase.wiki","password":"test-password-123"}' -TimeoutSec 10
+# 3 correct login -> access token + httpOnly refresh cookie
+$session = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+$login = Invoke-RestMethod "$base/admin/login" -Method Post -ContentType "application/json" -Body '{"email":"admin@nullbase.wiki","password":"test-password-123"}' -WebSession $session -TimeoutSec 10
 Write-Host ("3 login: " + ($login.admin | ConvertTo-Json -Compress))
-$auth = @{ Authorization = "Bearer $($login.token)" }
+$auth = @{ Authorization = "Bearer $($login.accessToken)" }
 
 # 4 /admin/me without and with token
 try {
@@ -49,3 +50,21 @@ $allowed = (Invoke-WebRequest "$base/health" -Headers $frontend -TimeoutSec 10).
 $blocked = (Invoke-WebRequest "$base/health" -Headers @{ Origin = "https://evil.example" } -TimeoutSec 10).Headers["access-control-allow-origin"]
 Write-Host "10 cors allowed-origin header: $allowed"
 Write-Host "10 cors blocked-origin header: [$blocked]"
+
+# 11 admin likes list
+Write-Host ("11 admin likes: " + (Invoke-RestMethod "$base/admin/likes" -Headers $auth -TimeoutSec 10 | ConvertTo-Json -Compress))
+
+# 12 sessions: list (should include the current one), then refresh rotates it
+$sessions = Invoke-RestMethod "$base/admin/sessions" -Headers $auth -WebSession $session -TimeoutSec 10
+Write-Host ("12 sessions: " + $sessions.items.Count + " active")
+
+# 13 refresh -> new access token, old refresh token rotated away
+$refreshed = Invoke-RestMethod "$base/admin/refresh" -Method Post -WebSession $session -TimeoutSec 10
+Write-Host ("13 refresh: got new accessToken -> " + [bool]$refreshed.accessToken)
+
+# 14 logout -> refresh cookie revoked, a second refresh attempt 401s
+Invoke-RestMethod "$base/admin/logout" -Method Post -WebSession $session -TimeoutSec 10 | Out-Null
+try {
+  Invoke-WebRequest "$base/admin/refresh" -Method Post -WebSession $session -TimeoutSec 10 | Out-Null
+  Write-Host "14 logout: FAIL (refresh still works)"
+} catch { Write-Host ("14 logout -> post-logout refresh: " + $_.Exception.Response.StatusCode.value__) }

@@ -52,12 +52,13 @@ export class FeedbackService {
 
   async list(options: {
     status?: FeedbackStatus;
+    pagePath?: string;
     limit: number;
     offset: number;
   }): Promise<{ items: FeedbackRow[]; total: number; limit: number; offset: number }> {
     const [items, total] = await Promise.all([
       this.repo.list(options),
-      this.repo.count(options.status),
+      this.repo.count(options.status, options.pagePath),
     ]);
     return { items, total, limit: options.limit, offset: options.offset };
   }

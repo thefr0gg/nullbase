@@ -68,27 +68,42 @@ export class FeedbackRepository {
 
   async list(options: {
     status?: FeedbackStatus;
+    pagePath?: string;
     limit: number;
     offset: number;
   }): Promise<FeedbackRow[]> {
-    const { status, limit, offset } = options;
-    const base = "SELECT * FROM feedback";
-    const where = status ? " WHERE status = ?" : "";
+    const { status, pagePath, limit, offset } = options;
+    const conditions: string[] = [];
+    const params: (string | number)[] = [];
+    if (status) {
+      conditions.push("status = ?");
+      params.push(status);
+    }
+    if (pagePath) {
+      conditions.push("page_path = ?");
+      params.push(pagePath);
+    }
+    const where = conditions.length ? ` WHERE ${conditions.join(" AND ")}` : "";
     const stmt = this.db.prepare(
-      `${base}${where} ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?`,
+      `SELECT * FROM feedback${where} ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?`,
     );
-    return status
-      ? stmt.bind(status, limit, offset).all<FeedbackRow>()
-      : stmt.bind(limit, offset).all<FeedbackRow>();
+    return stmt.bind(...params, limit, offset).all<FeedbackRow>();
   }
 
-  async count(status?: FeedbackStatus): Promise<number> {
-    const stmt = this.db.prepare(
-      `SELECT COUNT(*) AS n FROM feedback${status ? " WHERE status = ?" : ""}`,
-    );
-    const row = await (status
-      ? stmt.bind(status).first<{ n: number }>()
-      : stmt.first<{ n: number }>());
+  async count(status?: FeedbackStatus, pagePath?: string): Promise<number> {
+    const conditions: string[] = [];
+    const params: string[] = [];
+    if (status) {
+      conditions.push("status = ?");
+      params.push(status);
+    }
+    if (pagePath) {
+      conditions.push("page_path = ?");
+      params.push(pagePath);
+    }
+    const where = conditions.length ? ` WHERE ${conditions.join(" AND ")}` : "";
+    const stmt = this.db.prepare(`SELECT COUNT(*) AS n FROM feedback${where}`);
+    const row = await stmt.bind(...params).first<{ n: number }>();
     return row?.n ?? 0;
   }
 

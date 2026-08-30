@@ -27,7 +27,10 @@
   ],
     "vars": {
     // Comma-separated allowlist (www.nullbase.wiki included for canonical redirects).
-    "ALLOWED_ORIGINS": "https://nullbase.wiki,https://www.nullbase.wiki,https://admin.nullbase.wiki"
+    "ALLOWED_ORIGINS": "https://nullbase.wiki,https://www.nullbase.wiki,https://admin.nullbase.wiki",
+    // Shares the admin refresh/hint cookies across admin.nullbase.wiki and
+    // nullbase.wiki. Left unset in dev — see AppConfig.cookieDomain.
+    "COOKIE_DOMAIN": "nullbase.wiki"
   }
   // ADMIN_TOKEN_SECRET is a secret, not a var:
   //   npx wrangler secret put ADMIN_TOKEN_SECRET

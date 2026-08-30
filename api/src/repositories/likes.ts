@@ -18,6 +18,23 @@ export class LikesRepository {
     return row?.count ?? 0;
   }
 
+  /** Every page with at least one like, most-liked first — the admin panel's list. */
+  async listAll(options: { limit: number; offset: number }): Promise<LikesRow[]> {
+    return this.db
+      .prepare(
+        "SELECT page_path, count, updated_at FROM page_likes ORDER BY count DESC, page_path ASC LIMIT ? OFFSET ?",
+      )
+      .bind(options.limit, options.offset)
+      .all<LikesRow>();
+  }
+
+  async countAll(): Promise<number> {
+    const row = await this.db
+      .prepare("SELECT COUNT(*) AS n FROM page_likes")
+      .first<{ n: number }>();
+    return row?.n ?? 0;
+  }
+
   async hasVisitorLiked(pagePath: string, visitorHash: string): Promise<boolean> {
     const row = await this.db
       .prepare("SELECT 1 AS x FROM page_like_events WHERE page_path = ? AND visitor_hash = ?")

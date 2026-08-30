@@ -69,13 +69,18 @@ function timingSafeEqual(a: string, b: string): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// Session tokens (stateless HMAC-SHA256: base64url(payload).base64url(sig))
+// Access tokens: real JWTs (HS256) — short-lived, self-contained, verified
+// on every request. Kept in memory client-side (never localStorage), sent
+// as `Authorization: Bearer <token>`.
 // ---------------------------------------------------------------------------
 
 export interface TokenPayload {
   sub: number; // admin user id
-  exp: number; // unix seconds
+  iat: number; // unix seconds, issued-at
+  exp: number; // unix seconds, expiry
 }
+
+const JWT_HEADER = toBase64Url(encoder.encode(JSON.stringify({ alg: "HS256", typ: "JWT" })));
 
 async function hmacKey(secret: string) {
   return crypto.subtle.importKey(
@@ -87,28 +92,31 @@ async function hmacKey(secret: string) {
   );
 }
 
-export async function signToken(
-  payload: TokenPayload,
+export async function signAccessToken(
+  adminId: number,
   secret: string,
   ttlSeconds: number,
 ): Promise<string> {
-  const body = toBase64Url(encoder.encode(JSON.stringify({ ...payload, exp: payload.exp || Math.floor(Date.now() / 1000) + ttlSeconds })));
-  const signature = await crypto.subtle.sign("HMAC", await hmacKey(secret), encoder.encode(body));
-  return `${body}.${toBase64Url(signature)}`;
+  const now = Math.floor(Date.now() / 1000);
+  const payload: TokenPayload = { sub: adminId, iat: now, exp: now + ttlSeconds };
+  const body = toBase64Url(encoder.encode(JSON.stringify(payload)));
+  const signingInput = `${JWT_HEADER}.${body}`;
+  const signature = await crypto.subtle.sign("HMAC", await hmacKey(secret), encoder.encode(signingInput));
+  return `${signingInput}.${toBase64Url(signature)}`;
 }
 
-export async function verifyToken(
+export async function verifyAccessToken(
   token: string,
   secret: string,
 ): Promise<TokenPayload | null> {
-  const [body, sig] = token.split(".");
-  if (!body || !sig) return null;
+  const [header, body, sig] = token.split(".");
+  if (!header || !body || !sig) return null;
   const key = await hmacKey(secret);
   const valid = await crypto.subtle.verify(
     "HMAC",
     key,
     fromBase64Url(sig) as unknown as ArrayBuffer,
-    encoder.encode(body),
+    encoder.encode(`${header}.${body}`),
   );
   if (!valid) return null;
   try {
@@ -119,6 +127,21 @@ export async function verifyToken(
   } catch {
     return null;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Refresh tokens: opaque random values, always looked up server-side (never
+// decoded), so unlike the access token there's no benefit to a JWT shape.
+// Only the SHA-256 hash is ever persisted — see migrations/0003_admin_sessions.sql.
+// ---------------------------------------------------------------------------
+
+export function generateRefreshToken(): string {
+  return toBase64Url(crypto.getRandomValues(new Uint8Array(32)));
+}
+
+export async function hashRefreshToken(token: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", encoder.encode(token));
+  return toBase64Url(digest);
 }
 
 // ---------------------------------------------------------------------------

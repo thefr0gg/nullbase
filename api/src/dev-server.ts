@@ -26,6 +26,8 @@ const config: AppConfig = {
     .filter(Boolean),
   // Dev-only default; production uses `wrangler secret put ADMIN_TOKEN_SECRET`.
   tokenSecret: process.env.ADMIN_TOKEN_SECRET ?? "dev-only-secret-change-me",
+  // Plain HTTP locally — a `Secure` cookie would never be stored/sent.
+  secureCookies: false,
 };
 
 const port = Number(process.env.PORT ?? 8787);

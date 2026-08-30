@@ -29,6 +29,12 @@ export function corsMiddleware(allowedOrigins: string[]) {
     ],
     exposeHeaders: ["Retry-After"],
     maxAge: 86_400,
+    // Required for the browser to send/receive the admin panel's httpOnly
+    // refresh cookie cross-subdomain (admin.nullbase.wiki calling
+    // api.nullbase.wiki). Only takes effect for requests a client opts
+    // into via `credentials: "include"` — the public likes/feedback calls
+    // in web/lib/api.ts stay on `credentials: "omit"`, unaffected.
+    credentials: true,
   });
 
   return async (c: Parameters<typeof corsHandler>[0], next: () => Promise<void>) => {

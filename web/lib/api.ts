@@ -31,7 +31,10 @@ const TIMEOUT_MS = 10_000;
  * 10s timeout, and typed errors. Server error messages are surfaced so the
  * widgets can show exactly why something failed (validation, rate limit...).
  */
-async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+/** Exported so `lib/admin-api.ts` reuses the same base-URL/timeout/error
+ *  handling instead of duplicating a second fetch wrapper — it just passes
+ *  `credentials: "include"` per-call to opt into the httpOnly refresh cookie. */
+export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   let res: Response;
   try {
     res = await fetch(`${API_BASE_URL}${path}`, {
