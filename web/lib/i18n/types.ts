@@ -72,4 +72,41 @@ export interface Dictionary {
     /** `{count}` — CLDR plural forms, see above. */
     pageCount: Partial<Record<Intl.LDMLPluralRule, string>> & { other: string };
   };
+  privacy: {
+    badge: string;
+    heading: string;
+    intro: string;
+    lastUpdatedLabel: string;
+    terminalComment: string;
+    neverDoes: { title: string; items: [string, string, string, string, string] };
+    stored: {
+      title: string;
+      intro: string;
+      browserTitle: string;
+      themeItem: string;
+      visitorIdItem: string;
+      browserFooter: string;
+      serverTitle: string;
+      likesItem: string;
+      feedbackItem: string;
+      serverFooter: string;
+      outro: string;
+    };
+    hosting: { title: string; before: string; linkText: string; after: string };
+    advertising: {
+      title: string;
+      p1: string;
+      p2Before: string;
+      linkAdsSettings: string;
+      p2Mid1: string;
+      linkAboutAds: string;
+      p2Mid2: string;
+      linkAdPolicy: string;
+      p2After: string;
+    };
+    choices: { title: string; items: [string, string, string] };
+    children: { title: string; text: string };
+    changes: { title: string; text: string };
+    contact: { title: string; before: string };
+  };
 }

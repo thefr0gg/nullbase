@@ -57,4 +57,77 @@ export const es: Dictionary = {
       other: "{count} páginas",
     },
   },
+  privacy: {
+    badge: "Privacidad",
+    heading: "Cómo maneja nullbase tus datos",
+    intro:
+      "La versión corta: no hay cuentas, ni analítica, ni huella digital. Esta página explica, en términos sencillos, las pocas cosas que el sitio almacena y por qué — además de lo que hace Google AdSense por su cuenta.",
+    lastUpdatedLabel: "Última actualización:",
+    terminalComment: "# sin Set-Cookie, sin inicio de sesión, sin script de rastreo — solo la página.",
+    neverDoes: {
+      title: "Lo que nullbase nunca hace",
+      items: [
+        "Ninguna cuenta de usuario, registro o inicio de sesión para visitantes.",
+        "Ningún script de analítica o telemetría (sin Google Analytics, sin Meta Pixel, sin session replay).",
+        "Ninguna huella digital del dispositivo o navegador.",
+        "Ninguna venta ni intercambio de datos con corredores de datos.",
+        "Ningún seguimiento de las páginas que lees entre visitas.",
+      ],
+    },
+    stored: {
+      title: "Qué se almacena, y por qué",
+      intro:
+        "Un par de funciones interactivas (dar me gusta a una página, enviar comentarios) necesitan solo el estado justo para funcionar y evitar abusos. Esto es exactamente lo que es:",
+      browserTitle: "En tu navegador",
+      themeItem: "tu preferencia de tema claro/oscuro, en localStorage.",
+      visitorIdItem:
+        "un UUID aleatorio generado en tu dispositivo, en localStorage. No es una huella digital — no lleva ninguna información sobre ti, y borrar los datos del sitio simplemente genera uno nuevo.",
+      browserFooter: "Ninguno de los dos sale nunca de tu navegador salvo hacia nuestra propia API — nunca hacia un tercero.",
+      serverTitle: "En nuestro servidor",
+      likesItem: "Me gusta de páginas — qué página, y un recuento agregado. Un me gusta por visitante y por página.",
+      feedbackItem:
+        "Comentarios — la página en la que se dejó, una valoración y/o comentario, y un correo electrónico solo si eliges proporcionarlo (para poder responderte).",
+      serverFooter:
+        "Para evitar el spam, ambos se emparejan con un hash SHA-256 salado de tu dirección IP y el user-agent de tu navegador — nunca los valores en bruto. El hash no se puede revertir para recuperar tu IP.",
+      outro:
+        "Nada de esto se usa para publicidad, perfilado, o cualquier cosa más allá de hacer que el botón de me gusta y el formulario de comentarios funcionen como se pretende.",
+    },
+    hosting: {
+      title: "Alojamiento",
+      before: "nullbase está alojado en Cloudflare, bajo la",
+      linkText: "propia política de privacidad de Cloudflare",
+      after: ".",
+    },
+    advertising: {
+      title: "Publicidad (Google AdSense)",
+      p1: "nullbase muestra anuncios servidos por Google AdSense para ayudar a cubrir los costos de alojamiento. Google y sus socios publicitarios pueden usar cookies e identificadores similares para mostrar anuncios — incluidos anuncios basados en tus visitas a este y otros sitios — y para medir el rendimiento de los anuncios. nullbase no controla esto y no recibe ninguno de los datos que Google recopila para ello.",
+      p2Before: "Puedes ver y ajustar cómo Google personaliza los anuncios en",
+      linkAdsSettings: "Google Ads Settings",
+      p2Mid1: ", u optar por no recibir publicidad personalizada en general en",
+      linkAboutAds: "aboutads.info",
+      p2Mid2: ". El detalle completo de cómo Google usa los datos de los sitios que utilizan sus servicios está en la",
+      linkAdPolicy: "Política de Publicidad de Google",
+      p2After: ".",
+    },
+    choices: {
+      title: "Tus opciones",
+      items: [
+        "Borra el almacenamiento local de tu navegador en cualquier momento para restablecer tu preferencia de tema y tu ID de visitante — nada de nuestro lado está vinculado a ti por nombre o cuenta.",
+        "Pídenos que eliminemos comentarios que hayas enviado con una dirección de correo escribiendo al contacto de abajo.",
+        "Usa en cualquier momento los controles de personalización de anuncios enlazados arriba.",
+      ],
+    },
+    children: {
+      title: "Privacidad de menores",
+      text: "nullbase es una referencia técnica y no está dirigida a menores. No recopilamos a sabiendas datos de nadie menor de 13 años.",
+    },
+    changes: {
+      title: "Cambios en esta página",
+      text: "Si lo que nullbase almacena o cómo usa la publicidad cambia, esta página se actualizará y la fecha de arriba cambiará en consecuencia.",
+    },
+    contact: {
+      title: "Contacto",
+      before: "Preguntas sobre esta página, o solicitud de eliminación de datos:",
+    },
+  },
 };

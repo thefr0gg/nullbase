@@ -27,7 +27,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"
-      data-theme="dark"
+      // No `data-theme` here — see [locale]/layout.tsx's comment: a literal
+      // prop value here would get re-asserted by React on every re-render
+      // of this element (e.g. navigating between /admin/login and /admin),
+      // stomping the inline script's real value below.
       suppressHydrationWarning
       className={`${jakarta.variable} ${geistMono.variable} font-sans`}
     >

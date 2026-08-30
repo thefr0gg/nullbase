@@ -105,7 +105,14 @@ export default async function LocaleLayout({
     <html
       lang={locale}
       dir={dir}
-      data-theme="dark"
+      // No `data-theme` here on purpose — it's set only by the inline
+      // pre-paint script below. If it were a literal prop here too, React
+      // would re-assert "dark" over the script's real value on every
+      // re-render of this element, including a locale switch (`dir`/`lang`
+      // differ between locales, which forces this <html> to re-render) —
+      // that reset a saved light-mode preference back to dark the moment
+      // you changed languages. `suppressHydrationWarning` only covers the
+      // very first hydration pass, not this.
       suppressHydrationWarning
       className={`${jakarta.variable} ${geistMono.variable} ${notoSansArabic.variable} ${notoKufiArabic.variable} font-sans`}
     >
