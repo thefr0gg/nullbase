@@ -1,0 +1,19 @@
+---
+title: Requête et réponse HTTP
+description: Construisez à la main une vraie requête HTTP et observez une réponse simulée — méthode, chemin, en-têtes, et le texte brut de la requête/réponse.
+category: Interactive Demos
+weight: 1
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+Une requête d'<GlossaryTerm id="api">API</GlossaryTerm> n'est que du texte transmis sur une connexion — une méthode, un chemin, une version, des en-têtes et (parfois) un corps. Choisissez une méthode et un chemin ci-dessous, ajustez les en-têtes si vous le souhaitez, puis envoyez. Rien ici ne quitte votre navigateur : un petit ensemble de routes est simulé côté client (voir `web/components/interactive/mock-api.ts`), mais la requête construite est exactement ce qu'un vrai client enverrait.
+
+<RequestPlayground protocol="http" defaultTarget="/api/users/1" defaultMethod="GET" />
+
+Essayez de passer la méthode à `POST` vers `/api/users` avec un corps JSON, ou demandez `/api/rate-limited` plusieurs fois de suite pour voir un `429` simulé se déclencher.
+
+## Voir aussi
+
+- **[Fondamentaux HTTP](/fr/web-fundamentals/http)** — méthodes, codes de statut et en-têtes expliqués.
+- **[Cycle de vie d'une requête HTTP](/fr/interactive-demos/http-state-machine)** — les états que traverse un cycle requête/réponse.

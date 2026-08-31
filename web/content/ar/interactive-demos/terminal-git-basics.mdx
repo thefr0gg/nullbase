@@ -1,0 +1,25 @@
+---
+title: "الطرفية: أساسيات Git"
+description: واجهة سطر أوامر محاكاة مع نظام ملفات في الذاكرة ومجموعة فرعية من git — تحقّق من الحالة، وأضف ملفًا، وقم بأول commit.
+category: Interactive Demos
+weight: 9
+interactive: true
+interactiveType: ["InteractiveTerminal"]
+---
+
+import { gitBasicsFs, gitBasicsCwd, gitBasicsExpectedCommands } from "./git-basics-fs";
+
+هذا مُفسِّر أوامر حقيقي (وليس فيديو أو نصًّا مُعدًّا مسبقًا) يعمل على نظام ملفات في الذاكرة — لا شيء هنا يلمس واجهة أوامر حقيقية أو مستودع Git حقيقي. جرّب `pwd` و`ls` و`cat README.md`، ثم أكمل التمرين أدناه باستخدام `git status` و`git add` و`git commit`.
+
+<InteractiveTerminal
+  title="جرّبه"
+  initialFs={gitBasicsFs}
+  initialCwd={gitBasicsCwd}
+  expectedCommands={gitBasicsExpectedCommands}
+/>
+
+تبقى الأوامر نفسها بالإنجليزية، كما في واجهة أوامر حقيقية. استخدم التلميح إذا علِقت — يعرض بالضبط الأمر التالي المتوقَّع. تعيد إعادة التعيين التمرين من شجرة عمل نظيفة.
+
+## طالع أيضًا
+
+- **[عروض تفاعلية](/ar/interactive-demos)** — بقية الأمثلة العملية في هذا النظام.

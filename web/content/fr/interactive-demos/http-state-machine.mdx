@@ -1,0 +1,26 @@
+---
+title: Cycle de vie d'une requête HTTP (machine à états)
+description: Les états que traverse un seul cycle requête/réponse HTTP, sous la forme d'une machine à états cliquable et exécutable pas à pas plutôt qu'un diagramme statique.
+category: Interactive Demos
+weight: 3
+interactive: true
+interactiveType: ["StateMachine"]
+---
+
+import { httpLifecycleStates, httpLifecycleTransitions } from "./http-lifecycle-machine";
+
+Un seul cycle requête/réponse n'est pas instantané — il traverse un petit nombre d'états distincts, et toutes les transitions ne sont pas disponibles depuis tous les états (impossible de passer directement d'« inactif » à « réception »). Cliquez sur une transition pour la déclencher, ou utilisez **Étape** pour suivre automatiquement la première disponible.
+
+<StateMachine
+  title="Un cycle requête/réponse"
+  states={httpLifecycleStates}
+  transitions={httpLifecycleTransitions}
+  initial="idle"
+/>
+
+Cette même structure — un petit ensemble d'états, un ensemble fixe de transitions valides entre eux — décrit bien plus que HTTP : voir le cycle de vie de connexion [TCP](/en/networking/tcp), les états connexion/ouvert/fermeture/fermé d'un WebSocket, ou un flux d'autorisation OAuth.
+
+## Voir aussi
+
+- **[Requête et réponse HTTP](/fr/interactive-demos/http-request-response)** — construisez et envoyez une véritable requête simulée.
+- **[Sessions](/en/security/sessions)** — une machine à états plus longue, construite au-dessus de nombreux cycles requête/réponse.

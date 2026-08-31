@@ -1,0 +1,60 @@
+---
+title: TCP مقابل UDP
+description: مقارنة قابلة للتوسيع بالنقر بين TCP و UDP، بالإضافة إلى شريط تمرير يوضّح ما يتحكم فيه حجم نافذة TCP فعليًا.
+category: Interactive Demos
+weight: 2
+interactive: true
+interactiveType: ["ItemExplorer", "InteractiveSlider"]
+---
+
+import TcpWindowVisual from "./tcp-window-visual";
+
+يقع <GlossaryTerm id="tcp">TCP</GlossaryTerm> و<GlossaryTerm id="udp">UDP</GlossaryTerm> في نفس الطبقة ويحلّان نفس المشكلة الأساسية — نقل البايتات من مضيف إلى آخر — لكن بمقايضات متعاكسة. انقر على صف لمزيد من التفاصيل حول ذلك الفرق.
+
+<ItemExplorer
+  title="TCP مقابل UDP"
+  layout="table"
+  tableColumns={[{ key: "tcp", label: "TCP" }, { key: "udp", label: "UDP" }]}
+  items={[
+    {
+      id: "connection",
+      label: "الاتصال",
+      color: "blue",
+      columns: { tcp: "قائم على الاتصال (يتطلب مصافحة)", udp: "بلا اتصال" },
+      detail: "يقضي TCP جولة ذهاب وإياب كاملة في مصافحة ثلاثية قبل نقل أي بيانات. أما UDP فلا يحتاج إلى أي إعداد — أول حزمة تُرسل هي بالفعل بيانات حقيقية.",
+    },
+    {
+      id: "reliability",
+      label: "الموثوقية",
+      color: "green",
+      columns: { tcp: "تسليم مضمون، يعيد إرسال المقاطع المفقودة", udp: "أفضل جهد ممكن — الحزمة المفقودة تختفي ببساطة" },
+      detail: "يتتبّع TCP كل بايت بأرقام تسلسلية وتأكيدات استلام، ويعيد إرسال أي شيء لم يُؤكَّد. لا يملك UDP مثل هذا التتبع، وهذا بالضبط ما يجعله رخيصًا.",
+    },
+    {
+      id: "ordering",
+      label: "الترتيب",
+      color: "purple",
+      columns: { tcp: "يُسلَّم بالترتيب", udp: "لا ضمان للترتيب" },
+      detail: "يعيد TCP تجميع المقاطع حسب الرقم التسلسلي حتى لو وصلت بترتيب غير صحيح. أما UDP فيسلّم المخططات إلى التطبيق بالترتيب الذي تصل به.",
+    },
+    {
+      id: "use-cases",
+      label: "الاستخدام النموذجي",
+      color: "orange",
+      columns: { tcp: "HTTP، نقل الملفات، البريد الإلكتروني", udp: "DNS، مكالمات الفيديو، الألعاب عبر الإنترنت" },
+      detail: "أي حالة يكون فيها التحديث القديم أو المفقود أسوأ من التحديث المتأخر تفضّل UDP؛ وأي حالة تكون فيها الدقة أهم من بضعة أجزاء من الثانية تفضّل TCP.",
+    },
+  ]}
+/>
+
+## ما الذي يتحكم فيه حجم نافذة TCP فعليًا
+
+لا يرسل TCP بايتًا واحدًا في كل مرة منتظرًا كل تأكيد استلام — بل يرسل حتى **نافذة** من البايتات غير المؤكَّدة دفعة واحدة. النافذة الأكبر تعني بيانات أكثر قيد النقل قبل أن يضطر المرسل للتوقف.
+
+<InteractiveSlider label="حجم نافذة TCP (كيلوبايت)" min={1} max={64} defaultValue={16}>
+  <TcpWindowVisual />
+</InteractiveSlider>
+
+## طالع أيضًا
+
+- **[TCP](/en/networking/tcp)** و**[UDP](/en/networking/udp)** — صفحتا المرجع الكاملتان (بالإنجليزية حاليًا).

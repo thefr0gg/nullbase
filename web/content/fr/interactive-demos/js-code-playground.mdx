@@ -1,0 +1,28 @@
+---
+title: Bac à sable de code JavaScript
+description: Du JavaScript modifiable et exécutable — exécuté dans un iframe isolé sans accès aux cookies ou au DOM de cette page, jamais sur un serveur.
+category: Interactive Demos
+weight: 4
+interactive: true
+interactiveType: ["CodePlayground"]
+---
+
+Modifiez le code ci-dessous et appuyez sur **Exécuter**. Il s'exécute à l'intérieur d'un iframe `sandbox="allow-scripts"` dont `allow-same-origin` est délibérément omis — l'iframe isolé obtient une origine opaque, il n'a donc aucun moyen de lire les cookies, le stockage ou le DOM de cette page, ni d'effectuer d'appels réseau avec des identifiants ambiants. La sortie de `console.log` est capturée et affichée ci-dessous ; une erreur non interceptée ou une boucle infinie (via un délai d'expiration) est signalée plutôt que de bloquer la page.
+
+<CodePlayground
+  title="Essayez-le"
+  initialCode={`function fib(n) {
+  if (n <= 1) return n;
+  return fib(n - 1) + fib(n - 2);
+}
+
+for (let i = 0; i < 8; i++) {
+  console.log(i, fib(i));
+}`}
+/>
+
+Seul JavaScript s'exécute réellement aujourd'hui — l'architecture (`lib/execution/ExecutionProvider`) est volontairement générique pour qu'un autre langage puisse être ajouté plus tard sous forme de son propre fournisseur isolé, sans changer ce composant.
+
+## Voir aussi
+
+- **[Devinez la sortie](/fr/interactive-demos/predict-the-output)** — devinez ce qu'un extrait affiche avant de l'exécuter.

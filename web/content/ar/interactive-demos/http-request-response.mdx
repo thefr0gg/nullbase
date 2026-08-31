@@ -1,0 +1,19 @@
+---
+title: طلب واستجابة HTTP
+description: ابنِ طلب HTTP حقيقيًا يدويًا وشاهد استجابة محاكاة — الطريقة، والمسار، والترويسات، والنص الخام للطلب/الاستجابة.
+category: Interactive Demos
+weight: 1
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+طلب <GlossaryTerm id="api">API</GlossaryTerm> هو مجرد نص عبر اتصال — طريقة، ومسار، وإصدار، وترويسات، و(أحيانًا) نص أساسي. اختر طريقة ومسارًا أدناه، واضبط الترويسات إن أردت، ثم أرسل الطلب. لا شيء هنا يغادر متصفحك: مجموعة صغيرة من المسارات مُحاكاة على جانب العميل (انظر `web/components/interactive/mock-api.ts`)، لكن الطلب الذي تراه مبنيًا هو تمامًا ما سيرسله عميل حقيقي.
+
+<RequestPlayground protocol="http" defaultTarget="/api/users/1" defaultMethod="GET" />
+
+جرّب تغيير الطريقة إلى `POST` مقابل `/api/users` مع نص JSON، أو اطلب `/api/rate-limited` عدة مرات متتالية لترى استجابة `429` محاكاة تظهر.
+
+## طالع أيضًا
+
+- **[أساسيات HTTP](/ar/web-fundamentals/http)** — شرح الطرق ورموز الحالة والترويسات.
+- **[دورة حياة طلب HTTP](/ar/interactive-demos/http-state-machine)** — الحالات التي تمر بها دورة طلب/استجابة.

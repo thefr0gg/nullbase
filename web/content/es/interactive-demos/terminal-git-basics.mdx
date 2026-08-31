@@ -1,0 +1,25 @@
+---
+title: "Terminal: fundamentos de Git"
+description: Una shell simulada con un sistema de archivos en memoria y un subconjunto de git — comprueba el estado, indexa un archivo, y haz tu primer commit.
+category: Interactive Demos
+weight: 9
+interactive: true
+interactiveType: ["InteractiveTerminal"]
+---
+
+import { gitBasicsFs, gitBasicsCwd, gitBasicsExpectedCommands } from "./git-basics-fs";
+
+Este es un intérprete de comandos real (no un vídeo ni un guion) que funciona sobre un sistema de archivos en memoria — nada aquí toca una shell real ni un repositorio Git real. Prueba `pwd`, `ls`, `cat README.md`, y luego resuelve el ejercicio de abajo con `git status`, `git add` y `git commit`.
+
+<InteractiveTerminal
+  title="Pruébalo"
+  initialFs={gitBasicsFs}
+  initialCwd={gitBasicsCwd}
+  expectedCommands={gitBasicsExpectedCommands}
+/>
+
+Los comandos en sí permanecen en inglés, como en una terminal real. Usa la pista si te atascas — muestra exactamente el siguiente comando esperado. Reiniciar vuelve a empezar el ejercicio con un árbol de trabajo limpio.
+
+## Ver también
+
+- **[Demos interactivas](/es/interactive-demos)** — el resto de los ejemplos funcionales de este sistema.

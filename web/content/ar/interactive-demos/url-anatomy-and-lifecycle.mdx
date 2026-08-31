@@ -1,0 +1,31 @@
+---
+title: تشريح ودورة حياة الرابط
+description: فكِّك رابطًا إلى أجزائه، ثم تتبّع كل ما يحدث بين كتابته ورؤية الصفحة تُعرض.
+category: Interactive Demos
+weight: 0
+interactive: true
+interactiveType: ["UrlAnatomy", "DiagramExplorer"]
+---
+
+import { urlLifecycleRows } from "./url-lifecycle-rows";
+
+كل طلب يُحلّ عبر <GlossaryTerm id="dns">DNS</GlossaryTerm> ويُؤمَّن عبر <GlossaryTerm id="tls">TLS</GlossaryTerm> يبدأ كسلسلة نصية بسيطة. قبل أن تعمل كل هذه الآلية، يجب على المتصفح أولًا تقسيم تلك السلسلة إلى أجزاء ذات معنى:
+
+<UrlAnatomy
+  parts={[
+    { text: "https", label: "المخطط", color: "blue" },
+    { text: "://", label: "", color: "default" },
+    { text: "example.com", label: "المضيف", color: "green" },
+    { text: ":443", label: "المنفذ", color: "orange" },
+    { text: "/users", label: "المسار", color: "purple" },
+    { text: "?id=42", label: "الاستعلام", color: "red" },
+  ]}
+/>
+
+## ثم تبدأ دورة الحياة
+
+كل مرحلة أدناه قابلة للنقر — اختر واحدة لترى ما تفعله ولماذا هي ضرورية.
+
+<DiagramExplorer title="ما الذي يحدث بعد الضغط على Enter" rows={urlLifecycleRows} />
+
+هذه محاكاة: لا شيء في هذه الصفحة يقوم بطلب شبكة حقيقي. للاطلاع على الآلية الحقيقية، راجع [TCP/IP](/ar/web-fundamentals/tcp-ip) و[TLS](/ar/web-fundamentals/tls) و[DNS](/ar/web-fundamentals/dns).

@@ -1,0 +1,60 @@
+---
+title: TCP contre UDP
+description: Une comparaison à développer au clic entre TCP et UDP, plus un curseur montrant ce que contrôle réellement la taille de fenêtre TCP.
+category: Interactive Demos
+weight: 2
+interactive: true
+interactiveType: ["ItemExplorer", "InteractiveSlider"]
+---
+
+import TcpWindowVisual from "./tcp-window-visual";
+
+<GlossaryTerm id="tcp">TCP</GlossaryTerm> et <GlossaryTerm id="udp">UDP</GlossaryTerm> se situent à la même couche et résolvent le même problème de base — faire voyager des octets d'un hôte à un autre — avec des compromis opposés. Cliquez sur une ligne pour plus de détails sur cette différence.
+
+<ItemExplorer
+  title="TCP contre UDP"
+  layout="table"
+  tableColumns={[{ key: "tcp", label: "TCP" }, { key: "udp", label: "UDP" }]}
+  items={[
+    {
+      id: "connection",
+      label: "Connexion",
+      color: "blue",
+      columns: { tcp: "Orienté connexion (poignée de main requise)", udp: "Sans connexion" },
+      detail: "TCP consacre un aller-retour à une poignée de main en trois temps avant que la moindre donnée ne bouge. UDP n'a rien à établir — le premier paquet envoyé est déjà une vraie donnée.",
+    },
+    {
+      id: "reliability",
+      label: "Fiabilité",
+      color: "green",
+      columns: { tcp: "Livraison garantie, retransmet les segments perdus", udp: "Au mieux — un paquet perdu a simplement disparu" },
+      detail: "TCP suit chaque octet avec des numéros de séquence et des accusés de réception, en retransmettant tout ce qui n'est pas confirmé. UDP n'a aucune comptabilité de ce type, ce qui le rend justement peu coûteux.",
+    },
+    {
+      id: "ordering",
+      label: "Ordre",
+      color: "purple",
+      columns: { tcp: "Livré dans l'ordre", udp: "Aucune garantie d'ordre" },
+      detail: "TCP réassemble les segments par numéro de séquence même s'ils arrivent dans le désordre. UDP transmet les datagrammes à l'application dans l'ordre où ils arrivent.",
+    },
+    {
+      id: "use-cases",
+      label: "Usage typique",
+      color: "orange",
+      columns: { tcp: "HTTP, transfert de fichiers, e-mail", udp: "DNS, appels vidéo, jeux en ligne" },
+      detail: "Tout ce où une mise à jour périmée ou manquante est pire qu'une mise à jour retardée favorise UDP ; tout ce où l'exactitude compte plus que quelques millisecondes favorise TCP.",
+    },
+  ]}
+/>
+
+## Ce que fait réellement la taille de fenêtre TCP
+
+TCP n'envoie pas un octet à la fois en attendant chaque accusé de réception — il envoie jusqu'à une **fenêtre** d'octets non confirmés à la fois. Une fenêtre plus grande signifie plus de données en transit avant que l'émetteur ne doive faire une pause.
+
+<InteractiveSlider label="Taille de fenêtre TCP (Ko)" min={1} max={64} defaultValue={16}>
+  <TcpWindowVisual />
+</InteractiveSlider>
+
+## Voir aussi
+
+- **[TCP](/en/networking/tcp)** et **[UDP](/en/networking/udp)** — les pages de référence complètes (en anglais pour l'instant).

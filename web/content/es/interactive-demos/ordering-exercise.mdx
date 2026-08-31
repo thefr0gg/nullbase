@@ -1,0 +1,26 @@
+---
+title: Ordena la solicitud
+description: Reordena las piezas de una solicitud HTTP en bruto en la secuencia correcta — una línea de solicitud, luego cabeceras, luego una línea en blanco obligatoria.
+category: Interactive Demos
+weight: 8
+interactive: true
+interactiveType: ["OrderingExercise"]
+---
+
+Una solicitud HTTP en bruto no es solo una bolsa de líneas — el orden importa. Vuelve a colocar estas en la secuencia que usaría un cliente real.
+
+<OrderingExercise
+  title="Solicitud HTTP, desordenada"
+  prompt="Coloca estos componentes de la solicitud HTTP en el orden correcto."
+  items={[
+    { id: "accept", label: "Accept: text/html", explanation: "Las cabeceras pueden aparecer en cualquier orden entre sí, pero todas deben venir después de la línea de solicitud y antes de la línea en blanco." },
+    { id: "blank", label: "(línea en blanco)", explanation: "La línea en blanco marca el final de las cabeceras — sin ella, un servidor no puede saber dónde terminan las cabeceras y empieza el cuerpo." },
+    { id: "request-line", label: "GET / HTTP/1.1", explanation: "La línea de solicitud — método, ruta, versión — siempre va primero." },
+    { id: "host", label: "Host: example.com", explanation: "Host es una cabecera como cualquier otra, y (para HTTP/1.1) obligatoria — pero aun así va después de la línea de solicitud." },
+  ]}
+  correctOrder={["request-line", "host", "accept", "blank"]}
+/>
+
+## Ver también
+
+- **[Solicitud y respuesta HTTP](/es/interactive-demos/http-request-response)** — constrúyela de forma interactiva en lugar de solo reordenarla.

@@ -1,0 +1,29 @@
+---
+title: SQL interactivo
+description: Una base de datos SQLite real, compilada a WebAssembly, ejecutándose por completo en tu navegador — ejecución SQL genuina sobre un pequeño conjunto de datos inicial.
+category: Interactive Demos
+weight: 6
+interactive: true
+interactiveType: ["SqlPlayground"]
+---
+
+A diferencia de la mayoría de los widgets de este sitio, este no está guionizado — es <GlossaryTerm id="sql">SQL</GlossaryTerm> real ejecutado por un motor SQLite auténtico (mediante `sql.js`, SQLite compilado a WebAssembly) que se ejecuta enteramente del lado del cliente. La consulta de abajo se ejecuta sobre una pequeña tabla `users` en memoria, inicializada al cargar la página.
+
+<SqlPlayground
+  title="Prueba una consulta"
+  schema={`
+CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL, age INTEGER NOT NULL);
+INSERT INTO users (id, name, age) VALUES
+  (1, 'Alice', 21),
+  (2, 'Bob', 25),
+  (3, 'Charlie', 19);
+`}
+  defaultQuery={`SELECT name FROM users WHERE age > 20;`}
+/>
+
+Prueba a cambiar la condición, añadir un `ORDER BY`, o escribir intencionalmente una consulta rota — el error que obtienes es un error genuino del analizador de SQLite, no uno guionizado.
+
+## Ver también
+
+- **[SQL](/en/databases/sql)** — la referencia completa sobre el propio lenguaje de consulta (en inglés por ahora).
+- **[Inyección SQL](/en/security/sql-injection)** — qué sale mal cuando una entrada no confiable llega a una consulta como esta sin protección.

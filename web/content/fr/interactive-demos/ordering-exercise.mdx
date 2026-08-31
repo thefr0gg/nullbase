@@ -1,0 +1,26 @@
+---
+title: Ordonnez la requête
+description: Réordonnez les éléments d'une requête HTTP brute dans le bon ordre — une ligne de requête, puis des en-têtes, puis une ligne vide obligatoire.
+category: Interactive Demos
+weight: 8
+interactive: true
+interactiveType: ["OrderingExercise"]
+---
+
+Une requête HTTP brute n'est pas juste un sac de lignes — l'ordre compte. Remettez celles-ci dans l'ordre qu'un vrai client utiliserait pour les envoyer.
+
+<OrderingExercise
+  title="Requête HTTP, mélangée"
+  prompt="Remettez ces éléments d'une requête HTTP dans le bon ordre."
+  items={[
+    { id: "accept", label: "Accept: text/html", explanation: "Les en-têtes peuvent apparaître dans n'importe quel ordre entre eux, mais ils doivent tous venir après la ligne de requête et avant la ligne vide." },
+    { id: "blank", label: "(ligne vide)", explanation: "La ligne vide marque la fin des en-têtes — sans elle, un serveur ne peut pas savoir où les en-têtes se terminent et où le corps commence." },
+    { id: "request-line", label: "GET / HTTP/1.1", explanation: "La ligne de requête — méthode, chemin, version — vient toujours en premier." },
+    { id: "host", label: "Host: example.com", explanation: "Host est un en-tête comme un autre, et (pour HTTP/1.1) obligatoire — mais il vient tout de même après la ligne de requête." },
+  ]}
+  correctOrder={["request-line", "host", "accept", "blank"]}
+/>
+
+## Voir aussi
+
+- **[Requête et réponse HTTP](/fr/interactive-demos/http-request-response)** — construisez-en une de manière interactive au lieu de simplement la réordonner.

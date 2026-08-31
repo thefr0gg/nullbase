@@ -1,0 +1,34 @@
+---
+title: Devinez la sortie
+description: Deux courts quiz JavaScript — devinez ce qu'affiche chaque extrait, puis découvrez la vraie sortie et pourquoi.
+category: Interactive Demos
+weight: 5
+interactive: true
+interactiveType: ["PredictOutput"]
+---
+
+Un moyen rapide de vérifier si le comportement d'un morceau de JavaScript correspond à votre modèle mental. Choisissez une réponse, vérifiez-la, et lisez l'explication dans les deux cas.
+
+<PredictOutput
+  title="Tableau + tableau"
+  code={`console.log([1, 2, 3] + [4, 5, 6]);`}
+  options={["1,2,34,5,6", "[1,2,3,4,5,6]", "7", "Erreur"]}
+  correctIndex={0}
+  explanation="L'opérateur + sur deux objets (les tableaux inclus) les convertit d'abord en chaînes. [1,2,3].toString() donne '1,2,3', [4,5,6].toString() donne '4,5,6', et la concaténation de chaînes les joint simplement sans rien entre les deux."
+  actualOutput="1,2,34,5,6"
+/>
+
+<PredictOutput
+  title="var dans une boucle"
+  code={`for (var i = 0; i < 3; i++) {
+  setTimeout(() => console.log(i), 0);
+}`}
+  options={["0, 1, 2", "3, 3, 3", "0, 0, 0", "Erreur"]}
+  correctIndex={1}
+  explanation="var a une portée de fonction, pas de bloc — les trois callbacks capturent la même variable i, qui a déjà atteint 3 au moment où l'un d'eux s'exécute réellement (setTimeout diffère toujours, même avec un délai de 0 ms). Remplacer var par let donnerait à chaque itération sa propre liaison, affichant 0, 1, 2 à la place."
+  actualOutput="3, 3, 3"
+/>
+
+## Voir aussi
+
+- **[Bac à sable de code JavaScript](/fr/interactive-demos/js-code-playground)** — exécutez vos propres extraits au lieu de seulement ces deux-là.

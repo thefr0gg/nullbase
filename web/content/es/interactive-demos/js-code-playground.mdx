@@ -1,0 +1,28 @@
+---
+title: Entorno de código JavaScript
+description: JavaScript editable y ejecutable — ejecutado en un iframe aislado sin acceso a las cookies o al DOM de esta página, nunca en un servidor.
+category: Interactive Demos
+weight: 4
+interactive: true
+interactiveType: ["CodePlayground"]
+---
+
+Edita el código de abajo y pulsa **Ejecutar**. Se ejecuta dentro de un iframe `sandbox="allow-scripts"` con `allow-same-origin` deliberadamente omitido — el iframe aislado obtiene un origen opaco, por lo que no tiene forma de leer las cookies, el almacenamiento o el DOM de esta página, ni de hacer llamadas de red con credenciales ambientales. La salida de `console.log` se captura y se muestra abajo; un error no capturado o un bucle infinito (mediante un tiempo de espera) se informa en lugar de bloquear la página.
+
+<CodePlayground
+  title="Pruébalo"
+  initialCode={`function fib(n) {
+  if (n <= 1) return n;
+  return fib(n - 1) + fib(n - 2);
+}
+
+for (let i = 0; i < 8; i++) {
+  console.log(i, fib(i));
+}`}
+/>
+
+Solo JavaScript se ejecuta realmente hoy — la arquitectura (`lib/execution/ExecutionProvider`) es deliberadamente genérica para que otro lenguaje pueda añadirse más adelante como su propio proveedor aislado, sin cambiar este componente.
+
+## Ver también
+
+- **[Predice la salida](/es/interactive-demos/predict-the-output)** — adivina qué muestra un fragmento antes de ejecutarlo.

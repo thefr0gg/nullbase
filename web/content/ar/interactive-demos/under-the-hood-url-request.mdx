@@ -1,0 +1,25 @@
+---
+title: "خلف الكواليس: طلب رابط"
+description: جملة بسيطة افتراضيًا، مع زر يكشف دورة الطلب الكاملة لمن يريد التفاصيل.
+category: Interactive Demos
+weight: 7
+interactive: true
+interactiveType: ["UnderTheHood", "StepFlow"]
+---
+
+import { urlLifecycleRows } from "./url-lifecycle-rows";
+
+export const stepsFromRows = urlLifecycleRows.map((row) => ({
+  title: row.nodes[0].label,
+  description: typeof row.nodes[0].detail === "string" ? row.nodes[0].detail : "",
+}));
+
+كشف تدريجي — جملة قصيرة وصادقة لمعظم القراء، مع الآلية الكاملة على بُعد نقرة واحدة لمن يريدها. هذه هي نفس بيانات صفحة [تشريح ودورة حياة الرابط](/ar/interactive-demos/url-anatomy-and-lifecycle)، معروضة هنا كتسلسل خطوات ذاتي التشغيل بدلًا من مخطط.
+
+<UnderTheHood summary="عندما تزور موقعًا إلكترونيًا، يرسل متصفحك طلبًا إلى الخادم ويعرض ما يصله ردًّا.">
+  <StepFlow title="ما الذي يحدث فعليًا" steps={stepsFromRows} autoPlay />
+</UnderTheHood>
+
+## طالع أيضًا
+
+- **[تشريح ودورة حياة الرابط](/ar/interactive-demos/url-anatomy-and-lifecycle)** — نفس المراحل كمخطط قابل للنقر.

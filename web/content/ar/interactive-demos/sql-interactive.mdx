@@ -1,0 +1,29 @@
+---
+title: SQL تفاعلي
+description: قاعدة بيانات SQLite حقيقية ومضمَّنة، مُصرَّفة إلى WebAssembly، تعمل بالكامل داخل متصفحك — تنفيذ SQL حقيقي على مجموعة بيانات ابتدائية صغيرة.
+category: Interactive Demos
+weight: 6
+interactive: true
+interactiveType: ["SqlPlayground"]
+---
+
+على عكس معظم عناصر هذا الموقع، هذا العنصر ليس مُعدًّا مسبقًا (scripted) — إنه <GlossaryTerm id="sql">SQL</GlossaryTerm> حقيقي يُنفَّذه محرك SQLite فعلي (عبر `sql.js`، وهو SQLite مُصرَّف إلى WebAssembly) يعمل بالكامل على جانب العميل. يُنفَّذ الاستعلام أدناه على جدول `users` صغير في الذاكرة، يُهيَّأ عند تحميل الصفحة.
+
+<SqlPlayground
+  title="جرّب استعلامًا"
+  schema={`
+CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL, age INTEGER NOT NULL);
+INSERT INTO users (id, name, age) VALUES
+  (1, 'Alice', 21),
+  (2, 'Bob', 25),
+  (3, 'Charlie', 19);
+`}
+  defaultQuery={`SELECT name FROM users WHERE age > 20;`}
+/>
+
+جرّب تغيير الشرط، أو إضافة `ORDER BY`، أو كتابة استعلام خاطئ عمدًا — الخطأ الذي تحصل عليه هو خطأ محلِّل SQLite حقيقي، وليس خطأ مُعدًّا مسبقًا.
+
+## طالع أيضًا
+
+- **[SQL](/en/databases/sql)** — المرجع الكامل عن لغة الاستعلام نفسها (بالإنجليزية حاليًا).
+- **[حقن SQL](/en/security/sql-injection)** — ما الذي يحدث خطأً عندما يصل إدخال غير موثوق إلى استعلام كهذا دون حماية.

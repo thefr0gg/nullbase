@@ -1,0 +1,29 @@
+---
+title: SQL interactif
+description: Une véritable base de données SQLite intégrée, compilée en WebAssembly, exécutée entièrement dans votre navigateur — une exécution SQL authentique sur un petit jeu de données de départ.
+category: Interactive Demos
+weight: 6
+interactive: true
+interactiveType: ["SqlPlayground"]
+---
+
+Contrairement à la plupart des widgets de ce site, celui-ci n'est pas scripté — c'est du <GlossaryTerm id="sql">SQL</GlossaryTerm> réel exécuté par un véritable moteur SQLite (via `sql.js`, SQLite compilé en WebAssembly) qui s'exécute entièrement côté client. La requête ci-dessous s'exécute sur une petite table `users` en mémoire, initialisée au chargement de la page.
+
+<SqlPlayground
+  title="Essayez une requête"
+  schema={`
+CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL, age INTEGER NOT NULL);
+INSERT INTO users (id, name, age) VALUES
+  (1, 'Alice', 21),
+  (2, 'Bob', 25),
+  (3, 'Charlie', 19);
+`}
+  defaultQuery={`SELECT name FROM users WHERE age > 20;`}
+/>
+
+Essayez de modifier la condition, d'ajouter un `ORDER BY`, ou d'écrire volontairement une requête incorrecte — l'erreur que vous obtenez est une véritable erreur du analyseur SQLite, pas une erreur scriptée.
+
+## Voir aussi
+
+- **[SQL](/en/databases/sql)** — la référence complète sur le langage de requête lui-même (en anglais pour l'instant).
+- **[Injection SQL](/en/security/sql-injection)** — ce qui se passe lorsqu'une entrée non fiable atteint une requête comme celle-ci sans protection.

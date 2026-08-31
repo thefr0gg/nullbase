@@ -1,0 +1,25 @@
+---
+title: "Por dentro: una solicitud de URL"
+description: Una frase simple por defecto, con un botón que revela el ciclo completo de la solicitud para quien quiera los detalles.
+category: Interactive Demos
+weight: 7
+interactive: true
+interactiveType: ["UnderTheHood", "StepFlow"]
+---
+
+import { urlLifecycleRows } from "./url-lifecycle-rows";
+
+export const stepsFromRows = urlLifecycleRows.map((row) => ({
+  title: row.nodes[0].label,
+  description: typeof row.nodes[0].detail === "string" ? row.nodes[0].detail : "",
+}));
+
+Divulgación progresiva — una frase corta y honesta para la mayoría de los lectores, con el mecanismo completo a un clic de distancia para quien lo quiera. Estos son los mismos datos que la página [Anatomía y ciclo de vida de una URL](/es/interactive-demos/url-anatomy-and-lifecycle), mostrados aquí como una secuencia de pasos con reproducción automática en lugar de un diagrama.
+
+<UnderTheHood summary="Cuando visitas un sitio web, tu navegador envía una solicitud al servidor y renderiza lo que sea que reciba de vuelta.">
+  <StepFlow title="Lo que sucede en realidad" steps={stepsFromRows} autoPlay />
+</UnderTheHood>
+
+## Ver también
+
+- **[Anatomía y ciclo de vida de una URL](/es/interactive-demos/url-anatomy-and-lifecycle)** — las mismas etapas como un diagrama interactivo.

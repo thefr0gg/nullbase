@@ -1,0 +1,26 @@
+---
+title: Ciclo de vida de una solicitud HTTP (máquina de estados)
+description: Los estados por los que pasa un ciclo de solicitud/respuesta HTTP, como una máquina de estados interactiva y ejecutable paso a paso en vez de un diagrama estático.
+category: Interactive Demos
+weight: 3
+interactive: true
+interactiveType: ["StateMachine"]
+---
+
+import { httpLifecycleStates, httpLifecycleTransitions } from "./http-lifecycle-machine";
+
+Un solo ciclo de solicitud/respuesta no es instantáneo — pasa por un pequeño número de estados distintos, y no todas las transiciones están disponibles desde todos los estados (no se puede pasar directamente de "inactivo" a "recibiendo"). Haz clic en una transición para activarla, o usa **Paso** para seguir automáticamente la primera disponible.
+
+<StateMachine
+  title="Un ciclo de solicitud/respuesta"
+  states={httpLifecycleStates}
+  transitions={httpLifecycleTransitions}
+  initial="idle"
+/>
+
+Esta misma estructura — un pequeño conjunto de estados, un conjunto fijo de transiciones válidas entre ellos — describe mucho más que HTTP: ver el ciclo de vida de conexión de [TCP](/en/networking/tcp), los estados de conexión/abierto/cerrando/cerrado de un WebSocket, o un flujo de autorización de OAuth.
+
+## Ver también
+
+- **[Solicitud y respuesta HTTP](/es/interactive-demos/http-request-response)** — construye y envía una solicitud simulada real.
+- **[Sesiones](/en/security/sessions)** — una máquina de estados más larga, construida sobre muchos ciclos de solicitud/respuesta.

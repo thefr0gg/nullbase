@@ -1,0 +1,19 @@
+---
+title: Solicitud y respuesta HTTP
+description: Construye a mano una solicitud HTTP real y observa una respuesta simulada — método, ruta, cabeceras y el texto en bruto de la solicitud/respuesta.
+category: Interactive Demos
+weight: 1
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+Una solicitud de <GlossaryTerm id="api">API</GlossaryTerm> es solo texto sobre una conexión — un método, una ruta, una versión, cabeceras y (a veces) un cuerpo. Elige un método y una ruta abajo, ajusta las cabeceras si quieres, y envíala. Nada aquí sale de tu navegador: un pequeño conjunto de rutas se simula del lado del cliente (ver `web/components/interactive/mock-api.ts`), pero la solicitud que ves construida es exactamente lo que enviaría un cliente real.
+
+<RequestPlayground protocol="http" defaultTarget="/api/users/1" defaultMethod="GET" />
+
+Prueba a cambiar el método a `POST` contra `/api/users` con un cuerpo JSON, o solicita `/api/rate-limited` varias veces seguidas para ver cómo se activa un `429` simulado.
+
+## Ver también
+
+- **[Fundamentos de HTTP](/es/web-fundamentals/http)** — métodos, códigos de estado y cabeceras explicados.
+- **[Ciclo de vida de una solicitud HTTP](/es/interactive-demos/http-state-machine)** — los estados por los que pasa un ciclo de solicitud/respuesta.

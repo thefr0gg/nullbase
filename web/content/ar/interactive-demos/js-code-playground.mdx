@@ -1,0 +1,28 @@
+---
+title: بيئة تشغيل كود JavaScript
+description: كود JavaScript قابل للتحرير والتنفيذ — يُنفَّذ داخل إطار iframe معزول دون وصول إلى ملفات تعريف الارتباط أو DOM الخاصين بهذه الصفحة، وأبدًا على خادم.
+category: Interactive Demos
+weight: 4
+interactive: true
+interactiveType: ["CodePlayground"]
+---
+
+عدّل الكود أدناه واضغط **تشغيل**. يُنفَّذ داخل إطار `sandbox="allow-scripts"` مع حذف `allow-same-origin` عمدًا — يحصل الإطار المعزول على مصدر معتم، فلا وسيلة له لقراءة ملفات تعريف الارتباط أو التخزين أو DOM الخاصين بهذه الصفحة، ولا لإجراء اتصالات شبكية بصلاحيات ضمنية. تُلتقط مخرجات `console.log` وتُعرض أدناه؛ ويُبلَّغ عن أي خطأ غير مُلتقط أو حلقة لا نهائية (عبر مهلة زمنية) بدلًا من تعليق الصفحة.
+
+<CodePlayground
+  title="جرّبه"
+  initialCode={`function fib(n) {
+  if (n <= 1) return n;
+  return fib(n - 1) + fib(n - 2);
+}
+
+for (let i = 0; i < 8; i++) {
+  console.log(i, fib(i));
+}`}
+/>
+
+لا تُنفَّذ فعليًا اليوم سوى لغة JavaScript — البنية المعمارية (`lib/execution/ExecutionProvider`) عامّة عمدًا بحيث يمكن إضافة لغة أخرى لاحقًا كمزوّد معزول خاص بها، دون تغيير هذا المكوّن.
+
+## طالع أيضًا
+
+- **[توقّع الناتج](/ar/interactive-demos/predict-the-output)** — خمّن ما يطبعه مقطع كود قبل تشغيله.

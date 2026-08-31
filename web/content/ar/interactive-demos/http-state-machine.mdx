@@ -1,0 +1,26 @@
+---
+title: دورة حياة طلب HTTP (آلة حالات)
+description: الحالات التي تمر بها دورة طلب/استجابة HTTP واحدة، كآلة حالات قابلة للنقر والتنفيذ خطوة بخطوة بدلًا من مخطط ثابت.
+category: Interactive Demos
+weight: 3
+interactive: true
+interactiveType: ["StateMachine"]
+---
+
+import { httpLifecycleStates, httpLifecycleTransitions } from "./http-lifecycle-machine";
+
+دورة طلب/استجابة واحدة ليست لحظية — بل تمر بعدد صغير من الحالات المتمايزة، وليست كل الانتقالات متاحة من كل حالة (لا يمكنك القفز مباشرة من "خامل" إلى "الاستقبال"). انقر على انتقال لتنفيذه، أو استخدم **خطوة** لمتابعة أول انتقال متاح تلقائيًا.
+
+<StateMachine
+  title="دورة طلب/استجابة واحدة"
+  states={httpLifecycleStates}
+  transitions={httpLifecycleTransitions}
+  initial="idle"
+/>
+
+هذا الشكل نفسه — مجموعة صغيرة من الحالات، ومجموعة ثابتة من الانتقالات الصالحة بينها — يصف أكثر بكثير من HTTP: انظر دورة حياة اتصال [TCP](/en/networking/tcp)، أو حالات الاتصال/الفتح/الإغلاق/المغلق في WebSocket، أو تدفّق ترخيص OAuth.
+
+## طالع أيضًا
+
+- **[طلب واستجابة HTTP](/ar/interactive-demos/http-request-response)** — ابنِ وأرسل طلبًا محاكاة حقيقيًا.
+- **[الجلسات](/en/security/sessions)** — آلة حالات أطول، مبنية فوق دورات طلب/استجابة عديدة.

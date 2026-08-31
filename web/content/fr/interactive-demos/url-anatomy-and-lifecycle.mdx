@@ -1,0 +1,31 @@
+---
+title: Anatomie et cycle de vie d'une URL
+description: Décomposez une URL en ses parties, puis parcourez tout ce qui se passe entre sa saisie et l'affichage de la page.
+category: Interactive Demos
+weight: 0
+interactive: true
+interactiveType: ["UrlAnatomy", "DiagramExplorer"]
+---
+
+import { urlLifecycleRows } from "./url-lifecycle-rows";
+
+Une requête résolue par <GlossaryTerm id="dns">DNS</GlossaryTerm> et sécurisée par <GlossaryTerm id="tls">TLS</GlossaryTerm> commence toujours comme une simple chaîne de caractères. Avant que toute cette mécanique ne se mette en route, le navigateur doit d'abord découper cette chaîne en parties significatives :
+
+<UrlAnatomy
+  parts={[
+    { text: "https", label: "Schéma", color: "blue" },
+    { text: "://", label: "", color: "default" },
+    { text: "example.com", label: "Hôte", color: "green" },
+    { text: ":443", label: "Port", color: "orange" },
+    { text: "/users", label: "Chemin", color: "purple" },
+    { text: "?id=42", label: "Requête", color: "red" },
+  ]}
+/>
+
+## Puis le cycle de vie commence
+
+Chaque étape ci-dessous est cliquable — sélectionnez-en une pour voir ce qu'elle fait et pourquoi elle est nécessaire.
+
+<DiagramExplorer title="Ce qui se passe après avoir appuyé sur Entrée" rows={urlLifecycleRows} />
+
+Ceci est une simulation : rien sur cette page ne fait de véritable requête réseau. Pour voir le vrai mécanisme, consultez [TCP/IP](/fr/web-fundamentals/tcp-ip), [TLS](/fr/web-fundamentals/tls) et [DNS](/fr/web-fundamentals/dns).

@@ -1,0 +1,25 @@
+---
+title: "Terminal : bases de Git"
+description: Un shell simulé avec un système de fichiers en mémoire et un sous-ensemble de git — vérifiez le statut, indexez un fichier, et faites votre premier commit.
+category: Interactive Demos
+weight: 9
+interactive: true
+interactiveType: ["InteractiveTerminal"]
+---
+
+import { gitBasicsFs, gitBasicsCwd, gitBasicsExpectedCommands } from "./git-basics-fs";
+
+Ceci est un véritable interpréteur de commandes (pas une vidéo ni un script) qui s'exécute sur un système de fichiers en mémoire — rien ici ne touche un vrai shell ni un vrai dépôt Git. Essayez `pwd`, `ls`, `cat README.md`, puis faites l'exercice ci-dessous avec `git status`, `git add` et `git commit`.
+
+<InteractiveTerminal
+  title="Essayez-le"
+  initialFs={gitBasicsFs}
+  initialCwd={gitBasicsCwd}
+  expectedCommands={gitBasicsExpectedCommands}
+/>
+
+Les commandes elles-mêmes restent en anglais, comme un vrai terminal. Utilisez l'indice si vous êtes bloqué — il affiche exactement la prochaine commande attendue. Réinitialiser recommence l'exercice avec un arbre de travail propre.
+
+## Voir aussi
+
+- **[Démos interactives](/fr/interactive-demos)** — le reste des exemples concrets de ce système.

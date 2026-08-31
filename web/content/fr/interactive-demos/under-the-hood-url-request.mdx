@@ -1,0 +1,25 @@
+---
+title: "Sous le capot : une requête d'URL"
+description: Une phrase simple par défaut, avec un bouton qui révèle le cycle de requête complet pour qui veut les détails.
+category: Interactive Demos
+weight: 7
+interactive: true
+interactiveType: ["UnderTheHood", "StepFlow"]
+---
+
+import { urlLifecycleRows } from "./url-lifecycle-rows";
+
+export const stepsFromRows = urlLifecycleRows.map((row) => ({
+  title: row.nodes[0].label,
+  description: typeof row.nodes[0].detail === "string" ? row.nodes[0].detail : "",
+}));
+
+Divulgation progressive — une phrase courte et honnête pour la plupart des lecteurs, avec le mécanisme complet à un clic pour qui le souhaite. Ce sont les mêmes données que la page [Anatomie et cycle de vie d'une URL](/fr/interactive-demos/url-anatomy-and-lifecycle), présentées ici comme une séquence d'étapes en lecture automatique plutôt qu'un diagramme.
+
+<UnderTheHood summary="Quand vous visitez un site, votre navigateur envoie une requête au serveur et affiche ce qu'il reçoit en retour.">
+  <StepFlow title="Ce qui se passe réellement" steps={stepsFromRows} autoPlay />
+</UnderTheHood>
+
+## Voir aussi
+
+- **[Anatomie et cycle de vie d'une URL](/fr/interactive-demos/url-anatomy-and-lifecycle)** — les mêmes étapes sous forme de diagramme cliquable.

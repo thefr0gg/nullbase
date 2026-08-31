@@ -1,0 +1,26 @@
+---
+title: رتّب الطلب
+description: أعد ترتيب أجزاء طلب HTTP خام إلى التسلسل الصحيح — سطر طلب، ثم ترويسات، ثم سطر فارغ إلزامي.
+category: Interactive Demos
+weight: 8
+interactive: true
+interactiveType: ["OrderingExercise"]
+---
+
+طلب HTTP الخام ليس مجرد كومة أسطر — الترتيب مهم. أعد ترتيب هذه العناصر بالتسلسل الذي سيرسله عميل حقيقي.
+
+<OrderingExercise
+  title="طلب HTTP، مُبعثَر"
+  prompt="رتّب عناصر طلب HTTP هذه بالترتيب الصحيح."
+  items={[
+    { id: "accept", label: "Accept: text/html", explanation: "يمكن أن تظهر الترويسات بأي ترتيب فيما بينها، لكن يجب أن تأتي جميعها بعد سطر الطلب وقبل السطر الفارغ." },
+    { id: "blank", label: "(سطر فارغ)", explanation: "يُشير السطر الفارغ إلى نهاية الترويسات — بدونه، لا يمكن لخادم أن يعرف أين تنتهي الترويسات وأين يبدأ النص الأساسي." },
+    { id: "request-line", label: "GET / HTTP/1.1", explanation: "سطر الطلب — الطريقة والمسار والإصدار — يأتي دائمًا أولًا." },
+    { id: "host", label: "Host: example.com", explanation: "Host هي ترويسة كأي ترويسة أخرى، و(بالنسبة لـ HTTP/1.1) إلزامية — لكنها تأتي مع ذلك بعد سطر الطلب." },
+  ]}
+  correctOrder={["request-line", "host", "accept", "blank"]}
+/>
+
+## طالع أيضًا
+
+- **[طلب واستجابة HTTP](/ar/interactive-demos/http-request-response)** — ابنِ طلبًا تفاعليًا بدلًا من إعادة ترتيبه فقط.
