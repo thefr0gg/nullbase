@@ -1,0 +1,40 @@
+---
+title: Serverless
+description: Running code without managing a server at all — the platform allocates capacity per request, and you're billed for execution, not idle uptime.
+category: DevOps & Infrastructure
+weight: 9
+---
+
+**Serverless** doesn't mean there's no server — it means the developer never provisions, patches, or scales one. Code is deployed as a function or small handler; the platform ([Cloudflare Workers](/en/cloudflare/workers), AWS Lambda, similar) decides where and when to actually run it, spinning up capacity on demand and tearing it down when idle.
+
+## What changes vs a traditional server
+
+<ItemExplorer
+  title="Serverless vs a Traditional Server"
+  layout="table"
+  tableColumns={[{ key: "traditional", label: "Traditional server" }, { key: "serverless", label: "Serverless" }]}
+  items={[
+    { id: "provisioning", label: "Provisioning", color: "blue", columns: { traditional: "You choose and manage a server (or a fleet of them)", serverless: "The platform allocates capacity per request automatically" } },
+    { id: "billing", label: "Billing", color: "green", columns: { traditional: "Pay for the server whether or not it's handling traffic", serverless: "Pay per invocation / execution time — idle costs nothing" } },
+    { id: "scaling", label: "Scaling", color: "purple", columns: { traditional: "Manual or configured autoscaling, with real ramp-up time", serverless: "Scales to zero and back up automatically, often near-instantly" } },
+    { id: "state", label: "In-memory state between requests", color: "orange", columns: { traditional: "Persists as long as the process runs", serverless: "Not guaranteed — an idle function instance can be torn down entirely between invocations" } },
+  ]}
+/>
+
+## Cold starts
+
+The first request to a serverless function after a period of inactivity may hit a **cold start** — the platform has to actually initialize a new execution environment before running the code, adding latency that a warm, already-running traditional server doesn't have. How significant this is varies enormously by platform and runtime: a lightweight JavaScript function on an edge platform can cold-start in single-digit milliseconds, while a heavier runtime with a large dependency tree can take much longer.
+
+## What serverless is good at
+
+Workloads that are naturally spiky or infrequent (an API endpoint hit a few times a minute, a webhook handler, scheduled batch jobs) are a strong fit — there's no idle server cost during the quiet periods, and scaling up for a sudden burst of traffic is the platform's problem, not something that needs pre-provisioned capacity to absorb. It's a weaker fit for workloads needing long-lived in-memory state, extremely predictable low-latency performance under any load, or execution times longer than a platform's imposed limit.
+
+## Why statelessness is the real constraint
+
+Because a serverless platform can spin up, reuse, or discard an execution environment at will, code has to assume no state survives reliably between invocations — [sessions](/en/backend/sessions), [caching](/en/backend/caching), and any other shared state have to live in something external (a database, a shared cache, [KV](/en/cloudflare/kv)) rather than a local in-memory variable, which would work by accident sometimes and fail unpredictably the rest of the time.
+
+## See also
+
+- **[Cloudflare Workers](/en/cloudflare/workers)** — a serverless platform running at the network edge specifically.
+- **[Edge Computing](/en/devops/edge-computing)** — running serverless code physically close to users, not in one central region.
+- **[Containers](/en/devops/containers)** — the isolation technology many serverless platforms build their execution sandboxes on top of.

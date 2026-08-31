@@ -1,0 +1,50 @@
+---
+title: Cloudflare Workers Bindings
+description: How a Worker actually gets access to D1, KV, R2, secrets, and other Workers — a typed, configuration-driven connection instead of a connection string.
+category: Cloudflare
+weight: 8
+---
+
+A **binding** is how a Worker gets access to another Cloudflare resource — a database, a storage bucket, a secret, even another Worker — declared in [Wrangler](/en/cloudflare/wrangler)'s configuration and exposed to the Worker's code as a property on the `env` object passed into every handler.
+
+## Declaring and using one
+
+```jsonc
+// wrangler.jsonc
+{
+  "d1_databases": [{ "binding": "DB", "database_name": "my-database", "database_id": "..." }],
+  "kv_namespaces": [{ "binding": "CACHE", "id": "..." }],
+  "r2_buckets": [{ "binding": "UPLOADS", "bucket_name": "my-uploads" }]
+}
+```
+
+```js
+export default {
+  async fetch(request, env) {
+    const rows = await env.DB.prepare("SELECT 1").all();   // D1
+    const cached = await env.CACHE.get("key");              // KV
+    const file = await env.UPLOADS.get("path/to/file");     // R2
+    return Response.json({ rows, cached: !!cached, hasFile: !!file });
+  },
+};
+```
+
+Each binding name (`DB`, `CACHE`, `UPLOADS`) is arbitrary — chosen in the config, not fixed by the platform — and appears on `env` with the corresponding resource's specific API already attached, with no separate SDK initialization, connection string, or client library setup required.
+
+## Why this instead of a connection string
+
+A traditional service reaches a database via a connection string (`postgres://user:pass@host/db`) that the application code has to parse and use to establish its own connection, usually pooled and managed manually. A binding is resolved by the Workers runtime itself before the Worker's code even runs — there's no connection to open, no credentials embedded in an environment variable that could leak into logs, and no pooling logic to get wrong, because the underlying access is handled entirely by the platform.
+
+## Service bindings
+
+A Worker can also bind directly to *another* Worker via a **service binding**, letting one Worker call another with none of the overhead of a real HTTP round trip over the public internet — the call happens within Cloudflare's own infrastructure. This is a common way to split a larger system into multiple Workers (an API Worker and a separate background-processing Worker, say) that still need to call each other directly and efficiently.
+
+## Secrets as bindings too
+
+A secret set via `wrangler secret put` also appears on `env` exactly like any other binding, just holding a plain string value rather than a client object — the same access pattern (`env.API_KEY`) applies uniformly whether the binding is a database, a bucket, or a secret string.
+
+## See also
+
+- **[Wrangler](/en/cloudflare/wrangler)** — where every binding is actually declared.
+- **[D1](/en/cloudflare/d1)**, **[KV](/en/cloudflare/kv)**, **[R2](/en/cloudflare/r2)** — the storage products most commonly accessed via a binding.
+- **[Environment Variables](/en/devops/environment-variables)** — the general concept bindings extend well beyond plain strings.

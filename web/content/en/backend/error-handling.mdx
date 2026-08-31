@@ -1,0 +1,49 @@
+---
+title: Error Handling
+description: Failing in a way that's recoverable, debuggable, and safe to expose — the difference between a caught error and an unhandled one, and what a client should actually see.
+category: Backend
+weight: 10
+---
+
+Something will eventually fail — a database connection drops, a third-party API times out, input arrives malformed. **Error handling** is the deliberate decision about what happens next, instead of leaving that decision to whatever the runtime does by default with an unhandled exception (typically: crash the process, or worse, return a raw stack trace to the client).
+
+## Expected vs unexpected errors
+
+<ItemExplorer
+  title="Two Different Kinds of Failure"
+  layout="table"
+  tableColumns={[{ key: "example", label: "Example" }, { key: "response", label: "Typical handling" }]}
+  items={[
+    { id: "expected", label: "Expected / operational", color: "blue", columns: { example: "Invalid input, a resource that doesn't exist, a rate limit hit, a third-party API returning an error", response: "Caught explicitly, mapped to a specific status code and a clear message the client can act on." } },
+    { id: "unexpected", label: "Unexpected / programmer error", color: "red", columns: { example: "A null pointer, a bug reaching an unreachable code path, an out-of-memory condition", response: "Caught by a top-level handler, logged with full detail, and turned into a generic 500 — the client never needed to know the internal cause." } },
+  ]}
+/>
+
+Treating both the same way is a common mistake in both directions: surfacing an unexpected error's raw internals to a client leaks implementation details (and sometimes secrets) with no benefit to the client; treating an expected error like a validation failure as a mysterious 500 makes a normal, everyday situation look like a system malfunction.
+
+## What a client should actually receive
+
+```json
+{
+  "error": {
+    "code": "insufficient_funds",
+    "message": "Your balance is too low to complete this transfer."
+  }
+}
+```
+
+A useful error response has a stable, machine-checkable `code` a client can branch on programmatically, and a `message` meant for a human — never a raw exception message or stack trace, which can change wording between deployments and may reveal internal file paths, library versions, or query structure to whoever's looking at the response.
+
+## Centralizing the catch
+
+Rather than wrapping every single route handler in its own `try/catch`, most frameworks support a single top-level error handler — often the last piece of [middleware](/en/backend/middleware) in the chain — that catches anything unhandled from earlier in the request, logs it with full context, and produces a consistent error response shape site-wide. This keeps error formatting consistent without every handler needing to remember to produce it correctly.
+
+## Retrying vs failing fast
+
+Not every failure should be retried automatically — retrying a request that failed because the input was invalid will fail identically every time and just waste effort, while retrying a request that failed because of a transient network blip can genuinely succeed on the second attempt. Distinguishing the two (often by treating specific status codes or exception types as retryable and everything else as not) is what makes automatic retry logic actually useful instead of just delaying an inevitable failure.
+
+## See also
+
+- **[Logging](/en/backend/logging)** — where the full detail of an unexpected error actually goes.
+- **[Middleware](/en/backend/middleware)** — where a centralized error handler is typically implemented.
+- **[HTTP status codes](/en/web-fundamentals/http/status-codes)** — the vocabulary an error response's status code should draw from.

@@ -1,0 +1,30 @@
+---
+title: Web Servers
+description: The process that accepts a raw connection and speaks HTTP — separate from the application code that decides what a response actually contains.
+category: Backend
+weight: 0
+---
+
+A **web server** is the process listening on a port, accepting TCP connections, and speaking [HTTP](/en/web-fundamentals/http) well enough to receive a request and send back a response. That's a narrower job than it sounds — a web server doesn't need to know anything about your application's routes, database, or business logic; it needs to handle connections, parse requests, and hand them off to something else that does.
+
+## What a web server actually does
+
+- **Accepts connections** — manages the [TCP](/en/networking/tcp) handshake and keeps a connection open across multiple requests when the client asks for it (`Connection: keep-alive`).
+- **Parses HTTP** — turns raw bytes into a structured method, path, headers, and body.
+- **Terminates TLS** — decrypts an HTTPS connection so everything behind it can speak plain HTTP, if it's the outermost layer.
+- **Serves static files directly** — images, CSS, prebuilt HTML — without ever involving application code, which is usually far faster than routing a static asset through a full application stack.
+- **Hands dynamic requests off** — to an [application server](/en/backend/application-servers) via a protocol built for that handoff (WSGI/ASGI in Python, a Node.js process, FastCGI, or a reverse proxy pass-through).
+
+## Nginx, Apache, and "just use the runtime's own server"
+
+Nginx and Apache are the two long-standing dedicated web servers — optimized C code that can hold open tens of thousands of idle connections cheaply, handle TLS, and serve static files with minimal overhead. Many application runtimes (Node.js's `http` module, Python's `uvicorn`, Go's `net/http`) also ship a capable web server built in, blurring the line — a Node.js app can bind directly to port 443 with no Nginx in front of it at all, though production deployments commonly still put a dedicated web server or reverse proxy in front regardless, for TLS termination, static file serving, and request buffering under load.
+
+## Why this layer exists separately
+
+Separating "accept connections and speak HTTP" from "run application logic" means a web server can restart, scale, or fail independently of the application code behind it — a slow database query in the application layer doesn't block the web server from continuing to accept new connections, and a web server crash doesn't necessarily take down every application process it was routing to. This separation of concerns is also what makes a [reverse proxy](/en/backend/reverse-proxies) possible in the first place: it's just another web server, positioned to hand requests to other servers instead of to local application code.
+
+## See also
+
+- **[Application Servers](/en/backend/application-servers)** — what actually receives a request after the web server hands it off.
+- **[Reverse Proxies](/en/backend/reverse-proxies)** — a web server used specifically to route to other servers.
+- **[TLS Certificates](/en/security/tls-certificates)** — the certificate a web server presents when terminating HTTPS.

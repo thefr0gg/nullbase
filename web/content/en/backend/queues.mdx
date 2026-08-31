@@ -1,0 +1,32 @@
+---
+title: Queues
+description: The durable, ordered buffer that sits between something producing work and something consuming it — what makes background jobs survive a crash.
+category: Backend
+weight: 5
+---
+
+A **queue** is a durable, ordered (or at least fair) buffer of messages sitting between a **producer** (something creating work) and one or more **consumers** (something processing it). [Background jobs](/en/backend/background-jobs) are the most common reason a backend needs one, but the pattern is general: anywhere work needs to be handed off without the producer and consumer running in lockstep.
+
+## Why durability is the whole point
+
+An in-memory array of pending jobs disappears the moment the process holding it crashes or restarts. A real queue (RabbitMQ, Amazon SQS, Redis Streams, Kafka, [Cloudflare Queues](/en/cloudflare/queues)) persists messages independently of any one producer or consumer process, so a crash on either side doesn't silently lose work that was already enqueued — the message is still there when a consumer comes back.
+
+## At-least-once delivery and idempotency
+
+Most queues guarantee a message is delivered **at least once**, not exactly once — a consumer can crash *after* processing a message but *before* acknowledging it, and the queue will redeliver that message to another consumer, having no way to know the work already happened. This makes **idempotency** — designing a job so processing it twice has the same effect as processing it once (e.g. `UPDATE ... SET status = 'shipped'` rather than `INSERT` a new shipment record each time) — a real, common requirement for queue consumers, not a defensive nicety.
+
+## Ordering and fan-out
+
+A basic queue delivers messages roughly in the order they arrived, to whichever consumer is free — fine for independent jobs, but insufficient if some jobs must be processed in a specific relative order (all events for the same user, say). Systems like Kafka address this with **partitions**: messages with the same key always go to the same partition, and a partition is only ever consumed in order, giving ordering guarantees per-key without serializing the entire queue behind one consumer.
+
+A **pub/sub** variant fans one message out to *every* subscriber rather than exactly one consumer — useful when multiple independent systems all need to react to the same event (an order being placed triggering both an email and an inventory update), which a traditional work queue (one consumer takes each message) doesn't support directly.
+
+## Dead-letter queues
+
+A job that fails repeatedly — a permanently malformed message, a bug that makes every retry fail identically — shouldn't retry forever, consuming resources for something that will never succeed. A **dead-letter queue** is where a message goes after exceeding a retry limit, so it stops blocking the main queue and can be inspected manually instead of disappearing silently.
+
+## See also
+
+- **[Background Jobs](/en/backend/background-jobs)** — the pattern queues most commonly support.
+- **[Cloudflare Queues](/en/cloudflare/queues)** — a managed queue product with built-in retries and dead-letter queue support.
+- **[Caching](/en/backend/caching)** — a different way of avoiding repeated work, solving a different problem than a queue does.

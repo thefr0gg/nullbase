@@ -1,0 +1,39 @@
+---
+title: Cloudflare DNS
+description: Cloudflare as an authoritative DNS provider — what the orange cloud icon actually turns on, and how a proxied record differs from a plain DNS-only one.
+category: Cloudflare
+weight: 11
+---
+
+Cloudflare's original product is [DNS](/en/web-fundamentals/dns) hosting and a reverse-proxy/CDN layer sitting in front of a domain's actual traffic — nearly everything else in this section (Workers, Custom Domains, caching) depends on a domain already being an active Cloudflare zone.
+
+## DNS-only vs proxied ("the orange cloud")
+
+<ItemExplorer
+  title="Grey Cloud vs Orange Cloud"
+  layout="table"
+  tableColumns={[{ key: "traffic", label: "Where traffic goes" }, { key: "gets", label: "What you get" }]}
+  items={[
+    { id: "dns-only", label: "DNS only (grey cloud)", color: "default", columns: { traffic: "Directly to the record's IP — Cloudflare only answers the DNS lookup itself", gets: "Just DNS resolution, nothing else — no caching, no DDoS protection, no hidden origin IP" } },
+    { id: "proxied", label: "Proxied (orange cloud)", color: "orange", columns: { traffic: "Through Cloudflare's network first, which then forwards to the actual origin", gets: "Caching, DDoS protection, TLS termination, WAF rules, and the origin server's real IP hidden from the public internet" } },
+  ]}
+/>
+
+A **proxied** record makes Cloudflare a genuine [reverse proxy](/en/backend/reverse-proxies) in front of the domain's real infrastructure — visitors resolve the domain to one of Cloudflare's own IPs, never the actual origin server's, which is also why a proxied domain's true origin IP being leaked elsewhere (an old DNS record, an exposed server header) can be a real security concern: it's the address every other protection is meant to keep hidden.
+
+## Common record types
+
+- **A / AAAA** — a hostname to an IPv4 or IPv6 address directly.
+- **CNAME** — a hostname to *another* hostname, which is then resolved in turn — commonly used to point a subdomain at a platform-managed hostname without needing to know or hardcode its IP.
+- **MX** — where email for a domain should be delivered, entirely separate from where its website is served.
+- **TXT** — arbitrary text, commonly used for domain ownership verification and email authentication (SPF, DKIM) records.
+
+## Why a Worker needs an active zone
+
+A [Workers Route](/en/cloudflare/workers-routes) or [Custom Domain](/en/cloudflare/custom-domains) only works on a domain Cloudflare is already authoritative for — Cloudflare has to be the thing actually resolving and routing that domain's traffic before it can hand any of it off to a Worker. This is why deploying a Worker to a new domain always starts with pointing that domain's nameservers at Cloudflare first.
+
+## See also
+
+- **[DNS](/en/web-fundamentals/dns)** — the general protocol and record types this page assumes.
+- **[Reverse Proxies](/en/backend/reverse-proxies)** — the general pattern a proxied DNS record implements at Cloudflare's scale.
+- **[Cloudflare Cache](/en/cloudflare/cloudflare-cache)** — one of the specific things a proxied record actually turns on.

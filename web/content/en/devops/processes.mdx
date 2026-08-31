@@ -1,0 +1,38 @@
+---
+title: Processes
+description: The operating system's unit of running code — what a PID actually is, how processes are isolated from each other, and what a container turns out to just be.
+category: DevOps & Infrastructure
+weight: 1
+---
+
+A **process** is a running instance of a program — its own memory space, its own file descriptors, its own execution state — tracked by the operating system under a unique **PID** (process ID). Almost every other concept in this section (a [web server](/en/backend/web-servers), a [container](/en/devops/containers), a background worker) is, underneath, one or more OS processes.
+
+## What a process actually has
+
+- **Its own virtual memory space** — one process can't directly read or write another's memory; the OS enforces this isolation at the hardware level via the CPU's memory management unit.
+- **File descriptors** — handles to open files, network sockets, and pipes, numbered starting from 0 (stdin), 1 (stdout), 2 (stderr).
+- **A parent** — every process except the very first one (`init`, PID 1) was created by another process calling `fork()` or similar, forming a tree. Killing a parent can (depending on signal handling) leave "orphaned" child processes.
+- **An exit code** — a number returned when it finishes, `0` conventionally meaning success and anything else meaning some kind of failure, checked by scripts and process managers to decide what to do next.
+
+## Process vs thread
+
+A **thread** is a unit of execution *within* a process, sharing that process's memory space with other threads in the same process — cheaper to create and switch between than a whole new process, but without the memory isolation: a bug in one thread can corrupt data another thread in the same process depends on. This is the same trade-off [application servers](/en/backend/application-servers) navigate when choosing a concurrency model.
+
+## Signals
+
+The OS lets one process ask another to do something via a **signal** — `SIGTERM` politely asks a process to shut down (giving it a chance to clean up open connections, finish in-flight work); `SIGKILL` terminates it immediately with no chance to react at all. Deployment tooling and process managers rely on this distinction: a graceful restart sends `SIGTERM` and waits, only escalating to `SIGKILL` if the process doesn't exit within some timeout.
+
+```bash
+kill -TERM 1234   # ask nicely
+kill -KILL 1234   # no negotiation (same as kill -9)
+```
+
+## Why a container is "just" processes
+
+A [container](/en/devops/containers) doesn't run a separate operating system — it's a regular Linux process (or group of processes) given an isolated *view* of the system (its own filesystem, network interface, process list) via kernel features like namespaces and cgroups, while still sharing the same underlying kernel as the host. That's why containers start in milliseconds and a virtual machine, which does boot a full separate OS, takes much longer.
+
+## See also
+
+- **[Application Servers](/en/backend/application-servers)** — process/thread/event-loop concurrency models in practice.
+- **[Containers](/en/devops/containers)** — the isolation mechanism built on top of these same process primitives.
+- **[Linux](/en/devops/linux)** — the `ps`/`kill` commands used to inspect and signal processes directly.

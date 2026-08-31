@@ -1,0 +1,50 @@
+---
+title: File Uploads
+description: Accepting binary data from a client safely and at scale — multipart encoding, streaming vs buffering, and why uploads usually bypass the application server entirely.
+category: Backend
+weight: 8
+---
+
+A file upload is a request whose body is binary data rather than JSON or form fields — and handling it well means dealing with sizes and failure modes that a typical small JSON request never has to worry about.
+
+## Multipart form data
+
+Browsers upload files using `multipart/form-data`, an encoding that lets a single request carry a mix of regular fields and one or more binary file parts, each with its own boundary marker:
+
+```http
+POST /upload HTTP/1.1
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWx
+
+------WebKitFormBoundary7MA4YWx
+Content-Disposition: form-data; name="title"
+
+My vacation photo
+------WebKitFormBoundary7MA4YWx
+Content-Disposition: form-data; name="file"; filename="beach.jpg"
+Content-Type: image/jpeg
+
+<binary JPEG data>
+------WebKitFormBoundary7MA4YWx--
+```
+
+A server-side multipart parser splits the body back into its parts, exposing each field and file separately to application code.
+
+## Streaming instead of buffering
+
+A naive upload handler reads the entire request body into memory before doing anything with it — fine for a 20KB form, but a real problem for a 500MB video: buffering it fully means holding that much memory per concurrent upload, and a handful of simultaneous large uploads can exhaust a server's memory outright. A **streaming** upload handler instead processes the body as it arrives, writing chunks directly to disk or to a storage service without ever holding the whole file in memory at once.
+
+## Why uploads often skip the application server
+
+Many production systems route large uploads *around* the application server entirely: the client requests a **pre-signed upload URL** from the backend (a short-lived, scoped credential), then uploads the file directly to object storage (S3, [R2](/en/cloudflare/r2)) using that URL — the application server never touches the file bytes at all, just the small amount of metadata. This avoids the application tier's memory/bandwidth being the bottleneck for large transfers, and lets it scale independently of upload traffic.
+
+## Validation that actually matters
+
+- **File size limits** — reject before reading the whole body, not after, or an oversized upload has already cost bandwidth and memory before being rejected.
+- **Content-type checking** — the client-supplied `Content-Type` header is not trustworthy on its own; a file claiming to be `image/png` can contain anything. Real validation inspects the actual file bytes (a "magic number" check) rather than trusting the declared type.
+- **Filename sanitization** — a client-supplied filename can contain path traversal sequences (`../../etc/passwd`) or characters unsafe for the destination filesystem; never use it directly to construct a storage path.
+
+## See also
+
+- **[Cloudflare R2](/en/cloudflare/r2)** — S3-compatible object storage, a common upload destination.
+- **[CORS](/en/security/cors)** — relevant when the browser uploads directly to a different origin (like a storage bucket) rather than through your own API.
+- **[Error Handling](/en/backend/error-handling)** — an interrupted or oversized upload needs a clear, specific failure response.

@@ -1,0 +1,36 @@
+---
+title: Sessions
+description: Where server-side session state actually lives once a backend runs on more than one machine — not the cookie mechanics, but the storage architecture behind them.
+category: Backend
+weight: 7
+---
+
+[Sessions](/en/security/sessions) covers the cookie mechanism — a session ID issued at login, sent back on every request. This page is about a question that only becomes real once a backend scales past a single process: **where does the actual session data live**, given that any of several backend instances might handle the next request from that same browser?
+
+## The problem a single instance never has
+
+On one server, storing sessions in a plain in-memory object works fine — every request hits the same process, so the same memory. The instant there's a second instance behind a [reverse proxy](/en/backend/reverse-proxies) or [load balancer](/en/devops/load-balancing), that stops being true: a login handled by instance A means nothing to instance B, which has never heard of that session ID.
+
+## Three ways to fix it
+
+<ItemExplorer
+  title="Multi-Instance Session Strategies"
+  layout="pills"
+  items={[
+    { id: "sticky", label: "Sticky sessions", color: "blue", detail: "Configure the load balancer to always route a given client to the same backend instance (via a cookie or the client's IP). Keeps in-memory sessions working, but an instance restart or scale-down still loses every session pinned to it, and load distribution gets uneven." },
+    { id: "shared-store", label: "Shared session store", color: "green", detail: "Move session data out of any instance's memory into a shared cache (Redis is the classic choice) or database that every instance reads from. Any instance can now handle any request — the standard, most robust fix." },
+    { id: "stateless-tokens", label: "Stateless tokens (JWT)", color: "purple", detail: "Skip server-side session storage entirely — encode identity/claims into a signed token the client holds. No shared store needed, at the cost of harder early revocation (see JWT)." },
+  ]}
+/>
+
+A shared store is the default recommendation for most backends: it requires no special load-balancer configuration, survives an individual instance restarting or being replaced, and keeps the actual session-cookie mechanics from the security page completely unchanged — only *where the session lookup goes* is different.
+
+## What actually goes in a session
+
+Session storage should generally hold as little as practical — a user ID and maybe a few short-lived flags, not a full copy of the user's profile data (which belongs in the database and can be fetched by ID when needed). A bloated session adds latency to every request that has to read it and creates yet another place the same data can drift out of sync with its source of truth.
+
+## See also
+
+- **[Sessions](/en/security/sessions)** — the cookie mechanism and security flags this page assumes.
+- **[Caching](/en/backend/caching)** — the same shared-store infrastructure (Redis, Memcached) often backs both sessions and a general cache.
+- **[Load Balancing](/en/devops/load-balancing)** — where sticky-session routing is actually configured.

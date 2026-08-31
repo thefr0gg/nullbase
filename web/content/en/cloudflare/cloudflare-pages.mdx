@@ -1,0 +1,49 @@
+---
+title: Cloudflare Pages
+description: Git-based static site hosting with automatic preview deployments — and how it's converging with Workers into one unified platform.
+category: Cloudflare
+weight: 12
+---
+
+**Cloudflare Pages** hosts static sites (and sites with light server-side logic via Pages Functions) with deployment driven directly by a Git repository — push a commit, get a new deployment automatically, with every pull request getting its own preview URL before anything merges to production.
+
+## The core workflow
+
+1. Connect a GitHub or GitLab repository.
+2. Configure a build command (`npm run build`) and an output directory (`dist`, `out`).
+3. Every push to the production branch triggers a new production deployment automatically.
+4. Every other branch and pull request gets its own unique preview URL, so reviewers can see the actual rendered result before approving, not just the diff.
+
+This Git-driven model removes the manual "build locally, upload the files somewhere" step entirely — the deployment history *is* the commit history, and rolling back a bad deploy is as simple as re-promoting an earlier, known-good deployment.
+
+## Pages Functions
+
+Beyond pure static hosting, Pages Functions let specific routes run server-side code — using the same underlying Workers runtime, just with a file-based routing convention (`functions/api/hello.js` automatically becomes `/api/hello`) instead of a single `fetch` handler routing everything itself.
+
+```js
+// functions/api/hello.js
+export async function onRequest(context) {
+  return new Response("Hello from a Pages Function");
+}
+```
+
+## Converging with Workers
+
+Cloudflare has been steadily unifying Pages and plain [Workers](/en/cloudflare/workers) into one platform — a Workers project can now serve static assets directly (exactly what powers nullbase's own frontend, a static Next.js export served by a Workers static-assets configuration rather than a separate Pages project), which increasingly makes "Pages vs Workers" less of a hard fork and more a question of which deployment workflow (Git-push-to-deploy vs `wrangler deploy`) fits a given team's process better.
+
+## Choosing between them today
+
+<ItemExplorer
+  title="Pages vs a Static-Assets Worker"
+  layout="pills"
+  items={[
+    { id: "pages-fit", label: "Prefer Pages when...", color: "blue", detail: "You want Git-push deployment and automatic preview URLs per pull request out of the box, with minimal Wrangler configuration." },
+    { id: "worker-fit", label: "Prefer a Workers project when...", color: "green", detail: "The frontend and any API logic should be deployed and versioned together under one Wrangler-driven workflow, or you need finer control over routing/caching behavior than Pages' conventions provide." },
+  ]}
+/>
+
+## See also
+
+- **[Workers](/en/cloudflare/workers)** — the runtime Pages Functions actually execute on.
+- **[CI/CD](/en/devops/ci-cd)** — the general practice Pages' Git-push deployment is a specialized, pre-built implementation of.
+- **[Deployment](/en/devops/deployment)** — preview deployments are effectively a lightweight form of the canary/staging pattern covered there.

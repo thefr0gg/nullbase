@@ -1,0 +1,34 @@
+---
+title: Cloudflare
+description: Cloudflare's developer platform — Workers, storage products (D1, KV, R2, Durable Objects), and the tooling and networking layer around them.
+category: Cloudflare
+weight: 10
+---
+
+Cloudflare started as a CDN and DDoS protection service sitting in front of other people's servers, and has since built a full application platform on the same global edge network — [serverless](/en/devops/serverless) compute and several distinct storage products, all running at hundreds of locations worldwide instead of in one central region. This section covers that platform specifically, as a concrete, real implementation of the [edge computing](/en/devops/edge-computing) concepts covered generally elsewhere.
+
+## Compute
+
+- **[Workers](/en/cloudflare/workers)** — the serverless runtime everything else in this section plugs into.
+- **[Durable Objects](/en/cloudflare/durable-objects)** — strongly consistent, single-instance state and coordination at the edge.
+
+## Storage
+
+- **[D1](/en/cloudflare/d1)** — a managed SQLite database.
+- **[KV](/en/cloudflare/kv)** — a globally replicated, eventually-consistent key-value store.
+- **[R2](/en/cloudflare/r2)** — S3-compatible object storage with no egress fees.
+- **[Queues](/en/cloudflare/queues)** — a managed message queue for Workers.
+
+## Scheduling and tooling
+
+- **[Cron Triggers](/en/cloudflare/cron-triggers)** — running a Worker on a schedule instead of in response to a request.
+- **[Wrangler](/en/cloudflare/wrangler)** — the CLI used to develop, configure, and deploy everything in this section.
+- **[Workers Bindings](/en/cloudflare/workers-bindings)** — how a Worker actually gets access to D1, KV, R2, and the rest.
+
+## Networking
+
+- **[Workers Routes](/en/cloudflare/workers-routes)** — mapping URL patterns to a specific Worker.
+- **[Custom Domains](/en/cloudflare/custom-domains)** — the simpler alternative to routes for a Worker that should own an entire domain.
+- **[Cloudflare DNS](/en/cloudflare/cloudflare-dns)** — Cloudflare as an authoritative DNS provider, and what the orange cloud icon actually means.
+- **[Cloudflare Pages](/en/cloudflare/cloudflare-pages)** — static site hosting with Git-based deployments, now converging with Workers.
+- **[Cloudflare Cache](/en/cloudflare/cloudflare-cache)** — the CDN caching layer in front of everything else.

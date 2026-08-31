@@ -1,0 +1,40 @@
+---
+title: Caching
+description: Avoiding redoing expensive work you already did once — where a cache lives, how it stays fresh, and the two hard problems everyone jokes about.
+category: Backend
+weight: 6
+---
+
+**Caching** stores the result of expensive work (a database query, a computed value, a rendered page) so a later request for the same thing can be answered instantly instead of redoing it. The classic joke — "there are only two hard things in computer science: cache invalidation and naming things" — exists because a cache is only correct as long as it doesn't serve **stale** data, and knowing exactly when to throw a cached value away is genuinely hard to get right.
+
+## Where a cache lives
+
+<ItemExplorer
+  title="Cache Layers"
+  layout="table"
+  tableColumns={[{ key: "speed", label: "Speed" }, { key: "shared", label: "Shared across instances?" }]}
+  items={[
+    { id: "in-process", label: "In-process memory", color: "blue", columns: { speed: "Fastest — no network hop at all", shared: "No — every application instance has its own separate copy" } },
+    { id: "shared-cache", label: "Shared cache (Redis, Memcached)", color: "green", columns: { speed: "Fast — one network hop, but a real one", shared: "Yes — every instance reads/writes the same store" } },
+    { id: "cdn", label: "CDN / edge cache", color: "purple", columns: { speed: "Fastest for the client — served from a nearby edge location", shared: "Yes, globally — see CDNs" } },
+    { id: "http-cache", label: "HTTP cache headers", color: "orange", columns: { speed: "Instant when it hits — served from the browser itself", shared: "No — per browser, per device" } },
+  ]}
+/>
+
+An in-process cache is the cheapest to add but stops helping the moment a backend runs on more than one instance — instance A caching a value doesn't do anything for a request that lands on instance B, and worse, the two instances can silently disagree about what the current value even is. A shared cache fixes that at the cost of a real network round trip per lookup, which is still normally far cheaper than the work being cached.
+
+## Invalidation strategies
+
+- **TTL (time to live)** — a cached value simply expires after N seconds, whether or not the underlying data actually changed. Simple, but can serve stale data for up to the TTL window, or unnecessarily recompute fresh data that hadn't actually changed.
+- **Explicit invalidation** — the code that changes the underlying data also deletes or updates the cache entry at that moment. More precise, but only as correct as every code path that can change the data remembering to do it.
+- **Cache-aside** — the application checks the cache first, and on a miss, computes the value and writes it to the cache before returning it — the most common pattern, since it only ever puts effort into caching things actually being requested.
+
+## What's worth caching
+
+The best caching candidates are read-heavy, expensive to compute, and don't need to be perfectly up-to-the-millisecond fresh — a product listing page, a computed analytics rollup, a rendered template fragment. Data that changes on every read, or where staleness has real consequences (an account balance right before a withdrawal), is a poor fit regardless of how expensive it is to compute, unless the invalidation strategy is genuinely airtight.
+
+## See also
+
+- **[CDNs](/en/web-fundamentals/cdns)** — caching pushed to the network edge, closest to the client.
+- **[Cloudflare KV](/en/cloudflare/kv)** and **[Cloudflare Cache](/en/cloudflare/cloudflare-cache)** — managed caching products at two different layers.
+- **[Sessions](/en/backend/sessions)** — session state is a specific, common thing people reach for a shared cache to store.

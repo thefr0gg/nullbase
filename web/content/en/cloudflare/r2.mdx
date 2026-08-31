@@ -1,0 +1,54 @@
+---
+title: Cloudflare R2
+description: S3-compatible object storage with no egress fees — storing and serving large binary objects like uploads, backups, and media.
+category: Cloudflare
+weight: 3
+---
+
+**R2** is Cloudflare's object storage product — built for exactly the kind of large, unstructured binary data ([file uploads](/en/backend/file-uploads), backups, media, exports) that doesn't belong in a relational database like [D1](/en/cloudflare/d1) or a small key-value store like [KV](/en/cloudflare/kv). It's intentionally API-compatible with Amazon S3, the long-standing default for this category, so existing S3 tooling and client libraries largely work against R2 with only an endpoint change.
+
+## Basic usage
+
+```js
+export default {
+  async fetch(request, env) {
+    if (request.method === "PUT") {
+      await env.MY_BUCKET.put("uploads/photo.jpg", request.body);
+      return new Response("Uploaded");
+    }
+    const object = await env.MY_BUCKET.get("uploads/photo.jpg");
+    return new Response(object?.body, {
+      headers: { "content-type": object?.httpMetadata?.contentType ?? "application/octet-stream" },
+    });
+  },
+};
+```
+
+Objects are stored and retrieved by key (`uploads/photo.jpg`) — R2 has no real directory structure underneath; a key containing slashes is just a string that *looks* hierarchical, the same convention S3 itself uses.
+
+## No egress fees
+
+The headline difference from S3 and most competing object storage: R2 charges for storage and operations, but not for **egress** — bandwidth used serving data back out to the internet. Many object storage providers charge meaningfully for egress, which can make serving large files (video, downloadable assets) at scale surprisingly expensive regardless of how cheap the storage itself is; R2's pricing model removes that specific cost entirely.
+
+## Pre-signed URLs for direct uploads
+
+Rather than routing every large upload through a Worker (spending Worker execution time and CPU on data it's just passing through), a Worker can generate a **pre-signed URL** — a short-lived, scoped credential the client uses to upload directly to R2, bypassing the Worker entirely for the actual file transfer. This mirrors the same pattern covered generally in [File Uploads](/en/backend/file-uploads), with R2 as the concrete storage destination.
+
+## R2 vs KV vs D1
+
+<ItemExplorer
+  title="Cloudflare Storage Products, Compared"
+  layout="table"
+  tableColumns={[{ key: "shape", label: "Data shape" }, { key: "fit", label: "Best fit" }]}
+  items={[
+    { id: "d1", label: "D1", color: "blue", columns: { shape: "Relational rows/tables", fit: "Structured application data needing SQL queries or joins" } },
+    { id: "kv", label: "KV", color: "green", columns: { shape: "Small key-value pairs", fit: "Fast, globally-read, rarely-written config or cache values" } },
+    { id: "r2", label: "R2", color: "purple", columns: { shape: "Large binary objects", fit: "Files, media, backups, anything measured in megabytes or more" } },
+  ]}
+/>
+
+## See also
+
+- **[File Uploads](/en/backend/file-uploads)** — the general pattern R2 is a concrete destination for.
+- **[D1](/en/cloudflare/d1)** and **[KV](/en/cloudflare/kv)** — the other two Cloudflare storage products, for structured and small-value data respectively.
+- **[Workers Bindings](/en/cloudflare/workers-bindings)** — how a Worker gets `env.MY_BUCKET` above.

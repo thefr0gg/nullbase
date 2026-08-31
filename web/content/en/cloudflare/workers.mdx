@@ -1,0 +1,54 @@
+---
+title: Cloudflare Workers
+description: Cloudflare's serverless JavaScript/WebAssembly runtime — running at every edge location instead of one region, on a V8-isolate model that starts in milliseconds.
+category: Cloudflare
+weight: 0
+interactive: true
+interactiveType: ["StepFlow"]
+---
+
+**Cloudflare Workers** runs JavaScript, TypeScript, or WebAssembly at every one of Cloudflare's edge locations, invoked directly in response to an incoming HTTP request — a concrete implementation of both [serverless](/en/devops/serverless) (no server to provision) and [edge computing](/en/devops/edge-computing) (runs close to the requester, not in one region) at once.
+
+## The basic shape
+
+```js
+export default {
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+    if (url.pathname === "/api/hello") {
+      return new Response(JSON.stringify({ message: "Hello!" }), {
+        headers: { "content-type": "application/json" },
+      });
+    }
+    return new Response("Not found", { status: 404 });
+  },
+};
+```
+
+A Worker's `fetch` handler receives the incoming `Request`, an `env` object exposing any configured [bindings](/en/cloudflare/workers-bindings) (D1, KV, R2, secrets), and a `ctx` object for tasks like `waitUntil` (letting work continue briefly after the response has already been sent).
+
+## Isolates, not containers
+
+Most serverless platforms isolate one function from another using a [container](/en/devops/containers) or a full virtual machine — Workers instead uses **V8 isolates**, the same lightweight sandboxing mechanism V8 (Chrome and Node.js's JavaScript engine) uses to isolate one browser tab's JavaScript from another's. An isolate has far less overhead to start than a container, which is the direct reason a Worker's cold start is typically sub-millisecond rather than the hundreds of milliseconds to seconds a container-based cold start can take.
+
+## Where a request actually goes
+
+<StepFlow
+  title="A Request Hitting a Worker"
+  steps={[
+    { actor: "Client", title: "Request sent", description: "A client makes a request to a domain with a Worker configured (via a route or custom domain).", detail: "GET https://api.example.com/hello" },
+    { actor: "Cloudflare edge", title: "Routed to the nearest location", description: "Cloudflare's network directs the request to whichever of its hundreds of edge locations is closest to the client, not to one fixed origin server.", detail: "" },
+    { actor: "Worker", title: "The fetch handler runs", description: "An already-warm (or freshly started) isolate executes the Worker's fetch handler at that edge location, with access to any configured bindings.", detail: "export default { async fetch(request, env, ctx) { ... } }" },
+    { actor: "Worker", title: "Response returned", description: "The handler returns a Response, sent straight back to the client from the same nearby edge location — no round trip to a distant origin required unless the Worker itself makes one.", detail: "return new Response(...)" },
+  ]}
+/>
+
+## What Workers is not
+
+A Worker isn't a general-purpose server process — there's no filesystem, no long-running background threads outside a request's lifecycle (beyond `waitUntil`'s brief extension), and CPU time per request is capped. This isn't a limitation so much as a different model entirely: statelessness and short execution windows are what let Cloudflare run the same code at every edge location cheaply and start it near-instantly, the same trade-off [serverless](/en/devops/serverless) makes generally, just enforced more strictly here in exchange for genuinely global, low-latency execution.
+
+## See also
+
+- **[Workers Bindings](/en/cloudflare/workers-bindings)** — how a Worker actually reaches D1, KV, R2, and other services.
+- **[Wrangler](/en/cloudflare/wrangler)** — the CLI used to develop and deploy a Worker.
+- **[Durable Objects](/en/cloudflare/durable-objects)** — what to reach for when a Worker's statelessness becomes a real limitation.

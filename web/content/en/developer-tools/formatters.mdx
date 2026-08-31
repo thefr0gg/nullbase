@@ -1,0 +1,50 @@
+---
+title: Formatters
+description: Ending arguments about code style by automating it entirely — a formatter rewrites code to a single consistent style, with no configuration to argue about.
+category: Developer Tools
+weight: 7
+---
+
+A **formatter** (Prettier for JavaScript/CSS/many others, Black for Python, gofmt for Go) rewrites source code to a single, consistent style — indentation, line length, quote style, spacing — without changing what the code actually does. Unlike a [linter](/en/developer-tools/linters), a formatter isn't looking for bugs; it's purely about how code *looks*.
+
+## Before and after
+
+```js
+// before
+function add(a,b){return a+b}
+const obj={x:1,y:2,z:3}
+
+// after (formatted)
+function add(a, b) {
+  return a + b;
+}
+const obj = { x: 1, y: 2, z: 3 };
+```
+
+Nothing about behavior changed — only whitespace, spacing, and (in this case) added semicolons.
+
+## Opinionated by design
+
+Prettier in particular is deliberately close to unconfigurable — a handful of options exist (tab width, quote style), but far fewer than a typical linter's dozens of individually toggleable rules. This is intentional: the entire value proposition is ending bikeshedding over style entirely, and a formatter with a hundred configurable options just moves the argument from "what style should we use" to "how should we configure the formatter," which defeats the point.
+
+## Why not just use a linter for this
+
+A linter *can* flag style issues (inconsistent indentation, wrong quote style) the same way it flags logic issues, but reporting hundreds of style violations one at a time and asking a human to fix each is a poor experience for something entirely mechanical. Formatters exist specifically to fully automate the mechanical part — run the formatter, every style issue is fixed, and code review can focus entirely on logic instead of spacing.
+
+## Running it automatically
+
+Most teams run a formatter in one or more of these places, often more than one at once:
+
+- **On save**, via an editor integration — the most immediate feedback loop.
+- **As a pre-commit hook** — refusing to commit unformatted code, or auto-formatting it before the commit completes.
+- **In CI** — checking (not fixing) that all code is already formatted, failing the build if not, as a backstop against anyone bypassing the earlier steps.
+
+## Formatter + linter together
+
+A formatter and a linter aren't competitors — they're commonly run together, with the linter's own style-related rules (indentation, spacing) explicitly turned off in favor of letting the formatter own that entirely (`eslint-config-prettier` exists specifically to disable ESLint rules that would otherwise conflict with Prettier's output). The linter then focuses purely on logic and correctness, and the formatter purely on appearance.
+
+## See also
+
+- **[Linters](/en/developer-tools/linters)** — the complementary tool that checks logic and correctness rather than style.
+- **[Git](/en/developer-tools/git)** — pre-commit hooks that run a formatter are typically wired up via Git's own hook mechanism.
+- **[CI/CD](/en/devops/ci-cd)** — where a "check formatting" step commonly runs as a backstop.

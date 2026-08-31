@@ -1,0 +1,36 @@
+---
+title: DevOps & Infrastructure
+description: What runs underneath an application — the OS primitives, containers, pipelines, and infrastructure decisions that get code from a repository to something serving real traffic.
+category: DevOps & Infrastructure
+weight: 8
+---
+
+Writing an application is one thing; getting it running reliably, deploying changes without downtime, and knowing when it breaks is a distinct set of skills and tools. This section covers the operating-system fundamentals every backend runs on top of, the containerization and pipeline tooling that moves code from a repository into production, and the infrastructure models (serverless, edge) that change what "a server" even means.
+
+## Operating system fundamentals
+
+- **[Linux](/en/devops/linux)** — the operating system the overwhelming majority of servers run.
+- **[Processes](/en/devops/processes)** — the OS-level unit almost everything else in this section is built on top of.
+- **[Environment Variables](/en/devops/environment-variables)** — how configuration reaches a running process without being baked into code.
+
+## Packaging and running code
+
+- **[Docker](/en/devops/docker)** — packaging an application with everything it needs to run, consistently, anywhere.
+- **[Containers](/en/devops/containers)** — the underlying OS mechanism Docker is built on top of.
+
+## Shipping changes
+
+- **[CI/CD](/en/devops/ci-cd)** — automatically testing and deploying every change, instead of doing it by hand.
+- **[Deployment](/en/devops/deployment)** — actually getting a new version of an application running in production.
+
+## Keeping it running
+
+- **[Load Balancing](/en/devops/load-balancing)** — distributing traffic across multiple instances of a service.
+- **[Monitoring](/en/devops/monitoring)** — knowing something's wrong before a user has to tell you.
+
+## Newer infrastructure models
+
+- **[Serverless](/en/devops/serverless)** — running code without managing a server at all.
+- **[Edge Computing](/en/devops/edge-computing)** — running code physically close to the user, not in one central data center.
+
+Reverse proxies specifically are covered under **[Backend](/en/backend/reverse-proxies)**, since they're most often configured as part of a backend's own request path rather than broader infrastructure.

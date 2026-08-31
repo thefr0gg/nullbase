@@ -1,0 +1,39 @@
+---
+title: Deployment
+description: Actually getting a new version of an application running in production — and doing it without downtime or an unrecoverable mistake.
+category: DevOps & Infrastructure
+weight: 8
+---
+
+**Deployment** is the act of replacing a running application's old version with a new one. Done naively — stop the old version, start the new one — this causes a visible gap where the service is completely down; most real deployment strategies exist specifically to avoid that gap, or to limit the blast radius if the new version turns out to be broken.
+
+## Deployment strategies
+
+<ItemExplorer
+  title="Deployment Strategies"
+  layout="table"
+  tableColumns={[{ key: "how", label: "How it works" }, { key: "tradeoff", label: "Trade-off" }]}
+  items={[
+    { id: "rolling", label: "Rolling", color: "blue", columns: { how: "Replace instances one (or a few) at a time, keeping the rest serving traffic throughout", tradeoff: "No downtime, but both old and new versions serve traffic simultaneously for a while — they need to be compatible." } },
+    { id: "blue-green", label: "Blue-green", color: "green", columns: { how: "Deploy the new version fully alongside the old one, then switch all traffic over at once", tradeoff: "Instant, clean cutover and instant rollback (switch back), but requires running two full environments at once." } },
+    { id: "canary", label: "Canary", color: "purple", columns: { how: "Send a small percentage of traffic to the new version, watch metrics, then gradually increase it", tradeoff: "Limits the blast radius of a bad release to a small fraction of users, but takes longer to fully roll out." } },
+  ]}
+/>
+
+## Rollbacks
+
+However careful the rollout, a new version can still turn out to be broken in a way that only shows up under real production traffic. A fast, reliable **rollback** — reverting to the last known-good version — matters as much as the deployment mechanism itself; blue-green deployments make this closest to instant (switch traffic back to the environment that was never touched), while a rolling deployment's rollback is itself another rolling deployment, just in reverse.
+
+## Database migrations complicate all of this
+
+Code can usually be deployed and rolled back freely, but a database schema change often can't be rolled back as cleanly — dropping a column the new code needs breaks the new code, but a rollback to old code after a column was already dropped breaks the old code too. This is why schema changes are typically done in backward-compatible steps (add a new column without removing the old one yet, deploy code that can handle both, only remove the old column in a later, separate deployment) rather than as one atomic change alongside the code that uses it.
+
+## Feature flags
+
+A **feature flag** decouples deploying code from actually turning a feature on — new code ships to production behind a flag that's off by default, and gets enabled for a subset of users (or everyone) independently of any further deployment. This lets a risky feature be enabled gradually, or instantly disabled if something goes wrong, without needing a full redeploy or rollback in either direction.
+
+## See also
+
+- **[CI/CD](/en/devops/ci-cd)** — the pipeline that typically triggers a deployment automatically.
+- **[Load Balancing](/en/devops/load-balancing)** — what actually routes traffic during a rolling or canary deployment.
+- **[Monitoring](/en/devops/monitoring)** — what a canary deployment watches before deciding to continue rolling out.

@@ -1,0 +1,49 @@
+---
+title: Git
+description: The distributed version control system nearly every codebase uses — commits, branches, and the state a file actually moves through before it's committed.
+category: Developer Tools
+weight: 0
+interactive: true
+interactiveType: ["StateMachine"]
+---
+
+**Git** tracks changes to a codebase over time as a series of **commits** — each one a snapshot of the entire project at that point, linked to its parent commit, forming a history. It's **distributed**, meaning every clone of a repository carries the *entire* history, not just a pointer to a central server — which is why most Git operations (viewing history, creating a branch, committing) work completely offline.
+
+## The state of a file
+
+A file in a Git repository moves through a small number of states before a change to it is actually recorded in history:
+
+<StateMachine
+  title="A File's Journey to a Commit"
+  states={[
+    { id: "untracked", label: "Untracked", color: "default", detail: "Git sees the file exists but isn't tracking changes to it — new files start here." },
+    { id: "modified", label: "Modified", color: "orange", detail: "A tracked file has changes on disk that haven't been staged yet." },
+    { id: "staged", label: "Staged", color: "blue", detail: "Changes are marked to be included in the next commit — the staging area lets you commit only some of your changes, not necessarily everything modified." },
+    { id: "committed", label: "Committed", color: "green", detail: "The change is now permanently recorded in the repository's history as part of a commit." },
+  ]}
+  transitions={[
+    { from: "untracked", to: "staged", label: "git add", detail: "Starts tracking a new file and stages it in one step." },
+    { from: "modified", to: "staged", label: "git add", detail: "Stages the current changes to an already-tracked file." },
+    { from: "staged", to: "committed", label: "git commit", detail: "Permanently records every staged change as a new commit." },
+    { from: "committed", to: "modified", label: "edit the file", detail: "Editing a committed file again moves it back to modified." },
+  ]}
+  initial="untracked"
+/>
+
+## Branches are just pointers
+
+A **branch** is nothing more than a movable pointer to a specific commit — creating one (`git branch feature-x`) is instant regardless of a repository's size, because it doesn't copy any files, just adds a new pointer. `git checkout feature-x` moves your working directory to reflect whatever commit that pointer currently points at; committing while on a branch moves that branch's pointer forward to the new commit.
+
+## Merging vs rebasing
+
+**Merging** combines two branches' histories by creating a new commit with two parents, preserving exactly what happened and when on both branches. **Rebasing** rewrites one branch's commits to appear as if they were made on top of the other branch's latest commit, producing a linear history with no merge commit at all — cleaner to read, but it rewrites commit history, which is unsafe on any branch other people have already pulled from (their local history would now diverge from the rewritten one).
+
+## The staging area's actual purpose
+
+`git add` existing as a separate step from `git commit` seems redundant until you need it: it lets you build a commit out of only *some* of your current changes (`git add -p` even lets you stage part of a single file), keeping commits focused on one logical change rather than lumping every edit currently on disk into one commit regardless of whether it's related.
+
+## See also
+
+- **[GitHub](/en/developer-tools/github)** — where most Git repositories are actually hosted and collaborated on.
+- **[CI/CD](/en/devops/ci-cd)** — commonly triggered by a push or a pull request against a Git repository.
+- **[Semantic Versioning](/en/developer-tools/semantic-versioning)** — the versioning convention layered on top of Git tags for releases.

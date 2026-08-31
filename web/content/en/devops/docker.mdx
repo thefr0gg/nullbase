@@ -1,0 +1,50 @@
+---
+title: Docker
+description: Packaging an application with everything it needs to run — its code, dependencies, and runtime — so it behaves identically on any machine that can run Docker.
+category: DevOps & Infrastructure
+weight: 3
+interactive: true
+interactiveType: ["StepFlow"]
+---
+
+**Docker** packages an application together with its dependencies, runtime, and configuration into a single portable unit — an **image** — that runs identically on a developer's laptop, a CI server, and production, because it carries its own environment instead of depending on whatever happens to already be installed on the host.
+
+## A Dockerfile
+
+```dockerfile
+FROM node:20-slim
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --production
+COPY . .
+EXPOSE 3000
+CMD ["node", "server.js"]
+```
+
+Each instruction adds a **layer** to the resulting image; Docker caches layers, so re-running a build after only changing application code (the `COPY . .` step) reuses the earlier, unchanged `npm ci` layer rather than reinstalling every dependency from scratch — which is exactly why `package.json` is copied and installed *before* the rest of the source code, not after.
+
+## Building and running
+
+<StepFlow
+  title="From Dockerfile to Running Container"
+  steps={[
+    { actor: "Developer", title: "Build the image", description: "docker build reads the Dockerfile and produces a versioned, immutable image containing the app and everything it depends on.", detail: "docker build -t myapp:1.0 ." },
+    { actor: "Developer", title: "Run a container from it", description: "docker run starts a container — a running instance of that image — mapping a host port to the container's exposed port.", detail: "docker run -p 3000:3000 myapp:1.0" },
+    { actor: "Docker", title: "The container runs in isolation", description: "The process inside sees its own filesystem (from the image) and its own view of the network, sharing the host's kernel but nothing else by default.", detail: "" },
+    { actor: "Registry", title: "Push for others to pull", description: "A built image can be pushed to a registry (Docker Hub, a private registry) so any other machine can pull and run the exact same artifact.", detail: "docker push myregistry.io/myapp:1.0" },
+  ]}
+/>
+
+## Images vs containers
+
+An **image** is the immutable, built artifact — a set of layered filesystem snapshots plus metadata about how to run it. A **container** is a running (or stopped) instance of an image, with its own writable layer on top for any changes made while it runs. Many containers can be started from the same image simultaneously, each isolated from the others, the same way many processes can run from the same executable file.
+
+## Why this over "just install dependencies on the server"
+
+Installing dependencies directly on a server means the server's exact state (OS version, installed libraries, their versions) becomes part of what makes the application work — "works on my machine" is a direct symptom of this. A Docker image bakes that entire environment into a single versioned artifact, so the same image that passed tests in CI is exactly what runs in production, with no drift between them.
+
+## See also
+
+- **[Containers](/en/devops/containers)** — the underlying Linux kernel mechanism (namespaces, cgroups) Docker builds on.
+- **[CI/CD](/en/devops/ci-cd)** — where a Docker image typically gets built and tested automatically.
+- **[Deployment](/en/devops/deployment)** — actually getting a built image running in production.

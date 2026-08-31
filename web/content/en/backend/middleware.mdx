@@ -1,0 +1,48 @@
+---
+title: Middleware
+description: The chain of functions every request passes through before reaching a route handler — and every response passes back through on the way out.
+category: Backend
+weight: 3
+---
+
+**Middleware** is a function that sits between a request arriving and a route handler actually running, with the ability to inspect or modify the request, short-circuit it entirely, or let it continue to the next thing in the chain. Nearly every backend framework is built around some version of this pattern, because so much of what a backend needs to do on *every* request (not just one specific route) fits it naturally.
+
+## The chain, concretely
+
+```js
+app.use(logRequest);       // runs first
+app.use(parseJsonBody);
+app.use(authenticate);
+app.use(rateLimit);
+app.get("/users/:id", getUserHandler); // the actual route
+```
+
+Each middleware function typically calls a `next()` callback (or returns/awaits, depending on the framework) to pass control forward. Skipping that call — because authentication failed, because a rate limit was hit — stops the chain right there and sends a response immediately, without the route handler ever running at all.
+
+## Common uses
+
+<ItemExplorer
+  title="What Middleware Commonly Does"
+  layout="pills"
+  items={[
+    { id: "logging", label: "Request logging", color: "blue", detail: "Records method, path, status, and duration for every request — see Logging — without every route handler needing its own logging code." },
+    { id: "auth", label: "Authentication", color: "green", detail: "Verifies a session or token once, attaching the resolved identity to the request so every downstream handler can just read it." },
+    { id: "cors", label: "CORS headers", color: "purple", detail: "Adds Access-Control-Allow-* headers to every response without each route needing to remember to." },
+    { id: "parsing", label: "Body parsing", color: "orange", detail: "Reads a raw request body and parses it (JSON, form data) into a structured object before any handler needs it." },
+    { id: "rate-limit", label: "Rate limiting", color: "red", detail: "Rejects a request before it reaches expensive application logic at all, if a client has exceeded some threshold." },
+  ]}
+/>
+
+## Order matters
+
+Middleware runs in the order it's registered, and that order is often load-bearing — authentication middleware has to run before anything that assumes a logged-in user exists; body-parsing middleware has to run before a handler tries to read the parsed body; error-handling middleware in frameworks like Express is conventionally registered *last*, specifically so it can catch errors thrown anywhere earlier in the chain. A middleware bug is disproportionately often actually an ordering bug.
+
+## Middleware vs a route handler
+
+The distinction is really about scope: a route handler is specific to one route; middleware is written once and applied to many routes (sometimes all of them) without duplicating that logic in every handler. This is the same "don't repeat cross-cutting logic in every call site" motivation behind [interceptors](/en/web-apis) in an API client, applied on the server side instead.
+
+## See also
+
+- **[Application Servers](/en/backend/application-servers)** — the process middleware chains actually run inside.
+- **[Error Handling](/en/backend/error-handling)** — commonly implemented as the last middleware in the chain.
+- **[Authentication](/en/security/authentication)** — the concern authentication middleware specifically implements.

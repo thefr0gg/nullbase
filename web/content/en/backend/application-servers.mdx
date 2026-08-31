@@ -1,0 +1,35 @@
+---
+title: Application Servers
+description: The process that actually runs your code — routing a parsed request to a handler, managing worker processes, and keeping application state alive between requests.
+category: Backend
+weight: 1
+---
+
+Where a [web server](/en/backend/web-servers) stops at "parse HTTP and hand off the request," an **application server** is where your actual code runs — the framework's router matches a path to a handler, the handler executes, and a response comes back. In many stacks this is the same process as the web server (a Node.js app listening on its own port); in others it's a genuinely separate tier (PHP-FPM workers behind Nginx, a Gunicorn/uvicorn process pool behind a reverse proxy, a JVM application server behind Apache).
+
+## Process and worker models
+
+An application server has to decide how to handle many requests at once without one slow request blocking every other one:
+
+<ItemExplorer
+  title="Concurrency Models"
+  layout="table"
+  tableColumns={[{ key: "how", label: "How it handles concurrency" }, { key: "tradeoff", label: "Trade-off" }]}
+  items={[
+    { id: "multi-process", label: "Multiple worker processes", color: "blue", columns: { how: "The OS runs several independent copies of the app, each handling one request at a time (or a small pool)", tradeoff: "Simple and crash-isolated — one worker dying doesn't take others down — but each process duplicates memory (loaded code, cached data)." } },
+    { id: "threaded", label: "Thread pool per process", color: "green", columns: { how: "One process, many OS threads, each blocking independently while waiting on I/O", tradeoff: "Shares memory across threads, but requires the language/runtime to handle concurrent access safely." } },
+    { id: "event-loop", label: "Single-threaded event loop", color: "purple", columns: { how: "One thread, non-blocking I/O — a slow database call yields control back to handle other requests instead of blocking", tradeoff: "No thread-safety concerns, but a genuinely CPU-heavy handler blocks everything else until it finishes." } },
+  ]}
+/>
+
+Node.js is the canonical event-loop example; Gunicorn (Python) and Puma (Ruby) are commonly configured with multiple worker processes, each of which may additionally use threads or an async event loop internally — real deployments frequently combine more than one of these models at once.
+
+## State between requests
+
+Because an application server process stays running across many requests (unlike, say, a single PHP script executing once per request in the classic CGI model), it can hold state in memory between them — a connection pool to the database, a compiled template cache, an in-memory cache of recent queries. This is a real capability, but it's also why running more than one instance of an application server (for scaling or reliability) means that in-memory state isn't shared across instances — a value cached in worker A's memory means nothing to worker B, which is exactly the problem [caching](/en/backend/caching) and [sessions](/en/backend/sessions) run into as soon as a backend scales past one process.
+
+## See also
+
+- **[Web Servers](/en/backend/web-servers)** — the layer in front that hands a parsed request to the application server.
+- **[Middleware](/en/backend/middleware)** — the chain of functions a request passes through inside the application server before reaching a route handler.
+- **[Background Jobs](/en/backend/background-jobs)** — work an application server explicitly defers rather than doing inline.

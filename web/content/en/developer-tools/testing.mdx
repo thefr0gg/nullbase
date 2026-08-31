@@ -1,0 +1,55 @@
+---
+title: Testing
+description: Verifying code behaves correctly, automatically, on every change — the test pyramid, and why fast, reliable tests matter more than exhaustive ones.
+category: Developer Tools
+weight: 8
+interactive: true
+interactiveType: ["PredictOutput"]
+---
+
+**Automated testing** runs code against known inputs and checks the output matches what's expected, without a human manually clicking through the application each time. The value compounds over a project's life: a test written once keeps checking that behavior on every future change, catching regressions a human reviewer would have no reason to notice.
+
+## The test pyramid
+
+<ItemExplorer
+  title="Kinds of Tests"
+  layout="table"
+  tableColumns={[{ key: "scope", label: "Scope" }, { key: "speed", label: "Speed" }]}
+  items={[
+    { id: "unit", label: "Unit tests", color: "green", columns: { scope: "One function or module in isolation, dependencies mocked/stubbed", speed: "Very fast — milliseconds each, thousands can run in seconds" } },
+    { id: "integration", label: "Integration tests", color: "blue", columns: { scope: "Several real components working together (e.g. a route handler + a real database)", speed: "Slower — real I/O involved" } },
+    { id: "e2e", label: "End-to-end (E2E) tests", color: "purple", columns: { scope: "The whole system, often driving a real browser against a running app", speed: "Slowest — seconds per test, sometimes more" } },
+  ]}
+/>
+
+The "pyramid" shape is a recommendation, not a law: many fast unit tests at the base, fewer integration tests, and only a small number of expensive E2E tests at the top — because a test suite that's mostly slow E2E tests takes too long to run on every change to actually get run on every change, defeating the purpose.
+
+## Try it
+
+<PredictOutput
+  code={`function add(a, b) {
+  return a + b;
+}
+
+test("adds two numbers", () => {
+  expect(add(2, 2)).toBe(5);
+});`}
+  options={["The test passes", "The test fails", "A syntax error", "Nothing happens"]}
+  correctIndex={1}
+  explanation="The assertion expects 5, but add(2, 2) actually returns 4 — the test itself has a bug, not the code it's testing. A test is only useful if its expected value is actually correct; a wrong assertion can pass for the wrong reason just as easily as it can fail for the right one."
+  actualOutput="FAIL: expected 5, received 4"
+/>
+
+## Mocking
+
+A **mock** replaces a real dependency (a database, a third-party API, the current time) with a fake, controllable stand-in — letting a unit test isolate exactly the logic being tested without depending on a real database being available, a real API not rate-limiting the test run, or a test's result changing depending on what day it happens to run. Overusing mocks has a real cost too: a test that mocks so much it no longer resembles how the code behaves for real can pass while the actual integration is broken — a balance every team has to strike deliberately rather than mocking everything by default.
+
+## Flaky tests
+
+A **flaky test** passes and fails inconsistently with no code change in between — usually caused by a race condition, a reliance on timing, or a shared/leftover state between test runs. Flaky tests are worse than no test at all in one specific way: they train a team to re-run failures and assume they're spurious, which eventually causes a genuinely broken test (or genuinely broken code) to be dismissed the same way.
+
+## See also
+
+- **[CI/CD](/en/devops/ci-cd)** — where a test suite typically runs automatically on every change.
+- **[Linters](/en/developer-tools/linters)** — catches a different class of problem (style/likely-bug patterns) than a test does (actual behavior).
+- **[Debugging](/en/developer-tools/debugging)** — what you reach for once a test tells you something's wrong but not why.

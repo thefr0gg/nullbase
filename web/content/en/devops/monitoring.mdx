@@ -1,0 +1,45 @@
+---
+title: Monitoring
+description: Knowing something's wrong before a user has to tell you — metrics, alerting, and the difference between monitoring and observability.
+category: DevOps & Infrastructure
+weight: 7
+---
+
+**Monitoring** is collecting data about a running system's health and behavior — and, critically, alerting a human when that data indicates a problem — so an outage or degradation is caught by the system itself rather than discovered from user complaints.
+
+## What gets monitored
+
+<ItemExplorer
+  title="Common Categories of Metrics"
+  layout="pills"
+  items={[
+    { id: "availability", label: "Availability", color: "green", detail: "Is the service responding at all? Usually a simple periodic health-check request from outside the system." },
+    { id: "latency", label: "Latency", color: "blue", detail: "How long requests take — often tracked as percentiles (p50, p95, p99) rather than an average, since an average hides how bad the slowest requests actually are." },
+    { id: "error-rate", label: "Error rate", color: "red", detail: "What fraction of requests are failing (5xx responses, exceptions) — a sudden spike is usually the clearest signal something just broke." },
+    { id: "saturation", label: "Saturation", color: "orange", detail: "How close a resource (CPU, memory, connection pool, disk) is to its limit — a leading indicator of trouble before it becomes an outage." },
+  ]}
+/>
+
+These four (latency, errors, traffic, and saturation) are commonly called the "four golden signals" — a widely used starting point for what to instrument on any service, regardless of what it actually does.
+
+## Metrics, logs, and traces
+
+- **Metrics** — numeric measurements over time (requests per second, memory usage), cheap to store and graph, good for spotting trends and triggering alerts on thresholds.
+- **[Logs](/en/backend/logging)** — discrete, detailed records of specific events, good for understanding exactly what happened during one particular incident.
+- **Traces** — the path a single request took across multiple services, showing exactly where time was spent — essential once a request might touch a dozen different internal services before returning.
+
+These three together are often called "observability" — not just knowing *that* something is wrong (monitoring's job) but having enough detail to figure out *why*, which usually requires all three working together.
+
+## Alerting, and alert fatigue
+
+An alert that fires for something that doesn't actually need immediate human attention trains people to ignore alerts generally — a real and common failure mode called **alert fatigue**. Good alerting is tied to something that genuinely requires action (an error rate exceeding a threshold that indicates real user impact) rather than every anomaly a metric could theoretically show, and routes to whoever can actually act on it rather than blasting an entire team for every minor blip.
+
+## SLIs, SLOs, and SLAs
+
+A **Service Level Indicator** is a specific measured value (e.g. "99.95% of requests succeed"); a **Service Level Objective** is the internal target for that indicator; a **Service Level Agreement** is an external, often contractual, commitment to customers — usually a looser target than the internal SLO, leaving a margin so an SLO miss doesn't automatically become a broken customer promise.
+
+## See also
+
+- **[Logging](/en/backend/logging)** — the detailed record monitoring's alerts point you toward when investigating.
+- **[Load Balancing](/en/devops/load-balancing)** — health checks are a simple, specific form of availability monitoring.
+- **[Error Handling](/en/backend/error-handling)** — what actually produces the error-rate signal monitoring tracks.

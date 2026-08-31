@@ -1,0 +1,50 @@
+---
+title: Cloudflare Queues
+description: A managed message queue built for Workers — producers push messages, a consumer Worker processes them in batches, with built-in retries and a dead-letter queue.
+category: Cloudflare
+weight: 5
+---
+
+**Cloudflare Queues** is a managed implementation of the general [queue](/en/backend/queues) pattern, purpose-built to connect Workers together — one Worker (the producer) pushes messages, and another Worker (the consumer) is invoked automatically to process them in batches, without either side needing to run or scale a queue broker itself.
+
+## Producer and consumer
+
+```js
+// Producer — a Worker handling an incoming request
+export default {
+  async fetch(request, env) {
+    await env.MY_QUEUE.send({ orderId: 42, action: "send_receipt" });
+    return new Response("Queued");
+  },
+};
+
+// Consumer — a separate Worker configured to process this queue
+export default {
+  async queue(batch, env) {
+    for (const message of batch.messages) {
+      await sendReceipt(message.body);
+      message.ack();
+    }
+  },
+};
+```
+
+The consumer's `queue` handler (distinct from the `fetch` handler regular Workers implement) receives a **batch** of messages at once rather than one at a time — processing in batches amortizes overhead across multiple messages instead of invoking the consumer fresh for every single one.
+
+## Acknowledgment and retries
+
+Calling `message.ack()` tells Queues the message was processed successfully and can be discarded; not acknowledging a message (or explicitly calling `message.retry()`) leaves it to be redelivered, up to a configured maximum number of retries. This is the same at-least-once delivery guarantee general message queues make — a consumer has to be written expecting a message might be delivered and processed more than once, which is why idempotent processing matters here exactly as it does for any queue consumer.
+
+## Dead-letter queues
+
+A message that exhausts its retry limit without ever being acknowledged is moved to a configured **dead-letter queue** instead of disappearing or endlessly retrying forever — letting it be inspected and reprocessed manually later, without it silently blocking or looping the main queue in the meantime.
+
+## Why not just call the downstream Worker directly
+
+A producer *could* skip Queues and call the consumer's logic directly via a service binding — but that couples the two: if the downstream work is slow, fails intermittently, or the consumer is temporarily overloaded, the producer's own request now waits on (or fails because of) something it didn't need to wait on at all. Queues decouples them exactly the way [Background Jobs](/en/backend/background-jobs) generally recommends — the producer's request finishes as soon as the message is durably enqueued, regardless of how long the actual processing takes.
+
+## See also
+
+- **[Queues](/en/backend/queues)** — the general pattern this product implements specifically for Workers.
+- **[Background Jobs](/en/backend/background-jobs)** — the broader motivation for deferring work out of a request's critical path.
+- **[Cron Triggers](/en/cloudflare/cron-triggers)** — a different way to run a Worker outside a request, on a schedule instead of via a queue.

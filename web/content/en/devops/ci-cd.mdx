@@ -1,0 +1,41 @@
+---
+title: CI/CD
+description: Automatically testing and deploying every change instead of doing it by hand — continuous integration catching problems early, continuous delivery/deployment shipping the fix fast.
+category: DevOps & Infrastructure
+weight: 5
+interactive: true
+interactiveType: ["StepFlow"]
+---
+
+**CI/CD** is the practice of automating what happens to code between "committed" and "running in production" — running tests and checks on every change (**continuous integration**), and automatically packaging and shipping changes that pass (**continuous delivery/deployment**) — rather than a person manually running tests and deploying by hand each time.
+
+## CI vs CD, the distinction
+
+**Continuous Integration** means every change is automatically built and tested as soon as it's pushed, catching breakage within minutes instead of it being discovered days later after several more changes have piled on top. **Continuous Delivery** means every change that passes CI is automatically packaged into a deployable artifact, ready to ship with a single action. **Continuous Deployment** goes one step further and actually deploys that artifact to production automatically, with no manual approval step at all — the most automated end of the spectrum, and not always the right choice for every team or every environment.
+
+## A typical pipeline
+
+<StepFlow
+  title="From Push to Production"
+  steps={[
+    { actor: "Developer", title: "Push a commit", description: "A developer pushes code to a shared repository, typically via a pull request.", detail: "git push origin feature/add-login" },
+    { actor: "CI server", title: "Run automated checks", description: "A CI service (GitHub Actions, GitLab CI, CircleCI) automatically checks out the code and runs linting, type checking, and the test suite.", detail: "npm run lint && npm test" },
+    { actor: "CI server", title: "Build an artifact", description: "If checks pass, the pipeline builds a deployable artifact — often a Docker image — and tags it, e.g. with the commit hash.", detail: "docker build -t app:a1b2c3d ." },
+    { actor: "CD pipeline", title: "Deploy (with or without approval)", description: "Continuous delivery stops here, waiting for a human to trigger the deploy; continuous deployment ships the artifact to production automatically.", detail: "" },
+    { actor: "Production", title: "New version live", description: "The new version starts serving traffic — ideally with a strategy (see Deployment) that avoids downtime and allows a fast rollback if something's wrong.", detail: "" },
+  ]}
+/>
+
+## Why automate this at all
+
+Manual deployment is slow, easy to get wrong under pressure, and inconsistent — a step skipped once because "it's a small change" is exactly the kind of skipped step that eventually causes an incident. A pipeline runs the same checks, the same way, every single time, and makes shipping a fix fast enough that a small, frequent release is less risky than a large, infrequent one — smaller diffs are easier to review, test, and roll back if something goes wrong.
+
+## Configuration as code
+
+A CI/CD pipeline's steps are themselves usually defined in a file committed alongside the code (a `.github/workflows/*.yml`, a `.gitlab-ci.yml`) — version-controlled, reviewable in a pull request like any other change, and reproducible across every branch rather than living as undocumented manual steps only one person remembers.
+
+## See also
+
+- **[Docker](/en/devops/docker)** — the artifact format most CI/CD pipelines build and ship.
+- **[Deployment](/en/devops/deployment)** — what actually happens once CD hands off a built artifact.
+- **[Testing](/en/developer-tools/testing)** — the automated checks a CI pipeline runs on every change.

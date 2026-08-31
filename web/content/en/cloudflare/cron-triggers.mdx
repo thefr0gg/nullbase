@@ -1,0 +1,50 @@
+---
+title: Cloudflare Cron Triggers
+description: Running a Worker on a schedule instead of in response to a request — the same cron syntax you already know, invoking a scheduled handler instead of fetch.
+category: Cloudflare
+weight: 6
+---
+
+A **Cron Trigger** runs a Worker on a schedule — hourly, nightly, every five minutes — rather than in response to an incoming HTTP request. It's the Workers platform's answer to a need every backend eventually has: cleanup jobs, scheduled reports, periodic data syncs, none of which are naturally triggered by a user visiting a URL.
+
+## Configuration
+
+```jsonc
+// wrangler.jsonc
+{
+  "triggers": {
+    "crons": ["0 3 * * *"]  // every day at 03:00 UTC
+  }
+}
+```
+
+The schedule uses standard cron syntax — five fields for minute, hour, day-of-month, month, and day-of-week — the same format used by `crontab` on any Unix system, so existing familiarity with cron expressions transfers directly.
+
+## The scheduled handler
+
+```js
+export default {
+  async fetch(request, env) {
+    return new Response("This Worker also handles normal requests");
+  },
+  async scheduled(event, env, ctx) {
+    await cleanupExpiredSessions(env.DB);
+  },
+};
+```
+
+A single Worker can implement both `fetch` (for normal HTTP requests) and `scheduled` (invoked automatically at each configured cron time) — they're independent entry points into the same deployed Worker, sharing the same [bindings](/en/cloudflare/workers-bindings) and code, but triggered by entirely different events.
+
+## Why this fits the Workers model naturally
+
+Because a Worker is already short-lived and stateless by design, a scheduled invocation is architecturally identical to a request-triggered one — it starts, runs to completion, and exits, with no separate always-on process needed just to keep a clock ticking somewhere. This is a meaningfully different model from a traditional cron job, which requires an actual server (or at least a persistent process) sitting around solely to be available at the scheduled time.
+
+## What to actually do inside a scheduled handler
+
+Common uses include expiring stale data, syncing an external data source periodically, sending scheduled digest emails, and rotating or cleaning up logs — generally anything that needs to happen regularly but isn't a direct response to any specific user action. Since `scheduled` handlers are still subject to the same CPU-time limits as `fetch` handlers, genuinely long-running batch work is usually better modeled as the scheduled handler *enqueuing* work (see [Queues](/en/cloudflare/queues)) rather than trying to do all of it inline within one invocation.
+
+## See also
+
+- **[Wrangler](/en/cloudflare/wrangler)** — where cron triggers are configured and deployed.
+- **[Background Jobs](/en/backend/background-jobs)** and **[Queues](/en/cloudflare/queues)** — what a scheduled handler often delegates heavier work to.
+- **[Workers](/en/cloudflare/workers)** — the runtime a scheduled handler executes within, alongside `fetch`.

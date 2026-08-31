@@ -1,0 +1,43 @@
+---
+title: Semantic Versioning
+description: The MAJOR.MINOR.PATCH convention that makes automated dependency updates possible — what each number is actually promising, and what happens when that promise is broken.
+category: Developer Tools
+weight: 5
+---
+
+**Semantic Versioning (SemVer)** is a convention for version numbers — `MAJOR.MINOR.PATCH` (e.g. `4.18.2`) — where each position carries a specific, agreed-upon meaning about what kind of change happened since the last version. The entire point is that a tool (or a human) can look at a version number alone and know whether upgrading is safe.
+
+## What each number means
+
+<ItemExplorer
+  title="MAJOR.MINOR.PATCH"
+  layout="table"
+  tableColumns={[{ key: "meaning", label: "Incremented when" }, { key: "example", label: "Example" }]}
+  items={[
+    { id: "major", label: "MAJOR", color: "red", columns: { meaning: "A breaking change — existing code using this package may need to change to keep working", example: "3.2.1 -> 4.0.0" } },
+    { id: "minor", label: "MINOR", color: "blue", columns: { meaning: "A new, backward-compatible feature was added", example: "4.18.0 -> 4.19.0" } },
+    { id: "patch", label: "PATCH", color: "green", columns: { meaning: "A backward-compatible bug fix, no new functionality", example: "4.18.1 -> 4.18.2" } },
+  ]}
+/>
+
+## Why this enables automated updates at all
+
+[Package managers](/en/developer-tools/package-managers) let a dependency's declared version be a *range* rather than an exact pin — `^4.18.0` means "any version compatible with 4.18.0 under SemVer rules," which in practice means anything from `4.18.0` up to (but not including) `5.0.0`. A tool can automatically apply minor and patch updates within that range with reasonable confidence they won't break anything, precisely because the MAJOR version is a promise that nothing breaking happened. None of this works if maintainers don't actually follow the convention.
+
+## When the promise is broken
+
+SemVer is a social convention enforced by nothing except the package maintainer's discipline — nothing stops a "patch" release from accidentally introducing a breaking change, and it happens regularly in real ecosystems, which is exactly why lockfiles (recording exact resolved versions, not just ranges) matter: they mean an unexpected breaking patch release doesn't silently get pulled into a build until someone deliberately updates the lockfile and can test the change first.
+
+## Pre-release and build metadata
+
+SemVer also defines an optional pre-release suffix (`4.18.0-beta.1`) — sorted as *lower* than the plain `4.18.0` it precedes, letting a package publish and let early adopters test a version before it's considered stable — and build metadata (`4.18.0+20260115`), which is informational only and ignored entirely when comparing version precedence.
+
+## `0.x.y` is a special case
+
+By SemVer's own rules, a `0.x.y` version means the package is still in initial development and *anything* may change at any time, even between patch releases — the MAJOR-version-means-breaking-change guarantee only formally begins at `1.0.0`. In practice this convention is honored inconsistently; some `0.x` packages are treated as stable by their maintainers and users regardless.
+
+## See also
+
+- **[npm](/en/developer-tools/npm)** — the version-range syntax (`^`, `~`) built directly on SemVer's rules.
+- **[Package Managers](/en/developer-tools/package-managers)** — the tools that actually resolve these ranges into installed versions.
+- **[CI/CD](/en/devops/ci-cd)** — where an automated dependency update is typically tested before being merged.

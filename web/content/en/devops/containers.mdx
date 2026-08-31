@@ -1,0 +1,47 @@
+---
+title: Containers
+description: The Linux kernel mechanism underneath Docker — namespaces and cgroups — and how a container differs from a full virtual machine.
+category: DevOps & Infrastructure
+weight: 4
+---
+
+[Docker](/en/devops/docker) is the tool most people mean when they say "containers," but containerization is really a set of Linux kernel features Docker packages into an easy-to-use interface. Understanding what's actually happening underneath explains both why containers are so lightweight and where their isolation boundary actually is.
+
+## The two kernel features that make it work
+
+<ItemExplorer
+  title="Kernel Primitives Behind a Container"
+  layout="pills"
+  items={[
+    { id: "namespaces", label: "Namespaces", color: "blue", detail: "Give a process its own isolated *view* of a global resource — its own process list (PID namespace), its own network interfaces (network namespace), its own filesystem mount points (mount namespace) — without actually duplicating that resource at the hardware level." },
+    { id: "cgroups", label: "cgroups (control groups)", color: "green", detail: "Limit and account for how much of a real resource (CPU, memory, disk I/O) a group of processes can use — what stops one container from starving every other container on the same host of memory." },
+  ]}
+/>
+
+A container is, concretely, one or more processes running with a specific set of namespaces (so it can't see the host's other processes or network interfaces) and cgroup limits (so it can't exceed its resource allocation) — all while still executing on the exact same kernel as the host and every other container on that machine.
+
+## Container vs virtual machine
+
+<ItemExplorer
+  title="Containers vs Virtual Machines"
+  layout="table"
+  tableColumns={[{ key: "container", label: "Container" }, { key: "vm", label: "Virtual Machine" }]}
+  items={[
+    { id: "kernel", label: "Kernel", color: "blue", columns: { container: "Shares the host's kernel", vm: "Runs its own complete, separate kernel" } },
+    { id: "startup", label: "Startup time", color: "green", columns: { container: "Milliseconds — no OS boot needed", vm: "Seconds to minutes — a full OS boots" } },
+    { id: "overhead", label: "Resource overhead", color: "purple", columns: { container: "Low — no duplicated kernel/OS per instance", vm: "Higher — each VM carries a full OS" } },
+    { id: "isolation", label: "Isolation strength", color: "orange", columns: { container: "Process-level, weaker boundary (shared kernel is a shared attack surface)", vm: "Hardware-virtualized, a stronger security boundary" } },
+  ]}
+/>
+
+This is a real security trade-off, not just a performance one: because containers on one host share a kernel, a kernel-level vulnerability can potentially let a process escape its container's isolation and affect the host or other containers — something a full VM's hardware-enforced boundary is much more resistant to. This is exactly why running genuinely untrusted code (arbitrary user-submitted code, for instance) typically needs either a VM-level boundary or additional sandboxing beyond a plain container.
+
+## Why this matters practically
+
+Understanding that a container is "just" isolated Linux processes explains a lot of container behavior that otherwise seems surprising: `docker exec` into a running container just runs a new process inside its existing namespaces; a container that runs out of its memory cgroup limit gets killed by the kernel's OOM killer exactly like any other process would; and a container's process list, viewed from inside, genuinely believes it's PID 1 on its own machine, even though the host sees it as an ordinary process among many.
+
+## See also
+
+- **[Processes](/en/devops/processes)** — the OS unit namespaces and cgroups apply to.
+- **[Docker](/en/devops/docker)** — the tooling layer that makes these kernel features practical to use.
+- **[Serverless](/en/devops/serverless)** — often implemented using this same container/isolation technology under the hood, hidden from the developer entirely.

@@ -1,0 +1,45 @@
+---
+title: Cloudflare KV
+description: A globally replicated key-value store optimized for fast reads everywhere, at the cost of eventual (not immediate) consistency after a write.
+category: Cloudflare
+weight: 2
+---
+
+**Workers KV** stores simple key-value pairs, replicated to Cloudflare's edge locations worldwide so a read from anywhere is fast and local — the explicit trade-off is that a write isn't immediately visible everywhere at once, unlike a traditional single-region database.
+
+## Basic usage
+
+```js
+export default {
+  async fetch(request, env) {
+    await env.MY_KV.put("theme:user-42", "dark");
+    const theme = await env.MY_KV.get("theme:user-42");
+    return new Response(theme);
+  },
+};
+```
+
+`env.MY_KV` is a [binding](/en/cloudflare/workers-bindings) to a specific KV namespace; `put`/`get`/`delete`/`list` are the entire core API — deliberately minimal compared to a relational database's query language, since KV isn't trying to support relational queries at all.
+
+## Eventual consistency, concretely
+
+A `put()` from one edge location can take up to roughly 60 seconds to propagate to every other location globally — a read for that same key from a *different* location shortly after the write may still return the old value (or no value at all, if it's a new key). This isn't a bug; it's the mechanism that makes KV reads fast everywhere without every read needing to check a single authoritative source first. Workloads that need every reader to see a write immediately, everywhere, are a poor fit for KV specifically because of this.
+
+## What KV is actually good for
+
+<ItemExplorer
+  title="Good and Poor Fits for KV"
+  layout="pills"
+  items={[
+    { id: "config", label: "Configuration / feature flags", color: "green", detail: "Read constantly, written rarely — eventual consistency on an infrequent write is a non-issue, and reads are extremely fast everywhere." },
+    { id: "cache", label: "Cached computed values", color: "blue", detail: "A natural fit for the cache-aside pattern — see Caching — where a slightly stale cached value is an acceptable trade-off for speed." },
+    { id: "session-poor-fit", label: "Frequently-updated counters", color: "red", detail: "A poor fit — KV isn't built for high-frequency writes to the same key, and has no atomic increment operation to safely coordinate concurrent updates." },
+    { id: "durable-fit", label: "Strongly consistent coordination", color: "orange", detail: "A poor fit — reach for a Durable Object instead, which serializes all access to one specific instance rather than replicating eventually." },
+  ]}
+/>
+
+## See also
+
+- **[Caching](/en/backend/caching)** — the general pattern KV's "read-heavy, write-rarely" sweet spot fits into.
+- **[Durable Objects](/en/cloudflare/durable-objects)** — the strongly-consistent alternative for workloads KV's eventual consistency doesn't suit.
+- **[D1](/en/cloudflare/d1)** — reach for this instead when data actually needs relational structure or transactions.

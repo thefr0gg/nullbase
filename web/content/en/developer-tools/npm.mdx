@@ -1,0 +1,51 @@
+---
+title: npm
+description: The default package manager and registry for JavaScript — package.json, the lockfile, and what actually happens on npm install.
+category: Developer Tools
+weight: 3
+---
+
+**npm (Node Package Manager)** is the default tool for installing, publishing, and managing JavaScript dependencies, along with the public registry that hosts the packages themselves. It ships bundled with Node.js, which is most of why it remains the default choice even though alternatives ([Yarn](/en/developer-tools/package-managers), pnpm) exist.
+
+## package.json
+
+```json
+{
+  "name": "my-app",
+  "version": "1.0.0",
+  "dependencies": {
+    "express": "^4.18.0"
+  },
+  "devDependencies": {
+    "vitest": "^1.0.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "vitest run"
+  }
+}
+```
+
+`dependencies` are needed at runtime; `devDependencies` are only needed while developing (test frameworks, linters, build tools) and aren't installed when a package is installed as *someone else's* dependency. `scripts` defines named shell commands runnable via `npm run <name>` — a lightweight, project-local alternative to a separate task runner.
+
+## The lockfile
+
+`npm install` writes (or updates) `package-lock.json`, recording the *exact* resolved version of every dependency and transitive dependency actually installed — not just the version ranges in `package.json`. Without a lockfile, two people running `npm install` against the same `package.json` at different times could get different transitive dependency versions if anything upstream published a new version in between; the lockfile pins those, so `npm ci` (the lockfile-strict install used in CI) reproduces exactly the same dependency tree every time.
+
+## What `npm install` actually does
+
+1. Reads `package.json`'s declared version ranges (and `package-lock.json` if present).
+2. Resolves a compatible version for every dependency and every one of *their* dependencies, recursively.
+3. Downloads each package's tarball from the registry (or a local cache, if already downloaded).
+4. Extracts everything into `node_modules/`, with npm's flattening algorithm trying to avoid duplicate copies of the same package version where possible.
+5. Writes/updates `package-lock.json` to record exactly what was resolved.
+
+## Semantic versioning ranges
+
+The `^4.18.0` in the example above is a range, not an exact pin — `^` allows any version that doesn't change the leftmost non-zero component (so `4.19.2` is allowed, `5.0.0` is not), following [semantic versioning](/en/developer-tools/semantic-versioning)'s convention that a major version bump signals a breaking change. `~4.18.0` is stricter, only allowing patch-level updates (`4.18.x`); an exact version with no prefix allows no automatic updates at all.
+
+## See also
+
+- **[Package Managers](/en/developer-tools/package-managers)** — the general pattern npm, Yarn, and pnpm all implement differently.
+- **[Semantic Versioning](/en/developer-tools/semantic-versioning)** — the versioning convention npm's range syntax is built around.
+- **[Git](/en/developer-tools/git)** — `package-lock.json` is committed to version control precisely so every clone resolves dependencies identically.

@@ -1,0 +1,56 @@
+---
+title: Cloudflare D1
+description: A managed SQLite database built for Workers — the SQL you already know, with replication and a request-scoped connection model shaped by the edge.
+category: Cloudflare
+weight: 1
+---
+
+**D1** is Cloudflare's managed database product — [SQLite](/en/databases/sqlite) under the hood, accessed from a [Worker](/en/cloudflare/workers) via a [binding](/en/cloudflare/workers-bindings) rather than a traditional persistent connection string. Choosing SQLite specifically (rather than building a distributed Postgres-alike from scratch) means D1 inherits SQL you likely already know, with none of a typical client/server database's separate connection-management concerns.
+
+## Querying from a Worker
+
+```js
+export default {
+  async fetch(request, env) {
+    const { results } = await env.DB
+      .prepare("SELECT * FROM users WHERE age > ?")
+      .bind(20)
+      .all();
+    return Response.json(results);
+  },
+};
+```
+
+`env.DB` is the binding configured in `wrangler.jsonc`; `.prepare().bind().all()` is a parameterized query — binding the value separately from the query text, the same [SQL injection](/en/security/sql-injection)-safe pattern any parameterized query follows, regardless of database.
+
+## No persistent connections
+
+A traditional database client opens a long-lived TCP connection and keeps it open across many queries. A Worker's isolate-based, short-lived execution model doesn't fit that pattern — instead, D1 is accessed more like an HTTP API under the hood, with each query effectively self-contained rather than depending on a connection object that has to be carefully pooled and reused across invocations. This sidesteps an entire class of "too many open connections" problems that serverless functions calling traditional databases are notorious for.
+
+## Migrations
+
+```sql
+-- migrations/0001_create_users.sql
+CREATE TABLE users (
+  id INTEGER PRIMARY KEY,
+  name TEXT NOT NULL,
+  age INTEGER NOT NULL
+);
+```
+
+```bash
+wrangler d1 migrations apply my-database --local   # local dev
+wrangler d1 migrations apply my-database --remote   # production
+```
+
+The same plain `.sql` migration files apply to both a local SQLite file used during development and the actual remote D1 database in production — one schema source of truth, no separate local/production migration tooling to keep in sync.
+
+## When D1 fits, and when it doesn't
+
+D1 is a strong fit for typical relational, read-heavy application data — user accounts, content, structured records — the same workload SQLite has always suited well. It's a weaker fit for extremely high write-throughput requirements or workloads needing strict, immediate global consistency on every write across regions simultaneously, where a [Durable Object](/en/cloudflare/durable-objects) — with all reads and writes serialized through one specific instance — or a purpose-built distributed database is a better match.
+
+## See also
+
+- **[SQL](/en/databases/sql)** and **[SQLite](/en/databases/sqlite)** — the language and engine D1 runs.
+- **[Workers Bindings](/en/cloudflare/workers-bindings)** — how `env.DB` above actually gets there.
+- **[KV](/en/cloudflare/kv)** — a good fit when data doesn't need relational structure or strong consistency at all.

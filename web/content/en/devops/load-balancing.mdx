@@ -1,0 +1,40 @@
+---
+title: Load Balancing
+description: Distributing traffic across multiple instances of a service — the algorithms behind the choice, and what health checks add on top.
+category: DevOps & Infrastructure
+weight: 6
+---
+
+**Load balancing** spreads incoming requests across more than one backend instance, so no single instance has to handle all the traffic alone — the mechanism that makes horizontal scaling (adding more instances) actually translate into more capacity. A [reverse proxy](/en/backend/reverse-proxies) is the component that typically does this in practice; this page is specifically about the algorithms it chooses between.
+
+## Common algorithms
+
+<ItemExplorer
+  title="Load Balancing Algorithms"
+  layout="table"
+  tableColumns={[{ key: "how", label: "How it picks the next instance" }, { key: "good-for", label: "Good for" }]}
+  items={[
+    { id: "round-robin", label: "Round robin", color: "blue", columns: { how: "Cycles through instances in a fixed rotation, one after another", "good-for": "Uniform requests of similar cost, roughly equal-capacity instances" } },
+    { id: "least-connections", label: "Least connections", color: "green", columns: { how: "Sends the next request to whichever instance currently has the fewest active connections", "good-for": "Requests with widely varying durations, where round robin could pile slow requests onto one instance" } },
+    { id: "ip-hash", label: "IP hash", color: "purple", columns: { how: "Hashes the client's IP to consistently route the same client to the same instance", "good-for": "Sticky sessions — see Sessions — without a separate session-affinity mechanism" } },
+    { id: "weighted", label: "Weighted", color: "orange", columns: { how: "Any of the above, but biased toward instances with more assigned weight (capacity)", "good-for": "A mixed fleet where some instances have more CPU/memory than others" } },
+  ]}
+/>
+
+## Health checks
+
+A load balancer that keeps routing to a crashed or overloaded instance makes things worse, not better — a **health check** periodically pings each instance (often a lightweight `/health` endpoint) and stops routing to any instance that fails to respond correctly, automatically reintroducing it once it recovers. This is what lets an individual instance be restarted or replaced without a human needing to manually remove it from rotation first.
+
+## Layer 4 vs Layer 7 load balancing
+
+A **Layer 4** load balancer operates purely on IP/TCP information — it doesn't parse HTTP at all, just forwards packets based on IP and port, which is fast but can't make decisions based on request content. A **Layer 7** load balancer understands HTTP and can route based on the actual request — path-based routing (`/api/*` to one service, `/static/*` to another), header inspection, or even A/B testing based on a cookie. Most reverse proxies doubling as load balancers (Nginx, [Cloudflare](/en/cloudflare)) operate at Layer 7 for exactly this flexibility.
+
+## Scaling out vs scaling up
+
+Load balancing is specifically what makes **horizontal scaling** (adding more, smaller instances) viable as an alternative to **vertical scaling** (making one instance bigger — more CPU, more RAM). Horizontal scaling has a ceiling determined by how well the algorithm distributes load and how well the backend handles running as multiple instances (see [Sessions](/en/backend/sessions) for the classic complication), but it also allows near-unlimited capacity growth and much better fault tolerance than a single, larger machine ever can.
+
+## See also
+
+- **[Reverse Proxies](/en/backend/reverse-proxies)** — where load balancing is typically configured in practice.
+- **[Sessions](/en/backend/sessions)** — the classic complication of running more than one backend instance.
+- **[Monitoring](/en/devops/monitoring)** — what actually tells you an instance needs to be removed from rotation.

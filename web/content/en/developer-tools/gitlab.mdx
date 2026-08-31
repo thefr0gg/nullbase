@@ -1,0 +1,51 @@
+---
+title: GitLab
+description: GitHub's major alternative for hosting Git repositories — the same core collaboration model, with CI/CD built in as a first-class, more deeply integrated feature.
+category: Developer Tools
+weight: 2
+---
+
+**GitLab** covers largely the same ground as [GitHub](/en/developer-tools/github) — hosting [Git](/en/developer-tools/git) repositories, merge requests (GitLab's name for a pull request), issue tracking — but has historically distinguished itself with CI/CD as a deeply integrated, first-party feature rather than a separate product bolted on afterward, and with a self-hosted, open-source edition that organizations can run entirely on their own infrastructure.
+
+## Merge requests vs pull requests
+
+A GitLab **merge request (MR)** is functionally the same concept as a GitHub pull request — propose merging one branch into another, review changes, run CI, then merge — just under a different name from GitLab's earlier, independent development. The underlying Git operations are identical regardless of which platform hosts the repository; only the collaboration UI and terminology differ.
+
+## GitLab CI/CD
+
+GitLab's pipelines are defined in a single `.gitlab-ci.yml` file at the repository root:
+
+```yaml
+stages:
+  - test
+  - deploy
+
+test:
+  stage: test
+  script:
+    - npm ci
+    - npm test
+
+deploy:
+  stage: deploy
+  script:
+    - ./deploy.sh
+  only:
+    - main
+```
+
+`stages` defines the pipeline's ordered phases; jobs within the same stage run in parallel, and a stage only starts once every job in the previous stage has succeeded. This structure is broadly similar to GitHub Actions' jobs-and-steps model, but GitLab's CI/CD has historically been positioned as the platform's core feature rather than an add-on, with tighter built-in support for things like multi-stage deployment pipelines and environments.
+
+## Self-hosting
+
+GitLab ships a self-hosted "Community Edition" (open source) and "Enterprise Edition" (additional paid features), letting an organization run the entire platform — repository hosting, CI runners, issue tracking — on its own servers rather than depending on a third-party SaaS platform. This matters for organizations with strict data-residency or compliance requirements that a hosted service can't satisfy, at the cost of the organization now operating that infrastructure itself.
+
+## Choosing between them
+
+For most teams the choice comes down to ecosystem and existing familiarity more than any hard technical limitation — both are mature, both support the same fundamental Git workflows, and migrating a repository's raw Git history between them is straightforward since Git itself doesn't care which platform hosts it. The more consequential differences (self-hosting needs, CI/CD depth, existing team familiarity) are usually what actually drives the decision.
+
+## See also
+
+- **[Git](/en/developer-tools/git)** — the version control system both platforms are built around.
+- **[GitHub](/en/developer-tools/github)** — the more widely used alternative for open-source and many commercial projects.
+- **[CI/CD](/en/devops/ci-cd)** — the general practice GitLab CI/CD and GitHub Actions both implement.

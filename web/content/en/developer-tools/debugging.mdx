@@ -1,0 +1,45 @@
+---
+title: Debugging
+description: Figuring out why code isn't doing what it's supposed to — breakpoints, print debugging, and the discipline of actually forming a hypothesis first.
+category: Developer Tools
+weight: 9
+---
+
+**Debugging** is the process of finding out *why* code isn't behaving as expected — as distinct from testing, which tells you *that* something's wrong but rarely explains why on its own.
+
+## Breakpoints and step debugging
+
+A **breakpoint** pauses code execution at a specific line, letting you inspect every variable's current value, step through subsequent lines one at a time, and watch exactly how state changes — far more precise than guessing from a handful of print statements about what might be happening at that point. Every mainstream language has debugger tooling built into its editor/IDE (VS Code's built-in debugger, Chrome DevTools for browser JavaScript) that makes this a few clicks rather than a separate command-line tool to configure.
+
+## Print debugging
+
+```js
+console.log("user before update:", user);
+user = updateUser(user);
+console.log("user after update:", user);
+```
+
+Sprinkling `console.log` (or `print`, or `dd()`, depending on language) around suspect code is the oldest debugging technique, and remains genuinely useful — especially for timing-dependent bugs where pausing execution with a breakpoint would itself change the behavior being investigated (a race condition that only reproduces under real timing). Its downside is needing to re-run the code after adding each log line, versus a debugger letting you inspect state interactively without restarting.
+
+## Forming a hypothesis before poking around
+
+The most common debugging mistake is jumping straight into changing code and re-running it, hoping something looks different, without first forming a specific, falsifiable hypothesis about what's actually wrong. A more disciplined approach:
+
+1. **Reproduce it reliably** — a bug that only sometimes happens is far harder to fix than one you can trigger on demand every time.
+2. **Narrow down where** — bisect the code path (comment out half, or use breakpoints) until you've isolated the smallest region that still reproduces the problem.
+3. **Form a hypothesis** — "I think `updateUser` is mutating the input instead of returning a new object."
+4. **Test the hypothesis directly** — check specifically for that, rather than staring at the whole function again.
+
+## Rubber duck debugging
+
+Explaining a bug out loud, line by line, to another person (or literally a rubber duck on your desk) frequently surfaces the problem before the explanation even finishes — articulating an assumption forces you to actually examine it, rather than silently skipping over it the way you might while just reading the code in your head.
+
+## Reading the actual error
+
+A surprising amount of debugging time is lost to not carefully reading what an error message and stack trace actually say — the specific line, the specific exception type, the specific values involved are often right there, and skipping straight to guessing wastes the most direct clue available.
+
+## See also
+
+- **[Testing](/en/developer-tools/testing)** — what tells you a bug exists in the first place.
+- **[Logging](/en/backend/logging)** — production's equivalent of print debugging, for issues that only show up outside a local environment.
+- **[Profiling](/en/developer-tools/profiling)** — the equivalent process for a performance problem instead of a correctness one.

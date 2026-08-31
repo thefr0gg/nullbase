@@ -1,0 +1,41 @@
+---
+title: Package Managers
+description: The general pattern npm is one implementation of — resolving, downloading, and deduplicating dependencies, and why alternatives like pnpm exist at all.
+category: Developer Tools
+weight: 4
+---
+
+A **package manager** resolves a project's declared dependencies (and all of *their* dependencies) into a concrete, installed set of code, handling version conflicts and avoiding duplicate work — [npm](/en/developer-tools/npm) is the default for JavaScript, but the same underlying problem shows up in every language ecosystem (pip for Python, Cargo for Rust, Bundler for Ruby, Go's own module system).
+
+## Why alternatives to npm exist
+
+<ItemExplorer
+  title="JavaScript Package Managers"
+  layout="table"
+  tableColumns={[{ key: "notes", label: "Notes" }]}
+  items={[
+    { id: "npm", label: "npm", color: "blue", columns: { notes: "Ships with Node.js; the default choice, and the registry every alternative below also pulls packages from." } },
+    { id: "yarn", label: "Yarn", color: "green", columns: { notes: "Created originally to fix npm's early speed and determinism issues (many of which npm has since fixed itself); introduced the lockfile concept that npm later adopted." } },
+    { id: "pnpm", label: "pnpm", color: "purple", columns: { notes: "Stores every package version once in a global content-addressed store, linking it into each project's node_modules via hard links/symlinks instead of copying it — dramatically less disk usage across multiple projects." } },
+  ]}
+/>
+
+All three read the same `package.json` and install from the same npm registry — they're largely interchangeable at the level of "what packages get installed," differing mainly in installation speed, disk usage, and how strictly they enforce that a package can only import dependencies it explicitly declared (pnpm is notably stricter here than npm's default flattened `node_modules`).
+
+## The "phantom dependency" problem
+
+npm's classic flat `node_modules` layout means a package can sometimes successfully `require()` a dependency it never declared in its own `package.json`, simply because some *other* dependency happened to install that package at the top level of `node_modules` too. This works by accident until the actual declared dependency is removed for unrelated reasons, silently breaking the code that was relying on the phantom one. pnpm's stricter, symlink-based structure prevents this by only exposing a package's own declared dependencies to it.
+
+## Workspaces / monorepos
+
+Most package managers support **workspaces** — multiple packages living in one repository (a `web/` and an `api/`, say) that can depend on each other directly without publishing to a registry first, while still sharing a single top-level install and lockfile. This is the same mechanism a monorepo relies on to let one workspace import another's code as a normal dependency during local development.
+
+## Choosing one
+
+For most projects the choice matters less than consistency — picking one and committing its lockfile so every contributor and CI run resolves dependencies identically matters far more than which specific tool is used. Switching later is possible but not free: lockfiles aren't directly interchangeable between tools, so a switch typically means regenerating one from scratch and re-verifying nothing broke.
+
+## See also
+
+- **[npm](/en/developer-tools/npm)** — the default implementation of everything described generally here.
+- **[Semantic Versioning](/en/developer-tools/semantic-versioning)** — the version-range convention every package manager listed here understands.
+- **[CI/CD](/en/devops/ci-cd)** — where a strict, lockfile-respecting install (`npm ci` or equivalent) matters most.

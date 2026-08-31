@@ -1,0 +1,47 @@
+---
+title: Reverse Proxies
+description: How a reverse proxy sits in front of a backend's application servers specifically — routing, health checks, and why backend code usually never sees the internet directly.
+category: Backend
+weight: 2
+---
+
+[Proxies](/en/web-fundamentals/proxies) covers the general forward-vs-reverse distinction; this page is about the specific, very common role a reverse proxy plays directly in front of a backend's [application servers](/en/backend/application-servers) — the layer that decides which of possibly many identical backend processes actually handles a given request.
+
+## A minimal Nginx example
+
+```nginx
+upstream app_servers {
+    server 10.0.0.1:8000;
+    server 10.0.0.2:8000;
+    server 10.0.0.3:8000;
+}
+
+server {
+    listen 443 ssl;
+    location / {
+        proxy_pass http://app_servers;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+The `upstream` block lists every backend instance; `proxy_pass` forwards matching requests to one of them. `X-Real-IP` matters because, from the application server's point of view, every request now appears to originate from the reverse proxy's own IP — without it, the backend loses the client's actual address entirely.
+
+## Health checks
+
+A reverse proxy in front of multiple backend instances typically checks each one's health (a lightweight `/health` endpoint, or just noticing repeated connection failures) and stops routing to an instance that's failing, without needing any external orchestration to notice and react. This is what lets one backend instance be restarted, redeployed, or crash outright without necessarily causing a visible outage — traffic simply stops going to it until it's healthy again.
+
+## Why backend code shouldn't be reachable directly
+
+Putting every application server behind a reverse proxy means the actual backend processes never need a public IP or an open port on the internet at all — only the reverse proxy does. This shrinks the attack surface significantly: a vulnerability in an internal-only service is far less exploitable if it's simply unreachable from outside the network in the first place, independent of whatever authentication or authorization that service does or doesn't have.
+
+## Sticky sessions
+
+Some backends need every request from the same client to reach the same backend instance — most commonly when [session](/en/backend/sessions) state is held in that instance's own memory rather than a shared store. A reverse proxy can be configured for **sticky sessions** (routing based on a cookie or the client's IP) to guarantee this, though the more robust fix is usually to move session state out of any single instance's memory entirely, so any instance can handle any request.
+
+## See also
+
+- **[Proxies](/en/web-fundamentals/proxies)** — the general forward/reverse distinction and TLS termination.
+- **[Load Balancing](/en/devops/load-balancing)** — the algorithms a reverse proxy uses to choose which backend gets a request.
+- **[Sessions](/en/backend/sessions)** — why sticky sessions exist, and the alternative to needing them.

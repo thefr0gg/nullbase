@@ -1,0 +1,38 @@
+---
+title: Edge Computing
+description: Running code physically close to the user instead of in one central data center — what it actually buys you, and the real constraints it introduces.
+category: DevOps & Infrastructure
+weight: 10
+---
+
+**Edge computing** runs code in many geographically distributed locations — "points of presence" close to end users — instead of a small number of large, central data centers (a single AWS region, say). The goal is simple: a network round trip has a hard physical latency floor set by the speed of light, and no amount of server optimization can beat a user in Tokyo simply talking to a server in Tokyo instead of one in Virginia.
+
+## What runs at the edge
+
+<ItemExplorer
+  title="Common Edge Workloads"
+  layout="pills"
+  items={[
+    { id: "static", label: "Static assets", color: "blue", detail: "The original and simplest edge workload — a CDN caching images, CSS, and JS close to every user. See CDNs." },
+    { id: "compute", label: "Request-time compute", color: "green", detail: "Actual application logic — auth checks, A/B test routing, personalization, even full API responses — running at the edge instead of a single origin server. This is what platforms like Cloudflare Workers specifically enable." },
+    { id: "data", label: "Edge-replicated data", color: "purple", detail: "Databases and key-value stores (like Cloudflare KV or D1) that replicate data to many locations, so reads at the edge don't need a round trip back to one central origin." },
+  ]}
+/>
+
+## The trade-off: consistency and coordination
+
+Distributing compute across dozens or hundreds of locations makes low-latency reads easy, but makes anything requiring strong consistency across locations harder — if two edge locations can both accept a write to the "same" piece of data simultaneously, something has to reconcile them, and that reconciliation itself takes time or requires accepting weaker consistency guarantees. This is why edge platforms often distinguish sharply between workloads that read far more than they write (a great fit) and workloads needing strict, immediately-consistent writes across every location at once (a much harder fit, sometimes requiring a specific mechanism like [Durable Objects](/en/cloudflare/durable-objects) that pins coordination to a single location per logical unit of state).
+
+## Edge vs traditional serverless
+
+Edge computing and [serverless](/en/devops/serverless) overlap heavily but aren't identical: serverless is fundamentally about not managing server capacity yourself, while edge is about *where* that capacity runs. A serverless function can run in one central region (most traditional serverless platforms do exactly this); an edge platform specifically runs the same logic in many regions simultaneously, routing each request to whichever is closest.
+
+## Why this matters beyond raw speed
+
+Beyond latency, running close to users can also mean data stays closer to where regulations require it (a request from a user in the EU handled by an EU-based edge location), and a request that never has to leave the user's own region for simple checks (auth validation, rate limiting) reduces load on — and dependency on the availability of — one central origin.
+
+## See also
+
+- **[CDNs](/en/web-fundamentals/cdns)** — the earliest and most established form of edge computing.
+- **[Cloudflare Workers](/en/cloudflare/workers)** and **[Durable Objects](/en/cloudflare/durable-objects)** — a concrete edge compute platform and its answer to the coordination problem above.
+- **[Serverless](/en/devops/serverless)** — the execution model edge platforms are usually also built on.

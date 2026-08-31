@@ -1,0 +1,52 @@
+---
+title: Logging
+description: The record a backend leaves of what it actually did — log levels, structured logging, and why "just print statements" stops working past a certain scale.
+category: Backend
+weight: 9
+---
+
+**Logging** is a backend recording what it did, in roughly the order it did it, so a human (or another system) can reconstruct what happened after the fact — debugging an error a user hit an hour ago, verifying a deployment went smoothly, or auditing who did what. It's often the only evidence available once a request has finished and its in-memory state is gone.
+
+## Log levels
+
+<ItemExplorer
+  title="Common Log Levels"
+  layout="table"
+  tableColumns={[{ key: "when", label: "Used for" }]}
+  items={[
+    { id: "debug", label: "DEBUG", color: "default", columns: { when: "Verbose detail useful only while actively debugging — usually disabled in production entirely." } },
+    { id: "info", label: "INFO", color: "blue", columns: { when: "Normal operation worth recording — a request completed, a job finished, a server started." } },
+    { id: "warn", label: "WARN", color: "orange", columns: { when: "Something unexpected but recoverable — a retried request, a deprecated API being used, a slow query." } },
+    { id: "error", label: "ERROR", color: "red", columns: { when: "Something failed and needs attention — an unhandled exception, a failed payment, a dependency being unreachable." } },
+  ]}
+/>
+
+Levels let a team turn verbosity up or down without changing code — DEBUG in a local environment, INFO and above in production, with the option to temporarily raise verbosity while investigating a live issue.
+
+## Structured logging
+
+```json
+{"level":"error","msg":"payment failed","userId":42,"orderId":"ord_9f2","amount":1999,"ts":"2026-01-15T10:22:03Z"}
+```
+
+versus the equivalent unstructured line:
+
+```text
+[ERROR] Payment failed for user 42, order ord_9f2, amount 1999 at 2026-01-15T10:22:03Z
+```
+
+Both carry the same information, but the structured (usually JSON) version is trivially machine-parseable — a log aggregation system can filter every error for `orderId: "ord_9f2"` directly, rather than needing a regex that might break the moment someone tweaks the wording of the human-readable message. Structured logging is what makes searching and alerting on logs practical at any real scale.
+
+## Why print statements stop working
+
+A single server's `console.log` output is fine to read directly. The moment a backend runs on multiple instances (or is redeployed and loses its previous instance's disk entirely, as is normal for containers), logs need to be shipped somewhere durable and centralized — a log aggregation service — or they're simply gone the moment the instance that wrote them disappears. This is also why logging to a local file is a poor fit for most modern deployments: the file dies with the container.
+
+## What not to log
+
+Logs are often retained for a long time and read by more people than the original developer — logging a plaintext password, a full credit card number, or an unredacted [JWT](/en/security/jwt) turns a debugging convenience into a genuine [secrets management](/en/security/secrets-management) problem. Structured logging makes this easier to get right consistently: a logging library can be configured to automatically redact known-sensitive field names before anything is written.
+
+## See also
+
+- **[Error Handling](/en/backend/error-handling)** — what a caught error actually does, logging being one part of it.
+- **[Monitoring](/en/devops/monitoring)** — logs are one of the signals a monitoring system aggregates and alerts on.
+- **[Secrets Management](/en/security/secrets-management)** — why sensitive values need to be kept out of logs specifically.

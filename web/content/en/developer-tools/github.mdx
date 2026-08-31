@@ -1,0 +1,44 @@
+---
+title: GitHub
+description: The most widely used place to host Git repositories — pull requests, code review, issues, and Actions, layered on top of plain Git.
+category: Developer Tools
+weight: 1
+---
+
+**GitHub** hosts [Git](/en/developer-tools/git) repositories and adds an entire collaboration layer on top of plain Git: a web UI for browsing code and history, pull requests for reviewing changes before they merge, issue tracking, and CI/CD via GitHub Actions. Git itself has no concept of any of this — it's purely a version control tool; GitHub is a platform built around it.
+
+## Pull requests
+
+A **pull request (PR)** proposes merging one branch into another, and is where most collaborative review actually happens: reviewers comment on specific lines, CI checks run automatically against the proposed change, and the PR itself becomes a permanent record of *why* a change was made, not just *what* changed (which the commit history alone already shows). Nothing about a pull request is Git-specific — it's entirely a GitHub (or GitLab, or Bitbucket) feature layered on top of Git's branches.
+
+## Forks vs branches
+
+A **branch** lives inside a repository you already have write access to. A **fork** is a full copy of someone else's repository into your own account — the standard way to contribute to a project you don't have direct write access to: fork it, branch and commit within your fork, then open a pull request from your fork's branch back to the original repository.
+
+## GitHub Actions
+
+GitHub Actions runs [CI/CD](/en/devops/ci-cd) workflows defined in YAML files under `.github/workflows/`, triggered by events like a push or a pull request:
+
+```yaml
+name: CI
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci
+      - run: npm test
+```
+
+Each job runs in a fresh, isolated virtual machine (or [container](/en/devops/containers)), and a large ecosystem of reusable "actions" (like `actions/checkout` above) means most common CI steps don't need to be written from scratch.
+
+## Issues and project boards
+
+GitHub Issues track bugs, feature requests, and tasks, each with its own discussion thread, labels, and assignees — often linked directly to the pull request that resolves them (closing an issue automatically when the linked PR merges). Project boards layer a Kanban-style view (To Do / In Progress / Done) on top of issues and PRs for lightweight project tracking without needing a separate tool.
+
+## See also
+
+- **[Git](/en/developer-tools/git)** — the version control system GitHub is built around.
+- **[GitLab](/en/developer-tools/gitlab)** — a major alternative covering similar ground with a more integrated CI/CD story.
+- **[CI/CD](/en/devops/ci-cd)** — the general practice GitHub Actions is one implementation of.

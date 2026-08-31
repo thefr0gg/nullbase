@@ -1,0 +1,31 @@
+---
+title: Backend
+description: What actually runs behind an API endpoint — servers, middleware, background work, caching, and the operational concerns every backend eventually needs.
+category: Backend
+weight: 7
+---
+
+[Web APIs](/en/web-apis) covers the shapes requests and responses take; this section covers what's actually running on the other end of that connection — the servers that accept it, the layers a request passes through before reaching application code, and the concerns (background work, caching, uploads, logging, failure) that show up in every non-trivial backend regardless of language or framework.
+
+## Serving requests
+
+- **[Web Servers](/en/backend/web-servers)** — the process that accepts a connection and speaks HTTP.
+- **[Application Servers](/en/backend/application-servers)** — where your actual code runs, and how it differs from the web server in front of it.
+- **[Reverse Proxies](/en/backend/reverse-proxies)** — routing, TLS termination, and load distribution in front of a backend.
+- **[Middleware](/en/backend/middleware)** — the chain of functions every request passes through before reaching a route handler.
+
+## Work that doesn't happen inline
+
+- **[Background Jobs](/en/backend/background-jobs)** — work deferred out of the request/response cycle.
+- **[Queues](/en/backend/queues)** — the durable buffer that makes background jobs reliable.
+
+## State and performance
+
+- **[Caching](/en/backend/caching)** — avoiding redoing expensive work you already did once.
+- **[Sessions](/en/backend/sessions)** — where server-side session state actually lives when a backend runs on more than one machine.
+
+## Handling the real world
+
+- **[File Uploads](/en/backend/file-uploads)** — accepting binary data safely and at scale.
+- **[Logging](/en/backend/logging)** — the record a backend leaves of what it actually did.
+- **[Error Handling](/en/backend/error-handling)** — failing in a way that's recoverable, debuggable, and safe to expose.

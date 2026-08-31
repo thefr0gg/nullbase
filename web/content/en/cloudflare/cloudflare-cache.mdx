@@ -1,0 +1,58 @@
+---
+title: Cloudflare Cache
+description: The CDN caching layer in front of everything else — cache keys, cache status headers, and what a Worker can control directly via the Cache API.
+category: Cloudflare
+weight: 13
+---
+
+**Cloudflare's Cache** stores responses at edge locations close to visitors, so a repeat request for the same resource can be served without reaching the origin (or a [Worker](/en/cloudflare/workers)) at all — the same general [caching](/en/backend/caching) idea, applied at the CDN layer in front of an entire site.
+
+## Cache status
+
+Every response from a proxied Cloudflare zone carries a `cf-cache-status` header showing exactly what happened:
+
+<ItemExplorer
+  title="cf-cache-status Values"
+  layout="table"
+  tableColumns={[{ key: "meaning", label: "Meaning" }]}
+  items={[
+    { id: "hit", label: "HIT", color: "green", columns: { meaning: "Served directly from Cloudflare's edge cache — the origin was never contacted." } },
+    { id: "miss", label: "MISS", color: "orange", columns: { meaning: "Not in cache; Cloudflare fetched it from the origin and (if cacheable) stored it for next time." } },
+    { id: "expired", label: "EXPIRED", color: "orange", columns: { meaning: "Was cached, but the cached copy's TTL has passed — re-fetched from origin." } },
+    { id: "bypass", label: "BYPASS", color: "default", columns: { meaning: "Deliberately not cached — the response, request, or a cache rule marked it uncacheable." } },
+  ]}
+/>
+
+## The cache key
+
+By default, Cloudflare's cache key is based on the request URL (query string included, by default) — two requests to the exact same URL can share a cached response, but a URL differing even by an extra query parameter is treated as an entirely different cache entry unless configured otherwise. This is a common source of confusion when a cache "isn't working": an analytics or tracking query parameter appended inconsistently can silently fragment what should be one cache entry into many, each individually cold.
+
+## Controlling caching from a Worker
+
+```js
+export default {
+  async fetch(request, env, ctx) {
+    const cache = caches.default;
+    let response = await cache.match(request);
+    if (!response) {
+      response = await fetch("https://origin.example.com" + new URL(request.url).pathname);
+      response = new Response(response.body, response);
+      response.headers.append("Cache-Control", "max-age=3600");
+      ctx.waitUntil(cache.put(request, response.clone()));
+    }
+    return response;
+  },
+};
+```
+
+The Cache API (`caches.default`) gives a Worker direct, programmatic control over the same edge cache Cloudflare's automatic caching uses — checking for a cached response first, and explicitly storing a fresh one (via `ctx.waitUntil`, so storing the response doesn't delay returning it to the client) when there isn't one.
+
+## Cache-Control still matters
+
+Cloudflare's edge cache still respects standard HTTP caching headers (`Cache-Control`, `Expires`) from the origin — a response marked `no-store` won't be cached regardless of any Cloudflare-side configuration, and `max-age` still governs how long a cached copy is considered fresh before Cloudflare treats it as `EXPIRED` and re-validates against the origin.
+
+## See also
+
+- **[Caching](/en/backend/caching)** — the general concept this page applies specifically to Cloudflare's edge network.
+- **[CDNs](/en/web-fundamentals/cdns)** — the broader category of service Cloudflare's cache is one implementation of.
+- **[Workers](/en/cloudflare/workers)** — where the Cache API above is actually called from.

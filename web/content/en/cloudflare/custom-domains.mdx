@@ -1,0 +1,39 @@
+---
+title: Cloudflare Custom Domains
+description: The simpler alternative to Routes when a Worker should own an entire domain or subdomain outright — Cloudflare manages the DNS record for you.
+category: Cloudflare
+weight: 10
+---
+
+A **Custom Domain** attaches a Worker to a whole hostname — `api.example.com`, say — with Cloudflare automatically creating and managing the necessary DNS record, rather than an author manually configuring a [route](/en/cloudflare/workers-routes) pattern and a separate DNS entry themselves.
+
+## When to reach for this instead of a route
+
+<ItemExplorer
+  title="Custom Domain vs Route"
+  layout="pills"
+  items={[
+    { id: "whole-domain", label: "A Worker owns the whole (sub)domain", color: "green", detail: "api.example.com should always go to this one Worker, nothing else — a Custom Domain is simpler to set up and reason about than a route pattern matching every path." },
+    { id: "shared-domain", label: "A domain serves more than just this Worker", color: "blue", detail: "example.com serves a normal website except for /api/* — this needs a Route's pattern matching, since a Custom Domain can't carve out just part of a hostname's traffic." },
+  ]}
+/>
+
+This is exactly the split nullbase's own architecture uses: `nullbase.wiki` is one Worker (the static frontend), and `api.nullbase.wiki` is a separate Worker (the API) attached via its own Custom Domain — two independent Workers, each owning a distinct hostname outright, deployed and scaled completely independently of each other.
+
+## What it sets up automatically
+
+Configuring a Custom Domain for a Worker creates the DNS record pointing that hostname at Cloudflare's network (so traffic for it reaches Cloudflare at all), provisions a TLS certificate covering it, and wires up the routing internally so every request to that exact hostname reaches the specified Worker — several manual steps collapsed into one configuration action.
+
+## One Worker, one Custom Domain (usually)
+
+A Custom Domain is a cleaner mental model specifically because it maps one hostname to one Worker with no pattern-matching ambiguity — there's no equivalent to a route's precedence rules to reason about, since a hostname either has a Custom Domain pointing to a specific Worker or it doesn't. This simplicity is the trade-off for losing a route's ability to split one hostname's traffic across multiple Workers by path.
+
+## Requirements
+
+A Custom Domain requires the domain (or its parent domain) to already be an active zone on Cloudflare — the same prerequisite [Routes](/en/cloudflare/workers-routes) has — since Cloudflare needs to actually control DNS for that domain to create and manage the record automatically.
+
+## See also
+
+- **[Workers Routes](/en/cloudflare/workers-routes)** — the pattern-based alternative for splitting one domain's traffic across multiple Workers.
+- **[Cloudflare DNS](/en/cloudflare/cloudflare-dns)** — the DNS record a Custom Domain creates and manages automatically.
+- **[TLS Certificates](/en/security/tls-certificates)** — the certificate Cloudflare provisions automatically for a Custom Domain.

@@ -1,0 +1,49 @@
+---
+title: Cloudflare Workers Routes
+description: Mapping URL patterns on an existing domain to a specific Worker — running alongside other traffic on the same zone, rather than owning it entirely.
+category: Cloudflare
+weight: 9
+---
+
+A **route** maps a URL pattern on a domain already using Cloudflare (a "zone") to a specific Worker — letting a Worker handle only some paths, or a specific subdomain, while everything else on that domain continues being served normally (a plain website, a different Worker, or another origin server entirely).
+
+## Route patterns
+
+```jsonc
+// wrangler.jsonc
+{
+  "routes": [
+    { "pattern": "example.com/api/*", "zone_name": "example.com" }
+  ]
+}
+```
+
+`*` matches any remaining path segments — `example.com/api/*` matches `example.com/api/users`, `example.com/api/users/42`, and so on, but not `example.com/blog`, which continues to be handled by whatever was serving it before the Worker existed at all.
+
+## Routes vs custom domains
+
+<ItemExplorer
+  title="Routes vs Custom Domains"
+  layout="table"
+  tableColumns={[{ key: "when", label: "Use when" }, { key: "flexibility", label: "Flexibility" }]}
+  items={[
+    { id: "routes", label: "Routes", color: "blue", columns: { when: "A Worker should handle only some paths on a domain that also serves other content", flexibility: "Fine-grained pattern matching, multiple Workers can share one zone by path" } },
+    { id: "custom-domains", label: "Custom Domains", color: "green", columns: { when: "A Worker should own an entire domain or subdomain outright", flexibility: "Simpler to set up — no pattern to get wrong — but all-or-nothing for that hostname" } },
+  ]}
+/>
+
+Route patterns are the right tool for exactly the kind of setup this site itself uses: a static frontend served from one Worker, with `/api/*`-style paths (or, in nullbase's case, an entirely separate `api.` subdomain) routed to a different Worker entirely — see [Custom Domains](/en/cloudflare/custom-domains) for that simpler, whole-subdomain alternative.
+
+## Multiple Workers, one zone
+
+Because routes are pattern-based rather than domain-wide, a single Cloudflare zone can have several Workers active simultaneously, each handling a distinct, non-overlapping set of paths — a common pattern when different parts of a system genuinely benefit from being deployed and scaled independently (an API Worker separate from a static-asset-serving Worker), while still appearing to visitors as one coherent domain.
+
+## Route precedence
+
+When a request could match more than one configured route, Cloudflare resolves it by specificity — a more specific pattern (`example.com/api/users/*`) takes precedence over a more general one (`example.com/api/*`) that would otherwise also match. Getting this wrong (two routes that overlap ambiguously) is a common source of "why is the wrong Worker handling this request" confusion when a zone has several Workers configured.
+
+## See also
+
+- **[Custom Domains](/en/cloudflare/custom-domains)** — the simpler alternative when a Worker should own a whole hostname.
+- **[Wrangler](/en/cloudflare/wrangler)** — where routes are declared alongside a Worker's other configuration.
+- **[Cloudflare DNS](/en/cloudflare/cloudflare-dns)** — a domain has to already be on Cloudflare (an active zone) before a route can be configured for it.

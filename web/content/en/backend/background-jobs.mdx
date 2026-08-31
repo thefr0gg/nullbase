@@ -1,0 +1,36 @@
+---
+title: Background Jobs
+description: Work deliberately moved out of the request/response cycle — so a client doesn't wait on something slower than a response should ever take.
+category: Backend
+weight: 4
+interactive: true
+interactiveType: ["StepFlow"]
+---
+
+A **background job** is work triggered by a request but not completed before that request's response is sent — sending a confirmation email, resizing an uploaded image, generating a report, retraining a recommendation model. If it doesn't need to finish before the client can be told "done," running it inline just makes the client wait for something they don't actually need to wait for.
+
+## The pattern
+
+<StepFlow
+  title="Deferring Work to a Background Job"
+  steps={[
+    { actor: "Client", title: "Request arrives", description: "A user signs up, triggering account creation and (separately) a welcome email.", detail: "POST /signup" },
+    { actor: "Server", title: "Enqueue instead of executing inline", description: "The server creates the account synchronously (the client needs to know this succeeded), then pushes a \"send welcome email\" job onto a queue instead of sending it directly.", detail: "queue.push({ job: 'send_welcome_email', userId: 42 })" },
+    { actor: "Server", title: "Respond immediately", description: "The response goes back to the client right away — signup succeeded, and the client has no reason to know or care that the email hasn't been sent yet.", detail: "201 Created" },
+    { actor: "Worker", title: "A separate worker processes the job", description: "An independent worker process, polling or subscribed to the queue, picks up the job whenever it's available and sends the actual email — seconds or even minutes later is fine.", detail: "worker.process('send_welcome_email') -> sends email" },
+  ]}
+/>
+
+## Why not just use a slow inline call
+
+Nothing stops a request handler from calling the email provider's API directly and waiting for it — but that ties the request's response time to a third-party service's latency and reliability. If the email provider is slow or briefly down, every signup becomes slow or fails, for a task the user was never actually waiting on. Deferring it decouples the two: signup succeeds or fails based only on the database write, and the email send can retry independently without the user ever noticing a delay.
+
+## What makes a job "background" rather than just async
+
+Firing off a promise and not awaiting it (`sendEmail(user)` without `await`) looks similar but isn't the same thing — if the process crashes or restarts a moment later, that in-flight work is simply lost, with no record it was ever supposed to happen. A real background job system persists the job (usually in a [queue](/en/backend/queues)) before considering the triggering request done, so a crash between "enqueued" and "processed" still leaves the job recoverable rather than silently dropped.
+
+## See also
+
+- **[Queues](/en/backend/queues)** — the durable buffer background jobs are built on top of.
+- **[Cloudflare Queues](/en/cloudflare/queues)** — a managed queue product purpose-built for exactly this pattern.
+- **[Error Handling](/en/backend/error-handling)** — a failed background job needs its own retry/failure strategy, since there's no client left waiting to see an error.

@@ -1,0 +1,39 @@
+---
+title: Profiling
+description: Figuring out why code is slower than it should be — measuring where time and memory actually go, instead of guessing.
+category: Developer Tools
+weight: 10
+---
+
+**Profiling** measures where a program actually spends its time and memory while running, rather than guessing based on which code *looks* like it should be slow. Intuition about performance is frequently wrong — a profiler replaces "I think this loop is the problem" with an actual measurement of exactly which function consumed how much time.
+
+## CPU profiling
+
+A CPU profiler samples (or fully instruments) a running program to build a picture of time spent per function — commonly visualized as a **flame graph**, where each horizontal bar is a function call, its width proportional to time spent, and stacked bars showing what called what. A wide bar near the top of a flame graph is exactly what you're looking for: a specific function consuming a disproportionate share of total execution time.
+
+```js
+console.time("processOrders");
+processOrders(orders);
+console.timeEnd("processOrders");
+// processOrders: 842.31ms
+```
+
+Coarse timing like this is a legitimate first step — wrapping a suspect function to confirm it's actually the slow part before reaching for a full profiler — but a real profiler goes further, breaking down time *within* that function to show which of its own internal calls are actually responsible.
+
+## Memory profiling
+
+A memory profiler tracks allocations over time, helping find **memory leaks** — memory that keeps growing because something is holding a reference to objects that should have been garbage collected, but isn't. A heap snapshot comparison (take one, perform an action repeatedly, take another, diff them) is a standard technique: objects that keep accumulating across repeated identical actions are the leak candidates.
+
+## The 80/20 reality of performance
+
+In most real programs, a small fraction of the code accounts for the overwhelming majority of execution time — optimizing code that isn't actually a bottleneck wastes effort and adds complexity for no measurable benefit. This is the entire justification for profiling before optimizing rather than after: without measurement, it's easy to spend days optimizing a function that was never meaningfully slow in the first place, while the actual bottleneck goes untouched.
+
+## Profiling in production vs locally
+
+A local profiler run against a synthetic benchmark can miss real-world bottlenecks entirely — production traffic patterns, real data sizes, and real network conditions can behave completely differently than a developer's local test case. Continuous, low-overhead production profiling (sampling a small percentage of real requests) is how many performance issues that never show up locally actually get found.
+
+## See also
+
+- **[Debugging](/en/developer-tools/debugging)** — the equivalent process for a correctness problem instead of a performance one.
+- **[Monitoring](/en/devops/monitoring)** — the production-wide signal (latency percentiles) that usually indicates *when* to reach for a profiler.
+- **[Caching](/en/backend/caching)** — one of the most common fixes a profiler's findings actually lead to.

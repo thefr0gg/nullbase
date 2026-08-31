@@ -1,0 +1,57 @@
+---
+title: Cloudflare Durable Objects
+description: Strongly consistent state and coordination at the edge — a single, addressable instance that every request for a given ID gets routed to, with its own persistent storage.
+category: Cloudflare
+weight: 4
+---
+
+A **Durable Object** is a single, addressable instance of a class, uniquely identified by an ID, that Cloudflare guarantees runs in exactly one place at a time — every request for that specific ID gets routed to the same instance, wherever it currently lives. This is the direct answer to the coordination problem [edge computing](/en/devops/edge-computing) runs into generally: [KV](/en/cloudflare/kv) is fast everywhere but only eventually consistent; a Durable Object is strongly consistent by construction, because there's only ever one of it to be consistent with.
+
+## Why "one instance" solves coordination
+
+If two requests for the same logical resource (a chat room, a game session, a per-user rate limiter) can be handled by two different servers simultaneously, keeping them consistent requires distributed locking, consensus protocols, or accepting eventual consistency. Routing every request for that resource to one specific Durable Object instance sidesteps the problem entirely — there's no concurrent access to reconcile, because there's exactly one place state actually lives, and Cloudflare's infrastructure handles finding and routing to it.
+
+## Basic shape
+
+```js
+export class Counter {
+  constructor(state, env) {
+    this.state = state;
+  }
+  async fetch(request) {
+    let count = (await this.state.storage.get("count")) || 0;
+    count++;
+    await this.state.storage.put("count", count);
+    return new Response(String(count));
+  }
+}
+
+// In the Worker routing to it:
+const id = env.COUNTER.idFromName("global-counter");
+const stub = env.COUNTER.get(id);
+return stub.fetch(request);
+```
+
+`idFromName` derives a consistent ID from a string, so every request using the same name reaches the same instance; `state.storage` is the Durable Object's own persistent, transactional key-value storage, scoped to that one instance alone.
+
+## What this actually enables
+
+<ItemExplorer
+  title="Common Durable Object Use Cases"
+  layout="pills"
+  items={[
+    { id: "realtime", label: "Real-time collaboration", color: "blue", detail: "A WebSocket-based chat room or collaborative document, where one Durable Object per room holds the connections and current state, broadcasting updates to everyone connected." },
+    { id: "rate-limit", label: "Precise rate limiting", color: "green", detail: "Unlike KV's eventual consistency, a Durable Object can maintain an exact, immediately-consistent request count per user or API key with no race conditions." },
+    { id: "game-state", label: "Multiplayer game state", color: "purple", detail: "One Durable Object per game session, serializing every player action through a single consistent source of truth." },
+  ]}
+/>
+
+## The trade-off
+
+Because a Durable Object is pinned to a single location and processes requests for its ID serially, it doesn't scale horizontally the way a stateless Worker does — every request for the *same* ID is a bottleneck through that one instance by design. This is the correct trade-off specifically when consistency genuinely requires serialization; splitting work across many differently-keyed Durable Objects (one per chat room, not one for all chat globally) is how real systems avoid that bottleneck becoming a problem in practice.
+
+## See also
+
+- **[Workers](/en/cloudflare/workers)** — the stateless compute model Durable Objects specifically extend with persistent, consistent state.
+- **[KV](/en/cloudflare/kv)** — the eventually-consistent alternative, better suited when strict consistency isn't required.
+- **[Edge Computing](/en/devops/edge-computing)** — the general coordination problem Durable Objects are Cloudflare's specific answer to.
