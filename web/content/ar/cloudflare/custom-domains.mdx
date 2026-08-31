@@ -1,0 +1,39 @@
+---
+title: Cloudflare Custom Domains
+description: البديل الأبسط عن Routes عندما يجب أن يمتلك Worker نطاقاً كاملاً أو نطاقاً فرعياً بالكامل — تدير Cloudflare سجل DNS نيابة عنك.
+category: Cloudflare
+weight: 10
+---
+
+يربط **Custom Domain** عامل Worker باسم مضيف كامل — `api.example.com` مثلاً — مع إنشاء Cloudflare تلقائياً وإدارتها لسجل DNS اللازم، بدلاً من أن يضبط المؤلف يدوياً نمط [route](/ar/cloudflare/workers-routes) ومدخل DNS منفصل بنفسه.
+
+## متى تلجأ إلى هذا بدلاً من route
+
+<ItemExplorer
+  title="Custom Domain مقابل Route"
+  layout="pills"
+  items={[
+    { id: "whole-domain", label: "يمتلك Worker النطاق (الفرعي) بالكامل", color: "green", detail: "يجب أن يذهب api.example.com دائماً إلى هذا Worker الواحد، لا شيء آخر — إعداد Custom Domain أبسط والتفكير فيه أسهل من نمط route يطابق كل مسار." },
+    { id: "shared-domain", label: "يخدم نطاق ما أكثر من هذا Worker فقط", color: "blue", detail: "يخدم example.com موقعاً عادياً باستثناء /api/* — يحتاج هذا مطابقة نمط Route، لأن Custom Domain لا يمكنه فصل جزء فقط من حركة مرور اسم مضيف." },
+  ]}
+/>
+
+هذا بالضبط الانقسام الذي تستخدمه معمارية nullbase نفسها: `nullbase.wiki` هو Worker واحد (الواجهة الأمامية الثابتة)، و`api.nullbase.wiki` هو Worker منفصل (الـ API) مربوط عبر Custom Domain خاص به — عاملا Workers مستقلان، يمتلك كل منهما اسم مضيف مختلفاً بالكامل، يُنشران ويتوسّعان باستقلال تام عن بعضهما.
+
+## ما الذي يضبطه تلقائياً
+
+يؤدي ضبط Custom Domain لعامل Worker إلى إنشاء سجل DNS الذي يوجّه اسم المضيف ذاك إلى شبكة Cloudflare (بحيث تصل حركة المرور إليه إلى Cloudflare أصلاً)، وتوفير شهادة TLS تغطيه، وربط التوجيه داخلياً بحيث يصل كل طلب لاسم المضيف ذاك تحديداً إلى Worker المحدد — عدة خطوات يدوية مختصرة في إجراء ضبط واحد.
+
+## Worker واحد، Custom Domain واحد (عادةً)
+
+يُعد Custom Domain نموذجاً ذهنياً أنظف تحديداً لأنه يربط اسم مضيف واحد بـ Worker واحد دون أي غموض في مطابقة الأنماط — لا يوجد ما يعادل قواعد أولوية route ليُفكَّر فيها، لأن اسم المضيف إما أن يملك Custom Domain يشير إلى Worker محدد أو لا يملك. هذه البساطة هي مقابل فقدان قدرة route على تقسيم حركة مرور اسم مضيف واحد بين عدة Workers حسب المسار.
+
+## المتطلبات
+
+يتطلب Custom Domain أن يكون النطاق (أو النطاق الأب له) منطقة نشطة أصلاً على Cloudflare — نفس الشرط المسبق الذي تتطلبه [Routes](/ar/cloudflare/workers-routes) — لأن Cloudflare تحتاج فعلياً للتحكم بـ DNS لذلك النطاق لتنشئ السجل وتديره تلقائياً.
+
+## طالع أيضاً
+
+- **[Workers Routes](/ar/cloudflare/workers-routes)** — البديل القائم على الأنماط لتقسيم حركة مرور نطاق واحد بين عدة Workers.
+- **[Cloudflare DNS](/ar/cloudflare/cloudflare-dns)** — سجل DNS الذي ينشئه Custom Domain ويديره تلقائياً.
+- **[شهادات TLS](/en/security/tls-certificates)** — الشهادة التي توفّرها Cloudflare تلقائياً لـ Custom Domain.

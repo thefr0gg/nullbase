@@ -1,0 +1,43 @@
+---
+title: Versionado semántico
+description: La convención MAJOR.MINOR.PATCH que hace posibles las actualizaciones automatizadas de dependencias — qué promete realmente cada número, y qué pasa cuando esa promesa se rompe.
+category: Developer Tools
+weight: 5
+---
+
+El **versionado semántico (SemVer)** es una convención para los números de versión — `MAJOR.MINOR.PATCH` (p. ej. `4.18.2`) — donde cada posición tiene un significado específico y acordado sobre qué tipo de cambio ocurrió desde la versión anterior. Todo el propósito es que una herramienta (o un humano) pueda mirar solo un número de versión y saber si actualizar es seguro.
+
+## Qué significa cada número
+
+<ItemExplorer
+  title="MAJOR.MINOR.PATCH"
+  layout="table"
+  tableColumns={[{ key: "meaning", label: "Se incrementa cuando" }, { key: "example", label: "Ejemplo" }]}
+  items={[
+    { id: "major", label: "MAJOR", color: "red", columns: { meaning: "Hay un cambio incompatible — el código existente que usa este paquete puede necesitar cambiar para seguir funcionando", example: "3.2.1 -> 4.0.0" } },
+    { id: "minor", label: "MINOR", color: "blue", columns: { meaning: "Se añadió una funcionalidad nueva y retrocompatible", example: "4.18.0 -> 4.19.0" } },
+    { id: "patch", label: "PATCH", color: "green", columns: { meaning: "Una corrección de errores retrocompatible, sin funcionalidad nueva", example: "4.18.1 -> 4.18.2" } },
+  ]}
+/>
+
+## Por qué esto hace posibles las actualizaciones automatizadas
+
+Los [gestores de paquetes](/es/developer-tools/package-managers) permiten que la versión declarada de una dependencia sea un *rango* en lugar de una versión fija exacta — `^4.18.0` significa «cualquier versión compatible con 4.18.0 según las reglas de SemVer», lo que en la práctica significa cualquier cosa desde `4.18.0` hasta (sin incluir) `5.0.0`. Una herramienta puede aplicar automáticamente actualizaciones menores (minor) y de parche (patch) dentro de ese rango con una confianza razonable de que no romperán nada, precisamente porque la versión MAJOR es una promesa de que no ocurrió nada incompatible. Nada de esto funciona si los mantenedores no siguen realmente la convención.
+
+## Cuando se rompe la promesa
+
+SemVer es una convención social que no se hace cumplir con nada excepto la disciplina del mantenedor del paquete — nada impide que un lanzamiento de «patch» introduzca accidentalmente un cambio incompatible, y ocurre regularmente en ecosistemas reales, que es exactamente por qué importan los lockfiles (que registran versiones resueltas exactas, no solo rangos): significan que un lanzamiento de patch inesperadamente incompatible no se cuela silenciosamente en una compilación hasta que alguien actualiza el lockfile de forma deliberada y puede probar el cambio primero.
+
+## Metadatos de pre-lanzamiento y de compilación
+
+SemVer también define un sufijo opcional de pre-lanzamiento (`4.18.0-beta.1`) — que se ordena como *inferior* a la versión simple `4.18.0` que precede, permitiendo que un paquete se publique y que los primeros usuarios prueben una versión antes de que se considere estable — y metadatos de compilación (`4.18.0+20260115`), que son puramente informativos y se ignoran por completo al comparar la precedencia de versiones.
+
+## `0.x.y` es un caso especial
+
+Según las propias reglas de SemVer, una versión `0.x.y` significa que el paquete todavía está en desarrollo inicial y *cualquier cosa* puede cambiar en cualquier momento, incluso entre lanzamientos de patch — la garantía de que MAJOR significa cambio incompatible solo empieza formalmente en `1.0.0`. En la práctica esta convención se respeta de forma inconsistente; algunos paquetes `0.x` son tratados como estables por sus mantenedores y usuarios de todos modos.
+
+## Ver también
+
+- **[npm](/es/developer-tools/npm)** — la sintaxis de rangos de versión (`^`, `~`) construida directamente sobre las reglas de SemVer.
+- **[Gestores de paquetes](/es/developer-tools/package-managers)** — las herramientas que realmente resuelven estos rangos en versiones instaladas.
+- **[CI/CD](/es/devops/ci-cd)** — donde normalmente se prueba una actualización automatizada de dependencias antes de fusionarla.

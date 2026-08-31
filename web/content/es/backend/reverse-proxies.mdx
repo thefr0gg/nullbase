@@ -1,0 +1,47 @@
+---
+title: Proxies Inversos
+description: Cómo un proxy inverso se sitúa específicamente delante de los servidores de aplicación de un backend — enrutamiento, chequeos de salud, y por qué el código de backend normalmente nunca ve internet directamente.
+category: Backend
+weight: 2
+---
+
+[Proxies](/es/web-fundamentals/proxies) cubre la distinción general entre directo e inverso; esta página trata sobre el papel específico y muy común que juega un proxy inverso directamente delante de los [servidores de aplicación](/es/backend/application-servers) de un backend — la capa que decide cuál de posiblemente muchos procesos de backend idénticos maneja realmente una solicitud dada.
+
+## Un ejemplo mínimo de Nginx
+
+```nginx
+upstream app_servers {
+    server 10.0.0.1:8000;
+    server 10.0.0.2:8000;
+    server 10.0.0.3:8000;
+}
+
+server {
+    listen 443 ssl;
+    location / {
+        proxy_pass http://app_servers;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+El bloque `upstream` lista cada instancia de backend; `proxy_pass` reenvía las solicitudes coincidentes a una de ellas. `X-Real-IP` importa porque, desde el punto de vista del servidor de aplicación, ahora cada solicitud parece originarse desde la propia IP del proxy inverso — sin ella, el backend pierde por completo la dirección real del cliente.
+
+## Chequeos de salud
+
+Un proxy inverso delante de múltiples instancias de backend típicamente verifica la salud de cada una (un endpoint ligero `/health`, o simplemente notar fallos de conexión repetidos) y deja de enrutar hacia una instancia que está fallando, sin necesitar ninguna orquestación externa para notarlo y reaccionar. Esto es lo que permite que una instancia de backend se reinicie, se redespliegue, o se caiga por completo sin causar necesariamente una interrupción visible — el tráfico simplemente deja de dirigirse a ella hasta que vuelve a estar saludable.
+
+## Por qué el código de backend no debería ser accesible directamente
+
+Poner cada servidor de aplicación detrás de un proxy inverso significa que los procesos de backend reales nunca necesitan una IP pública ni un puerto abierto en internet en absoluto — solo lo necesita el proxy inverso. Esto reduce significativamente la superficie de ataque: una vulnerabilidad en un servicio de uso exclusivamente interno es mucho menos explotable si simplemente es inalcanzable desde fuera de la red en primer lugar, independientemente de la autenticación o autorización que ese servicio tenga o no tenga.
+
+## Sesiones persistentes (sticky sessions)
+
+Algunos backends necesitan que cada solicitud del mismo cliente llegue a la misma instancia de backend — lo más común es cuando el estado de [sesión](/es/backend/sessions) se mantiene en la memoria propia de esa instancia en vez de en un almacén compartido. Un proxy inverso puede configurarse para **sticky sessions** (enrutando según una cookie o la IP del cliente) para garantizar esto, aunque la solución más robusta suele ser mover el estado de sesión fuera de la memoria de cualquier instancia individual por completo, de modo que cualquier instancia pueda manejar cualquier solicitud.
+
+## Ver también
+
+- **[Proxies](/es/web-fundamentals/proxies)** — la distinción general entre directo/inverso y la terminación TLS.
+- **[Balanceo de carga](/es/devops/load-balancing)** — los algoritmos que usa un proxy inverso para elegir qué backend recibe una solicitud.
+- **[Sesiones](/es/backend/sessions)** — por qué existen las sticky sessions, y la alternativa a necesitarlas.

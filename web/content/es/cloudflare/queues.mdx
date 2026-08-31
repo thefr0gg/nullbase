@@ -1,0 +1,50 @@
+---
+title: Cloudflare Queues
+description: Una cola de mensajes gestionada, hecha para Workers — los productores envían mensajes, un Worker consumidor los procesa por lotes, con reintentos integrados y una cola de mensajes fallidos.
+category: Cloudflare
+weight: 5
+---
+
+**Cloudflare Queues** es una implementación gestionada del patrón general de [cola](/es/backend/queues), diseñada específicamente para conectar Workers entre sí — un Worker (el productor) envía mensajes, y otro Worker (el consumidor) se invoca automáticamente para procesarlos por lotes, sin que ninguno de los dos lados tenga que ejecutar ni escalar un broker de colas por su cuenta.
+
+## Productor y consumidor
+
+```js
+// Producer — a Worker handling an incoming request
+export default {
+  async fetch(request, env) {
+    await env.MY_QUEUE.send({ orderId: 42, action: "send_receipt" });
+    return new Response("Queued");
+  },
+};
+
+// Consumer — a separate Worker configured to process this queue
+export default {
+  async queue(batch, env) {
+    for (const message of batch.messages) {
+      await sendReceipt(message.body);
+      message.ack();
+    }
+  },
+};
+```
+
+El handler `queue` del consumidor (distinto del handler `fetch` que implementan los Workers normales) recibe un **lote** de mensajes de una vez en lugar de uno por uno — procesar por lotes amortiza la sobrecarga entre varios mensajes en lugar de invocar al consumidor desde cero para cada uno de ellos.
+
+## Confirmación y reintentos
+
+Llamar a `message.ack()` le indica a Queues que el mensaje se procesó con éxito y puede descartarse; no confirmar un mensaje (o llamar explícitamente a `message.retry()`) hace que se vuelva a entregar, hasta un número máximo de reintentos configurado. Es la misma garantía de entrega al menos una vez que hacen las colas de mensajes en general — un consumidor tiene que escribirse esperando que un mensaje pueda entregarse y procesarse más de una vez, por lo que el procesamiento idempotente importa aquí exactamente igual que para cualquier consumidor de colas.
+
+## Colas de mensajes fallidos
+
+Un mensaje que agota su límite de reintentos sin llegar nunca a confirmarse se traslada a una **cola de mensajes fallidos** (dead-letter queue) configurada en lugar de desaparecer o reintentarse sin fin — permitiendo inspeccionarlo y reprocesarlo manualmente más tarde, sin que bloquee ni haga bucle silenciosamente en la cola principal mientras tanto.
+
+## Por qué no simplemente llamar al Worker de destino directamente
+
+Un productor *podría* saltarse Queues y llamar directamente a la lógica del consumidor mediante un service binding — pero eso los acopla: si el trabajo del destino es lento, falla de forma intermitente, o el consumidor está temporalmente sobrecargado, la propia solicitud del productor ahora espera (o falla por culpa de) algo con lo que no tenía por qué tener nada que ver. Queues los desacopla exactamente de la forma que recomienda en general [Background Jobs](/es/backend/background-jobs) — la solicitud del productor termina en cuanto el mensaje queda encolado de forma duradera, sin importar cuánto tarde el procesamiento real.
+
+## Ver también
+
+- **[Queues](/es/backend/queues)** — el patrón general que este producto implementa específicamente para Workers.
+- **[Background Jobs](/es/backend/background-jobs)** — la motivación más amplia para sacar trabajo de la ruta crítica de una solicitud.
+- **[Cron Triggers](/es/cloudflare/cron-triggers)** — otra forma de ejecutar un Worker fuera de una solicitud, según una programación en lugar de mediante una cola.

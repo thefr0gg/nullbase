@@ -1,0 +1,51 @@
+---
+title: GitLab
+description: La principal alternativa a GitHub para alojar repositorios Git — el mismo modelo de colaboración central, con CI/CD integrado como una característica de primer nivel y más profundamente unificada.
+category: Developer Tools
+weight: 2
+---
+
+**GitLab** cubre en gran medida el mismo terreno que [GitHub](/es/developer-tools/github) — alojar repositorios [Git](/es/developer-tools/git), merge requests (el nombre de GitLab para un pull request), seguimiento de issues — pero históricamente se ha distinguido por tener CI/CD como una característica propia profundamente integrada en lugar de un producto aparte añadido después, y por una edición autoalojada y de código abierto que las organizaciones pueden ejecutar enteramente en su propia infraestructura.
+
+## Merge requests frente a pull requests
+
+Un **merge request (MR)** de GitLab es funcionalmente el mismo concepto que un pull request de GitHub — proponer fusionar una rama en otra, revisar los cambios, ejecutar CI, y luego fusionar — solo que con un nombre distinto por el desarrollo anterior e independiente de GitLab. Las operaciones de Git subyacentes son idénticas sin importar qué plataforma aloje el repositorio; solo difieren la interfaz de colaboración y la terminología.
+
+## GitLab CI/CD
+
+Los pipelines de GitLab se definen en un único archivo `.gitlab-ci.yml` en la raíz del repositorio:
+
+```yaml
+stages:
+  - test
+  - deploy
+
+test:
+  stage: test
+  script:
+    - npm ci
+    - npm test
+
+deploy:
+  stage: deploy
+  script:
+    - ./deploy.sh
+  only:
+    - main
+```
+
+`stages` define las fases ordenadas del pipeline; los jobs dentro de la misma etapa se ejecutan en paralelo, y una etapa solo empieza una vez que todos los jobs de la etapa anterior han tenido éxito. Esta estructura es a grandes rasgos similar al modelo de jobs y steps de GitHub Actions, pero el CI/CD de GitLab históricamente se ha posicionado como la característica central de la plataforma en lugar de un añadido, con un soporte integrado más estrecho para cosas como pipelines de despliegue multietapa y entornos.
+
+## Autoalojamiento
+
+GitLab ofrece una «Community Edition» autoalojada (de código abierto) y una «Enterprise Edition» (con funcionalidades de pago adicionales), permitiendo que una organización ejecute toda la plataforma — alojamiento de repositorios, runners de CI, seguimiento de issues — en sus propios servidores en lugar de depender de una plataforma SaaS de terceros. Esto importa para organizaciones con requisitos estrictos de residencia de datos o cumplimiento normativo que un servicio alojado no puede satisfacer, al coste de que la organización ahora tiene que operar esa infraestructura ella misma.
+
+## Elegir entre ambas
+
+Para la mayoría de los equipos, la elección se reduce más al ecosistema y a la familiaridad existente que a cualquier limitación técnica de peso — ambas son maduras, ambas admiten los mismos flujos de trabajo fundamentales de Git, y migrar el historial de Git puro de un repositorio entre ellas es sencillo, ya que a Git en sí no le importa qué plataforma lo aloja. Las diferencias más importantes (necesidades de autoalojamiento, profundidad del CI/CD, familiaridad existente del equipo) suelen ser lo que realmente determina la decisión.
+
+## Ver también
+
+- **[Git](/es/developer-tools/git)** — el sistema de control de versiones sobre el que se construyen ambas plataformas.
+- **[GitHub](/es/developer-tools/github)** — la alternativa más usada para proyectos de código abierto y muchos proyectos comerciales.
+- **[CI/CD](/es/devops/ci-cd)** — la práctica general que tanto GitLab CI/CD como GitHub Actions implementan.

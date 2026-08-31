@@ -1,0 +1,48 @@
+---
+title: Middleware
+description: La chaîne de fonctions que traverse chaque requête avant d'atteindre un gestionnaire de route — et que chaque réponse retraverse en sens inverse à la sortie.
+category: Backend
+weight: 3
+---
+
+Un **middleware** est une fonction placée entre l'arrivée d'une requête et l'exécution réelle d'un gestionnaire de route, avec la capacité d'inspecter ou de modifier la requête, de la court-circuiter entièrement, ou de la laisser continuer vers l'élément suivant de la chaîne. Presque tous les frameworks backend sont construits autour d'une version de ce pattern, parce qu'une grande partie de ce qu'un backend doit faire sur *chaque* requête (pas seulement une route spécifique) s'y prête naturellement.
+
+## La chaîne, concrètement
+
+```js
+app.use(logRequest);       // runs first
+app.use(parseJsonBody);
+app.use(authenticate);
+app.use(rateLimit);
+app.get("/users/:id", getUserHandler); // the actual route
+```
+
+Chaque fonction middleware appelle typiquement un callback `next()` (ou retourne/attend, selon le framework) pour transmettre le contrôle en avant. Sauter cet appel — parce que l'authentification a échoué, parce qu'une limite de débit a été atteinte — arrête la chaîne à cet endroit précis et envoie immédiatement une réponse, sans que le gestionnaire de route ne s'exécute jamais.
+
+## Usages courants
+
+<ItemExplorer
+  title="Ce que fait typiquement un middleware"
+  layout="pills"
+  items={[
+    { id: "logging", label: "Request logging", color: "blue", detail: "Enregistre la méthode, le chemin, le statut et la durée de chaque requête — voir Logging — sans que chaque gestionnaire de route ait besoin de son propre code de logging." },
+    { id: "auth", label: "Authentication", color: "green", detail: "Vérifie une session ou un token une seule fois, en attachant l'identité résolue à la requête pour que chaque gestionnaire en aval puisse simplement la lire." },
+    { id: "cors", label: "CORS headers", color: "purple", detail: "Ajoute des headers Access-Control-Allow-* à chaque réponse sans que chaque route ait besoin de s'en souvenir." },
+    { id: "parsing", label: "Body parsing", color: "orange", detail: "Lit un corps de requête brut et l'analyse (JSON, données de formulaire) en un objet structuré avant qu'un gestionnaire n'en ait besoin." },
+    { id: "rate-limit", label: "Rate limiting", color: "red", detail: "Rejette une requête avant même qu'elle n'atteigne une logique applicative coûteuse, si un client a dépassé un certain seuil." },
+  ]}
+/>
+
+## L'ordre compte
+
+Le middleware s'exécute dans l'ordre où il est enregistré, et cet ordre est souvent structurant — le middleware d'authentification doit s'exécuter avant tout ce qui suppose l'existence d'un utilisateur connecté ; le middleware d'analyse du corps doit s'exécuter avant qu'un gestionnaire n'essaie de lire le corps analysé ; le middleware de gestion des erreurs dans des frameworks comme Express est conventionnellement enregistré *en dernier*, spécifiquement pour qu'il puisse intercepter les erreurs levées n'importe où plus tôt dans la chaîne. Un bug de middleware est disproportionnellement souvent en réalité un bug d'ordonnancement.
+
+## Middleware vs gestionnaire de route
+
+La distinction porte réellement sur la portée : un gestionnaire de route est spécifique à une route ; un middleware est écrit une fois et appliqué à de nombreuses routes (parfois toutes) sans dupliquer cette logique dans chaque gestionnaire. C'est la même motivation « ne pas répéter une logique transversale à chaque point d'appel » qui sous-tend les [intercepteurs](/en/web-apis) dans un client d'API, appliquée cette fois côté serveur.
+
+## Voir aussi
+
+- **[Application Servers](/fr/backend/application-servers)** — le processus à l'intérieur duquel les chaînes de middleware s'exécutent réellement.
+- **[Error Handling](/fr/backend/error-handling)** — couramment implémenté comme le dernier middleware de la chaîne.
+- **[Authentication](/en/security/authentication)** — la préoccupation que le middleware d'authentification implémente spécifiquement.

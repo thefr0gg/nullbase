@@ -1,0 +1,41 @@
+---
+title: Gestores de paquetes
+description: El patrón general del que npm es una implementación — resolver, descargar y deduplicar dependencias, y por qué existen alternativas como pnpm.
+category: Developer Tools
+weight: 4
+---
+
+Un **gestor de paquetes** resuelve las dependencias declaradas de un proyecto (y todas *sus* dependencias) en un conjunto concreto de código instalado, gestionando conflictos de versiones y evitando trabajo duplicado — [npm](/es/developer-tools/npm) es el estándar por defecto para JavaScript, pero el mismo problema subyacente aparece en todos los ecosistemas de lenguajes (pip para Python, Cargo para Rust, Bundler para Ruby, el propio sistema de módulos de Go).
+
+## Por qué existen alternativas a npm
+
+<ItemExplorer
+  title="Gestores de paquetes de JavaScript"
+  layout="table"
+  tableColumns={[{ key: "notes", label: "Notas" }]}
+  items={[
+    { id: "npm", label: "npm", color: "blue", columns: { notes: "Viene incluido con Node.js; la opción por defecto, y el registro del que también tiran todas las alternativas de abajo." } },
+    { id: "yarn", label: "Yarn", color: "green", columns: { notes: "Creado originalmente para arreglar los primeros problemas de velocidad y determinismo de npm (muchos de los cuales npm ha corregido desde entonces); introdujo el concepto de lockfile que npm adoptó más tarde." } },
+    { id: "pnpm", label: "pnpm", color: "purple", columns: { notes: "Almacena cada versión de paquete una sola vez en un almacén global direccionado por contenido, enlazándola en el node_modules de cada proyecto mediante hard links/symlinks en lugar de copiarla — un uso de disco drásticamente menor en múltiples proyectos." } },
+  ]}
+/>
+
+Los tres leen el mismo `package.json` e instalan desde el mismo registro de npm — son en gran medida intercambiables en cuanto a «qué paquetes se instalan», diferenciándose principalmente en velocidad de instalación, uso de disco, y cuán estrictamente hacen cumplir que un paquete solo pueda importar dependencias que declaró explícitamente (pnpm es notablemente más estricto en esto que el `node_modules` aplanado por defecto de npm).
+
+## El problema de la «dependencia fantasma»
+
+El clásico diseño plano de `node_modules` de npm significa que a veces un paquete puede hacer `require()` con éxito de una dependencia que nunca declaró en su propio `package.json`, simplemente porque alguna *otra* dependencia hizo que ese paquete también se instalara en el nivel superior de `node_modules`. Esto funciona por accidente hasta que la dependencia realmente declarada se elimina por motivos ajenos, rompiendo silenciosamente el código que dependía de la fantasma. La estructura más estricta y basada en symlinks de pnpm evita esto exponiendo a un paquete únicamente sus propias dependencias declaradas.
+
+## Workspaces / monorepos
+
+La mayoría de los gestores de paquetes admiten **workspaces** — varios paquetes viviendo en un mismo repositorio (un `web/` y un `api/`, por ejemplo) que pueden depender directamente unos de otros sin necesidad de publicarlos antes en un registro, a la vez que comparten una única instalación y lockfile de nivel superior. Este es el mismo mecanismo del que depende un monorepo para que un workspace importe el código de otro como una dependencia normal durante el desarrollo local.
+
+## Elegir uno
+
+Para la mayoría de los proyectos, la elección importa menos que la consistencia — elegir uno y comprometer su lockfile para que cada colaborador y cada ejecución de CI resuelvan las dependencias de forma idéntica importa mucho más que qué herramienta específica se usa. Cambiar más adelante es posible pero no gratis: los lockfiles no son directamente intercambiables entre herramientas, así que un cambio típicamente implica regenerar uno desde cero y volver a verificar que nada se rompió.
+
+## Ver también
+
+- **[npm](/es/developer-tools/npm)** — la implementación por defecto de todo lo descrito aquí de forma general.
+- **[Versionado semántico](/es/developer-tools/semantic-versioning)** — la convención de rangos de versión que entiende cada gestor de paquetes mencionado aquí.
+- **[CI/CD](/es/devops/ci-cd)** — donde más importa una instalación estricta que respete el lockfile (`npm ci` o equivalente).

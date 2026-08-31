@@ -1,0 +1,50 @@
+---
+title: Docker
+description: Empaquetar una aplicación con todo lo que necesita para ejecutarse — su código, sus dependencias y su runtime — para que se comporte de forma idéntica en cualquier máquina que pueda ejecutar Docker.
+category: DevOps & Infrastructure
+weight: 3
+interactive: true
+interactiveType: ["StepFlow"]
+---
+
+**Docker** empaqueta una aplicación junto con sus dependencias, su runtime y su configuración en una sola unidad portable — una **imagen** — que se ejecuta de forma idéntica en el portátil de un desarrollador, en un servidor de CI y en producción, porque lleva su propio entorno consigo en lugar de depender de lo que ya esté instalado en el host.
+
+## Un Dockerfile
+
+```dockerfile
+FROM node:20-slim
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --production
+COPY . .
+EXPOSE 3000
+CMD ["node", "server.js"]
+```
+
+Cada instrucción añade una **capa** a la imagen resultante; Docker cachea las capas, de modo que volver a ejecutar una build tras cambiar solo el código de la aplicación (el paso `COPY . .`) reutiliza la capa anterior de `npm ci`, sin cambios, en lugar de reinstalar todas las dependencias desde cero — precisamente por eso `package.json` se copia e instala *antes* que el resto del código fuente, no después.
+
+## Compilar y ejecutar
+
+<StepFlow
+  title="Del Dockerfile al contenedor en ejecución"
+  steps={[
+    { actor: "Developer", title: "Build the image", description: "docker build reads the Dockerfile and produces a versioned, immutable image containing the app and everything it depends on.", detail: "docker build -t myapp:1.0 ." },
+    { actor: "Developer", title: "Run a container from it", description: "docker run starts a container — a running instance of that image — mapping a host port to the container's exposed port.", detail: "docker run -p 3000:3000 myapp:1.0" },
+    { actor: "Docker", title: "The container runs in isolation", description: "The process inside sees its own filesystem (from the image) and its own view of the network, sharing the host's kernel but nothing else by default.", detail: "" },
+    { actor: "Registry", title: "Push for others to pull", description: "A built image can be pushed to a registry (Docker Hub, a private registry) so any other machine can pull and run the exact same artifact.", detail: "docker push myregistry.io/myapp:1.0" },
+  ]}
+/>
+
+## Imágenes frente a contenedores
+
+Una **imagen** es el artefacto compilado e inmutable — un conjunto de instantáneas del sistema de archivos por capas más metadatos sobre cómo ejecutarla. Un **contenedor** es una instancia en ejecución (o detenida) de una imagen, con su propia capa de escritura encima para cualquier cambio hecho mientras se ejecuta. Muchos contenedores pueden arrancarse a partir de la misma imagen simultáneamente, cada uno aislado de los demás, de la misma forma que muchos procesos pueden ejecutarse a partir del mismo archivo ejecutable.
+
+## Por qué esto en lugar de "simplemente instalar las dependencias en el servidor"
+
+Instalar las dependencias directamente en un servidor hace que el estado exacto del servidor (versión del SO, bibliotecas instaladas, sus versiones) pase a formar parte de lo que hace que la aplicación funcione — "en mi máquina funciona" es un síntoma directo de esto. Una imagen de Docker incrusta todo ese entorno en un único artefacto versionado, de modo que la misma imagen que pasó las pruebas en CI es exactamente lo que se ejecuta en producción, sin ninguna desviación entre ambas.
+
+## Ver también
+
+- **[Contenedores](/es/devops/containers)** — el mecanismo subyacente del kernel de Linux (namespaces, cgroups) sobre el que se construye Docker.
+- **[CI/CD](/es/devops/ci-cd)** — donde una imagen de Docker normalmente se compila y se prueba automáticamente.
+- **[Despliegue](/es/devops/deployment)** — conseguir que una imagen compilada se ejecute realmente en producción.

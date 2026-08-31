@@ -1,0 +1,50 @@
+---
+title: Cloudflare Workers Bindings
+description: كيف يحصل Worker فعلياً على وصول إلى D1 وKV وR2 والأسرار وWorkers أخرى — اتصال مُصنَّف (typed) وموجَّه بالإعداد بدلاً من سلسلة اتصال.
+category: Cloudflare
+weight: 8
+---
+
+**binding** هو الطريقة التي يحصل بها Worker على وصول لمورد Cloudflare آخر — قاعدة بيانات، أو مخزن كائنات، أو سر، أو حتى Worker آخر — مُعلَن في إعدادات [Wrangler](/ar/cloudflare/wrangler) ومُتاح لشيفرة Worker كخاصية على كائن `env` المُمرَّر إلى كل معالج (handler).
+
+## الإعلان عن binding واستخدامه
+
+```jsonc
+// wrangler.jsonc
+{
+  "d1_databases": [{ "binding": "DB", "database_name": "my-database", "database_id": "..." }],
+  "kv_namespaces": [{ "binding": "CACHE", "id": "..." }],
+  "r2_buckets": [{ "binding": "UPLOADS", "bucket_name": "my-uploads" }]
+}
+```
+
+```js
+export default {
+  async fetch(request, env) {
+    const rows = await env.DB.prepare("SELECT 1").all();   // D1
+    const cached = await env.CACHE.get("key");              // KV
+    const file = await env.UPLOADS.get("path/to/file");     // R2
+    return Response.json({ rows, cached: !!cached, hasFile: !!file });
+  },
+};
+```
+
+كل اسم binding (`DB`، `CACHE`، `UPLOADS`) اعتباطي — يُختار في الإعداد، لا تفرضه المنصة — ويظهر على `env` مع واجهة برمجية خاصة بالمورد المعني مرفقة به بالفعل، دون أي تهيئة SDK منفصلة، أو سلسلة اتصال، أو إعداد مكتبة عميل مطلوب.
+
+## لماذا هذا بدلاً من سلسلة اتصال
+
+تصل خدمة تقليدية إلى قاعدة بيانات عبر سلسلة اتصال (`postgres://user:pass@host/db`) يجب على شيفرة التطبيق تحليلها واستخدامها لإنشاء اتصالها الخاص، عادة مُجمَّع (pooled) ومُدار يدوياً. أما الـ binding فتحلّه بيئة تشغيل Workers نفسها قبل أن تبدأ شيفرة Worker بالتنفيذ أصلاً — لا يوجد اتصال يجب فتحه، ولا بيانات اعتماد مضمَّنة في متغير بيئة قد تتسرب إلى السجلات، ولا منطق تجميع (pooling) يمكن أن يُخطئ فيه، لأن الوصول الأساسي تديره المنصة بالكامل.
+
+## Service bindings
+
+يمكن لـ Worker أيضاً أن يرتبط مباشرة بـ Worker *آخر* عبر **service binding**، ما يتيح لـ Worker استدعاء آخر دون أي من تكاليف رحلة HTTP فعلية عبر الإنترنت العام — يحدث الاستدعاء داخل بنية Cloudflare التحتية نفسها. هذه طريقة شائعة لتقسيم نظام أكبر إلى عدة Workers (Worker خاص بواجهة API وWorker منفصل لمعالجة خلفية، مثلاً) لا تزال بحاجة لاستدعاء بعضها البعض مباشرة وبكفاءة.
+
+## الأسرار كـ bindings أيضاً
+
+السر المُعدّ عبر `wrangler secret put` يظهر أيضاً على `env` تماماً مثل أي binding آخر، لكنه يحمل قيمة سلسلة نصية بسيطة بدلاً من كائن عميل — نفس نمط الوصول (`env.API_KEY`) ينطبق بشكل موحّد سواء كان الـ binding قاعدة بيانات، أو مخزناً، أو سلسلة سر.
+
+## طالع أيضاً
+
+- **[Wrangler](/ar/cloudflare/wrangler)** — أين يُعلَن فعلياً كل binding.
+- **[D1](/ar/cloudflare/d1)** و**[KV](/ar/cloudflare/kv)** و**[R2](/ar/cloudflare/r2)** — منتجات التخزين الأكثر شيوعاً في الوصول إليها عبر binding.
+- **[Environment Variables](/ar/devops/environment-variables)** — المفهوم العام الذي تمتده bindings إلى ما هو أبعد من مجرد سلاسل نصية.

@@ -1,0 +1,39 @@
+---
+title: Deployment
+description: Faire tourner concrètement une nouvelle version d'une application en production — et le faire sans interruption ni erreur irrécupérable.
+category: DevOps & Infrastructure
+weight: 8
+---
+
+Le **déploiement** est l'action de remplacer l'ancienne version d'une application en cours d'exécution par une nouvelle. Fait naïvement — arrêter l'ancienne version, démarrer la nouvelle — cela crée un écart visible où le service est complètement interrompu ; la plupart des stratégies de déploiement réelles existent spécifiquement pour éviter cet écart, ou pour limiter le rayon d'impact si la nouvelle version s'avère cassée.
+
+## Stratégies de déploiement
+
+<ItemExplorer
+  title="Stratégies de déploiement"
+  layout="table"
+  tableColumns={[{ key: "how", label: "Comment ça marche" }, { key: "tradeoff", label: "Compromis" }]}
+  items={[
+    { id: "rolling", label: "Rolling", color: "blue", columns: { how: "Remplace les instances une (ou quelques-unes) à la fois, en gardant les autres servant du trafic tout du long", tradeoff: "Aucune interruption, mais l'ancienne et la nouvelle version servent du trafic simultanément pendant un moment — elles doivent être compatibles." } },
+    { id: "blue-green", label: "Blue-green", color: "green", columns: { how: "Déploie entièrement la nouvelle version aux côtés de l'ancienne, puis bascule tout le trafic d'un coup", tradeoff: "Bascule instantanée et propre, et rollback instantané (rebasculer), mais nécessite de faire tourner deux environnements complets à la fois." } },
+    { id: "canary", label: "Canary", color: "purple", columns: { how: "Envoie un petit pourcentage du trafic vers la nouvelle version, observe les métriques, puis l'augmente progressivement", tradeoff: "Limite le rayon d'impact d'une mauvaise version à une petite fraction des utilisateurs, mais prend plus de temps à se déployer complètement." } },
+  ]}
+/>
+
+## Rollbacks
+
+Aussi prudente que soit la mise en production, une nouvelle version peut quand même s'avérer cassée d'une manière qui n'apparaît que sous un trafic de production réel. Un **rollback** rapide et fiable — revenir à la dernière version connue comme bonne — compte autant que le mécanisme de déploiement lui-même ; les déploiements blue-green rendent cela le plus proche de l'instantané (rebasculer le trafic vers l'environnement qui n'a jamais été touché), tandis que le rollback d'un déploiement rolling est lui-même un autre déploiement rolling, juste en sens inverse.
+
+## Les migrations de base de données compliquent tout ça
+
+Le code peut généralement être déployé et annulé librement, mais un changement de schéma de base de données ne peut souvent pas être annulé aussi proprement — supprimer une colonne dont le nouveau code a besoin casse le nouveau code, mais revenir à l'ancien code après qu'une colonne a déjà été supprimée casse aussi l'ancien code. C'est pourquoi les changements de schéma se font typiquement en étapes rétrocompatibles (ajouter une nouvelle colonne sans encore retirer l'ancienne, déployer du code capable de gérer les deux, ne retirer l'ancienne colonne que dans un déploiement ultérieur et séparé) plutôt qu'en un seul changement atomique en même temps que le code qui l'utilise.
+
+## Feature flags
+
+Un **feature flag** découple le déploiement du code de l'activation réelle d'une fonctionnalité — le nouveau code est livré en production derrière un flag désactivé par défaut, puis activé pour un sous-ensemble d'utilisateurs (ou tous) indépendamment de tout déploiement ultérieur. Cela permet d'activer une fonctionnalité risquée progressivement, ou de la désactiver instantanément si quelque chose tourne mal, sans avoir besoin d'un redéploiement ou d'un rollback complet dans un sens ou dans l'autre.
+
+## Voir aussi
+
+- **[CI/CD](/fr/devops/ci-cd)** — le pipeline qui déclenche typiquement un déploiement automatiquement.
+- **[Load Balancing](/fr/devops/load-balancing)** — ce qui route réellement le trafic pendant un déploiement rolling ou canary.
+- **[Monitoring](/fr/devops/monitoring)** — ce qu'un déploiement canary surveille avant de décider de continuer le déploiement.

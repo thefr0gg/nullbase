@@ -1,0 +1,35 @@
+---
+title: Application Servers
+description: Le processus qui exécute réellement votre code — router une requête analysée vers un handler, gérer des processus workers, et maintenir l'état applicatif entre les requêtes.
+category: Backend
+weight: 1
+---
+
+Là où un [serveur web](/fr/backend/web-servers) s'arrête à « analyser HTTP et transmettre la requête », un **application server** est l'endroit où votre code s'exécute réellement — le routeur du framework fait correspondre un chemin à un handler, le handler s'exécute, et une réponse revient. Dans de nombreuses stacks, il s'agit du même processus que le serveur web (une application Node.js écoutant sur son propre port) ; dans d'autres, c'est un niveau véritablement séparé (des workers PHP-FPM derrière Nginx, un pool de processus Gunicorn/uvicorn derrière un reverse proxy, un serveur d'applications JVM derrière Apache).
+
+## Modèles de processus et de workers
+
+Un application server doit décider comment traiter de nombreuses requêtes à la fois sans qu'une requête lente bloque toutes les autres :
+
+<ItemExplorer
+  title="Modèles de concurrence"
+  layout="table"
+  tableColumns={[{ key: "how", label: "How it handles concurrency" }, { key: "tradeoff", label: "Trade-off" }]}
+  items={[
+    { id: "multi-process", label: "Multiple worker processes", color: "blue", columns: { how: "L'OS exécute plusieurs copies indépendantes de l'application, chacune traitant une requête à la fois (ou un petit pool)", tradeoff: "Simple et isolé face aux crashs — un worker qui plante n'entraîne pas la chute des autres — mais chaque processus duplique la mémoire (code chargé, données mises en cache)." } },
+    { id: "threaded", label: "Thread pool per process", color: "green", columns: { how: "Un processus, de nombreux threads OS, chacun bloquant indépendamment en attendant des E/S", tradeoff: "Partage la mémoire entre les threads, mais nécessite que le langage/runtime gère les accès concurrents en toute sécurité." } },
+    { id: "event-loop", label: "Single-threaded event loop", color: "purple", columns: { how: "Un seul thread, E/S non bloquantes — un appel base de données lent redonne la main pour traiter d'autres requêtes au lieu de bloquer", tradeoff: "Aucun souci de thread-safety, mais un handler véritablement gourmand en CPU bloque tout le reste jusqu'à sa fin." } },
+  ]}
+/>
+
+Node.js est l'exemple canonique d'event loop ; Gunicorn (Python) et Puma (Ruby) sont couramment configurés avec plusieurs processus workers, chacun pouvant en plus utiliser des threads ou une event loop asynchrone en interne — les déploiements réels combinent fréquemment plus d'un de ces modèles à la fois.
+
+## L'état entre les requêtes
+
+Comme un processus d'application server reste actif à travers de nombreuses requêtes (contrairement, disons, à un script PHP unique s'exécutant une fois par requête dans le modèle CGI classique), il peut conserver un état en mémoire entre elles — un pool de connexions à la base de données, un cache de templates compilés, un cache en mémoire des requêtes récentes. C'est une véritable capacité, mais c'est aussi pourquoi exécuter plus d'une instance d'un application server (pour la scalabilité ou la fiabilité) signifie que l'état en mémoire n'est pas partagé entre les instances — une valeur mise en cache dans la mémoire du worker A ne signifie rien pour le worker B, ce qui est exactement le problème auquel se heurtent le [cache](/fr/backend/caching) et les [sessions](/fr/backend/sessions) dès qu'un backend passe à plus d'un processus.
+
+## Voir aussi
+
+- **[Web Servers](/fr/backend/web-servers)** — la couche en amont qui transmet une requête analysée à l'application server.
+- **[Middleware](/fr/backend/middleware)** — la chaîne de fonctions qu'une requête traverse à l'intérieur de l'application server avant d'atteindre un gestionnaire de route.
+- **[Background Jobs](/fr/backend/background-jobs)** — le travail qu'un application server reporte explicitement plutôt que de l'exécuter en ligne.

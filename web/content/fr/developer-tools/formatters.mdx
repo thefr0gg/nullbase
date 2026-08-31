@@ -1,0 +1,50 @@
+---
+title: Formateurs
+description: Mettre fin aux discussions sur le style de code en l'automatisant entièrement — un formateur réécrit le code selon un style unique et cohérent, sans configuration à discuter.
+category: Developer Tools
+weight: 7
+---
+
+Un **formateur** (Prettier pour JavaScript/CSS/beaucoup d'autres, Black pour Python, gofmt pour Go) réécrit le code source selon un style unique et cohérent — indentation, longueur de ligne, style de guillemets, espacement — sans changer ce que le code fait réellement. Contrairement à un [linter](/fr/developer-tools/linters), un formateur ne cherche pas de bugs ; il s'intéresse uniquement à l'apparence du code.
+
+## Avant et après
+
+```js
+// before
+function add(a,b){return a+b}
+const obj={x:1,y:2,z:3}
+
+// after (formatted)
+function add(a, b) {
+  return a + b;
+}
+const obj = { x: 1, y: 2, z: 3 };
+```
+
+Rien n'a changé dans le comportement — seulement les espaces, l'espacement, et (dans ce cas) l'ajout de points-virgules.
+
+## Résolument peu configurable
+
+Prettier en particulier est délibérément proche du non-configurable — quelques options existent (largeur de tabulation, style de guillemets), mais bien moins que les dizaines de règles individuellement activables/désactivables d'un linter typique. C'est intentionnel : toute la proposition de valeur consiste à mettre fin entièrement aux discussions sans fin sur le style, et un formateur avec une centaine d'options configurables ne fait que déplacer le débat de « quel style devrions-nous utiliser » vers « comment devrions-nous configurer le formateur », ce qui va à l'encontre du but recherché.
+
+## Pourquoi ne pas simplement utiliser un linter pour cela
+
+Un linter *peut* signaler des problèmes de style (indentation incohérente, mauvais style de guillemets) de la même manière qu'il signale des problèmes logiques, mais signaler des centaines de violations de style une par une et demander à un humain de corriger chacune est une mauvaise expérience pour quelque chose d'entièrement mécanique. Les formateurs existent précisément pour automatiser entièrement la partie mécanique — on lance le formateur, chaque problème de style est corrigé, et la revue de code peut se concentrer entièrement sur la logique plutôt que sur l'espacement.
+
+## L'exécuter automatiquement
+
+La plupart des équipes exécutent un formateur à un ou plusieurs de ces moments, souvent plusieurs à la fois :
+
+- **À l'enregistrement**, via une intégration à l'éditeur — la boucle de rétroaction la plus immédiate.
+- **Comme hook de pré-commit** — refusant de committer du code non formaté, ou le formatant automatiquement avant que le commit ne se termine.
+- **En CI** — en vérifiant (sans corriger) que tout le code est déjà formaté, faisant échouer la build sinon, comme filet de sécurité contre quiconque contournerait les étapes précédentes.
+
+## Formateur + linter ensemble
+
+Un formateur et un linter ne sont pas concurrents — ils sont couramment utilisés ensemble, les règles de style propres au linter (indentation, espacement) étant explicitement désactivées pour laisser le formateur s'en occuper entièrement (`eslint-config-prettier` existe précisément pour désactiver les règles ESLint qui entreraient sinon en conflit avec la sortie de Prettier). Le linter se concentre alors purement sur la logique et la correction, et le formateur purement sur l'apparence.
+
+## Voir aussi
+
+- **[Linters](/fr/developer-tools/linters)** — l'outil complémentaire qui vérifie la logique et la correction plutôt que le style.
+- **[Git](/fr/developer-tools/git)** — les hooks de pré-commit qui exécutent un formateur sont généralement câblés via le propre mécanisme de hooks de Git.
+- **[CI/CD](/fr/devops/ci-cd)** — où une étape « vérification du formatage » s'exécute couramment comme filet de sécurité.

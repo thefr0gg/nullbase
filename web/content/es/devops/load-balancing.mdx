@@ -1,0 +1,40 @@
+---
+title: Balanceo de carga
+description: Distribuir el tráfico entre varias instancias de un servicio — los algoritmos detrás de la elección, y lo que añaden los health checks.
+category: DevOps & Infrastructure
+weight: 6
+---
+
+El **balanceo de carga** reparte las solicitudes entrantes entre más de una instancia de backend, de modo que ninguna instancia individual tiene que gestionar todo el tráfico ella sola — el mecanismo que hace que el escalado horizontal (añadir más instancias) se traduzca realmente en más capacidad. Un [proxy inverso](/es/backend/reverse-proxies) es el componente que normalmente hace esto en la práctica; esta página trata específicamente de los algoritmos entre los que elige.
+
+## Algoritmos comunes
+
+<ItemExplorer
+  title="Algoritmos de balanceo de carga"
+  layout="table"
+  tableColumns={[{ key: "how", label: "Cómo elige la siguiente instancia" }, { key: "good-for", label: "Adecuado para" }]}
+  items={[
+    { id: "round-robin", label: "Round robin", color: "blue", columns: { how: "Recorre las instancias en una rotación fija, una tras otra", "good-for": "Solicitudes uniformes de coste similar, instancias con capacidad aproximadamente igual" } },
+    { id: "least-connections", label: "Least connections", color: "green", columns: { how: "Envía la siguiente solicitud a la instancia que actualmente tenga menos conexiones activas", "good-for": "Solicitudes con duraciones muy variables, donde round robin podría acumular solicitudes lentas en una sola instancia" } },
+    { id: "ip-hash", label: "IP hash", color: "purple", columns: { how: "Aplica un hash a la IP del cliente para encaminar de forma consistente al mismo cliente hacia la misma instancia", "good-for": "Sesiones persistentes (sticky sessions) — ver Sessions — sin un mecanismo de afinidad de sesión aparte" } },
+    { id: "weighted", label: "Weighted", color: "orange", columns: { how: "Cualquiera de los anteriores, pero sesgado hacia las instancias con más peso asignado (capacidad)", "good-for": "Una flota mixta donde algunas instancias tienen más CPU/memoria que otras" } },
+  ]}
+/>
+
+## Health checks
+
+Un balanceador de carga que sigue encaminando tráfico hacia una instancia caída o sobrecargada empeora las cosas, no las mejora — un **health check** consulta periódicamente cada instancia (a menudo un endpoint ligero `/health`) y deja de encaminar tráfico hacia cualquier instancia que no responda correctamente, reintroduciéndola automáticamente en cuanto se recupera. Esto es lo que permite reiniciar o reemplazar una instancia concreta sin que una persona tenga que retirarla manualmente de la rotación primero.
+
+## Balanceo de carga de capa 4 frente a capa 7
+
+Un balanceador de carga de **Capa 4** opera únicamente con información de IP/TCP — no interpreta HTTP en absoluto, simplemente reenvía paquetes según la IP y el puerto, lo cual es rápido pero no puede tomar decisiones basadas en el contenido de la solicitud. Un balanceador de carga de **Capa 7** entiende HTTP y puede encaminar según la propia solicitud — enrutamiento basado en la ruta (`/api/*` a un servicio, `/static/*` a otro), inspección de cabeceras, o incluso pruebas A/B basadas en una cookie. La mayoría de los proxies inversos que también hacen de balanceador de carga (Nginx, [Cloudflare](/es/cloudflare)) operan en la Capa 7 precisamente por esa flexibilidad.
+
+## Escalar horizontalmente frente a escalar verticalmente
+
+El balanceo de carga es específicamente lo que hace viable el **escalado horizontal** (añadir más instancias, más pequeñas) como alternativa al **escalado vertical** (hacer una instancia más grande — más CPU, más RAM). El escalado horizontal tiene un techo determinado por lo bien que el algoritmo distribuye la carga y lo bien que el backend soporta ejecutarse como varias instancias (ver [Sessions](/es/backend/sessions) para la complicación clásica), pero también permite un crecimiento de capacidad casi ilimitado y una tolerancia a fallos mucho mejor que la que una única máquina, por grande que sea, puede ofrecer.
+
+## Ver también
+
+- **[Proxies inversos](/es/backend/reverse-proxies)** — donde normalmente se configura el balanceo de carga en la práctica.
+- **[Sessions](/es/backend/sessions)** — la complicación clásica de ejecutar más de una instancia de backend.
+- **[Monitorización](/es/devops/monitoring)** — lo que realmente indica que una instancia debe retirarse de la rotación.

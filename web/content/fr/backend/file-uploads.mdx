@@ -1,0 +1,50 @@
+---
+title: File Uploads
+description: Accepter des données binaires d'un client en toute sécurité et à grande échelle — encodage multipart, streaming vs mise en mémoire tampon, et pourquoi les uploads contournent souvent entièrement l'application server.
+category: Backend
+weight: 8
+---
+
+Un upload de fichier est une requête dont le corps est constitué de données binaires plutôt que de JSON ou de champs de formulaire — et bien le gérer implique de traiter des tailles et des modes d'échec dont une requête JSON classique et de petite taille n'a jamais à se soucier.
+
+## Multipart form data
+
+Les navigateurs téléversent des fichiers en utilisant `multipart/form-data`, un encodage qui permet à une seule requête de transporter un mélange de champs classiques et d'une ou plusieurs parties de fichiers binaires, chacune avec son propre marqueur de délimitation :
+
+```http
+POST /upload HTTP/1.1
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWx
+
+------WebKitFormBoundary7MA4YWx
+Content-Disposition: form-data; name="title"
+
+My vacation photo
+------WebKitFormBoundary7MA4YWx
+Content-Disposition: form-data; name="file"; filename="beach.jpg"
+Content-Type: image/jpeg
+
+<binary JPEG data>
+------WebKitFormBoundary7MA4YWx--
+```
+
+Un parseur multipart côté serveur redécoupe le corps en ses parties, exposant chaque champ et fichier séparément au code applicatif.
+
+## Streaming plutôt que mise en mémoire tampon
+
+Un gestionnaire d'upload naïf lit l'intégralité du corps de la requête en mémoire avant de faire quoi que ce soit avec — très bien pour un formulaire de 20 Ko, mais un vrai problème pour une vidéo de 500 Mo : la mettre entièrement en tampon signifie retenir autant de mémoire par upload simultané, et une poignée d'uploads volumineux simultanés peut carrément épuiser la mémoire d'un serveur. Un gestionnaire d'upload en **streaming** traite au contraire le corps au fur et à mesure de son arrivée, écrivant des chunks directement sur disque ou vers un service de stockage sans jamais garder le fichier entier en mémoire à la fois.
+
+## Pourquoi les uploads contournent souvent l'application server
+
+De nombreux systèmes en production font passer les uploads volumineux *autour* de l'application server dans son intégralité : le client demande au backend une **URL d'upload pré-signée** (un identifiant de courte durée et à portée limitée), puis téléverse le fichier directement vers un service de stockage d'objets (S3, [R2](/fr/cloudflare/r2)) en utilisant cette URL — l'application server ne touche jamais aux octets du fichier, seulement à une petite quantité de métadonnées. Cela évite que la mémoire/bande passante du niveau applicatif ne devienne le goulot d'étranglement pour les transferts volumineux, et lui permet de scaler indépendamment du trafic d'upload.
+
+## La validation qui compte réellement
+
+- **Limites de taille de fichier** — rejeter avant de lire l'intégralité du corps, pas après, sinon un upload surdimensionné a déjà coûté de la bande passante et de la mémoire avant d'être rejeté.
+- **Vérification du content-type** — le header `Content-Type` fourni par le client n'est pas fiable en soi ; un fichier prétendant être `image/png` peut contenir n'importe quoi. Une véritable validation inspecte les octets réels du fichier (une vérification du « nombre magique ») plutôt que de faire confiance au type déclaré.
+- **Assainissement du nom de fichier** — un nom de fichier fourni par le client peut contenir des séquences de traversée de chemin (`../../etc/passwd`) ou des caractères dangereux pour le système de fichiers de destination ; ne jamais l'utiliser directement pour construire un chemin de stockage.
+
+## Voir aussi
+
+- **[Cloudflare R2](/fr/cloudflare/r2)** — un stockage d'objets compatible S3, une destination d'upload courante.
+- **[CORS](/en/security/cors)** — pertinent lorsque le navigateur téléverse directement vers une origine différente (comme un bucket de stockage) plutôt que via votre propre API.
+- **[Error Handling](/fr/backend/error-handling)** — un upload interrompu ou surdimensionné nécessite une réponse d'échec claire et spécifique.

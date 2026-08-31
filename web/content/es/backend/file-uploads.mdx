@@ -1,0 +1,50 @@
+---
+title: Subida de Archivos
+description: Aceptar datos binarios de un cliente de forma segura y a gran escala — codificación multipart, streaming frente a almacenamiento en búfer, y por qué las subidas suelen evitar por completo el servidor de aplicación.
+category: Backend
+weight: 8
+---
+
+Una subida de archivo es una solicitud cuyo cuerpo son datos binarios en vez de JSON o campos de formulario — y manejarla bien implica lidiar con tamaños y modos de fallo con los que una solicitud JSON pequeña típica nunca tiene que preocuparse.
+
+## Datos de formulario multipart
+
+Los navegadores suben archivos usando `multipart/form-data`, una codificación que permite que una sola solicitud lleve una mezcla de campos normales y una o más partes de archivo binario, cada una con su propio marcador de límite:
+
+```http
+POST /upload HTTP/1.1
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWx
+
+------WebKitFormBoundary7MA4YWx
+Content-Disposition: form-data; name="title"
+
+My vacation photo
+------WebKitFormBoundary7MA4YWx
+Content-Disposition: form-data; name="file"; filename="beach.jpg"
+Content-Type: image/jpeg
+
+<binary JPEG data>
+------WebKitFormBoundary7MA4YWx--
+```
+
+Un analizador multipart del lado del servidor divide el cuerpo de vuelta en sus partes, exponiendo cada campo y archivo por separado al código de la aplicación.
+
+## Streaming en vez de almacenamiento en búfer
+
+Un manejador de subida ingenuo lee todo el cuerpo de la solicitud en memoria antes de hacer nada con él — bien para un formulario de 20KB, pero un problema real para un video de 500MB: almacenarlo por completo en búfer significa retener esa cantidad de memoria por cada subida concurrente, y un puñado de subidas grandes simultáneas puede agotar la memoria de un servidor por completo. Un manejador de subida por **streaming** en cambio procesa el cuerpo a medida que llega, escribiendo fragmentos directamente a disco o a un servicio de almacenamiento sin retener nunca el archivo completo en memoria a la vez.
+
+## Por qué las subidas suelen evitar el servidor de aplicación
+
+Muchos sistemas en producción enrutan las subidas grandes *alrededor* del servidor de aplicación por completo: el cliente solicita una **URL de subida pre-firmada** al backend (una credencial de corta duración y con alcance limitado), y luego sube el archivo directamente al almacenamiento de objetos (S3, [R2](/es/cloudflare/r2)) usando esa URL — el servidor de aplicación nunca toca los bytes del archivo, solo la pequeña cantidad de metadatos. Esto evita que la memoria/ancho de banda de la capa de aplicación sea el cuello de botella para transferencias grandes, y le permite escalar independientemente del tráfico de subidas.
+
+## Validación que realmente importa
+
+- **Límites de tamaño de archivo** — rechazar antes de leer todo el cuerpo, no después, o una subida sobredimensionada ya habrá costado ancho de banda y memoria antes de ser rechazada.
+- **Verificación del content-type** — la cabecera `Content-Type` proporcionada por el cliente no es confiable por sí sola; un archivo que dice ser `image/png` puede contener cualquier cosa. La validación real inspecciona los bytes reales del archivo (una verificación de «número mágico») en vez de confiar en el tipo declarado.
+- **Sanitización del nombre de archivo** — un nombre de archivo proporcionado por el cliente puede contener secuencias de path traversal (`../../etc/passwd`) o caracteres inseguros para el sistema de archivos de destino; nunca lo uses directamente para construir una ruta de almacenamiento.
+
+## Ver también
+
+- **[Cloudflare R2](/es/cloudflare/r2)** — almacenamiento de objetos compatible con S3, un destino de subida común.
+- **[CORS](/en/security/cors)** — relevante cuando el navegador sube directamente a un origen distinto (como un bucket de almacenamiento) en vez de a través de tu propia API.
+- **[Manejo de errores](/es/backend/error-handling)** — una subida interrumpida o sobredimensionada necesita una respuesta de fallo clara y específica.

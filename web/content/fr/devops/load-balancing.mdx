@@ -1,0 +1,40 @@
+---
+title: Load Balancing
+description: Distribuer le trafic entre plusieurs instances d'un service — les algorithmes derrière ce choix, et ce que les health checks ajoutent par-dessus.
+category: DevOps & Infrastructure
+weight: 6
+---
+
+Le **load balancing** répartit les requêtes entrantes entre plusieurs instances backend, afin qu'aucune instance unique n'ait à gérer tout le trafic seule — le mécanisme qui fait que la mise à l'échelle horizontale (ajouter plus d'instances) se traduit réellement en plus de capacité. Un [reverse proxy](/fr/backend/reverse-proxies) est le composant qui fait typiquement cela en pratique ; cette page porte spécifiquement sur les algorithmes entre lesquels il choisit.
+
+## Algorithmes courants
+
+<ItemExplorer
+  title="Algorithmes de load balancing"
+  layout="table"
+  tableColumns={[{ key: "how", label: "Comment il choisit la prochaine instance" }, { key: "good-for", label: "Adapté pour" }]}
+  items={[
+    { id: "round-robin", label: "Round robin", color: "blue", columns: { how: "Fait tourner les instances selon une rotation fixe, l'une après l'autre", "good-for": "Des requêtes uniformes de coût similaire, des instances de capacité à peu près égale" } },
+    { id: "least-connections", label: "Least connections", color: "green", columns: { how: "Envoie la prochaine requête à l'instance qui a actuellement le moins de connexions actives", "good-for": "Des requêtes de durées très variables, là où le round robin pourrait empiler des requêtes lentes sur une seule instance" } },
+    { id: "ip-hash", label: "IP hash", color: "purple", columns: { how: "Hache l'IP du client pour router systématiquement le même client vers la même instance", "good-for": "Les sessions collantes — voir Sessions — sans mécanisme d'affinité de session séparé" } },
+    { id: "weighted", label: "Pondéré", color: "orange", columns: { how: "N'importe lequel des précédents, mais biaisé vers les instances ayant plus de poids assigné (capacité)", "good-for": "Une flotte mixte où certaines instances ont plus de CPU/RAM que d'autres" } },
+  ]}
+/>
+
+## Health checks
+
+Un load balancer qui continue de router vers une instance plantée ou surchargée aggrave les choses, il ne les améliore pas — un **health check** interroge périodiquement chaque instance (souvent un endpoint léger `/health`) et arrête de router vers toute instance qui ne répond pas correctement, la réintroduisant automatiquement une fois qu'elle se rétablit. C'est ce qui permet à une instance individuelle d'être redémarrée ou remplacée sans qu'un humain n'ait besoin de la retirer manuellement de la rotation au préalable.
+
+## Load balancing Layer 4 vs Layer 7
+
+Un load balancer **Layer 4** opère purement sur des informations IP/TCP — il ne parse pas du tout HTTP, se contente de transférer des paquets selon l'IP et le port, ce qui est rapide mais ne peut pas prendre de décisions basées sur le contenu de la requête. Un load balancer **Layer 7** comprend HTTP et peut router en fonction de la requête réelle — routage basé sur le chemin (`/api/*` vers un service, `/static/*` vers un autre), inspection des en-têtes, ou même A/B testing basé sur un cookie. La plupart des reverse proxies faisant aussi office de load balancers (Nginx, [Cloudflare](/fr/cloudflare)) opèrent en Layer 7 précisément pour cette flexibilité.
+
+## Scaling out vs scaling up
+
+Le load balancing est spécifiquement ce qui rend la **mise à l'échelle horizontale** (ajouter plus d'instances, plus petites) viable comme alternative à la **mise à l'échelle verticale** (rendre une instance plus grosse — plus de CPU, plus de RAM). La mise à l'échelle horizontale a un plafond déterminé par la capacité de l'algorithme à distribuer la charge et par la capacité du backend à fonctionner en plusieurs instances (voir [Sessions](/fr/backend/sessions) pour la complication classique), mais elle permet aussi une croissance de capacité quasi illimitée et une bien meilleure tolérance aux pannes qu'une seule machine plus grosse ne le pourra jamais.
+
+## Voir aussi
+
+- **[Reverse Proxies](/fr/backend/reverse-proxies)** — là où le load balancing est typiquement configuré en pratique.
+- **[Sessions](/fr/backend/sessions)** — la complication classique de faire tourner plus d'une instance backend.
+- **[Monitoring](/fr/devops/monitoring)** — ce qui vous indique réellement qu'une instance doit être retirée de la rotation.

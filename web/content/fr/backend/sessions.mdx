@@ -1,0 +1,36 @@
+---
+title: Sessions
+description: Où vit réellement l'état de session côté serveur une fois qu'un backend tourne sur plus d'une machine — pas la mécanique des cookies, mais l'architecture de stockage derrière eux.
+category: Backend
+weight: 7
+---
+
+[Sessions](/en/security/sessions) couvre le mécanisme du cookie — un ID de session émis à la connexion, renvoyé à chaque requête. Cette page traite d'une question qui ne devient réelle qu'une fois qu'un backend passe à l'échelle au-delà d'un seul processus : **où vivent réellement les données de session**, étant donné que n'importe laquelle de plusieurs instances backend pourrait traiter la prochaine requête de ce même navigateur ?
+
+## Le problème qu'une seule instance n'a jamais
+
+Sur un seul serveur, stocker les sessions dans un simple objet en mémoire fonctionne bien — chaque requête atteint le même processus, donc la même mémoire. Dès qu'il y a une deuxième instance derrière un [reverse proxy](/fr/backend/reverse-proxies) ou un [load balancer](/fr/devops/load-balancing), cela cesse d'être vrai : une connexion traitée par l'instance A ne signifie rien pour l'instance B, qui n'a jamais entendu parler de cet ID de session.
+
+## Trois façons d'y remédier
+
+<ItemExplorer
+  title="Stratégies de session multi-instances"
+  layout="pills"
+  items={[
+    { id: "sticky", label: "Sticky sessions", color: "blue", detail: "Configurer le load balancer pour toujours router un client donné vers la même instance backend (via un cookie ou l'IP du client). Maintient les sessions en mémoire fonctionnelles, mais un redémarrage d'instance ou un scale-down perd tout de même chaque session épinglée à celle-ci, et la répartition de charge devient inégale." },
+    { id: "shared-store", label: "Shared session store", color: "green", detail: "Sortir les données de session de la mémoire de toute instance vers un cache partagé (Redis étant le choix classique) ou une base de données que chaque instance lit. N'importe quelle instance peut désormais traiter n'importe quelle requête — la solution standard et la plus robuste." },
+    { id: "stateless-tokens", label: "Stateless tokens (JWT)", color: "purple", detail: "Se passer entièrement du stockage de session côté serveur — encoder l'identité/les claims dans un token signé détenu par le client. Aucun store partagé nécessaire, au prix d'une révocation anticipée plus difficile (voir JWT)." },
+  ]}
+/>
+
+Un store partagé est la recommandation par défaut pour la plupart des backends : il ne nécessite aucune configuration spéciale du load balancer, survit au redémarrage ou au remplacement d'une instance individuelle, et laisse la mécanique réelle du cookie de session de la page sécurité entièrement inchangée — seul *l'endroit où va la recherche de session* diffère.
+
+## Ce qui va réellement dans une session
+
+Le stockage de session devrait généralement contenir aussi peu que possible — un ID utilisateur et peut-être quelques indicateurs de courte durée, pas une copie complète des données de profil de l'utilisateur (qui appartiennent à la base de données et peuvent être récupérées par ID en cas de besoin). Une session surchargée ajoute de la latence à chaque requête qui doit la lire et crée encore un autre endroit où les mêmes données peuvent se désynchroniser de leur source de vérité.
+
+## Voir aussi
+
+- **[Sessions](/en/security/sessions)** — le mécanisme du cookie et les indicateurs de sécurité que cette page présuppose.
+- **[Caching](/fr/backend/caching)** — la même infrastructure de store partagé (Redis, Memcached) sert souvent à la fois aux sessions et à un cache général.
+- **[Load Balancing](/fr/devops/load-balancing)** — là où le routage par sessions collantes est réellement configuré.

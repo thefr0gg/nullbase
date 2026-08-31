@@ -1,0 +1,38 @@
+---
+title: Processes
+description: L'unité de code en cours d'exécution du système d'exploitation — ce qu'est réellement un PID, comment les processus sont isolés les uns des autres, et ce qu'un conteneur s'avère être en réalité.
+category: DevOps & Infrastructure
+weight: 1
+---
+
+Un **processus** est une instance en cours d'exécution d'un programme — son propre espace mémoire, ses propres descripteurs de fichiers, son propre état d'exécution — suivi par le système d'exploitation sous un **PID** (process ID) unique. Presque tout autre concept de cette section (un [serveur web](/fr/backend/web-servers), un [conteneur](/fr/devops/containers), un worker en arrière-plan) est, en dessous, un ou plusieurs processus OS.
+
+## Ce qu'un processus possède réellement
+
+- **Son propre espace mémoire virtuel** — un processus ne peut pas directement lire ou écrire la mémoire d'un autre ; l'OS impose cette isolation au niveau matériel via l'unité de gestion mémoire du CPU.
+- **Des descripteurs de fichiers** — des handles vers des fichiers ouverts, des sockets réseau, et des pipes, numérotés à partir de 0 (stdin), 1 (stdout), 2 (stderr).
+- **Un parent** — chaque processus sauf le tout premier (`init`, PID 1) a été créé par un autre processus appelant `fork()` ou similaire, formant un arbre. Tuer un parent peut (selon la gestion des signaux) laisser des processus enfants « orphelins ».
+- **Un code de sortie** — un nombre retourné à la fin, `0` signifiant conventionnellement un succès et tout le reste une forme d'échec, vérifié par les scripts et gestionnaires de processus pour décider de la suite.
+
+## Processus vs thread
+
+Un **thread** est une unité d'exécution *au sein* d'un processus, partageant l'espace mémoire de ce processus avec d'autres threads du même processus — moins coûteux à créer et entre lesquels basculer qu'un processus entièrement nouveau, mais sans l'isolation mémoire : un bug dans un thread peut corrompre des données dont dépend un autre thread du même processus. C'est le même compromis que naviguent les [serveurs d'application](/fr/backend/application-servers) lorsqu'ils choisissent un modèle de concurrence.
+
+## Signaux
+
+L'OS permet à un processus de demander à un autre de faire quelque chose via un **signal** — `SIGTERM` demande poliment à un processus de s'arrêter (lui donnant une chance de nettoyer les connexions ouvertes, de finir le travail en cours) ; `SIGKILL` le termine immédiatement sans aucune chance de réagir. Les outils de déploiement et les gestionnaires de processus s'appuient sur cette distinction : un redémarrage gracieux envoie `SIGTERM` et attend, n'escaladant vers `SIGKILL` que si le processus ne se termine pas dans un certain délai.
+
+```bash
+kill -TERM 1234   # ask nicely
+kill -KILL 1234   # no negotiation (same as kill -9)
+```
+
+## Pourquoi un conteneur n'est « qu'» un ensemble de processus
+
+Un [conteneur](/fr/devops/containers) ne fait pas tourner un système d'exploitation séparé — c'est un processus Linux ordinaire (ou un groupe de processus) auquel on a donné une *vue* isolée du système (son propre système de fichiers, sa propre interface réseau, sa propre liste de processus) via des fonctionnalités du noyau comme les namespaces et les cgroups, tout en partageant toujours le même noyau sous-jacent que l'hôte. C'est pourquoi les conteneurs démarrent en millisecondes alors qu'une machine virtuelle, qui démarre bel et bien un OS séparé complet, prend beaucoup plus de temps.
+
+## Voir aussi
+
+- **[Application Servers](/fr/backend/application-servers)** — les modèles de concurrence processus/thread/event-loop en pratique.
+- **[Containers](/fr/devops/containers)** — le mécanisme d'isolation construit sur ces mêmes primitives de processus.
+- **[Linux](/fr/devops/linux)** — les commandes `ps`/`kill` utilisées pour inspecter et signaler directement les processus.

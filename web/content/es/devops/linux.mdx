@@ -1,0 +1,69 @@
+---
+title: Linux
+description: El sistema operativo que ejecuta la inmensa mayoría de los servidores — la jerarquía del sistema de archivos, los permisos, y el puñado de comandos que merece la pena saberse de memoria.
+category: DevOps & Infrastructure
+weight: 0
+interactive: true
+interactiveType: ["InteractiveTerminal"]
+---
+
+Casi todos los servidores de internet — VMs en la nube, contenedores, las máquinas detrás de la mayoría de los backends — ejecutan alguna distribución de Linux. No porque Linux sea obligatorio, sino porque es gratuito, estable, bien conocido, y tiene décadas de herramientas construidas precisamente en torno a este caso de uso. Saber moverse por un shell de Linux es casi un requisito previo para el trabajo de backend y DevOps en general.
+
+## La jerarquía del sistema de archivos
+
+A diferencia de las letras de unidad por disco de Windows, Linux tiene un único árbol de sistema de archivos con raíz en `/`, con un pequeño número de directorios de nivel superior convencionales:
+
+<ItemExplorer
+  title="Directorios de primer nivel comunes"
+  layout="table"
+  tableColumns={[{ key: "contains", label: "Contiene típicamente" }]}
+  items={[
+    { id: "bin", label: "/bin, /usr/bin", color: "blue", columns: { contains: "Programas ejecutables disponibles para todos los usuarios." } },
+    { id: "etc", label: "/etc", color: "green", columns: { contains: "Archivos de configuración de todo el sistema." } },
+    { id: "home", label: "/home", color: "purple", columns: { contains: "Los archivos personales de cada usuario, un subdirectorio por usuario." } },
+    { id: "var", label: "/var", color: "orange", columns: { contains: "Datos que cambian en tiempo de ejecución — logs (/var/log), cachés, bases de datos." } },
+    { id: "tmp", label: "/tmp", color: "red", columns: { contains: "Archivos temporales, a menudo eliminados al reiniciar." } },
+  ]}
+/>
+
+## Permisos
+
+Todo archivo tiene un propietario, un grupo, y tres conjuntos de permisos (propietario/grupo/otros), cada uno con bits de lectura, escritura y ejecución — mostrados por `ls -l` como una cadena tipo `-rwxr-xr--`. `chmod 755 script.sh` establece el propietario en lectura/escritura/ejecución (7), el grupo y los demás en lectura/ejecución (5 cada uno) — la forma numérica es solo esos tres bits de permisos leídos como dígitos octales. Un script que no sea ejecutable (`chmod +x`) se negará a ejecutarse directamente aunque su contenido sea perfectamente válido.
+
+## Comandos que merece la pena saberse de memoria
+
+```bash
+ls -la          # list files, including hidden ones, with details
+cd /var/log      # change directory
+pwd              # print working directory
+cat file.txt     # print a file's contents
+grep -r "TODO" . # search recursively for a pattern
+ps aux           # list running processes
+kill -9 1234     # forcibly terminate process 1234
+chmod +x run.sh  # make a file executable
+tail -f app.log  # follow a log file as it grows
+```
+
+`tail -f` en particular es una herramienta diaria para cualquiera que opere un servicio — observar cómo se actualiza un archivo de log en tiempo real mientras un servidor gestiona solicitudes.
+
+## Pruébalo
+
+<InteractiveTerminal
+  title="Una shell Linux mínima"
+  initialFs={
+    {
+      "type": "dir",
+      "children": {
+        "var": { "type": "dir", "children": { "log": { "type": "dir", "children": { "app.log": { "type": "file", "content": "server started\nlistening on :8080\n" } } } } },
+        "home": { "type": "dir", "children": { "user": { "type": "dir", "children": { "notes.txt": { "type": "file", "content": "remember to rotate the logs\n" } } } } }
+      }
+    }
+  }
+  initialCwd={["home", "user"]}
+/>
+
+## Ver también
+
+- **[Procesos](/es/devops/processes)** — sobre qué operan realmente `ps` y `kill` de arriba.
+- **[Variables de entorno](/es/devops/environment-variables)** — configuración leída del entorno del shell, no de un archivo de configuración.
+- **[Docker](/es/devops/docker)** — un contenedor es, por debajo, en realidad un proceso de Linux con vistas aisladas de las mismas primitivas de kernel cubiertas aquí.

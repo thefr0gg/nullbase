@@ -1,0 +1,48 @@
+---
+title: Environment Variables
+description: Comment la configuration atteint un processus en cours d'exécution sans être codée en dur dans le code — le mécanisme standard pour tout, d'une URL de base de données à une clé d'API.
+category: DevOps & Infrastructure
+weight: 2
+---
+
+Une **variable d'environnement** est une valeur nommée transmise à un [processus](/fr/devops/processes) par ce qui l'a démarré (un shell, un orchestrateur, le système de déploiement d'une plateforme), lisible par ce processus au moment de l'exécution sans avoir besoin d'un fichier de configuration, d'un flag en ligne de commande, ou d'une valeur codée en dur dans le code source.
+
+## Les définir et les lire
+
+```bash
+export DATABASE_URL="postgres://localhost/myapp"
+export NODE_ENV="production"
+node server.js
+```
+
+```js
+const dbUrl = process.env.DATABASE_URL;
+const isProd = process.env.NODE_ENV === "production";
+```
+
+Un processus enfant hérite par défaut de l'environnement de son parent — `node server.js` exécuté depuis un shell qui a exporté `DATABASE_URL` voit cette variable automatiquement, sans qu'elle soit transmise explicitement.
+
+## Pourquoi ne pas simplement coder la configuration en dur
+
+Le même code applicatif a besoin d'une configuration différente selon les environnements — une URL de base de données locale pendant le développement, une autre en staging, encore une autre en production — et coder en dur l'une d'elles signifie soit maintenir des branches de code séparées par environnement, soit modifier manuellement les valeurs avant chaque déploiement, les deux étant sujets à erreur. Les variables d'environnement permettent au *même* build/artefact de fonctionner correctement partout, seul l'environnement autour changeant.
+
+## Fichiers `.env`
+
+Comme exporter manuellement une douzaine de variables à chaque session de terminal est fastidieux, des outils comme `dotenv` chargent automatiquement le contenu d'un fichier `.env` dans `process.env` au démarrage :
+
+```text
+DATABASE_URL=postgres://localhost/myapp
+API_KEY=sk_test_abc123
+```
+
+Un fichier `.env` est une commodité de développement local — il devrait figurer dans `.gitignore`, ne jamais être commité, car il contient couramment de vrais identifiants (voir [Secrets Management](/en/security/secrets-management)). Les environnements de production définissent typiquement les variables via la propre configuration de la plateforme d'hébergement (un tableau de bord, un stockage de secrets en CLI) plutôt que de livrer un fichier `.env` du tout.
+
+## Les variables d'environnement ne sont pas automatiquement secrètes
+
+Le fait qu'une variable soit lue depuis l'environnement plutôt que codée en dur ne la rend pas sécurisée en soi — tout ce qui a accès au processus (un débogueur, un crash dump, une instruction de logging mal configurée qui affiche `process.env`) peut potentiellement la lire. Pour les valeurs réellement sensibles, les variables d'environnement sont généralement le *mécanisme de livraison*, la valeur réelle provenant d'un gestionnaire de secrets dédié plutôt que d'être saisie en clair là où un humain la maintient.
+
+## Voir aussi
+
+- **[Secrets Management](/en/security/secrets-management)** — pourquoi certaines variables d'environnement ont besoin de plus de protection que d'autres.
+- **[Docker](/fr/devops/docker)** — les variables d'environnement sont le moyen standard de configurer un conteneur sans reconstruire son image.
+- **[Cloudflare Workers Bindings](/fr/cloudflare/workers-bindings)** — un mécanisme différent (et plus structuré) pour le même besoin sous-jacent, propre aux Workers.

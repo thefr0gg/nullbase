@@ -1,0 +1,50 @@
+---
+title: Formateadores
+description: Acabar con las discusiones sobre el estilo del código automatizándolo por completo — un formateador reescribe el código a un único estilo consistente, sin nada que configurar sobre lo que discutir.
+category: Developer Tools
+weight: 7
+---
+
+Un **formateador** (Prettier para JavaScript/CSS/muchos otros, Black para Python, gofmt para Go) reescribe el código fuente a un único estilo consistente — indentación, longitud de línea, tipo de comillas, espaciado — sin cambiar lo que el código realmente hace. A diferencia de un [linter](/es/developer-tools/linters), un formateador no busca errores; se ocupa únicamente de cómo *se ve* el código.
+
+## Antes y después
+
+```js
+// before
+function add(a,b){return a+b}
+const obj={x:1,y:2,z:3}
+
+// after (formatted)
+function add(a, b) {
+  return a + b;
+}
+const obj = { x: 1, y: 2, z: 3 };
+```
+
+Nada del comportamiento cambió — solo los espacios en blanco, el espaciado y (en este caso) los punto y coma añadidos.
+
+## Poco configurable por diseño
+
+Prettier en particular es deliberadamente casi inconfigurable — existe un puñado de opciones (ancho de tabulación, tipo de comillas), pero muchas menos que las decenas de reglas activables individualmente de un linter típico. Esto es intencional: toda la propuesta de valor consiste en acabar por completo con las discusiones bizantinas sobre el estilo, y un formateador con cien opciones configurables simplemente traslada la discusión de «qué estilo deberíamos usar» a «cómo deberíamos configurar el formateador», lo que anula el propósito.
+
+## Por qué no usar simplemente un linter para esto
+
+Un linter *puede* señalar problemas de estilo (indentación inconsistente, tipo de comillas incorrecto) del mismo modo que señala problemas de lógica, pero reportar cientos de infracciones de estilo una a una y pedirle a un humano que arregle cada una es una mala experiencia para algo enteramente mecánico. Los formateadores existen específicamente para automatizar por completo la parte mecánica — ejecutas el formateador, se arregla todo problema de estilo, y la revisión de código puede centrarse enteramente en la lógica en lugar del espaciado.
+
+## Ejecutarlo automáticamente
+
+La mayoría de los equipos ejecutan un formateador en uno o más de estos puntos, a menudo varios a la vez:
+
+- **Al guardar**, mediante una integración del editor — el ciclo de retroalimentación más inmediato.
+- **Como hook de pre-commit** — negándose a hacer commit de código sin formatear, o formateándolo automáticamente antes de que el commit se complete.
+- **En CI** — comprobando (sin corregir) que todo el código ya está formateado, fallando la compilación si no, como respaldo contra quien se salte los pasos anteriores.
+
+## Formateador + linter juntos
+
+Un formateador y un linter no son competidores — se ejecutan habitualmente juntos, con las propias reglas del linter relacionadas con el estilo (indentación, espaciado) explícitamente desactivadas a favor de dejar que el formateador se encargue por completo de eso (`eslint-config-prettier` existe específicamente para desactivar las reglas de ESLint que de otro modo entrarían en conflicto con la salida de Prettier). El linter entonces se centra únicamente en la lógica y la corrección, y el formateador únicamente en la apariencia.
+
+## Ver también
+
+- **[Linters](/es/developer-tools/linters)** — la herramienta complementaria que comprueba la lógica y la corrección en lugar del estilo.
+- **[Git](/es/developer-tools/git)** — los hooks de pre-commit que ejecutan un formateador normalmente se conectan a través del propio mecanismo de hooks de Git.
+- **[CI/CD](/es/devops/ci-cd)** — donde un paso de «comprobar formato» suele ejecutarse como respaldo.

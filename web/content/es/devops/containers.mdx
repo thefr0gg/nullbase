@@ -1,0 +1,47 @@
+---
+title: Contenedores
+description: El mecanismo del kernel de Linux que hay debajo de Docker — namespaces y cgroups — y en qué se diferencia un contenedor de una máquina virtual completa.
+category: DevOps & Infrastructure
+weight: 4
+---
+
+[Docker](/es/devops/docker) es la herramienta en la que la mayoría de la gente piensa cuando dice "contenedores", pero la contenedorización es en realidad un conjunto de características del kernel de Linux que Docker empaqueta en una interfaz fácil de usar. Entender lo que realmente ocurre por debajo explica tanto por qué los contenedores son tan ligeros como dónde está realmente su límite de aislamiento.
+
+## Las dos características del kernel que lo hacen posible
+
+<ItemExplorer
+  title="Primitivas del kernel detrás de un contenedor"
+  layout="pills"
+  items={[
+    { id: "namespaces", label: "Namespaces", color: "blue", detail: "Dan a un proceso su propia *vista* aislada de un recurso global — su propia lista de procesos (namespace de PID), sus propias interfaces de red (namespace de red), sus propios puntos de montaje del sistema de archivos (namespace de montaje) — sin duplicar realmente ese recurso a nivel de hardware." },
+    { id: "cgroups", label: "cgroups (control groups)", color: "green", detail: "Limitan y contabilizan cuánto de un recurso real (CPU, memoria, E/S de disco) puede usar un grupo de procesos — lo que impide que un contenedor deje sin memoria a todos los demás contenedores del mismo host." },
+  ]}
+/>
+
+Un contenedor es, en concreto, uno o más procesos ejecutándose con un conjunto específico de namespaces (de modo que no puede ver los demás procesos o interfaces de red del host) y límites de cgroup (de modo que no puede exceder su asignación de recursos) — todo ello mientras se ejecuta en exactamente el mismo kernel que el host y que cualquier otro contenedor en esa máquina.
+
+## Contenedor frente a máquina virtual
+
+<ItemExplorer
+  title="Contenedores frente a máquinas virtuales"
+  layout="table"
+  tableColumns={[{ key: "container", label: "Container" }, { key: "vm", label: "Virtual Machine" }]}
+  items={[
+    { id: "kernel", label: "Kernel", color: "blue", columns: { container: "Comparte el kernel del host", vm: "Ejecuta su propio kernel completo y separado" } },
+    { id: "startup", label: "Tiempo de arranque", color: "green", columns: { container: "Milisegundos — no hace falta arrancar un SO", vm: "De segundos a minutos — arranca un SO completo" } },
+    { id: "overhead", label: "Sobrecarga de recursos", color: "purple", columns: { container: "Baja — no hay kernel/SO duplicado por instancia", vm: "Mayor — cada VM carga con un SO completo" } },
+    { id: "isolation", label: "Fuerza del aislamiento", color: "orange", columns: { container: "A nivel de proceso, un límite más débil (un kernel compartido es una superficie de ataque compartida)", vm: "Virtualizado por hardware, un límite de seguridad más fuerte" } },
+  ]}
+/>
+
+Esto es un trade-off de seguridad real, no solo de rendimiento: como los contenedores de un mismo host comparten kernel, una vulnerabilidad a nivel de kernel puede potencialmente permitir que un proceso escape del aislamiento de su contenedor y afecte al host o a otros contenedores — algo a lo que el límite reforzado por hardware de una VM completa resiste mucho mejor. Por eso ejecutar código genuinamente no confiable (código arbitrario enviado por usuarios, por ejemplo) normalmente necesita un límite a nivel de VM o un sandboxing adicional más allá de un simple contenedor.
+
+## Por qué esto importa en la práctica
+
+Entender que un contenedor es "solo" procesos de Linux aislados explica gran parte del comportamiento de los contenedores que de otro modo parecería sorprendente: `docker exec` en un contenedor en ejecución simplemente lanza un nuevo proceso dentro de sus namespaces existentes; un contenedor que agota su límite de cgroup de memoria es eliminado por el OOM killer del kernel exactamente igual que cualquier otro proceso; y la lista de procesos de un contenedor, vista desde dentro, realmente cree que es el PID 1 en su propia máquina, aunque el host lo vea como un proceso ordinario entre muchos.
+
+## Ver también
+
+- **[Procesos](/es/devops/processes)** — la unidad del sistema operativo a la que se aplican los namespaces y los cgroups.
+- **[Docker](/es/devops/docker)** — la capa de herramientas que hace que estas características del kernel sean prácticas de usar.
+- **[Serverless](/es/devops/serverless)** — a menudo implementado usando esta misma tecnología de contenedores/aislamiento por debajo, oculta por completo al desarrollador.

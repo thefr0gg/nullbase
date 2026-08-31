@@ -1,0 +1,40 @@
+---
+title: Caching
+description: Éviter de refaire un travail coûteux déjà effectué une fois — où vit un cache, comment il reste à jour, et les deux problèmes difficiles dont tout le monde plaisante.
+category: Backend
+weight: 6
+---
+
+Le **cache** stocke le résultat d'un travail coûteux (une requête base de données, une valeur calculée, une page rendue) pour qu'une requête ultérieure pour la même chose puisse être répondue instantanément au lieu d'être refaite. La blague classique — « il n'y a que deux choses difficiles en informatique : l'invalidation de cache et le nommage des choses » — existe parce qu'un cache n'est correct que tant qu'il ne sert pas de données **périmées**, et savoir exactement quand jeter une valeur mise en cache est réellement difficile à bien faire.
+
+## Où vit un cache
+
+<ItemExplorer
+  title="Couches de cache"
+  layout="table"
+  tableColumns={[{ key: "speed", label: "Speed" }, { key: "shared", label: "Shared across instances?" }]}
+  items={[
+    { id: "in-process", label: "In-process memory", color: "blue", columns: { speed: "Le plus rapide — aucun saut réseau", shared: "Non — chaque instance d'application a sa propre copie séparée" } },
+    { id: "shared-cache", label: "Shared cache (Redis, Memcached)", color: "green", columns: { speed: "Rapide — un saut réseau, mais un vrai", shared: "Oui — chaque instance lit/écrit dans le même store" } },
+    { id: "cdn", label: "CDN / edge cache", color: "purple", columns: { speed: "Le plus rapide pour le client — servi depuis un point de présence proche", shared: "Oui, globalement — voir les CDN" } },
+    { id: "http-cache", label: "HTTP cache headers", color: "orange", columns: { speed: "Instantané en cas de hit — servi depuis le navigateur lui-même", shared: "Non — par navigateur, par appareil" } },
+  ]}
+/>
+
+Un cache en mémoire de processus est le moins coûteux à ajouter mais cesse d'aider dès qu'un backend tourne sur plus d'une instance — l'instance A mettant une valeur en cache ne fait rien pour une requête qui atterrit sur l'instance B, et pire, les deux instances peuvent silencieusement être en désaccord sur ce qu'est la valeur actuelle. Un cache partagé résout cela au prix d'un véritable aller-retour réseau par lookup, ce qui reste normalement bien moins coûteux que le travail mis en cache.
+
+## Stratégies d'invalidation
+
+- **TTL (time to live)** — une valeur mise en cache expire simplement après N secondes, que les données sous-jacentes aient réellement changé ou non. Simple, mais peut servir des données périmées jusqu'à la fenêtre du TTL, ou recalculer inutilement des données fraîches qui n'avaient en réalité pas changé.
+- **Invalidation explicite** — le code qui modifie les données sous-jacentes supprime ou met aussi à jour l'entrée de cache à ce moment-là. Plus précis, mais aussi correct que chaque chemin de code pouvant modifier les données se souvenant de le faire.
+- **Cache-aside** — l'application vérifie d'abord le cache, et en cas de miss, calcule la valeur et l'écrit dans le cache avant de la renvoyer — le pattern le plus courant, puisqu'il ne met de l'effort que dans la mise en cache de choses réellement demandées.
+
+## Ce qui vaut la peine d'être mis en cache
+
+Les meilleurs candidats au cache sont à forte lecture, coûteux à calculer, et n'ont pas besoin d'être parfaitement à jour à la milliseconde près — une page de listing de produits, un agrégat analytique calculé, un fragment de template rendu. Les données qui changent à chaque lecture, ou pour lesquelles la péremption a de vraies conséquences (un solde de compte juste avant un retrait), sont un mauvais choix quel que soit leur coût de calcul, à moins que la stratégie d'invalidation ne soit réellement infaillible.
+
+## Voir aussi
+
+- **[CDNs](/fr/web-fundamentals/cdns)** — le cache poussé jusqu'à la périphérie du réseau, au plus près du client.
+- **[Cloudflare KV](/fr/cloudflare/kv)** et **[Cloudflare Cache](/fr/cloudflare/cloudflare-cache)** — des produits de cache managés à deux couches différentes.
+- **[Sessions](/fr/backend/sessions)** — l'état de session est une chose spécifique et courante pour laquelle on se tourne vers un cache partagé.

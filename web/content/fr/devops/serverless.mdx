@@ -1,0 +1,40 @@
+---
+title: Serverless
+description: Exécuter du code sans gérer de serveur du tout — la plateforme alloue de la capacité par requête, et vous êtes facturé pour l'exécution, pas pour le temps d'inactivité.
+category: DevOps & Infrastructure
+weight: 9
+---
+
+Le **serverless** ne signifie pas qu'il n'y a pas de serveur — cela signifie que le développeur n'en provisionne, ne le patche, ni ne le fait évoluer jamais lui-même. Le code est déployé comme une fonction ou un petit gestionnaire ; la plateforme ([Cloudflare Workers](/fr/cloudflare/workers), AWS Lambda, similaire) décide où et quand l'exécuter réellement, en démarrant de la capacité à la demande et en la démontant lorsqu'elle est inactive.
+
+## Ce qui change par rapport à un serveur traditionnel
+
+<ItemExplorer
+  title="Serverless vs un serveur traditionnel"
+  layout="table"
+  tableColumns={[{ key: "traditional", label: "Serveur traditionnel" }, { key: "serverless", label: "Serverless" }]}
+  items={[
+    { id: "provisioning", label: "Provisionnement", color: "blue", columns: { traditional: "Vous choisissez et gérez un serveur (ou une flotte de serveurs)", serverless: "La plateforme alloue automatiquement la capacité par requête" } },
+    { id: "billing", label: "Facturation", color: "green", columns: { traditional: "Vous payez pour le serveur qu'il traite du trafic ou non", serverless: "Vous payez par invocation / temps d'exécution — l'inactivité ne coûte rien" } },
+    { id: "scaling", label: "Mise à l'échelle", color: "purple", columns: { traditional: "Autoscaling manuel ou configuré, avec un vrai temps de montée en charge", serverless: "Redescend à zéro et remonte automatiquement, souvent quasi instantanément" } },
+    { id: "state", label: "État en mémoire entre les requêtes", color: "orange", columns: { traditional: "Persiste tant que le processus tourne", serverless: "Non garanti — une instance de fonction inactive peut être entièrement détruite entre deux invocations" } },
+  ]}
+/>
+
+## Cold starts
+
+La première requête vers une fonction serverless après une période d'inactivité peut subir un **cold start** — la plateforme doit réellement initialiser un nouvel environnement d'exécution avant d'exécuter le code, ajoutant une latence qu'un serveur traditionnel déjà chaud et en cours d'exécution n'a pas. L'importance de ce phénomène varie énormément selon la plateforme et le runtime : une fonction JavaScript légère sur une plateforme edge peut démarrer à froid en quelques millisecondes, tandis qu'un runtime plus lourd avec un large arbre de dépendances peut prendre beaucoup plus de temps.
+
+## Ce pour quoi le serverless est bon
+
+Les charges de travail naturellement irrégulières ou peu fréquentes (un endpoint d'API sollicité quelques fois par minute, un gestionnaire de webhook, des tâches batch planifiées) sont un très bon cas d'usage — il n'y a aucun coût de serveur inactif pendant les périodes calmes, et monter en charge pour un pic soudain de trafic devient le problème de la plateforme, pas quelque chose nécessitant de la capacité pré-provisionnée pour l'absorber. C'est un cas d'usage plus faible pour les charges de travail nécessitant un état en mémoire à longue durée de vie, une performance à faible latence extrêmement prévisible sous n'importe quelle charge, ou des temps d'exécution plus longs que la limite imposée par une plateforme.
+
+## Pourquoi l'absence d'état est la vraie contrainte
+
+Parce qu'une plateforme serverless peut démarrer, réutiliser, ou jeter un environnement d'exécution à volonté, le code doit supposer qu'aucun état ne survit de manière fiable entre les invocations — les [sessions](/fr/backend/sessions), le [caching](/fr/backend/caching), et tout autre état partagé doivent vivre dans quelque chose d'externe (une base de données, un cache partagé, [KV](/fr/cloudflare/kv)) plutôt que dans une variable locale en mémoire, qui fonctionnerait par accident parfois et échouerait de manière imprévisible le reste du temps.
+
+## Voir aussi
+
+- **[Cloudflare Workers](/fr/cloudflare/workers)** — une plateforme serverless s'exécutant spécifiquement à la périphérie du réseau.
+- **[Edge Computing](/fr/devops/edge-computing)** — exécuter du code serverless physiquement près des utilisateurs, pas dans une seule région centrale.
+- **[Containers](/fr/devops/containers)** — la technologie d'isolation sur laquelle de nombreuses plateformes serverless construisent leurs sandboxes d'exécution.

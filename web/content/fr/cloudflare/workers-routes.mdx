@@ -1,0 +1,49 @@
+---
+title: Cloudflare Workers Routes
+description: Faire correspondre des motifs d'URL sur un domaine existant à un Worker spécifique — fonctionnant aux côtés d'autre trafic sur la même zone, plutôt que de le posséder entièrement.
+category: Cloudflare
+weight: 9
+---
+
+Une **route** fait correspondre un motif d'URL sur un domaine déjà sur Cloudflare (une « zone ») à un Worker spécifique — permettant à un Worker de ne traiter que certains chemins, ou un sous-domaine spécifique, tandis que tout le reste de ce domaine continue d'être servi normalement (un site web classique, un Worker différent, ou un tout autre serveur d'origine).
+
+## Motifs de route
+
+```jsonc
+// wrangler.jsonc
+{
+  "routes": [
+    { "pattern": "example.com/api/*", "zone_name": "example.com" }
+  ]
+}
+```
+
+`*` correspond à tous les segments de chemin restants — `example.com/api/*` correspond à `example.com/api/users`, `example.com/api/users/42`, et ainsi de suite, mais pas à `example.com/blog`, qui continue d'être traité par ce qui le servait avant même que le Worker n'existe.
+
+## Routes contre custom domains
+
+<ItemExplorer
+  title="Routes vs Custom Domains"
+  layout="table"
+  tableColumns={[{ key: "when", label: "Use when" }, { key: "flexibility", label: "Flexibility" }]}
+  items={[
+    { id: "routes", label: "Routes", color: "blue", columns: { when: "Un Worker ne doit traiter que certains chemins d'un domaine qui sert aussi d'autre contenu", flexibility: "Correspondance de motifs fine, plusieurs Workers peuvent partager une zone par chemin" } },
+    { id: "custom-domains", label: "Custom Domains", color: "green", columns: { when: "Un Worker doit posséder purement et simplement un domaine ou sous-domaine entier", flexibility: "Plus simple à mettre en place — aucun motif à mal configurer — mais tout ou rien pour ce nom d'hôte" } },
+  ]}
+/>
+
+Les motifs de route sont l'outil adapté précisément au type de configuration que ce site utilise lui-même : un frontend statique servi depuis un Worker, avec des chemins de style `/api/*` (ou, dans le cas de nullbase, un sous-domaine `api.` entièrement séparé) routés vers un Worker entièrement différent — voir [Custom Domains](/fr/cloudflare/custom-domains) pour cette alternative plus simple, à l'échelle d'un sous-domaine entier.
+
+## Plusieurs Workers, une zone
+
+Parce que les routes sont basées sur des motifs plutôt que sur l'ensemble d'un domaine, une seule zone Cloudflare peut avoir plusieurs Workers actifs simultanément, chacun traitant un ensemble distinct et non chevauchant de chemins — un pattern courant quand différentes parties d'un système bénéficient réellement d'être déployées et mises à l'échelle indépendamment (un Worker d'API séparé d'un Worker servant des assets statiques), tout en apparaissant aux visiteurs comme un seul domaine cohérent.
+
+## Précédence des routes
+
+Quand une requête pourrait correspondre à plus d'une route configurée, Cloudflare la résout par spécificité — un motif plus spécifique (`example.com/api/users/*`) prend le pas sur un motif plus général (`example.com/api/*`) qui correspondrait sinon aussi. Se tromper là-dessus (deux routes se chevauchant de façon ambiguë) est une source fréquente de confusion du type « pourquoi le mauvais Worker traite-t-il cette requête » quand une zone a plusieurs Workers configurés.
+
+## Voir aussi
+
+- **[Custom Domains](/fr/cloudflare/custom-domains)** — l'alternative plus simple quand un Worker doit posséder un nom d'hôte entier.
+- **[Wrangler](/fr/cloudflare/wrangler)** — où les routes sont déclarées aux côtés de la reste de la configuration d'un Worker.
+- **[Cloudflare DNS](/fr/cloudflare/cloudflare-dns)** — un domaine doit déjà être sur Cloudflare (une zone active) avant qu'une route puisse y être configurée.

@@ -1,0 +1,54 @@
+---
+title: Cloudflare Workers
+description: Le runtime serverless JavaScript/WebAssembly de Cloudflare — fonctionnant à chaque emplacement en périphérie plutôt que dans une seule région, sur un modèle d'isolate V8 qui démarre en millisecondes.
+category: Cloudflare
+weight: 0
+interactive: true
+interactiveType: ["StepFlow"]
+---
+
+**Cloudflare Workers** exécute du JavaScript, du TypeScript, ou du WebAssembly à chacun des emplacements en périphérie de Cloudflare, invoqué directement en réponse à une requête HTTP entrante — une implémentation concrète à la fois du [serverless](/fr/devops/serverless) (aucun serveur à provisionner) et de l'[edge computing](/fr/devops/edge-computing) (fonctionne près du demandeur, pas dans une seule région) à la fois.
+
+## La structure de base
+
+```js
+export default {
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+    if (url.pathname === "/api/hello") {
+      return new Response(JSON.stringify({ message: "Hello!" }), {
+        headers: { "content-type": "application/json" },
+      });
+    }
+    return new Response("Not found", { status: 404 });
+  },
+};
+```
+
+Le gestionnaire `fetch` d'un Worker reçoit la `Request` entrante, un objet `env` exposant tout [binding](/fr/cloudflare/workers-bindings) configuré (D1, KV, R2, secrets), et un objet `ctx` pour des tâches comme `waitUntil` (permettant à du travail de continuer brièvement après que la réponse a déjà été envoyée).
+
+## Des isolates, pas des conteneurs
+
+La plupart des plateformes serverless isolent une fonction d'une autre en utilisant un [conteneur](/fr/devops/containers) ou une machine virtuelle complète — Workers utilise à la place des **isolates V8**, le même mécanisme de sandboxing léger que V8 (le moteur JavaScript de Chrome et de Node.js) utilise pour isoler le JavaScript d'un onglet de navigateur de celui d'un autre. Un isolate a une surcharge de démarrage bien plus faible qu'un conteneur, ce qui explique directement pourquoi le cold start d'un Worker est typiquement sous la milliseconde plutôt que les centaines de millisecondes à plusieurs secondes que peut prendre un cold start basé sur des conteneurs.
+
+## Où une requête va réellement
+
+<StepFlow
+  title="Une requête atteignant un Worker"
+  steps={[
+    { actor: "Client", title: "Request sent", description: "Un client effectue une requête vers un domaine avec un Worker configuré (via une route ou un custom domain).", detail: "GET https://api.example.com/hello" },
+    { actor: "Cloudflare edge", title: "Routed to the nearest location", description: "Le réseau de Cloudflare dirige la requête vers celui de ses centaines d'emplacements en périphérie le plus proche du client, pas vers un serveur d'origine fixe unique.", detail: "" },
+    { actor: "Worker", title: "The fetch handler runs", description: "Un isolate déjà chaud (ou fraîchement démarré) exécute le gestionnaire fetch du Worker à cet emplacement en périphérie, avec accès à tout binding configuré.", detail: "export default { async fetch(request, env, ctx) { ... } }" },
+    { actor: "Worker", title: "Response returned", description: "Le gestionnaire renvoie une Response, envoyée directement au client depuis ce même emplacement en périphérie proche — aucun aller-retour vers une origine distante n'est requis, sauf si le Worker lui-même en effectue un.", detail: "return new Response(...)" },
+  ]}
+/>
+
+## Ce que Workers n'est pas
+
+Un Worker n'est pas un processus serveur généraliste — il n'y a pas de système de fichiers, pas de threads d'arrière-plan longue durée en dehors du cycle de vie d'une requête (au-delà de la brève extension de `waitUntil`), et le temps CPU par requête est plafonné. Ce n'est pas tant une limitation qu'un modèle entièrement différent : l'absence d'état et les fenêtres d'exécution courtes sont ce qui permet à Cloudflare d'exécuter le même code à chaque emplacement en périphérie à moindre coût et de le démarrer quasi instantanément, le même compromis que fait le [serverless](/fr/devops/serverless) en général, simplement appliqué plus strictement ici en échange d'une exécution véritablement globale et à faible latence.
+
+## Voir aussi
+
+- **[Workers Bindings](/fr/cloudflare/workers-bindings)** — comment un Worker atteint réellement D1, KV, R2, et d'autres services.
+- **[Wrangler](/fr/cloudflare/wrangler)** — le CLI utilisé pour développer et déployer un Worker.
+- **[Durable Objects](/fr/cloudflare/durable-objects)** — vers quoi se tourner quand l'absence d'état d'un Worker devient une réelle limitation.

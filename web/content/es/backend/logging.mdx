@@ -1,0 +1,52 @@
+---
+title: Registro (Logging)
+description: El registro que deja un backend de lo que realmente hizo — niveles de log, logging estructurado, y por qué «simplemente usar prints» deja de funcionar a partir de cierta escala.
+category: Backend
+weight: 9
+---
+
+El **logging** es que un backend registre lo que hizo, más o menos en el orden en que lo hizo, para que un humano (u otro sistema) pueda reconstruir lo ocurrido después del hecho — depurar un error que sufrió un usuario hace una hora, verificar que un despliegue salió bien, o auditar quién hizo qué. A menudo es la única evidencia disponible una vez que una solicitud ha terminado y su estado en memoria ha desaparecido.
+
+## Niveles de log
+
+<ItemExplorer
+  title="Niveles de Log Comunes"
+  layout="table"
+  tableColumns={[{ key: "when", label: "Se usa para" }]}
+  items={[
+    { id: "debug", label: "DEBUG", color: "default", columns: { when: "Detalle detallado útil solo mientras se está depurando activamente — normalmente deshabilitado por completo en producción." } },
+    { id: "info", label: "INFO", color: "blue", columns: { when: "Operación normal que merece la pena registrar — una solicitud se completó, un job terminó, un servidor arrancó." } },
+    { id: "warn", label: "WARN", color: "orange", columns: { when: "Algo inesperado pero recuperable — una solicitud reintentada, una API obsoleta en uso, una consulta lenta." } },
+    { id: "error", label: "ERROR", color: "red", columns: { when: "Algo falló y necesita atención — una excepción sin manejar, un pago fallido, una dependencia inalcanzable." } },
+  ]}
+/>
+
+Los niveles permiten que un equipo suba o baje la verbosidad sin cambiar código — DEBUG en un entorno local, INFO y superior en producción, con la opción de subir temporalmente la verbosidad mientras se investiga un incidente en vivo.
+
+## Logging estructurado
+
+```json
+{"level":"error","msg":"payment failed","userId":42,"orderId":"ord_9f2","amount":1999,"ts":"2026-01-15T10:22:03Z"}
+```
+
+frente a la línea no estructurada equivalente:
+
+```text
+[ERROR] Payment failed for user 42, order ord_9f2, amount 1999 at 2026-01-15T10:22:03Z
+```
+
+Ambas llevan la misma información, pero la versión estructurada (normalmente JSON) es trivialmente analizable por máquina — un sistema de agregación de logs puede filtrar cada error por `orderId: "ord_9f2"` directamente, en vez de necesitar una expresión regular que podría romperse en cuanto alguien ajuste la redacción del mensaje legible para humanos. El logging estructurado es lo que hace práctico buscar y alertar sobre logs a cualquier escala real.
+
+## Por qué los prints dejan de funcionar
+
+La salida de `console.log` de un único servidor está bien para leerla directamente. En el momento en que un backend corre en múltiples instancias (o se redespliega y pierde por completo el disco de su instancia anterior, como es normal en contenedores), los logs necesitan enviarse a algún lugar duradero y centralizado — un servicio de agregación de logs — o simplemente desaparecen en el instante en que la instancia que los escribió desaparece. Esta es también la razón por la que registrar en un archivo local encaja mal con la mayoría de los despliegues modernos: el archivo muere con el contenedor.
+
+## Qué no registrar
+
+Los logs a menudo se conservan durante mucho tiempo y los lee más gente que el desarrollador original — registrar una contraseña en texto plano, un número de tarjeta de crédito completo, o un [JWT](/en/security/jwt) sin redactar convierte una conveniencia de depuración en un problema genuino de [gestión de secretos](/en/security/secrets-management). El logging estructurado hace que sea más fácil acertar en esto de forma consistente: una librería de logging puede configurarse para redactar automáticamente nombres de campo conocidos como sensibles antes de que se escriba nada.
+
+## Ver también
+
+- **[Manejo de errores](/es/backend/error-handling)** — lo que realmente hace un error capturado, siendo el logging una parte de ello.
+- **[Monitoreo](/es/devops/monitoring)** — los logs son una de las señales que un sistema de monitoreo agrega y sobre las que alerta.
+- **[Gestión de secretos](/en/security/secrets-management)** — por qué los valores sensibles necesitan mantenerse fuera de los logs específicamente.

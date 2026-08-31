@@ -1,0 +1,52 @@
+---
+title: Wrangler
+description: أداة سطر الأوامر المستخدَمة لتطوير كل شيء وإعداده ونشره على منصة Workers — التطوير المحلي، وإعداد bindings، وأمر النشر نفسه.
+category: Cloudflare
+weight: 7
+---
+
+**Wrangler** هي أداة سطر أوامر Cloudflare الخاصة بمنصة Workers — تشغّل خادم تطوير محلياً، وتدير إعدادات [bindings](/ar/cloudflare/workers-bindings)، وتنشر Worker إلى الإنتاج. إنها الأداة الوحيدة التي تفترض تقريباً كل صفحة أخرى في هذا القسم أنها مُثبَّتة ومُعدَّة بالفعل.
+
+## أوامر شائعة
+
+```bash
+wrangler dev              # run a Worker locally, with live reload
+wrangler deploy           # deploy the Worker to production
+wrangler d1 migrations apply my-db --local   # run a D1 migration locally
+wrangler tail             # stream live logs from a deployed Worker
+wrangler secret put API_KEY  # store a secret, prompted interactively
+```
+
+يشغّل `wrangler dev` محاكاة محلية لبيئة تشغيل Workers الفعلية (لا مجرد خادم Node.js عام)، بحيث تُقلَّل فروقات السلوك بين التطوير المحلي والإنتاج — تعكس bindings ومعالجة الطلبات وبيئة التنفيذ جميعها عن قرب ما يعمل فعلياً عند الحافة.
+
+## `wrangler.jsonc` (أو `.toml`)
+
+```jsonc
+{
+  "name": "my-worker",
+  "main": "src/index.js",
+  "compatibility_date": "2026-01-01",
+  "d1_databases": [
+    { "binding": "DB", "database_name": "my-database", "database_id": "..." }
+  ],
+  "kv_namespaces": [
+    { "binding": "MY_KV", "id": "..." }
+  ]
+}
+```
+
+يمثّل ملف الإعداد الوحيد هذا مصدر الحقيقة الواحد لاسم Worker، ونقطة دخوله، وكل binding يحتاجه — قواعد بيانات D1، ومساحات أسماء KV، ودِلاء R2، ومتغيرات بيئة، وroutes، تُعلَن جميعها هنا بدلاً من إعدادها منفصلة عبر لوحة تحكم ويب، ما يعني أن إعداد النشر بأكمله مُدار بنظام تحكم إصدارات إلى جانب الشيفرة نفسها.
+
+## `compatibility_date`
+
+بدلاً من إصدار بيئة تشغيل Workers نفسها بطريقة قد تغيّر السلوك بصمت للنشرات القائمة، تستخدم Cloudflare `compatibility_date` — يختار Worker سلوك بيئة التشغيل كما كان في تاريخ محدد، ويُضمَن ثبات ذلك السلوك لذلك Worker بغض النظر عن متى تتغير المنصة الأساسية لاحقاً، ما لم يُدفَع التاريخ قدماً عمداً. هذا يتجنب المشكلة الشائعة المتمثلة في تحديث بيئة تشغيل على مستوى المنصة يكسر بصمت شيفرة منشورة كانت تعتمد على سلوك قديم.
+
+## الأسرار مقابل المتغيرات العادية
+
+تميّز Wrangler بين قيم الإعداد العادية (مرئية في `wrangler.jsonc`، آمنة للترحيل إلى نظام التحكم بالإصدارات) و**الأسرار** (`wrangler secret put`)، المشفَّرة والتي لا تظهر أبداً في ملف الإعداد أو في أي مكان قابل للقراءة بعد إعدادها — المكان الصحيح لمفتاح API أو سر توقيع، متّبعة نفس المبدأ المشروح عموماً في [Secrets Management](/en/security/secrets-management).
+
+## طالع أيضاً
+
+- **[Workers Bindings](/ar/cloudflare/workers-bindings)** — كتل الإعداد المحددة التي تديرها Wrangler.
+- **[CI/CD](/ar/devops/ci-cd)** — `wrangler deploy` هو الأمر الذي يشغّله عادة خط أنابيب CI لنشر Worker تلقائياً.
+- **[Secrets Management](/en/security/secrets-management)** — الممارسة العامة التي يطبّقها `wrangler secret` تحديداً لأجل Workers.

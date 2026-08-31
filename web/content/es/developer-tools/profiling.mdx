@@ -1,0 +1,39 @@
+---
+title: Profiling
+description: Averiguar por qué el código es más lento de lo que debería ser — medir dónde van realmente el tiempo y la memoria, en lugar de adivinar.
+category: Developer Tools
+weight: 10
+---
+
+El **profiling** mide dónde emplea realmente su tiempo y memoria un programa mientras se ejecuta, en lugar de adivinar basándose en qué código *parece* que debería ser lento. La intuición sobre el rendimiento suele estar equivocada — un profiler sustituye «creo que este bucle es el problema» por una medición real de exactamente qué función consumió cuánto tiempo.
+
+## Profiling de CPU
+
+Un profiler de CPU muestrea (o instrumenta por completo) un programa en ejecución para construir una imagen del tiempo consumido por función — comúnmente visualizado como un **flame graph**, donde cada barra horizontal es una llamada a función, su ancho proporcional al tiempo consumido, y las barras apiladas muestran qué llamó a qué. Una barra ancha cerca de la parte superior de un flame graph es exactamente lo que se busca: una función específica consumiendo una parte desproporcionada del tiempo total de ejecución.
+
+```js
+console.time("processOrders");
+processOrders(orders);
+console.timeEnd("processOrders");
+// processOrders: 842.31ms
+```
+
+Una medición de tiempo tan burda como esta es un primer paso legítimo — envolver una función sospechosa para confirmar que realmente es la parte lenta antes de recurrir a un profiler completo — pero un profiler real va más allá, desglosando el tiempo *dentro* de esa función para mostrar cuáles de sus propias llamadas internas son realmente responsables.
+
+## Profiling de memoria
+
+Un profiler de memoria rastrea las asignaciones a lo largo del tiempo, ayudando a encontrar **fugas de memoria** — memoria que sigue creciendo porque algo mantiene una referencia a objetos que deberían haber sido recolectados por el recolector de basura, pero no lo fueron. Comparar snapshots del heap (tomar uno, realizar una acción repetidamente, tomar otro, compararlos) es una técnica estándar: los objetos que siguen acumulándose a través de acciones idénticas repetidas son los candidatos a fuga.
+
+## La realidad 80/20 del rendimiento
+
+En la mayoría de los programas reales, una pequeña fracción del código representa la abrumadora mayoría del tiempo de ejecución — optimizar código que en realidad no es un cuello de botella desperdicia esfuerzo y añade complejidad sin ningún beneficio medible. Esta es toda la justificación para hacer profiling antes de optimizar en lugar de después: sin medición, es fácil pasar días optimizando una función que nunca fue significativamente lenta, mientras el cuello de botella real queda sin tocar.
+
+## Profiling en producción frente a en local
+
+Una ejecución de profiler local contra un benchmark sintético puede pasar por alto por completo cuellos de botella del mundo real — los patrones de tráfico en producción, los tamaños de datos reales y las condiciones de red reales pueden comportarse de forma completamente distinta al caso de prueba local de un desarrollador. El profiling continuo y de bajo overhead en producción (muestreando un pequeño porcentaje de solicitudes reales) es cómo se descubren realmente muchos problemas de rendimiento que nunca aparecen en local.
+
+## Ver también
+
+- **[Depuración](/es/developer-tools/debugging)** — el proceso equivalente para un problema de corrección en lugar de uno de rendimiento.
+- **[Monitoring](/es/devops/monitoring)** — la señal a nivel de producción (percentiles de latencia) que suele indicar *cuándo* recurrir a un profiler.
+- **[Caching](/es/backend/caching)** — una de las soluciones más comunes a las que realmente conducen los hallazgos de un profiler.

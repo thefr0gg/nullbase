@@ -1,0 +1,45 @@
+---
+title: Cloudflare KV
+description: Un almacén clave-valor replicado globalmente, optimizado para lecturas rápidas en todas partes, a costa de una consistencia eventual (no inmediata) tras una escritura.
+category: Cloudflare
+weight: 2
+---
+
+**Workers KV** almacena pares clave-valor simples, replicados a las ubicaciones de borde de Cloudflare en todo el mundo, de modo que una lectura desde cualquier lugar sea rápida y local — la contrapartida explícita es que una escritura no es visible en todas partes inmediatamente, a diferencia de una base de datos tradicional de una sola región.
+
+## Uso básico
+
+```js
+export default {
+  async fetch(request, env) {
+    await env.MY_KV.put("theme:user-42", "dark");
+    const theme = await env.MY_KV.get("theme:user-42");
+    return new Response(theme);
+  },
+};
+```
+
+`env.MY_KV` es un [binding](/es/cloudflare/workers-bindings) a un namespace de KV específico; `put`/`get`/`delete`/`list` son toda la API central — deliberadamente mínima comparada con el lenguaje de consulta de una base de datos relacional, ya que KV no pretende soportar consultas relacionales en absoluto.
+
+## Consistencia eventual, en concreto
+
+Un `put()` desde una ubicación de borde puede tardar hasta unos 60 segundos aproximadamente en propagarse a cada otra ubicación a nivel global — una lectura de esa misma clave desde una ubicación *distinta* poco después de la escritura puede seguir devolviendo el valor antiguo (o ningún valor, si es una clave nueva). Esto no es un error; es el mecanismo que hace que las lecturas de KV sean rápidas en todas partes sin que cada lectura necesite comprobar primero una única fuente autoritativa. Las cargas de trabajo que necesitan que cada lector vea una escritura de inmediato, en todas partes, encajan mal con KV precisamente por esto.
+
+## Para qué es realmente bueno KV
+
+<ItemExplorer
+  title="Buenos y malos encajes para KV"
+  layout="pills"
+  items={[
+    { id: "config", label: "Configuración / feature flags", color: "green", detail: "Se lee constantemente, se escribe raramente — la consistencia eventual sobre una escritura poco frecuente no es un problema, y las lecturas son extremadamente rápidas en todas partes." },
+    { id: "cache", label: "Valores calculados en caché", color: "blue", detail: "Un encaje natural para el patrón cache-aside — ver Caching — donde un valor en caché ligeramente desactualizado es una contrapartida aceptable a cambio de velocidad." },
+    { id: "session-poor-fit", label: "Contadores actualizados con frecuencia", color: "red", detail: "Un mal encaje — KV no está pensado para escrituras de alta frecuencia sobre la misma clave, y no tiene una operación de incremento atómico para coordinar de forma segura actualizaciones concurrentes." },
+    { id: "durable-fit", label: "Coordinación fuertemente consistente", color: "orange", detail: "Un mal encaje — recurre en su lugar a un Durable Object, que serializa todo el acceso a través de una instancia específica en lugar de replicar de forma eventual." },
+  ]}
+/>
+
+## Ver también
+
+- **[Caching](/es/backend/caching)** — el patrón general en el que encaja el punto óptimo de KV de "lectura frecuente, escritura poco frecuente".
+- **[Durable Objects](/es/cloudflare/durable-objects)** — la alternativa fuertemente consistente para cargas de trabajo a las que no les conviene la consistencia eventual de KV.
+- **[D1](/es/cloudflare/d1)** — recurre a esto en su lugar cuando los datos realmente necesitan estructura relacional o transacciones.

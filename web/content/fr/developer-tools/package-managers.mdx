@@ -1,0 +1,41 @@
+---
+title: Gestionnaires de paquets
+description: Le modèle général dont npm est une implémentation — résoudre, télécharger et dédupliquer les dépendances, et pourquoi des alternatives comme pnpm existent.
+category: Developer Tools
+weight: 4
+---
+
+Un **gestionnaire de paquets** résout les dépendances déclarées d'un projet (et toutes *leurs* propres dépendances) en un ensemble concret de code installé, gérant les conflits de versions et évitant le travail redondant — [npm](/fr/developer-tools/npm) est le choix par défaut pour JavaScript, mais le même problème sous-jacent se retrouve dans chaque écosystème de langage (pip pour Python, Cargo pour Rust, Bundler pour Ruby, le propre système de modules de Go).
+
+## Pourquoi des alternatives à npm existent
+
+<ItemExplorer
+  title="Gestionnaires de paquets JavaScript"
+  layout="table"
+  tableColumns={[{ key: "notes", label: "Notes" }]}
+  items={[
+    { id: "npm", label: "npm", color: "blue", columns: { notes: "Fourni avec Node.js ; le choix par défaut, et le registre depuis lequel chaque alternative ci-dessous récupère aussi ses paquets." } },
+    { id: "yarn", label: "Yarn", color: "green", columns: { notes: "Créé à l'origine pour corriger les premiers problèmes de vitesse et de déterminisme de npm (dont beaucoup ont depuis été corrigés par npm lui-même) ; a introduit le concept de fichier de verrouillage que npm a ensuite adopté." } },
+    { id: "pnpm", label: "pnpm", color: "purple", columns: { notes: "Stocke chaque version de paquet une seule fois dans un magasin global adressé par contenu, la reliant au node_modules de chaque projet via des liens durs/symboliques plutôt que de la copier — un usage disque nettement plus faible sur plusieurs projets." } },
+  ]}
+/>
+
+Les trois lisent le même `package.json` et installent depuis le même registre npm — ils sont largement interchangeables au niveau de « quels paquets sont installés », différant principalement par la vitesse d'installation, l'usage disque, et la rigueur avec laquelle ils imposent qu'un paquet ne puisse importer que les dépendances qu'il a explicitement déclarées (pnpm est notablement plus strict sur ce point que le `node_modules` aplati par défaut de npm).
+
+## Le problème de la « dépendance fantôme »
+
+La disposition classique et aplatie de `node_modules` chez npm signifie qu'un paquet peut parfois réussir à faire un `require()` d'une dépendance qu'il n'a jamais déclarée dans son propre `package.json`, simplement parce qu'une *autre* dépendance a installé ce paquet elle aussi au niveau supérieur de `node_modules`. Cela fonctionne par accident jusqu'à ce que la dépendance réellement déclarée soit retirée pour des raisons sans rapport, cassant silencieusement le code qui s'appuyait sur la dépendance fantôme. La structure plus stricte, basée sur des liens symboliques, de pnpm empêche cela en n'exposant à un paquet que ses propres dépendances déclarées.
+
+## Workspaces / monorepos
+
+La plupart des gestionnaires de paquets prennent en charge les **workspaces** — plusieurs paquets vivant dans un seul dépôt (un `web/` et un `api/`, par exemple) qui peuvent dépendre les uns des autres directement sans être d'abord publiés sur un registre, tout en partageant une seule installation et un seul fichier de verrouillage au niveau supérieur. C'est le même mécanisme sur lequel repose un monorepo pour permettre à un workspace d'importer le code d'un autre comme une dépendance normale pendant le développement local.
+
+## En choisir un
+
+Pour la plupart des projets, le choix compte moins que la cohérence — en choisir un et committer son fichier de verrouillage pour que chaque contributeur et chaque exécution de CI résolvent les dépendances de manière identique compte bien plus que l'outil spécifique utilisé. Changer plus tard est possible mais pas gratuit : les fichiers de verrouillage ne sont pas directement interchangeables entre outils, donc un changement implique généralement d'en régénérer un depuis zéro et de revérifier que rien n'est cassé.
+
+## Voir aussi
+
+- **[npm](/fr/developer-tools/npm)** — l'implémentation par défaut de tout ce qui est décrit ici de manière générale.
+- **[Versionnage sémantique](/fr/developer-tools/semantic-versioning)** — la convention de plages de versions que chaque gestionnaire de paquets listé ici comprend.
+- **[CI/CD](/fr/devops/ci-cd)** — où une installation stricte respectant le fichier de verrouillage (`npm ci` ou équivalent) compte le plus.

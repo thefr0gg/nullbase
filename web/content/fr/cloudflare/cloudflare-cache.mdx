@@ -1,0 +1,58 @@
+---
+title: Cloudflare Cache
+description: La couche de cache CDN placée devant tout le reste — clés de cache, en-têtes de statut de cache, et ce qu'un Worker peut contrôler directement via la Cache API.
+category: Cloudflare
+weight: 13
+---
+
+Le **Cache de Cloudflare** stocke les réponses dans des emplacements en périphérie proches des visiteurs, de sorte qu'une requête répétée pour la même ressource puisse être servie sans jamais atteindre l'origine (ni un [Worker](/fr/cloudflare/workers)) — la même idée générale de [mise en cache](/fr/backend/caching), appliquée à la couche CDN devant un site entier.
+
+## Statut du cache
+
+Chaque réponse provenant d'une zone Cloudflare proxifiée porte un en-tête `cf-cache-status` indiquant exactement ce qui s'est passé :
+
+<ItemExplorer
+  title="Valeurs de cf-cache-status"
+  layout="table"
+  tableColumns={[{ key: "meaning", label: "Signification" }]}
+  items={[
+    { id: "hit", label: "HIT", color: "green", columns: { meaning: "Servi directement depuis le cache en périphérie de Cloudflare — l'origine n'a jamais été contactée." } },
+    { id: "miss", label: "MISS", color: "orange", columns: { meaning: "Absent du cache ; Cloudflare l'a récupéré depuis l'origine et (si c'est cacheable) l'a stocké pour la prochaine fois." } },
+    { id: "expired", label: "EXPIRED", color: "orange", columns: { meaning: "Était en cache, mais le TTL de la copie mise en cache est dépassé — récupéré à nouveau depuis l'origine." } },
+    { id: "bypass", label: "BYPASS", color: "default", columns: { meaning: "Délibérément non mis en cache — la réponse, la requête, ou une règle de cache l'a marqué comme non cacheable." } },
+  ]}
+/>
+
+## La clé de cache
+
+Par défaut, la clé de cache de Cloudflare est basée sur l'URL de la requête (chaîne de requête incluse, par défaut) — deux requêtes vers exactement la même URL peuvent partager une réponse mise en cache, mais une URL différant ne serait-ce que d'un paramètre de requête supplémentaire est traitée comme une entrée de cache entièrement différente, sauf configuration contraire. C'est une source fréquente de confusion quand un cache « ne fonctionne pas » : un paramètre de requête d'analytics ou de suivi ajouté de façon incohérente peut silencieusement fragmenter ce qui devrait être une seule entrée de cache en plusieurs, chacune individuellement froide.
+
+## Contrôler la mise en cache depuis un Worker
+
+```js
+export default {
+  async fetch(request, env, ctx) {
+    const cache = caches.default;
+    let response = await cache.match(request);
+    if (!response) {
+      response = await fetch("https://origin.example.com" + new URL(request.url).pathname);
+      response = new Response(response.body, response);
+      response.headers.append("Cache-Control", "max-age=3600");
+      ctx.waitUntil(cache.put(request, response.clone()));
+    }
+    return response;
+  },
+};
+```
+
+La Cache API (`caches.default`) donne à un Worker un contrôle direct et programmatique sur le même cache en périphérie que la mise en cache automatique de Cloudflare utilise — vérifier d'abord si une réponse est en cache, et en stocker explicitement une nouvelle (via `ctx.waitUntil`, pour que le stockage de la réponse ne retarde pas son renvoi au client) lorsqu'il n'y en a pas.
+
+## Cache-Control compte toujours
+
+Le cache en périphérie de Cloudflare respecte toujours les en-têtes HTTP standard de mise en cache (`Cache-Control`, `Expires`) provenant de l'origine — une réponse marquée `no-store` ne sera pas mise en cache, quelle que soit la configuration côté Cloudflare, et `max-age` continue de régir combien de temps une copie mise en cache est considérée comme fraîche avant que Cloudflare ne la traite comme `EXPIRED` et ne la revalide auprès de l'origine.
+
+## Voir aussi
+
+- **[Caching](/fr/backend/caching)** — le concept général que cette page applique spécifiquement au réseau en périphérie de Cloudflare.
+- **[CDNs](/fr/web-fundamentals/cdns)** — la catégorie plus large de service dont le cache de Cloudflare est une implémentation.
+- **[Workers](/fr/cloudflare/workers)** — d'où la Cache API ci-dessus est effectivement appelée.

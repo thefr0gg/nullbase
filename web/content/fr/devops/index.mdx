@@ -1,0 +1,36 @@
+---
+title: DevOps & Infrastructure
+description: Ce qui tourne sous une application — les primitives de l'OS, les conteneurs, les pipelines, et les décisions d'infrastructure qui font passer du code d'un dépôt à quelque chose qui sert du trafic réel.
+category: DevOps & Infrastructure
+weight: 8
+---
+
+Écrire une application est une chose ; la faire tourner de manière fiable, déployer des changements sans interruption, et savoir quand elle casse en est une autre. Cette section couvre les fondamentaux du système d'exploitation sur lesquels tourne tout backend, l'outillage de conteneurisation et de pipeline qui fait passer le code d'un dépôt à la production, et les modèles d'infrastructure (serverless, edge) qui changent ce que « un serveur » signifie même.
+
+## Fondamentaux du système d'exploitation
+
+- **[Linux](/fr/devops/linux)** — le système d'exploitation sur lequel tourne l'écrasante majorité des serveurs.
+- **[Processes](/fr/devops/processes)** — l'unité au niveau OS sur laquelle presque tout le reste de cette section est construit.
+- **[Environment Variables](/fr/devops/environment-variables)** — comment la configuration atteint un processus en cours d'exécution sans être codée en dur dans le code.
+
+## Empaqueter et exécuter du code
+
+- **[Docker](/fr/devops/docker)** — empaqueter une application avec tout ce dont elle a besoin pour tourner, de manière cohérente, n'importe où.
+- **[Containers](/fr/devops/containers)** — le mécanisme OS sous-jacent sur lequel Docker est construit.
+
+## Livrer des changements
+
+- **[CI/CD](/fr/devops/ci-cd)** — tester et déployer automatiquement chaque changement, au lieu de le faire à la main.
+- **[Deployment](/fr/devops/deployment)** — faire tourner concrètement une nouvelle version d'une application en production.
+
+## La maintenir en fonctionnement
+
+- **[Load Balancing](/fr/devops/load-balancing)** — distribuer le trafic entre plusieurs instances d'un service.
+- **[Monitoring](/fr/devops/monitoring)** — savoir que quelque chose ne va pas avant qu'un utilisateur n'ait à vous le dire.
+
+## Modèles d'infrastructure plus récents
+
+- **[Serverless](/fr/devops/serverless)** — exécuter du code sans gérer de serveur du tout.
+- **[Edge Computing](/fr/devops/edge-computing)** — exécuter du code physiquement près de l'utilisateur, et non dans un seul centre de données central.
+
+Les reverse proxies en particulier sont couverts dans **[Backend](/fr/backend/reverse-proxies)**, car ils sont le plus souvent configurés comme faisant partie du chemin de requête propre à un backend plutôt que comme une infrastructure plus large.

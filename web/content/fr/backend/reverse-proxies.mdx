@@ -1,0 +1,47 @@
+---
+title: Reverse Proxies
+description: Comment un reverse proxy se place spécifiquement devant les application servers d'un backend — routage, health checks, et pourquoi le code backend ne voit généralement jamais Internet directement.
+category: Backend
+weight: 2
+---
+
+[Proxies](/fr/web-fundamentals/proxies) couvre la distinction générale entre forward et reverse ; cette page traite du rôle spécifique et très courant qu'un reverse proxy joue directement devant les [application servers](/fr/backend/application-servers) d'un backend — la couche qui décide lequel, parmi peut-être plusieurs processus backend identiques, traite réellement une requête donnée.
+
+## Un exemple minimal avec Nginx
+
+```nginx
+upstream app_servers {
+    server 10.0.0.1:8000;
+    server 10.0.0.2:8000;
+    server 10.0.0.3:8000;
+}
+
+server {
+    listen 443 ssl;
+    location / {
+        proxy_pass http://app_servers;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+Le bloc `upstream` liste chaque instance backend ; `proxy_pass` transmet les requêtes correspondantes à l'une d'elles. `X-Real-IP` importe car, du point de vue de l'application server, chaque requête semble désormais provenir de l'IP propre du reverse proxy — sans cela, le backend perd entièrement l'adresse réelle du client.
+
+## Health checks
+
+Un reverse proxy placé devant plusieurs instances backend vérifie typiquement la santé de chacune (un endpoint léger `/health`, ou simplement en remarquant des échecs de connexion répétés) et cesse de router vers une instance défaillante, sans avoir besoin d'une orchestration externe pour le remarquer et réagir. C'est ce qui permet à une instance backend d'être redémarrée, redéployée, ou de carrément planter sans provoquer nécessairement de panne visible — le trafic cesse simplement d'y être envoyé jusqu'à ce qu'elle redevienne saine.
+
+## Pourquoi le code backend ne devrait pas être joignable directement
+
+Placer chaque application server derrière un reverse proxy signifie que les processus backend réels n'ont jamais besoin d'une IP publique ou d'un port ouvert sur Internet du tout — seul le reverse proxy en a besoin. Cela réduit considérablement la surface d'attaque : une vulnérabilité dans un service interne uniquement est bien moins exploitable si elle est simplement injoignable depuis l'extérieur du réseau en premier lieu, indépendamment de l'authentification ou de l'autorisation que ce service met en œuvre ou non.
+
+## Sessions collantes
+
+Certains backends ont besoin que chaque requête d'un même client atteigne la même instance backend — le plus souvent lorsque l'état de [session](/fr/backend/sessions) est conservé dans la propre mémoire de cette instance plutôt que dans un store partagé. Un reverse proxy peut être configuré pour des **sessions collantes** (sticky sessions, un routage basé sur un cookie ou l'IP du client) pour garantir cela, bien que la solution la plus robuste consiste généralement à sortir entièrement l'état de session de la mémoire de toute instance unique, pour que n'importe quelle instance puisse traiter n'importe quelle requête.
+
+## Voir aussi
+
+- **[Proxies](/fr/web-fundamentals/proxies)** — la distinction générale forward/reverse et la terminaison TLS.
+- **[Load Balancing](/fr/devops/load-balancing)** — les algorithmes qu'un reverse proxy utilise pour choisir quel backend reçoit une requête.
+- **[Sessions](/fr/backend/sessions)** — pourquoi les sessions collantes existent, et l'alternative pour ne pas en avoir besoin.

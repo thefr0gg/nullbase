@@ -1,0 +1,38 @@
+---
+title: Edge Computing
+description: Exécuter du code physiquement près de l'utilisateur au lieu d'un seul centre de données central — ce que cela apporte réellement, et les contraintes réelles que cela introduit.
+category: DevOps & Infrastructure
+weight: 10
+---
+
+L'**edge computing** exécute du code dans de nombreux emplacements géographiquement répartis — des « points de présence » proches des utilisateurs finaux — au lieu d'un petit nombre de grands centres de données centraux (une seule région AWS, par exemple). L'objectif est simple : un aller-retour réseau a un plancher de latence physique fixé par la vitesse de la lumière, et aucune optimisation de serveur ne peut battre un utilisateur à Tokyo qui parle simplement à un serveur à Tokyo plutôt qu'à un serveur en Virginie.
+
+## Ce qui tourne à la périphérie
+
+<ItemExplorer
+  title="Charges de travail courantes en périphérie"
+  layout="pills"
+  items={[
+    { id: "static", label: "Ressources statiques", color: "blue", detail: "La charge de travail edge d'origine et la plus simple — un CDN mettant en cache images, CSS et JS près de chaque utilisateur. Voir CDNs." },
+    { id: "compute", label: "Calcul au moment de la requête", color: "green", detail: "De la vraie logique applicative — vérifications d'authentification, routage de tests A/B, personnalisation, voire des réponses d'API complètes — s'exécutant en périphérie plutôt que sur un unique serveur d'origine. C'est précisément ce que permettent des plateformes comme Cloudflare Workers." },
+    { id: "data", label: "Données répliquées en périphérie", color: "purple", detail: "Des bases de données et des magasins clé-valeur (comme Cloudflare KV ou D1) qui répliquent les données vers de nombreux emplacements, afin que les lectures en périphérie n'aient pas besoin d'un aller-retour vers une origine centrale unique." },
+  ]}
+/>
+
+## Le compromis : cohérence et coordination
+
+Distribuer le calcul sur des dizaines ou des centaines d'emplacements facilite les lectures à faible latence, mais complique tout ce qui nécessite une forte cohérence entre les emplacements — si deux emplacements en périphérie peuvent tous deux accepter une écriture sur la « même » donnée simultanément, quelque chose doit les réconcilier, et cette réconciliation prend elle-même du temps ou exige d'accepter des garanties de cohérence plus faibles. C'est pourquoi les plateformes edge distinguent souvent nettement les charges de travail qui lisent bien plus qu'elles n'écrivent (un excellent cas d'usage) des charges de travail nécessitant des écritures strictement et immédiatement cohérentes sur tous les emplacements à la fois (un cas d'usage bien plus difficile, nécessitant parfois un mécanisme spécifique comme [Durable Objects](/fr/cloudflare/durable-objects) qui épingle la coordination sur un seul emplacement par unité logique d'état).
+
+## Edge vs serverless traditionnel
+
+L'edge computing et le [serverless](/fr/devops/serverless) se recoupent largement mais ne sont pas identiques : le serverless consiste fondamentalement à ne pas gérer soi-même la capacité serveur, tandis que l'edge concerne *où* cette capacité s'exécute. Une fonction serverless peut s'exécuter dans une seule région centrale (la plupart des plateformes serverless traditionnelles font exactement cela) ; une plateforme edge exécute spécifiquement la même logique dans de nombreuses régions simultanément, en routant chaque requête vers celle qui est la plus proche.
+
+## Pourquoi cela compte au-delà de la vitesse brute
+
+Au-delà de la latence, s'exécuter près des utilisateurs peut aussi signifier que les données restent plus proches de l'endroit où les réglementations l'exigent (une requête d'un utilisateur dans l'UE traitée par un emplacement edge basé dans l'UE), et une requête qui n'a jamais besoin de quitter la propre région de l'utilisateur pour des vérifications simples (validation d'authentification, limitation de débit) réduit la charge sur — et la dépendance à la disponibilité d'— une seule origine centrale.
+
+## Voir aussi
+
+- **[CDNs](/fr/web-fundamentals/cdns)** — la forme la plus ancienne et la plus établie d'edge computing.
+- **[Cloudflare Workers](/fr/cloudflare/workers)** et **[Durable Objects](/fr/cloudflare/durable-objects)** — une plateforme concrète de calcul en périphérie et sa réponse au problème de coordination ci-dessus.
+- **[Serverless](/fr/devops/serverless)** — le modèle d'exécution sur lequel les plateformes edge sont généralement aussi construites.

@@ -1,0 +1,49 @@
+---
+title: Error Handling
+description: Échouer d'une manière récupérable, débogable, et sûre à exposer — la différence entre une erreur interceptée et une erreur non gérée, et ce qu'un client devrait réellement voir.
+category: Backend
+weight: 10
+---
+
+Quelque chose finira par échouer — une connexion à la base de données qui tombe, une API tierce qui time out, une entrée qui arrive mal formée. La **gestion des erreurs** est la décision délibérée de ce qui se passe ensuite, plutôt que de laisser cette décision à ce que fait le runtime par défaut avec une exception non gérée (typiquement : planter le processus, ou pire, renvoyer une stack trace brute au client).
+
+## Erreurs attendues vs inattendues
+
+<ItemExplorer
+  title="Deux types d'échecs différents"
+  layout="table"
+  tableColumns={[{ key: "example", label: "Example" }, { key: "response", label: "Typical handling" }]}
+  items={[
+    { id: "expected", label: "Expected / operational", color: "blue", columns: { example: "Une entrée invalide, une ressource qui n'existe pas, une limite de débit atteinte, une API tierce renvoyant une erreur", response: "Interceptée explicitement, mappée à un code de statut spécifique et un message clair sur lequel le client peut agir." } },
+    { id: "unexpected", label: "Unexpected / programmer error", color: "red", columns: { example: "Un pointeur nul, un bug atteignant un chemin de code censé être inaccessible, une condition de manque de mémoire", response: "Interceptée par un handler de plus haut niveau, journalisée avec tous les détails, et transformée en un 500 générique — le client n'a jamais eu besoin de connaître la cause interne." } },
+  ]}
+/>
+
+Traiter les deux de la même façon est une erreur courante dans les deux sens : exposer les détails internes bruts d'une erreur inattendue à un client fuite des détails d'implémentation (et parfois des secrets) sans aucun bénéfice pour le client ; traiter une erreur attendue comme un échec de validation comme un mystérieux 500 fait passer une situation normale et quotidienne pour un dysfonctionnement du système.
+
+## Ce qu'un client devrait réellement recevoir
+
+```json
+{
+  "error": {
+    "code": "insufficient_funds",
+    "message": "Your balance is too low to complete this transfer."
+  }
+}
+```
+
+Une réponse d'erreur utile a un `code` stable et vérifiable par une machine sur lequel le client peut brancher sa logique programmatiquement, et un `message` destiné à un humain — jamais un message d'exception brut ou une stack trace, qui peuvent changer de formulation entre deux déploiements et peuvent révéler des chemins de fichiers internes, des versions de bibliothèques, ou une structure de requête à quiconque regarde la réponse.
+
+## Centraliser l'interception
+
+Plutôt que d'entourer chaque gestionnaire de route de son propre `try/catch`, la plupart des frameworks prennent en charge un unique gestionnaire d'erreurs de haut niveau — souvent le dernier élément de [middleware](/fr/backend/middleware) de la chaîne — qui intercepte tout ce qui n'a pas été géré plus tôt dans la requête, le journalise avec le contexte complet, et produit une forme de réponse d'erreur cohérente sur tout le site. Cela maintient un formatage d'erreur cohérent sans que chaque gestionnaire ait besoin de se souvenir de le produire correctement.
+
+## Réessayer vs échouer rapidement
+
+Tous les échecs ne devraient pas être réessayés automatiquement — réessayer une requête qui a échoué parce que l'entrée était invalide échouera identiquement à chaque fois et ne fera que gaspiller des efforts, tandis que réessayer une requête qui a échoué à cause d'un incident réseau transitoire peut véritablement réussir à la deuxième tentative. Distinguer les deux (souvent en traitant des codes de statut ou types d'exception spécifiques comme réessayables et tout le reste comme ne l'étant pas) est ce qui rend la logique de retry automatique réellement utile au lieu de simplement retarder un échec inévitable.
+
+## Voir aussi
+
+- **[Logging](/fr/backend/logging)** — là où va réellement le détail complet d'une erreur inattendue.
+- **[Middleware](/fr/backend/middleware)** — là où un gestionnaire d'erreurs centralisé est typiquement implémenté.
+- **[HTTP status codes](/fr/web-fundamentals/http/status-codes)** — le vocabulaire dans lequel le code de statut d'une réponse d'erreur devrait puiser.

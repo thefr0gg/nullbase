@@ -1,0 +1,34 @@
+---
+title: Cloudflare
+description: La plateforme de développement de Cloudflare — Workers, produits de stockage (D1, KV, R2, Durable Objects), et la couche d'outillage et de réseau qui les entoure.
+category: Cloudflare
+weight: 10
+---
+
+Cloudflare a débuté comme un service de CDN et de protection anti-DDoS placé devant les serveurs d'autrui, et a depuis construit une plateforme applicative complète sur ce même réseau global de périphérie — du [calcul serverless](/fr/devops/serverless) et plusieurs produits de stockage distincts, tous fonctionnant à des centaines d'emplacements dans le monde plutôt que dans une seule région centrale. Cette section couvre précisément cette plateforme, comme une implémentation concrète et réelle des concepts d'[edge computing](/fr/devops/edge-computing) traités plus généralement ailleurs.
+
+## Calcul
+
+- **[Workers](/fr/cloudflare/workers)** — le runtime serverless auquel tout le reste de cette section se connecte.
+- **[Durable Objects](/fr/cloudflare/durable-objects)** — un état et une coordination fortement cohérents, à instance unique, en périphérie.
+
+## Stockage
+
+- **[D1](/fr/cloudflare/d1)** — une base de données SQLite managée.
+- **[KV](/fr/cloudflare/kv)** — un store clé-valeur globalement répliqué, à cohérence à terme.
+- **[R2](/fr/cloudflare/r2)** — un stockage d'objets compatible S3, sans frais de sortie.
+- **[Queues](/fr/cloudflare/queues)** — une file de messages managée pour les Workers.
+
+## Planification et outillage
+
+- **[Cron Triggers](/fr/cloudflare/cron-triggers)** — exécuter un Worker selon un planning plutôt qu'en réponse à une requête.
+- **[Wrangler](/fr/cloudflare/wrangler)** — le CLI utilisé pour développer, configurer et déployer tout ce qui est couvert dans cette section.
+- **[Workers Bindings](/fr/cloudflare/workers-bindings)** — comment un Worker obtient effectivement l'accès à D1, KV, R2, et le reste.
+
+## Réseau
+
+- **[Workers Routes](/fr/cloudflare/workers-routes)** — faire correspondre des motifs d'URL à un Worker spécifique.
+- **[Custom Domains](/fr/cloudflare/custom-domains)** — l'alternative plus simple aux routes pour un Worker censé posséder un domaine entier.
+- **[Cloudflare DNS](/fr/cloudflare/cloudflare-dns)** — Cloudflare comme fournisseur DNS faisant autorité, et ce que l'icône du nuage orange signifie réellement.
+- **[Cloudflare Pages](/fr/cloudflare/cloudflare-pages)** — hébergement de sites statiques avec déploiements basés sur Git, désormais en convergence avec Workers.
+- **[Cloudflare Cache](/fr/cloudflare/cloudflare-cache)** — la couche de cache CDN placée devant tout le reste.

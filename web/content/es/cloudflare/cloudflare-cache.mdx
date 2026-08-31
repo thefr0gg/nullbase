@@ -1,0 +1,58 @@
+---
+title: Cloudflare Cache
+description: La capa de caché de la CDN que se sitúa delante de todo lo demás — claves de caché, cabeceras de estado de caché, y qué puede controlar un Worker directamente mediante la Cache API.
+category: Cloudflare
+weight: 13
+---
+
+La **caché de Cloudflare** almacena respuestas en ubicaciones de borde cercanas a los visitantes, de modo que una solicitud repetida del mismo recurso pueda servirse sin llegar en absoluto al origen (ni a un [Worker](/es/cloudflare/workers)) — la misma idea general de [caching](/es/backend/caching), aplicada en la capa de CDN delante de un sitio entero.
+
+## Estado de la caché
+
+Cada respuesta de una zona proxied de Cloudflare lleva una cabecera `cf-cache-status` que muestra exactamente qué ocurrió:
+
+<ItemExplorer
+  title="Valores de cf-cache-status"
+  layout="table"
+  tableColumns={[{ key: "meaning", label: "Significado" }]}
+  items={[
+    { id: "hit", label: "HIT", color: "green", columns: { meaning: "Servida directamente desde la caché de borde de Cloudflare — nunca se contactó al origen." } },
+    { id: "miss", label: "MISS", color: "orange", columns: { meaning: "No estaba en caché; Cloudflare la obtuvo del origen y (si es cacheable) la almacenó para la próxima vez." } },
+    { id: "expired", label: "EXPIRED", color: "orange", columns: { meaning: "Estaba en caché, pero el TTL de la copia cacheada ya pasó — se volvió a obtener del origen." } },
+    { id: "bypass", label: "BYPASS", color: "default", columns: { meaning: "Deliberadamente no cacheada — la respuesta, la solicitud, o una regla de caché la marcó como no cacheable." } },
+  ]}
+/>
+
+## La clave de caché
+
+Por defecto, la clave de caché de Cloudflare se basa en la URL de la solicitud (incluyendo la cadena de consulta, por defecto) — dos solicitudes a exactamente la misma URL pueden compartir una respuesta cacheada, pero una URL que difiera aunque sea en un parámetro de consulta adicional se trata como una entrada de caché completamente distinta a menos que se configure lo contrario. Esta es una fuente habitual de confusión cuando una caché "no funciona": un parámetro de consulta de analítica o seguimiento añadido de forma inconsistente puede fragmentar silenciosamente lo que debería ser una sola entrada de caché en muchas, cada una fría por separado.
+
+## Controlar la caché desde un Worker
+
+```js
+export default {
+  async fetch(request, env, ctx) {
+    const cache = caches.default;
+    let response = await cache.match(request);
+    if (!response) {
+      response = await fetch("https://origin.example.com" + new URL(request.url).pathname);
+      response = new Response(response.body, response);
+      response.headers.append("Cache-Control", "max-age=3600");
+      ctx.waitUntil(cache.put(request, response.clone()));
+    }
+    return response;
+  },
+};
+```
+
+La Cache API (`caches.default`) le da a un Worker control directo y programático sobre la misma caché de borde que usa el sistema de caché automático de Cloudflare — comprobando primero si hay una respuesta cacheada, y almacenando explícitamente una nueva (mediante `ctx.waitUntil`, para que almacenar la respuesta no retrase devolverla al cliente) cuando no la hay.
+
+## Cache-Control sigue importando
+
+La caché de borde de Cloudflare sigue respetando las cabeceras HTTP de caché estándar (`Cache-Control`, `Expires`) del origen — una respuesta marcada como `no-store` no se cacheará sin importar la configuración de Cloudflare, y `max-age` sigue rigiendo cuánto tiempo se considera fresca una copia cacheada antes de que Cloudflare la trate como `EXPIRED` y la revalide contra el origen.
+
+## Ver también
+
+- **[Caching](/es/backend/caching)** — el concepto general que esta página aplica específicamente a la red de borde de Cloudflare.
+- **[CDNs](/es/web-fundamentals/cdns)** — la categoría más amplia de servicio de la que la caché de Cloudflare es una implementación.
+- **[Workers](/es/cloudflare/workers)** — desde dónde se llama realmente a la Cache API de arriba.

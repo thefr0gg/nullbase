@@ -1,0 +1,49 @@
+---
+title: Manejo de Errores
+description: Fallar de una manera recuperable, depurable, y segura de exponer — la diferencia entre un error capturado y uno sin manejar, y lo que un cliente debería ver realmente.
+category: Backend
+weight: 10
+---
+
+Algo eventualmente fallará — una conexión a la base de datos se cae, una API de terceros expira, llegan datos malformados. El **manejo de errores** es la decisión deliberada sobre qué pasa a continuación, en vez de dejar esa decisión en manos de lo que el runtime haga por defecto ante una excepción sin manejar (típicamente: hacer crashear el proceso, o peor, devolver un stack trace crudo al cliente).
+
+## Errores esperados frente a inesperados
+
+<ItemExplorer
+  title="Dos Tipos Distintos de Fallo"
+  layout="table"
+  tableColumns={[{ key: "example", label: "Ejemplo" }, { key: "response", label: "Manejo típico" }]}
+  items={[
+    { id: "expected", label: "Esperado / operacional", color: "blue", columns: { example: "Entrada inválida, un recurso que no existe, un límite de tasa alcanzado, una API de terceros devolviendo un error", response: "Se captura explícitamente, se mapea a un código de estado específico y un mensaje claro sobre el que el cliente puede actuar." } },
+    { id: "unexpected", label: "Inesperado / error del programador", color: "red", columns: { example: "Un puntero nulo, un bug que alcanza una ruta de código inalcanzable, una condición de memoria agotada", response: "Capturado por un manejador de nivel superior, registrado con todo el detalle, y convertido en un 500 genérico — el cliente nunca necesitó conocer la causa interna." } },
+  ]}
+/>
+
+Tratar ambos de la misma manera es un error común en ambas direcciones: exponer los detalles internos crudos de un error inesperado a un cliente filtra detalles de implementación (y a veces secretos) sin ningún beneficio para el cliente; tratar un error esperado como un fallo de validación como si fuera un misterioso 500 hace que una situación normal y cotidiana parezca un mal funcionamiento del sistema.
+
+## Lo que un cliente debería recibir realmente
+
+```json
+{
+  "error": {
+    "code": "insufficient_funds",
+    "message": "Your balance is too low to complete this transfer."
+  }
+}
+```
+
+Una respuesta de error útil tiene un `code` estable y verificable por máquina sobre el que un cliente puede ramificar su lógica programáticamente, y un `message` pensado para un humano — nunca un mensaje de excepción crudo o un stack trace, que puede cambiar de redacción entre despliegues y puede revelar rutas de archivo internas, versiones de librerías, o estructura de consultas a quien esté mirando la respuesta.
+
+## Centralizar la captura
+
+En vez de envolver cada manejador de ruta individual en su propio `try/catch`, la mayoría de los frameworks soportan un único manejador de errores de nivel superior — a menudo la última pieza de [middleware](/es/backend/middleware) en la cadena — que captura cualquier cosa sin manejar de etapas anteriores de la solicitud, la registra con contexto completo, y produce una forma de respuesta de error consistente en todo el sitio. Esto mantiene el formato de errores consistente sin que cada manejador tenga que recordar producirlo correctamente.
+
+## Reintentar frente a fallar rápido
+
+No todo fallo debería reintentarse automáticamente — reintentar una solicitud que falló porque la entrada era inválida fallará idénticamente cada vez y simplemente desperdiciará esfuerzo, mientras que reintentar una solicitud que falló por un problema de red transitorio puede genuinamente tener éxito en el segundo intento. Distinguir entre ambos casos (a menudo tratando códigos de estado o tipos de excepción específicos como reintentables y todo lo demás como no reintentable) es lo que hace que la lógica de reintento automático sea realmente útil en vez de simplemente retrasar un fallo inevitable.
+
+## Ver también
+
+- **[Registro (logging)](/es/backend/logging)** — a dónde va realmente el detalle completo de un error inesperado.
+- **[Middleware](/es/backend/middleware)** — donde típicamente se implementa un manejador de errores centralizado.
+- **[Códigos de estado HTTP](/es/web-fundamentals/http/status-codes)** — el vocabulario del que debería tomarse el código de estado de una respuesta de error.

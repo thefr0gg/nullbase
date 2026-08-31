@@ -1,0 +1,36 @@
+---
+title: Background Jobs
+description: Le travail délibérément sorti du cycle requête/réponse — pour qu'un client n'attende pas quelque chose de plus lent que ce qu'une réponse devrait jamais prendre.
+category: Backend
+weight: 4
+interactive: true
+interactiveType: ["StepFlow"]
+---
+
+Un **background job** est un travail déclenché par une requête mais non terminé avant l'envoi de la réponse de cette requête — envoyer un email de confirmation, redimensionner une image téléversée, générer un rapport, réentraîner un modèle de recommandation. S'il n'a pas besoin de se terminer avant que le client puisse être informé que c'est « fait », l'exécuter en ligne fait simplement attendre le client pour quelque chose qu'il n'a en réalité pas besoin d'attendre.
+
+## Le pattern
+
+<StepFlow
+  title="Déférer du travail vers un job en arrière-plan"
+  steps={[
+    { actor: "Client", title: "Request arrives", description: "Un utilisateur s'inscrit, déclenchant la création du compte et (séparément) un email de bienvenue.", detail: "POST /signup" },
+    { actor: "Server", title: "Enqueue instead of executing inline", description: "Le serveur crée le compte de manière synchrone (le client doit savoir que cela a réussi), puis pousse un job \"send welcome email\" dans une file d'attente au lieu de l'envoyer directement.", detail: "queue.push({ job: 'send_welcome_email', userId: 42 })" },
+    { actor: "Server", title: "Respond immediately", description: "La réponse repart immédiatement vers le client — l'inscription a réussi, et le client n'a aucune raison de savoir ou de se soucier que l'email n'a pas encore été envoyé.", detail: "201 Created" },
+    { actor: "Worker", title: "A separate worker processes the job", description: "Un processus worker indépendant, sondant ou abonné à la file d'attente, récupère le job dès qu'il est disponible et envoie l'email réel — quelques secondes voire quelques minutes plus tard, ce qui est acceptable.", detail: "worker.process('send_welcome_email') -> sends email" },
+  ]}
+/>
+
+## Pourquoi ne pas simplement utiliser un appel lent en ligne
+
+Rien n'empêche un gestionnaire de requête d'appeler directement l'API du fournisseur d'emails et d'attendre — mais cela lie le temps de réponse de la requête à la latence et à la fiabilité d'un service tiers. Si le fournisseur d'emails est lent ou brièvement indisponible, chaque inscription devient lente ou échoue, pour une tâche que l'utilisateur n'attendait en réalité jamais. La reporter découple les deux : l'inscription réussit ou échoue uniquement en fonction de l'écriture en base de données, et l'envoi de l'email peut réessayer indépendamment sans que l'utilisateur ne remarque jamais de délai.
+
+## Ce qui fait qu'un job est « en arrière-plan » plutôt que simplement asynchrone
+
+Déclencher une promesse sans l'attendre (`sendEmail(user)` sans `await`) ressemble à la même chose mais n'en est pas une — si le processus plante ou redémarre un instant plus tard, ce travail en cours est simplement perdu, sans aucune trace qu'il était censé se produire. Un véritable système de background jobs persiste le job (généralement dans une [file d'attente](/fr/backend/queues)) avant de considérer la requête déclenchante comme terminée, de sorte qu'un crash entre « mis en file » et « traité » laisse tout de même le job récupérable plutôt que discrètement perdu.
+
+## Voir aussi
+
+- **[Queues](/fr/backend/queues)** — le tampon durable sur lequel s'appuient les background jobs.
+- **[Cloudflare Queues](/fr/cloudflare/queues)** — un produit de file d'attente managé conçu précisément pour ce pattern.
+- **[Error Handling](/fr/backend/error-handling)** — un background job échoué a besoin de sa propre stratégie de retry/échec, puisqu'il n'y a plus de client en attente pour voir une erreur.

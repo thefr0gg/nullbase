@@ -1,0 +1,51 @@
+---
+title: npm
+description: Le gestionnaire de paquets et le registre par défaut pour JavaScript — package.json, le fichier de verrouillage, et ce qui se passe réellement lors d'un npm install.
+category: Developer Tools
+weight: 3
+---
+
+**npm (Node Package Manager)** est l'outil par défaut pour installer, publier et gérer les dépendances JavaScript, ainsi que le registre public qui héberge les paquets eux-mêmes. Il est fourni avec Node.js, ce qui explique en grande partie pourquoi il reste le choix par défaut même si des alternatives ([Yarn](/fr/developer-tools/package-managers), pnpm) existent.
+
+## package.json
+
+```json
+{
+  "name": "my-app",
+  "version": "1.0.0",
+  "dependencies": {
+    "express": "^4.18.0"
+  },
+  "devDependencies": {
+    "vitest": "^1.0.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "vitest run"
+  }
+}
+```
+
+Les `dependencies` sont nécessaires à l'exécution ; les `devDependencies` ne sont nécessaires que pendant le développement (frameworks de test, linters, outils de build) et ne sont pas installées lorsqu'un paquet est installé comme dépendance de *quelqu'un d'autre*. `scripts` définit des commandes shell nommées, exécutables via `npm run <name>` — une alternative légère et locale au projet à un exécuteur de tâches séparé.
+
+## Le fichier de verrouillage
+
+`npm install` écrit (ou met à jour) `package-lock.json`, enregistrant la version résolue *exacte* de chaque dépendance et dépendance transitive réellement installée — pas seulement les plages de versions présentes dans `package.json`. Sans fichier de verrouillage, deux personnes exécutant `npm install` sur le même `package.json` à des moments différents pourraient obtenir des versions de dépendances transitives différentes si quelque chose en amont a publié une nouvelle version entre-temps ; le fichier de verrouillage les fige, de sorte que `npm ci` (l'installation stricte basée sur le fichier de verrouillage utilisée en CI) reproduit exactement le même arbre de dépendances à chaque fois.
+
+## Ce que fait réellement `npm install`
+
+1. Lit les plages de versions déclarées dans `package.json` (et `package-lock.json` s'il est présent).
+2. Résout une version compatible pour chaque dépendance et chacune de *leurs* dépendances, récursivement.
+3. Télécharge l'archive tarball de chaque paquet depuis le registre (ou un cache local, si déjà téléchargé).
+4. Extrait tout dans `node_modules/`, l'algorithme d'aplatissement de npm essayant d'éviter les copies dupliquées de la même version d'un paquet lorsque c'est possible.
+5. Écrit/met à jour `package-lock.json` pour enregistrer exactement ce qui a été résolu.
+
+## Plages de versionnage sémantique
+
+Le `^4.18.0` de l'exemple ci-dessus est une plage, pas une version exacte figée — `^` autorise toute version qui ne modifie pas la composante non nulle la plus à gauche (donc `4.19.2` est autorisée, `5.0.0` ne l'est pas), suivant la convention du [versionnage sémantique](/fr/developer-tools/semantic-versioning) selon laquelle une montée de version majeure signale un changement cassant. `~4.18.0` est plus strict, n'autorisant que les mises à jour de niveau patch (`4.18.x`) ; une version exacte sans préfixe n'autorise aucune mise à jour automatique du tout.
+
+## Voir aussi
+
+- **[Gestionnaires de paquets](/fr/developer-tools/package-managers)** — le modèle général que npm, Yarn et pnpm implémentent chacun différemment.
+- **[Versionnage sémantique](/fr/developer-tools/semantic-versioning)** — la convention de versionnage sur laquelle est construite la syntaxe de plages de npm.
+- **[Git](/fr/developer-tools/git)** — `package-lock.json` est commité dans le contrôle de version précisément pour que chaque clone résolve les dépendances de manière identique.

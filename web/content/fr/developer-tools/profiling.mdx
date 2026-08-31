@@ -1,0 +1,39 @@
+---
+title: Profilage
+description: Comprendre pourquoi le code est plus lent qu'il ne devrait l'être — mesurer où le temps et la mémoire sont réellement consommés, plutôt que de deviner.
+category: Developer Tools
+weight: 10
+---
+
+Le **profilage** mesure où un programme passe réellement son temps et sa mémoire pendant son exécution, plutôt que de deviner selon quel code *semble* devoir être lent. L'intuition sur la performance est fréquemment fausse — un profileur remplace « je pense que cette boucle est le problème » par une mesure réelle indiquant exactement quelle fonction a consommé combien de temps.
+
+## Profilage CPU
+
+Un profileur CPU échantillonne (ou instrumente entièrement) un programme en cours d'exécution pour construire une image du temps passé par fonction — couramment visualisée sous forme de **flame graph**, où chaque barre horizontale est un appel de fonction, sa largeur proportionnelle au temps passé, et des barres empilées montrant ce qui a appelé quoi. Une barre large près du sommet d'un flame graph est exactement ce que l'on cherche : une fonction précise consommant une part disproportionnée du temps d'exécution total.
+
+```js
+console.time("processOrders");
+processOrders(orders);
+console.timeEnd("processOrders");
+// processOrders: 842.31ms
+```
+
+Un chronométrage grossier comme celui-ci est une première étape légitime — encadrer une fonction suspecte pour confirmer qu'elle est réellement la partie lente avant de recourir à un profileur complet — mais un véritable profileur va plus loin, décomposant le temps *à l'intérieur* de cette fonction pour montrer lesquels de ses propres appels internes en sont réellement responsables.
+
+## Profilage mémoire
+
+Un profileur mémoire suit les allocations dans le temps, aidant à trouver des **fuites de mémoire** — de la mémoire qui continue de croître parce que quelque chose retient une référence à des objets qui auraient dû être récupérés par le ramasse-miettes, mais ne le sont pas. Une comparaison d'instantanés de tas (heap snapshots) (en prendre un, effectuer une action à plusieurs reprises, en prendre un autre, comparer les deux) est une technique standard : les objets qui continuent de s'accumuler à travers des actions identiques répétées sont les candidats à la fuite.
+
+## La réalité du 80/20 en performance
+
+Dans la plupart des programmes réels, une petite fraction du code représente l'écrasante majorité du temps d'exécution — optimiser du code qui n'est pas réellement un goulot d'étranglement gaspille des efforts et ajoute de la complexité sans bénéfice mesurable. C'est toute la justification du profilage avant l'optimisation plutôt qu'après : sans mesure, il est facile de passer des jours à optimiser une fonction qui n'a jamais été notablement lente, pendant que le véritable goulot d'étranglement reste intact.
+
+## Profilage en production contre en local
+
+Un profileur exécuté localement contre un benchmark synthétique peut complètement passer à côté de goulots d'étranglement réels — les schémas de trafic en production, les tailles de données réelles et les conditions réseau réelles peuvent se comporter de façon totalement différente du cas de test local d'un développeur. Le profilage continu et à faible coût en production (échantillonner un petit pourcentage des requêtes réelles) est la manière dont de nombreux problèmes de performance qui n'apparaissent jamais en local sont réellement découverts.
+
+## Voir aussi
+
+- **[Débogage](/fr/developer-tools/debugging)** — le processus équivalent pour un problème de correction plutôt que de performance.
+- **[Supervision](/fr/devops/monitoring)** — le signal à l'échelle de la production (percentiles de latence) qui indique généralement *quand* recourir à un profileur.
+- **[Cache](/fr/backend/caching)** — l'une des corrections les plus courantes que les résultats d'un profileur amènent réellement.

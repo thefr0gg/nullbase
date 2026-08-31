@@ -1,0 +1,52 @@
+---
+title: Logging
+description: La trace qu'un backend laisse de ce qu'il a réellement fait — niveaux de logs, logging structuré, et pourquoi « de simples print » cessent de fonctionner passé une certaine échelle.
+category: Backend
+weight: 9
+---
+
+Le **logging** consiste, pour un backend, à enregistrer ce qu'il a fait, à peu près dans l'ordre où il l'a fait, pour qu'un humain (ou un autre système) puisse reconstituer après coup ce qui s'est passé — déboguer une erreur rencontrée par un utilisateur une heure plus tôt, vérifier qu'un déploiement s'est bien passé, ou auditer qui a fait quoi. C'est souvent la seule preuve disponible une fois qu'une requête est terminée et que son état en mémoire a disparu.
+
+## Niveaux de logs
+
+<ItemExplorer
+  title="Niveaux de log courants"
+  layout="table"
+  tableColumns={[{ key: "when", label: "Used for" }]}
+  items={[
+    { id: "debug", label: "DEBUG", color: "default", columns: { when: "Détail verbeux utile uniquement pendant un débogage actif — généralement entièrement désactivé en production." } },
+    { id: "info", label: "INFO", color: "blue", columns: { when: "Fonctionnement normal qui vaut la peine d'être enregistré — une requête terminée, un job terminé, un serveur démarré." } },
+    { id: "warn", label: "WARN", color: "orange", columns: { when: "Quelque chose d'inattendu mais récupérable — une requête réessayée, une API dépréciée utilisée, une requête lente." } },
+    { id: "error", label: "ERROR", color: "red", columns: { when: "Quelque chose a échoué et nécessite de l'attention — une exception non gérée, un paiement échoué, une dépendance injoignable." } },
+  ]}
+/>
+
+Les niveaux permettent à une équipe d'augmenter ou de réduire la verbosité sans changer de code — DEBUG dans un environnement local, INFO et au-dessus en production, avec la possibilité d'augmenter temporairement la verbosité en enquêtant sur un incident en direct.
+
+## Logging structuré
+
+```json
+{"level":"error","msg":"payment failed","userId":42,"orderId":"ord_9f2","amount":1999,"ts":"2026-01-15T10:22:03Z"}
+```
+
+par rapport à la ligne non structurée équivalente :
+
+```text
+[ERROR] Payment failed for user 42, order ord_9f2, amount 1999 at 2026-01-15T10:22:03Z
+```
+
+Les deux transportent la même information, mais la version structurée (généralement JSON) est trivialement analysable par une machine — un système d'agrégation de logs peut filtrer directement toutes les erreurs pour `orderId: "ord_9f2"`, plutôt que d'avoir besoin d'une regex susceptible de casser dès que quelqu'un modifie la formulation du message lisible par un humain. Le logging structuré est ce qui rend la recherche et l'alerting sur les logs praticables à toute échelle réelle.
+
+## Pourquoi les print cessent de fonctionner
+
+La sortie `console.log` d'un serveur unique est bien lisible directement. Dès qu'un backend tourne sur plusieurs instances (ou est redéployé et perd entièrement le disque de son instance précédente, ce qui est normal pour les conteneurs), les logs doivent être expédiés vers un endroit durable et centralisé — un service d'agrégation de logs — ou ils disparaissent simplement dès que l'instance qui les a écrits disparaît. C'est aussi pourquoi journaliser vers un fichier local convient mal à la plupart des déploiements modernes : le fichier meurt avec le conteneur.
+
+## Ce qu'il ne faut pas journaliser
+
+Les logs sont souvent conservés longtemps et lus par plus de personnes que le développeur d'origine — journaliser un mot de passe en clair, un numéro de carte de crédit complet, ou un [JWT](/en/security/jwt) non expurgé transforme une commodité de débogage en un véritable problème de [gestion des secrets](/en/security/secrets-management). Le logging structuré facilite le fait de bien faire les choses de manière cohérente : une bibliothèque de logging peut être configurée pour expurger automatiquement les noms de champs connus comme sensibles avant que quoi que ce soit ne soit écrit.
+
+## Voir aussi
+
+- **[Error Handling](/fr/backend/error-handling)** — ce que fait réellement une erreur interceptée, le logging en étant une partie.
+- **[Monitoring](/fr/devops/monitoring)** — les logs sont l'un des signaux qu'un système de monitoring agrège et sur lequel il alerte.
+- **[Secrets Management](/en/security/secrets-management)** — pourquoi les valeurs sensibles doivent spécifiquement être tenues à l'écart des logs.

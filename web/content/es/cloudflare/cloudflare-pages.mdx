@@ -1,0 +1,49 @@
+---
+title: Cloudflare Pages
+description: Alojamiento de sitios estáticos basado en Git con despliegues de vista previa automáticos — y cómo está convergiendo con Workers en una única plataforma unificada.
+category: Cloudflare
+weight: 12
+---
+
+**Cloudflare Pages** aloja sitios estáticos (y sitios con lógica ligera del lado del servidor mediante Pages Functions) con el despliegue impulsado directamente por un repositorio Git — haces push de un commit, obtienes un despliegue nuevo automáticamente, y cada pull request obtiene su propia URL de vista previa antes de que nada se fusione a producción.
+
+## El flujo de trabajo central
+
+1. Conecta un repositorio de GitHub o GitLab.
+2. Configura un comando de build (`npm run build`) y un directorio de salida (`dist`, `out`).
+3. Cada push a la rama de producción activa automáticamente un nuevo despliegue de producción.
+4. Cada otra rama y pull request obtiene su propia URL de vista previa única, para que los revisores puedan ver el resultado renderizado real antes de aprobar, no solo el diff.
+
+Este modelo dirigido por Git elimina por completo el paso manual de "compilar en local, subir los archivos a algún sitio" — el historial de despliegues *es* el historial de commits, y revertir un despliegue fallido es tan simple como volver a promover un despliegue anterior conocido como correcto.
+
+## Pages Functions
+
+Más allá del alojamiento puramente estático, Pages Functions permite que rutas específicas ejecuten código del lado del servidor — usando el mismo runtime de Workers subyacente, solo que con una convención de enrutamiento basada en archivos (`functions/api/hello.js` se convierte automáticamente en `/api/hello`) en lugar de un único handler `fetch` que enruta todo por sí mismo.
+
+```js
+// functions/api/hello.js
+export async function onRequest(context) {
+  return new Response("Hello from a Pages Function");
+}
+```
+
+## Convergiendo con Workers
+
+Cloudflare ha ido unificando progresivamente Pages y los Workers normales en una sola plataforma — un proyecto de Workers ahora puede servir activos estáticos directamente (exactamente lo que impulsa el propio frontend de nullbase, una exportación estática de Next.js servida mediante una configuración de activos estáticos de Workers en lugar de un proyecto de Pages separado), lo que hace que "Pages frente a Workers" sea cada vez menos una bifurcación tajante y más una cuestión de qué flujo de despliegue (Git-push-to-deploy frente a `wrangler deploy`) encaja mejor con el proceso de un equipo dado.
+
+## Eligiendo entre ambos hoy
+
+<ItemExplorer
+  title="Pages frente a un Worker de activos estáticos"
+  layout="pills"
+  items={[
+    { id: "pages-fit", label: "Prefiere Pages cuando...", color: "blue", detail: "Quieres despliegue mediante Git-push y URLs de vista previa automáticas por pull request desde el primer momento, con una configuración mínima de Wrangler." },
+    { id: "worker-fit", label: "Prefiere un proyecto de Workers cuando...", color: "green", detail: "El frontend y cualquier lógica de API deben desplegarse y versionarse juntos bajo un único flujo de trabajo dirigido por Wrangler, o necesitas un control más fino sobre el enrutamiento o el comportamiento de la caché del que ofrecen las convenciones de Pages." },
+  ]}
+/>
+
+## Ver también
+
+- **[Workers](/es/cloudflare/workers)** — el runtime sobre el que realmente se ejecutan Pages Functions.
+- **[CI/CD](/es/devops/ci-cd)** — la práctica general de la que el despliegue mediante Git-push de Pages es una implementación especializada y ya construida.
+- **[Deployment](/es/devops/deployment)** — los despliegues de vista previa son, en la práctica, una forma ligera del patrón canary/staging cubierto ahí.

@@ -1,0 +1,45 @@
+---
+title: Depuración
+description: Averiguar por qué el código no hace lo que se supone que debe hacer — breakpoints, depuración con print, y la disciplina de formar primero una hipótesis.
+category: Developer Tools
+weight: 9
+---
+
+La **depuración** es el proceso de averiguar *por qué* el código no se comporta como se espera — a diferencia del testing, que te dice *que* algo está mal pero rara vez explica el porqué por sí solo.
+
+## Breakpoints y depuración paso a paso
+
+Un **breakpoint** pausa la ejecución del código en una línea específica, permitiéndote inspeccionar el valor actual de cada variable, avanzar por las líneas siguientes una a una, y observar exactamente cómo cambia el estado — mucho más preciso que adivinar, a partir de un puñado de sentencias print, qué podría estar pasando en ese punto. Todo lenguaje habitual tiene herramientas de depuración integradas en su editor/IDE (el depurador integrado de VS Code, Chrome DevTools para JavaScript en el navegador) que hacen de esto cosa de un par de clics en lugar de una herramienta de línea de comandos aparte que configurar.
+
+## Depuración con print
+
+```js
+console.log("user before update:", user);
+user = updateUser(user);
+console.log("user after update:", user);
+```
+
+Esparcir `console.log` (o `print`, o `dd()`, según el lenguaje) por el código sospechoso es la técnica de depuración más antigua, y sigue siendo genuinamente útil — especialmente para errores que dependen del tiempo, donde pausar la ejecución con un breakpoint cambiaría el propio comportamiento que se está investigando (una condición de carrera que solo se reproduce con los tiempos reales). Su desventaja es tener que volver a ejecutar el código tras añadir cada línea de log, frente a un depurador que permite inspeccionar el estado de forma interactiva sin reiniciar.
+
+## Formar una hipótesis antes de hurgar
+
+El error de depuración más común es lanzarse directamente a cambiar código y volver a ejecutarlo, con la esperanza de que algo se vea distinto, sin antes formar una hipótesis específica y falsable sobre qué está realmente mal. Un enfoque más disciplinado:
+
+1. **Reprodúcelo de forma fiable** — un error que solo ocurre a veces es mucho más difícil de arreglar que uno que puedes disparar a voluntad cada vez.
+2. **Acota dónde está** — haz bisección del código (comenta la mitad, o usa breakpoints) hasta aislar la región más pequeña que aún reproduzca el problema.
+3. **Forma una hipótesis** — «Creo que `updateUser` está mutando la entrada en lugar de devolver un objeto nuevo».
+4. **Comprueba la hipótesis directamente** — verifica específicamente eso, en lugar de volver a mirar toda la función de nuevo.
+
+## Depuración del pato de goma
+
+Explicar un error en voz alta, línea por línea, a otra persona (o literalmente a un pato de goma en tu escritorio) frecuentemente saca el problema a la luz antes incluso de terminar la explicación — articular una suposición te obliga a examinarla de verdad, en lugar de pasarla por alto en silencio como podrías hacer al simplemente leer el código en tu cabeza.
+
+## Leer el error real
+
+Una cantidad sorprendente de tiempo de depuración se pierde por no leer con atención lo que realmente dicen un mensaje de error y su stack trace — la línea específica, el tipo de excepción específico, los valores específicos implicados suelen estar ahí mismo, y saltar directamente a adivinar desperdicia la pista más directa disponible.
+
+## Ver también
+
+- **[Testing](/es/developer-tools/testing)** — lo que te dice que existe un error, para empezar.
+- **[Logging](/es/backend/logging)** — el equivalente en producción de la depuración con print, para problemas que solo aparecen fuera de un entorno local.
+- **[Profiling](/es/developer-tools/profiling)** — el proceso equivalente para un problema de rendimiento en lugar de uno de corrección.

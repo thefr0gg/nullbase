@@ -1,0 +1,54 @@
+---
+title: Cloudflare Workers
+description: بيئة تشغيل JavaScript/WebAssembly عديمة الخادم (serverless) من Cloudflare — تعمل عند كل موقع طرفي بدلاً من منطقة واحدة، على نموذج V8 isolate يبدأ خلال أجزاء من الثانية.
+category: Cloudflare
+weight: 0
+interactive: true
+interactiveType: ["StepFlow"]
+---
+
+يشغّل **Cloudflare Workers** JavaScript أو TypeScript أو WebAssembly عند كل موقع من مواقع Cloudflare الطرفية، مُستدعى مباشرة استجابة لطلب HTTP وارد — تطبيق ملموس لكل من [serverless](/ar/devops/serverless) (لا خادم يجب تجهيزه) و[الحوسبة الطرفية](/ar/devops/edge-computing) (يعمل قريباً من الطالب، لا في منطقة واحدة) في آنٍ واحد.
+
+## الشكل الأساسي
+
+```js
+export default {
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+    if (url.pathname === "/api/hello") {
+      return new Response(JSON.stringify({ message: "Hello!" }), {
+        headers: { "content-type": "application/json" },
+      });
+    }
+    return new Response("Not found", { status: 404 });
+  },
+};
+```
+
+يستقبل معالج `fetch` الخاص بـ Worker الـ `Request` الوارد، وكائن `env` يعرض أي [bindings](/ar/cloudflare/workers-bindings) مُعدَّة (D1، KV، R2، أسرار)، وكائن `ctx` لمهام مثل `waitUntil` (يتيح استمرار العمل لفترة وجيزة بعد إرسال الاستجابة بالفعل).
+
+## Isolates، لا حاويات
+
+تعزل معظم منصات serverless دالة عن أخرى باستخدام [حاوية](/ar/devops/containers) أو آلة افتراضية كاملة — بينما تستخدم Workers بدلاً من ذلك **V8 isolates**، آلية العزل الخفيفة نفسها التي يستخدمها V8 (محرك JavaScript الخاص بـ Chrome وNode.js) لعزل JavaScript الخاص بعلامة تبويب متصفح واحدة عن أخرى. تكاليف بدء تشغيل isolate أقل بكثير من حاوية، وهذا هو السبب المباشر في أن بدء تشغيل Worker البارد (cold start) يكون عادة أقل من ميلي ثانية بدلاً من مئات الميلي ثانية إلى ثوانٍ التي يمكن أن يستغرقها بدء تشغيل بارد قائم على حاوية.
+
+## أين يذهب الطلب فعلياً
+
+<StepFlow
+  title="طلب يصل إلى Worker"
+  steps={[
+    { actor: "العميل", title: "إرسال الطلب", description: "يرسل عميل طلباً إلى نطاق مُعدّ عليه Worker (عبر route أو نطاق مخصص).", detail: "GET https://api.example.com/hello" },
+    { actor: "حافة Cloudflare", title: "التوجيه إلى أقرب موقع", description: "توجّه شبكة Cloudflare الطلب إلى أياً من مئات مواقعها الطرفية الأقرب للعميل، لا إلى خادم أصل واحد ثابت.", detail: "" },
+    { actor: "Worker", title: "تشغيل معالج fetch", description: "تنفّذ isolate دافئة بالفعل (أو بدأت للتو) معالج fetch الخاص بـ Worker عند ذلك الموقع الطرفي، مع وصول لأي bindings مُعدَّة.", detail: "export default { async fetch(request, env, ctx) { ... } }" },
+    { actor: "Worker", title: "إعادة الاستجابة", description: "يُعيد المعالج Response، تُرسَل مباشرة إلى العميل من نفس الموقع الطرفي القريب — دون رحلة عودة إلى أصل بعيد ما لم يقم Worker نفسه بذلك.", detail: "return new Response(...)" },
+  ]}
+/>
+
+## ما ليس عليه Workers
+
+Worker ليس عملية خادم عامة الغرض — لا يوجد نظام ملفات، ولا خيوط خلفية طويلة الأمد خارج دورة حياة الطلب (باستثناء الامتداد الوجيز لـ `waitUntil`)، ووقت المعالج (CPU) لكل طلب محدود بحد أقصى. هذا ليس قيداً بقدر ما هو نموذج مختلف كلياً: انعدام الحالة ونوافذ التنفيذ القصيرة هما ما يتيحان لـ Cloudflare تشغيل نفس الشيفرة عند كل موقع طرفي بتكلفة زهيدة وبدئها شبه الفوري، نفس المفاضلة التي يقوم عليها [serverless](/ar/devops/serverless) عموماً، لكن مُطبَّقة هنا بصرامة أكبر مقابل تنفيذ عالمي فعلياً ومنخفض زمن الاستجابة.
+
+## طالع أيضاً
+
+- **[Workers Bindings](/ar/cloudflare/workers-bindings)** — كيف يصل Worker فعلياً إلى D1 وKV وR2 وخدمات أخرى.
+- **[Wrangler](/ar/cloudflare/wrangler)** — أداة سطر الأوامر المستخدَمة لتطوير Worker ونشره.
+- **[Durable Objects](/ar/cloudflare/durable-objects)** — ما يُلجأ إليه حين يصبح انعدام حالة Worker قيداً حقيقياً.

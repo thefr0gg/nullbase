@@ -1,0 +1,49 @@
+---
+title: Git
+description: Le système de contrôle de version distribué qu'utilise presque chaque base de code — commits, branches, et l'état par lequel un fichier passe réellement avant d'être commité.
+category: Developer Tools
+weight: 0
+interactive: true
+interactiveType: ["StateMachine"]
+---
+
+**Git** suit les modifications d'une base de code dans le temps sous forme d'une série de **commits** — chacun étant un instantané de l'ensemble du projet à ce moment-là, relié à son commit parent, formant un historique. Il est **distribué**, ce qui signifie que chaque clone d'un dépôt porte l'*intégralité* de l'historique, pas seulement un pointeur vers un serveur central — c'est pourquoi la plupart des opérations Git (consulter l'historique, créer une branche, committer) fonctionnent entièrement hors ligne.
+
+## L'état d'un fichier
+
+Un fichier dans un dépôt Git traverse un petit nombre d'états avant qu'une modification qui lui est apportée ne soit réellement enregistrée dans l'historique :
+
+<StateMachine
+  title="Le parcours d'un fichier jusqu'au commit"
+  states={[
+    { id: "untracked", label: "Non suivi", color: "default", detail: "Git voit que le fichier existe mais ne suit pas ses modifications — les nouveaux fichiers commencent ici." },
+    { id: "modified", label: "Modifié", color: "orange", detail: "Un fichier suivi a des modifications sur le disque qui n'ont pas encore été indexées." },
+    { id: "staged", label: "Indexé", color: "blue", detail: "Les modifications sont marquées pour être incluses dans le prochain commit — la zone d'index permet de committer seulement une partie de vos modifications, pas nécessairement tout ce qui a été modifié." },
+    { id: "committed", label: "Commité", color: "green", detail: "La modification est désormais enregistrée de façon permanente dans l'historique du dépôt, dans le cadre d'un commit." },
+  ]}
+  transitions={[
+    { from: "untracked", to: "staged", label: "git add", detail: "Commence à suivre un nouveau fichier et l'indexe en une seule étape." },
+    { from: "modified", to: "staged", label: "git add", detail: "Indexe les modifications actuelles d'un fichier déjà suivi." },
+    { from: "staged", to: "committed", label: "git commit", detail: "Enregistre de façon permanente chaque modification indexée sous forme d'un nouveau commit." },
+    { from: "committed", to: "modified", label: "edit the file", detail: "Modifier à nouveau un fichier commité le fait repasser à l'état modifié." },
+  ]}
+  initial="untracked"
+/>
+
+## Les branches ne sont que des pointeurs
+
+Une **branche** n'est rien de plus qu'un pointeur mobile vers un commit précis — en créer une (`git branch feature-x`) est instantané quelle que soit la taille du dépôt, car cela ne copie aucun fichier, ajoute simplement un nouveau pointeur. `git checkout feature-x` fait pointer votre répertoire de travail vers le commit que pointe actuellement ce pointeur ; committer alors qu'on est sur une branche fait avancer le pointeur de cette branche vers le nouveau commit.
+
+## Fusion (merge) contre rebasage (rebase)
+
+Le **merge** combine les historiques de deux branches en créant un nouveau commit avec deux parents, préservant exactement ce qui s'est passé et quand sur les deux branches. Le **rebase** réécrit les commits d'une branche pour qu'ils apparaissent comme s'ils avaient été faits par-dessus le dernier commit de l'autre branche, produisant un historique linéaire sans aucun commit de fusion — plus propre à lire, mais cela réécrit l'historique des commits, ce qui est risqué sur toute branche dont d'autres personnes ont déjà tiré (leur historique local divergerait alors de l'historique réécrit).
+
+## L'utilité réelle de la zone d'index
+
+Le fait que `git add` existe comme étape séparée de `git commit` semble redondant jusqu'au moment où on en a besoin : cela permet de construire un commit à partir de seulement *certaines* de vos modifications actuelles (`git add -p` permet même d'indexer une partie d'un seul fichier), gardant les commits centrés sur un seul changement logique plutôt que de regrouper toutes les modifications présentes sur le disque en un seul commit, qu'elles soient liées ou non.
+
+## Voir aussi
+
+- **[GitHub](/fr/developer-tools/github)** — l'endroit où la plupart des dépôts Git sont réellement hébergés et où l'on collabore autour d'eux.
+- **[CI/CD](/fr/devops/ci-cd)** — couramment déclenché par un push ou une pull request sur un dépôt Git.
+- **[Versionnage sémantique](/fr/developer-tools/semantic-versioning)** — la convention de versionnage superposée aux tags Git pour les releases.

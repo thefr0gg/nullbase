@@ -1,0 +1,57 @@
+---
+title: Cloudflare Durable Objects
+description: Estado y coordinación fuertemente consistentes en el borde — una instancia única y direccionable a la que se enruta cada solicitud para un ID dado, con su propio almacenamiento persistente.
+category: Cloudflare
+weight: 4
+---
+
+Un **Durable Object** es una instancia única y direccionable de una clase, identificada de forma unívoca por un ID, que Cloudflare garantiza que se ejecuta en exactamente un solo lugar a la vez — cada solicitud para ese ID específico se enruta a la misma instancia, dondequiera que esté en ese momento. Esta es la respuesta directa al problema de coordinación con el que se topa en general la [computación en el borde](/es/devops/edge-computing): [KV](/es/cloudflare/kv) es rápido en todas partes pero solo eventualmente consistente; un Durable Object es fuertemente consistente por construcción, porque nunca hay más de uno con el que ser consistente.
+
+## Por qué "una instancia" resuelve la coordinación
+
+Si dos solicitudes para el mismo recurso lógico (una sala de chat, una sesión de juego, un limitador de tasa por usuario) pueden ser gestionadas por dos servidores distintos simultáneamente, mantenerlas consistentes requiere bloqueo distribuido, protocolos de consenso o aceptar consistencia eventual. Enrutar cada solicitud de ese recurso a una instancia específica de Durable Object evita el problema por completo — no hay acceso concurrente que reconciliar, porque hay exactamente un único lugar donde vive realmente el estado, y la infraestructura de Cloudflare se encarga de encontrarlo y enrutar hacia él.
+
+## Forma básica
+
+```js
+export class Counter {
+  constructor(state, env) {
+    this.state = state;
+  }
+  async fetch(request) {
+    let count = (await this.state.storage.get("count")) || 0;
+    count++;
+    await this.state.storage.put("count", count);
+    return new Response(String(count));
+  }
+}
+
+// In the Worker routing to it:
+const id = env.COUNTER.idFromName("global-counter");
+const stub = env.COUNTER.get(id);
+return stub.fetch(request);
+```
+
+`idFromName` deriva un ID consistente a partir de una cadena, así que cada solicitud que use el mismo nombre llega a la misma instancia; `state.storage` es el propio almacenamiento clave-valor persistente y transaccional del Durable Object, limitado únicamente a esa instancia.
+
+## Lo que esto permite realmente
+
+<ItemExplorer
+  title="Casos de uso comunes de Durable Objects"
+  layout="pills"
+  items={[
+    { id: "realtime", label: "Colaboración en tiempo real", color: "blue", detail: "Una sala de chat o documento colaborativo basado en WebSocket, donde un Durable Object por sala mantiene las conexiones y el estado actual, difundiendo actualizaciones a todos los conectados." },
+    { id: "rate-limit", label: "Limitación de tasa precisa", color: "green", detail: "A diferencia de la consistencia eventual de KV, un Durable Object puede mantener un conteo de solicitudes exacto e inmediatamente consistente por usuario o clave de API sin condiciones de carrera." },
+    { id: "game-state", label: "Estado de juego multijugador", color: "purple", detail: "Un Durable Object por sesión de juego, serializando cada acción de los jugadores a través de una única fuente de verdad consistente." },
+  ]}
+/>
+
+## La contrapartida
+
+Como un Durable Object está fijado a una única ubicación y procesa las solicitudes de su ID de forma serial, no escala horizontalmente como lo hace un Worker sin estado — cada solicitud para el *mismo* ID es, por diseño, un cuello de botella a través de esa única instancia. Esta es la contrapartida correcta precisamente cuando la consistencia realmente requiere serialización; repartir el trabajo entre muchos Durable Objects con claves distintas (uno por sala de chat, no uno para todo el chat globalmente) es cómo los sistemas reales evitan que ese cuello de botella se convierta en un problema en la práctica.
+
+## Ver también
+
+- **[Workers](/es/cloudflare/workers)** — el modelo de cómputo sin estado que los Durable Objects extienden específicamente con estado persistente y consistente.
+- **[KV](/es/cloudflare/kv)** — la alternativa eventualmente consistente, más adecuada cuando no se requiere consistencia estricta.
+- **[Edge Computing](/es/devops/edge-computing)** — el problema general de coordinación al que los Durable Objects son la respuesta específica de Cloudflare.

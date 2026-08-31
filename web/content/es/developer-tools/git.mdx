@@ -1,0 +1,49 @@
+---
+title: Git
+description: El sistema de control de versiones distribuido que usa casi todo repositorio de código — commits, ramas, y el estado por el que realmente pasa un archivo antes de que se registre.
+category: Developer Tools
+weight: 0
+interactive: true
+interactiveType: ["StateMachine"]
+---
+
+**Git** rastrea los cambios a un código base a lo largo del tiempo como una serie de **commits** — cada uno una instantánea de todo el proyecto en ese momento, enlazado a su commit padre, formando un historial. Es **distribuido**, lo que significa que cada clon de un repositorio lleva *todo* el historial, no solo un puntero a un servidor central — por eso la mayoría de las operaciones de Git (ver el historial, crear una rama, hacer commit) funcionan completamente sin conexión.
+
+## El estado de un archivo
+
+Un archivo en un repositorio Git pasa por un pequeño número de estados antes de que un cambio en él quede realmente registrado en el historial:
+
+<StateMachine
+  title="El recorrido de un archivo hasta un commit"
+  states={[
+    { id: "untracked", label: "Sin seguimiento", color: "default", detail: "Git ve que el archivo existe pero no está siguiendo sus cambios — los archivos nuevos empiezan aquí." },
+    { id: "modified", label: "Modificado", color: "orange", detail: "Un archivo con seguimiento tiene cambios en disco que aún no se han preparado (staged)." },
+    { id: "staged", label: "Preparado", color: "blue", detail: "Los cambios están marcados para incluirse en el próximo commit — el área de staging te permite hacer commit solo de parte de tus cambios, no necesariamente de todo lo modificado." },
+    { id: "committed", label: "Confirmado", color: "green", detail: "El cambio ahora queda registrado permanentemente en el historial del repositorio como parte de un commit." },
+  ]}
+  transitions={[
+    { from: "untracked", to: "staged", label: "git add", detail: "Empieza a seguir un archivo nuevo y lo prepara en un solo paso." },
+    { from: "modified", to: "staged", label: "git add", detail: "Prepara los cambios actuales de un archivo que ya tenía seguimiento." },
+    { from: "staged", to: "committed", label: "git commit", detail: "Registra permanentemente cada cambio preparado como un nuevo commit." },
+    { from: "committed", to: "modified", label: "edit the file", detail: "Editar de nuevo un archivo confirmado lo devuelve al estado modificado." },
+  ]}
+  initial="untracked"
+/>
+
+## Las ramas son solo punteros
+
+Una **rama** no es más que un puntero movible a un commit específico — crear una (`git branch feature-x`) es instantáneo sin importar el tamaño del repositorio, porque no copia ningún archivo, solo añade un puntero nuevo. `git checkout feature-x` mueve tu directorio de trabajo para reflejar el commit al que apunta ese puntero en ese momento; hacer commit estando en una rama mueve el puntero de esa rama hacia adelante, hasta el nuevo commit.
+
+## Merge frente a rebase
+
+El **merge** combina el historial de dos ramas creando un nuevo commit con dos padres, preservando exactamente qué pasó y cuándo en ambas ramas. El **rebase** reescribe los commits de una rama para que parezca que se hicieron sobre el último commit de la otra rama, produciendo un historial lineal sin ningún commit de merge — más limpio de leer, pero reescribe el historial de commits, lo cual es inseguro en cualquier rama de la que otras personas ya hayan hecho pull (su historial local divergiría entonces del historial reescrito).
+
+## El propósito real del área de staging
+
+Que `git add` exista como un paso separado de `git commit` parece redundante hasta que lo necesitas: te permite construir un commit a partir de solo *algunos* de tus cambios actuales (`git add -p` incluso te permite preparar parte de un solo archivo), manteniendo los commits centrados en un único cambio lógico en lugar de amontonar en uno solo cada edición que haya actualmente en disco, esté relacionada o no.
+
+## Ver también
+
+- **[GitHub](/es/developer-tools/github)** — donde realmente se alojan y se colabora sobre la mayoría de los repositorios Git.
+- **[CI/CD](/es/devops/ci-cd)** — comúnmente disparado por un push o un pull request contra un repositorio Git.
+- **[Versionado semántico](/es/developer-tools/semantic-versioning)** — la convención de versionado que se apoya sobre las etiquetas (tags) de Git para los lanzamientos.

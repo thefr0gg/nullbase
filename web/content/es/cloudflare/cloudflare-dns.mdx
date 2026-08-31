@@ -1,0 +1,39 @@
+---
+title: Cloudflare DNS
+description: Cloudflare como proveedor de DNS autoritativo — qué activa realmente el icono de la nube naranja, y en qué se diferencia un registro proxied de uno DNS-only.
+category: Cloudflare
+weight: 11
+---
+
+El producto original de Cloudflare es el alojamiento de [DNS](/es/web-fundamentals/dns) y una capa de proxy inverso/CDN colocada delante del tráfico real de un dominio — casi todo lo demás en esta sección (Workers, Custom Domains, la caché) depende de que un dominio ya sea una zona activa de Cloudflare.
+
+## DNS-only frente a proxied (la "nube naranja")
+
+<ItemExplorer
+  title="Nube gris frente a nube naranja"
+  layout="table"
+  tableColumns={[{ key: "traffic", label: "Adónde va el tráfico" }, { key: "gets", label: "Qué obtienes" }]}
+  items={[
+    { id: "dns-only", label: "Solo DNS (nube gris)", color: "default", columns: { traffic: "Directamente a la IP del registro — Cloudflare solo responde la propia consulta DNS", gets: "Únicamente resolución DNS, nada más — sin caché, sin protección DDoS, sin la IP de origen oculta" } },
+    { id: "proxied", label: "Proxied (nube naranja)", color: "orange", columns: { traffic: "Primero a través de la red de Cloudflare, que después reenvía al origen real", gets: "Caché, protección DDoS, terminación TLS, reglas de WAF, y la IP real del servidor de origen oculta de internet público" } },
+  ]}
+/>
+
+Un registro **proxied** convierte a Cloudflare en un [proxy inverso](/es/backend/reverse-proxies) genuino delante de la infraestructura real del dominio — los visitantes resuelven el dominio a una de las propias IP de Cloudflare, nunca a la del servidor de origen real, que es también la razón por la que la filtración de la IP de origen real de un dominio proxied en otro lugar (un registro DNS antiguo, una cabecera de servidor expuesta) puede ser una preocupación de seguridad real: es la dirección que toda otra protección está pensada para mantener oculta.
+
+## Tipos de registro comunes
+
+- **A / AAAA** — un hostname directamente a una dirección IPv4 o IPv6.
+- **CNAME** — un hostname a *otro* hostname, que a su vez se resuelve — usado comúnmente para apuntar un subdominio a un hostname gestionado por una plataforma sin necesidad de conocer ni codificar su IP.
+- **MX** — dónde debe entregarse el correo de un dominio, algo completamente separado de dónde se sirve su sitio web.
+- **TXT** — texto arbitrario, usado comúnmente para verificación de propiedad de dominio y registros de autenticación de correo (SPF, DKIM).
+
+## Por qué un Worker necesita una zona activa
+
+Una [Workers Route](/es/cloudflare/workers-routes) o un [Custom Domain](/es/cloudflare/custom-domains) solo funcionan en un dominio para el que Cloudflare ya sea autoritativo — Cloudflare tiene que ser lo que realmente resuelve y enruta el tráfico de ese dominio antes de poder cederle algo de él a un Worker. Por eso desplegar un Worker en un dominio nuevo siempre empieza por apuntar primero los nameservers de ese dominio a Cloudflare.
+
+## Ver también
+
+- **[DNS](/es/web-fundamentals/dns)** — el protocolo general y los tipos de registro que esta página da por sabidos.
+- **[Reverse Proxies](/es/backend/reverse-proxies)** — el patrón general que un registro DNS proxied implementa a la escala de Cloudflare.
+- **[Cloudflare Cache](/es/cloudflare/cloudflare-cache)** — una de las cosas concretas que activa realmente un registro proxied.

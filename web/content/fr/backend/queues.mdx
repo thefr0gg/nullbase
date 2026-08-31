@@ -1,0 +1,32 @@
+---
+title: Queues
+description: Le tampon durable et ordonné qui se place entre quelque chose qui produit du travail et quelque chose qui le consomme — ce qui permet aux background jobs de survivre à un crash.
+category: Backend
+weight: 5
+---
+
+Une **file d'attente (queue)** est un tampon durable, ordonné (ou au moins équitable) de messages placé entre un **producteur** (quelque chose qui crée du travail) et un ou plusieurs **consommateurs** (quelque chose qui le traite). Les [background jobs](/fr/backend/background-jobs) sont la raison la plus courante pour laquelle un backend en a besoin, mais le pattern est général : partout où du travail doit être transmis sans que le producteur et le consommateur ne s'exécutent en parfaite synchronisation.
+
+## Pourquoi la durabilité est l'essentiel
+
+Un tableau en mémoire de jobs en attente disparaît dès que le processus qui le détient plante ou redémarre. Une véritable queue (RabbitMQ, Amazon SQS, Redis Streams, Kafka, [Cloudflare Queues](/fr/cloudflare/queues)) persiste les messages indépendamment de tout processus producteur ou consommateur, de sorte qu'un crash de l'un ou l'autre côté ne perd pas silencieusement du travail déjà mis en file — le message est toujours là quand un consommateur revient.
+
+## Livraison au moins une fois et idempotence
+
+La plupart des queues garantissent qu'un message est livré **au moins une fois**, pas exactement une fois — un consommateur peut planter *après* avoir traité un message mais *avant* de l'acquitter, et la queue redistribuera ce message à un autre consommateur, n'ayant aucun moyen de savoir que le travail a déjà eu lieu. Cela fait de l'**idempotence** — concevoir un job de sorte que le traiter deux fois ait le même effet que le traiter une fois (par exemple `UPDATE ... SET status = 'shipped'` plutôt que d'`INSERT` un nouvel enregistrement d'expédition à chaque fois) — une exigence réelle et courante pour les consommateurs de queue, pas une simple précaution défensive.
+
+## Ordonnancement et fan-out
+
+Une queue basique délivre les messages à peu près dans l'ordre où ils sont arrivés, au consommateur libre — suffisant pour des jobs indépendants, mais insuffisant si certains jobs doivent être traités dans un ordre relatif précis (tous les événements d'un même utilisateur, par exemple). Des systèmes comme Kafka résolvent cela avec des **partitions** : les messages ayant la même clé vont toujours vers la même partition, et une partition n'est jamais consommée que dans l'ordre, garantissant un ordonnancement par clé sans sérialiser toute la queue derrière un seul consommateur.
+
+Une variante **pub/sub** diffuse un même message vers *chaque* abonné plutôt que vers un seul consommateur — utile lorsque plusieurs systèmes indépendants doivent tous réagir au même événement (une commande passée déclenchant à la fois un email et une mise à jour de l'inventaire), ce qu'une queue de travail traditionnelle (un consommateur prend chaque message) ne prend pas en charge directement.
+
+## Dead-letter queues
+
+Un job qui échoue de manière répétée — un message définitivement malformé, un bug qui fait échouer chaque retry de manière identique — ne devrait pas être réessayé indéfiniment, consommant des ressources pour quelque chose qui ne réussira jamais. Une **dead-letter queue** est l'endroit où va un message après avoir dépassé une limite de retry, afin qu'il cesse de bloquer la queue principale et puisse être inspecté manuellement au lieu de disparaître silencieusement.
+
+## Voir aussi
+
+- **[Background Jobs](/fr/backend/background-jobs)** — le pattern que les queues prennent en charge le plus couramment.
+- **[Cloudflare Queues](/fr/cloudflare/queues)** — un produit de queue managé avec retries intégrés et support des dead-letter queues.
+- **[Caching](/fr/backend/caching)** — une autre manière d'éviter le travail répété, résolvant un problème différent de celui d'une queue.

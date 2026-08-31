@@ -1,0 +1,56 @@
+---
+title: Cloudflare D1
+description: قاعدة بيانات SQLite مُدارة مبنية لـ Workers — لغة SQL التي تعرفها بالفعل، مع تكرار ونموذج اتصال محدود النطاق بالطلب شكّلته الحافة.
+category: Cloudflare
+weight: 1
+---
+
+**D1** هو منتج قاعدة البيانات المُدارة من Cloudflare — [SQLite](/en/databases/sqlite) في الجوهر، يُصل إليه من [Worker](/ar/cloudflare/workers) عبر [binding](/ar/cloudflare/workers-bindings) بدلاً من سلسلة اتصال دائمة تقليدية. اختيار SQLite تحديداً (بدلاً من بناء نظير موزّع لـ Postgres من الصفر) يعني أن D1 يرث لغة SQL التي تعرفها على الأرجح بالفعل، بلا أي من همّ إدارة الاتصالات المنفصل الذي تحمله قاعدة بيانات نمطية بنموذج عميل/خادم.
+
+## الاستعلام من Worker
+
+```js
+export default {
+  async fetch(request, env) {
+    const { results } = await env.DB
+      .prepare("SELECT * FROM users WHERE age > ?")
+      .bind(20)
+      .all();
+    return Response.json(results);
+  },
+};
+```
+
+`env.DB` هو الـ binding المضبوط في `wrangler.jsonc`؛ `.prepare().bind().all()` استعلام مُعامَل (parameterized) — يربط القيمة منفصلة عن نص الاستعلام، نفس نمط [الحماية من SQL injection](/en/security/sql-injection) الذي يتبعه أي استعلام مُعامَل، بغض النظر عن قاعدة البيانات.
+
+## بلا اتصالات دائمة
+
+يفتح عميل قاعدة بيانات تقليدي اتصال TCP طويل الأمد ويبقيه مفتوحاً عبر استعلامات كثيرة. لا يناسب نموذج تنفيذ Worker القائم على العزلات (isolates) وقصير الأمد هذا النمط — بدلاً من ذلك، يُصل إلى D1 بشكل أقرب إلى واجهة HTTP في الجوهر، مع كون كل استعلام مكتفياً بذاته فعلياً بدلاً من الاعتماد على كائن اتصال يجب تجميعه (pooling) وإعادة استخدامه بعناية عبر الاستدعاءات. هذا يتجنب فئة كاملة من مشاكل "عدد كبير جداً من الاتصالات المفتوحة" التي تشتهر بها دوال serverless التي تستدعي قواعد بيانات تقليدية.
+
+## عمليات الترحيل (Migrations)
+
+```sql
+-- migrations/0001_create_users.sql
+CREATE TABLE users (
+  id INTEGER PRIMARY KEY,
+  name TEXT NOT NULL,
+  age INTEGER NOT NULL
+);
+```
+
+```bash
+wrangler d1 migrations apply my-database --local   # local dev
+wrangler d1 migrations apply my-database --remote   # production
+```
+
+تنطبق نفس ملفات ترحيل `.sql` العادية على كل من ملف SQLite المحلي المستخدَم أثناء التطوير وقاعدة بيانات D1 الفعلية البعيدة في الإنتاج — مصدر حقيقة واحد للمخطط (schema)، دون أدوات ترحيل محلية/إنتاجية منفصلة يجب مزامنتها.
+
+## متى يناسب D1، ومتى لا يناسب
+
+يُعد D1 خياراً قوياً لبيانات تطبيقات علائقية نمطية كثيرة القراءة — حسابات المستخدمين، والمحتوى، والسجلات المهيكلة — نفس العبء الذي تلائمه SQLite دائماً. إنه خيار أضعف لمتطلبات إنتاجية كتابة عالية جداً أو أعباء تحتاج اتساقاً عالمياً صارماً وفورياً عند كل كتابة عبر مناطق متعددة في آنٍ واحد، حيث يكون [Durable Object](/ar/cloudflare/durable-objects) — بتسلسل كل القراءات والكتابات عبر نسخة واحدة محددة — أو قاعدة بيانات موزّعة مبنية لغرض محدد خياراً أنسب.
+
+## طالع أيضاً
+
+- **[SQL](/en/databases/sql)** و**[SQLite](/en/databases/sqlite)** — اللغة والمحرك اللذان يشغّلهما D1.
+- **[Workers Bindings](/ar/cloudflare/workers-bindings)** — كيف يصل `env.DB` أعلاه فعلياً.
+- **[KV](/ar/cloudflare/kv)** — خيار جيد عندما لا تحتاج البيانات إلى بنية علائقية أو اتساق قوي إطلاقاً.

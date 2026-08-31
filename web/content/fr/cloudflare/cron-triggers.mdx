@@ -1,0 +1,50 @@
+---
+title: Cloudflare Cron Triggers
+description: Exécuter un Worker selon un planning plutôt qu'en réponse à une requête — la même syntaxe cron déjà connue, invoquant un gestionnaire planifié plutôt que fetch.
+category: Cloudflare
+weight: 6
+---
+
+Un **Cron Trigger** exécute un Worker selon un planning — toutes les heures, chaque nuit, toutes les cinq minutes — plutôt qu'en réponse à une requête HTTP entrante. C'est la réponse de la plateforme Workers à un besoin que tout backend finit par avoir : tâches de nettoyage, rapports planifiés, synchronisations de données périodiques, aucune de ces tâches n'étant naturellement déclenchée par la visite d'une URL par un utilisateur.
+
+## Configuration
+
+```jsonc
+// wrangler.jsonc
+{
+  "triggers": {
+    "crons": ["0 3 * * *"]  // every day at 03:00 UTC
+  }
+}
+```
+
+Le planning utilise la syntaxe cron standard — cinq champs pour la minute, l'heure, le jour du mois, le mois, et le jour de la semaine — le même format utilisé par `crontab` sur tout système Unix, si bien qu'une familiarité déjà acquise avec les expressions cron se transfère directement.
+
+## Le gestionnaire planifié
+
+```js
+export default {
+  async fetch(request, env) {
+    return new Response("This Worker also handles normal requests");
+  },
+  async scheduled(event, env, ctx) {
+    await cleanupExpiredSessions(env.DB);
+  },
+};
+```
+
+Un seul Worker peut implémenter à la fois `fetch` (pour les requêtes HTTP normales) et `scheduled` (invoqué automatiquement à chaque horaire cron configuré) — ce sont des points d'entrée indépendants dans le même Worker déployé, partageant les mêmes [bindings](/fr/cloudflare/workers-bindings) et le même code, mais déclenchés par des événements entièrement différents.
+
+## Pourquoi cela correspond naturellement au modèle Workers
+
+Parce qu'un Worker est déjà, par conception, éphémère et sans état, une invocation planifiée est architecturalement identique à une invocation déclenchée par une requête — elle démarre, s'exécute jusqu'au bout, puis se termine, sans qu'un processus séparé et toujours actif ne soit nécessaire simplement pour faire tourner une horloge quelque part. C'est un modèle sensiblement différent d'un job cron traditionnel, qui nécessite un véritable serveur (ou au moins un processus persistant) qui attend uniquement pour être disponible à l'heure planifiée.
+
+## Que faire réellement à l'intérieur d'un gestionnaire planifié
+
+Les usages courants incluent l'expiration de données obsolètes, la synchronisation périodique d'une source de données externe, l'envoi d'emails de synthèse planifiés, et la rotation ou le nettoyage des logs — en général tout ce qui doit se produire régulièrement mais qui n'est la réponse directe à aucune action utilisateur spécifique. Puisque les gestionnaires `scheduled` sont toujours soumis aux mêmes limites de temps CPU que les gestionnaires `fetch`, un travail par lots réellement long est généralement mieux modélisé comme un gestionnaire planifié qui *met en file d'attente* le travail (voir [Queues](/fr/cloudflare/queues)) plutôt que d'essayer de tout faire en ligne au sein d'une seule invocation.
+
+## Voir aussi
+
+- **[Wrangler](/fr/cloudflare/wrangler)** — où les cron triggers sont configurés et déployés.
+- **[Background Jobs](/fr/backend/background-jobs)** et **[Queues](/fr/cloudflare/queues)** — à qui un gestionnaire planifié délègue souvent le travail le plus lourd.
+- **[Workers](/fr/cloudflare/workers)** — le runtime dans lequel un gestionnaire planifié s'exécute, aux côtés de `fetch`.

@@ -1,0 +1,51 @@
+---
+title: npm
+description: El gestor de paquetes y registro por defecto de JavaScript — package.json, el lockfile, y qué pasa realmente al ejecutar npm install.
+category: Developer Tools
+weight: 3
+---
+
+**npm (Node Package Manager)** es la herramienta por defecto para instalar, publicar y gestionar dependencias de JavaScript, junto con el registro público que aloja los propios paquetes. Viene incluido con Node.js, lo cual explica gran parte de por qué sigue siendo la opción por defecto aunque existan alternativas ([Yarn](/es/developer-tools/package-managers), pnpm).
+
+## package.json
+
+```json
+{
+  "name": "my-app",
+  "version": "1.0.0",
+  "dependencies": {
+    "express": "^4.18.0"
+  },
+  "devDependencies": {
+    "vitest": "^1.0.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "vitest run"
+  }
+}
+```
+
+Las `dependencies` se necesitan en tiempo de ejecución; las `devDependencies` solo se necesitan durante el desarrollo (frameworks de testing, linters, herramientas de compilación) y no se instalan cuando un paquete se instala como dependencia de *otra persona*. `scripts` define comandos de shell con nombre, ejecutables mediante `npm run <name>` — una alternativa ligera y local al proyecto frente a un ejecutor de tareas aparte.
+
+## El lockfile
+
+`npm install` escribe (o actualiza) `package-lock.json`, registrando la versión resuelta *exacta* de cada dependencia y dependencia transitiva realmente instalada — no solo los rangos de versión de `package.json`. Sin un lockfile, dos personas ejecutando `npm install` contra el mismo `package.json` en momentos distintos podrían obtener versiones distintas de dependencias transitivas si algo aguas arriba publicó una versión nueva entretanto; el lockfile las fija, así que `npm ci` (la instalación estricta según el lockfile que se usa en CI) reproduce exactamente el mismo árbol de dependencias cada vez.
+
+## Qué hace realmente `npm install`
+
+1. Lee los rangos de versión declarados en `package.json` (y `package-lock.json` si existe).
+2. Resuelve una versión compatible para cada dependencia y para cada una de *sus* dependencias, recursivamente.
+3. Descarga el tarball de cada paquete desde el registro (o desde una caché local, si ya se descargó).
+4. Extrae todo en `node_modules/`, con el algoritmo de aplanado de npm intentando evitar copias duplicadas de la misma versión de un paquete siempre que sea posible.
+5. Escribe/actualiza `package-lock.json` para registrar exactamente lo que se resolvió.
+
+## Rangos de versionado semántico
+
+El `^4.18.0` del ejemplo anterior es un rango, no una versión fija exacta — `^` permite cualquier versión que no cambie el componente distinto de cero más a la izquierda (así que `4.19.2` está permitido, `5.0.0` no lo está), siguiendo la convención del [versionado semántico](/es/developer-tools/semantic-versioning) de que un incremento de versión mayor señala un cambio incompatible. `~4.18.0` es más estricto, permitiendo solo actualizaciones de nivel parche (`4.18.x`); una versión exacta sin prefijo no permite ninguna actualización automática.
+
+## Ver también
+
+- **[Gestores de paquetes](/es/developer-tools/package-managers)** — el patrón general que npm, Yarn y pnpm implementan cada uno a su manera.
+- **[Versionado semántico](/es/developer-tools/semantic-versioning)** — la convención de versionado sobre la que se construye la sintaxis de rangos de npm.
+- **[Git](/es/developer-tools/git)** — `package-lock.json` se registra en el control de versiones precisamente para que cada clon resuelva las dependencias de forma idéntica.

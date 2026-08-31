@@ -1,0 +1,52 @@
+---
+title: Wrangler
+description: La CLI usada para desarrollar, configurar e implementar todo en la plataforma Workers — desarrollo local, configuración de bindings, y el propio comando de despliegue.
+category: Cloudflare
+weight: 7
+---
+
+**Wrangler** es la herramienta de línea de comandos de Cloudflare para la plataforma Workers — ejecuta un servidor de desarrollo local, gestiona la configuración de [bindings](/es/cloudflare/workers-bindings), e implementa un Worker en producción. Es la única herramienta que casi todas las demás páginas de esta sección dan por instalada y configurada.
+
+## Comandos habituales
+
+```bash
+wrangler dev              # run a Worker locally, with live reload
+wrangler deploy           # deploy the Worker to production
+wrangler d1 migrations apply my-db --local   # run a D1 migration locally
+wrangler tail             # stream live logs from a deployed Worker
+wrangler secret put API_KEY  # store a secret, prompted interactively
+```
+
+`wrangler dev` ejecuta una simulación local del runtime real de Workers (no solo un servidor Node.js genérico), así que las diferencias de comportamiento entre el desarrollo local y producción se minimizan — los bindings, la gestión de solicitudes y el entorno de ejecución reflejan de cerca lo que realmente se ejecuta en el borde.
+
+## `wrangler.jsonc` (o `.toml`)
+
+```jsonc
+{
+  "name": "my-worker",
+  "main": "src/index.js",
+  "compatibility_date": "2026-01-01",
+  "d1_databases": [
+    { "binding": "DB", "database_name": "my-database", "database_id": "..." }
+  ],
+  "kv_namespaces": [
+    { "binding": "MY_KV", "id": "..." }
+  ]
+}
+```
+
+Este único archivo de configuración es la fuente de verdad para el nombre de un Worker, su punto de entrada y cada binding que necesita — bases de datos D1, namespaces de KV, buckets de R2, variables de entorno y rutas se declaran todos aquí en lugar de configurarse por separado a través de un panel web, lo que significa que toda la configuración de despliegue queda controlada por versiones junto con el propio código.
+
+## `compatibility_date`
+
+En lugar de versionar el runtime de Workers en sí de una forma que pudiera cambiar silenciosamente el comportamiento de despliegues existentes, Cloudflare usa una `compatibility_date` — un Worker se adhiere al comportamiento del runtime a partir de una fecha específica, y ese comportamiento se garantiza estable para ese Worker sin importar cuándo cambie más adelante la plataforma subyacente, a menos que la fecha se adelante deliberadamente. Esto evita el problema habitual de que una actualización del runtime a nivel de plataforma rompa silenciosamente código desplegado que dependía del comportamiento antiguo.
+
+## Secretos frente a variables planas
+
+Wrangler distingue entre valores de configuración planos (visibles en `wrangler.jsonc`, aptos para hacer commit) y **secretos** (`wrangler secret put`), que se cifran y nunca aparecen en el archivo de configuración ni en ningún lugar legible después de configurarlos — el lugar correcto para una clave de API o un secreto de firma, siguiendo el mismo principio cubierto de forma general en [Secrets Management](/en/security/secrets-management).
+
+## Ver también
+
+- **[Workers Bindings](/es/cloudflare/workers-bindings)** — los bloques de configuración específicos que gestiona Wrangler.
+- **[CI/CD](/es/devops/ci-cd)** — `wrangler deploy` es el comando que normalmente ejecuta un pipeline de CI para desplegar un Worker automáticamente.
+- **[Secrets Management](/en/security/secrets-management)** — la práctica general que `wrangler secret` implementa específicamente para Workers.

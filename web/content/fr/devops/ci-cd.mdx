@@ -1,0 +1,41 @@
+---
+title: CI/CD
+description: Tester et déployer automatiquement chaque changement au lieu de le faire à la main — l'intégration continue détecte les problèmes tôt, la livraison/déploiement continu livre le correctif rapidement.
+category: DevOps & Infrastructure
+weight: 5
+interactive: true
+interactiveType: ["StepFlow"]
+---
+
+Le **CI/CD** est la pratique consistant à automatiser ce qui arrive au code entre « commité » et « en cours d'exécution en production » — exécuter des tests et des vérifications sur chaque changement (**intégration continue**), et empaqueter et livrer automatiquement les changements qui passent (**livraison/déploiement continu**) — plutôt que d'avoir une personne qui exécute manuellement les tests et déploie à la main à chaque fois.
+
+## CI vs CD, la distinction
+
+L'**intégration continue** signifie que chaque changement est automatiquement construit et testé dès qu'il est poussé, détectant une casse en quelques minutes au lieu qu'elle soit découverte des jours plus tard après que plusieurs changements supplémentaires se soient accumulés par-dessus. La **livraison continue** signifie que chaque changement qui passe la CI est automatiquement empaqueté en un artefact déployable, prêt à être livré en une seule action. Le **déploiement continu** va un pas plus loin et déploie réellement cet artefact en production automatiquement, sans aucune étape d'approbation manuelle — l'extrémité la plus automatisée du spectre, et ce n'est pas toujours le bon choix pour chaque équipe ou chaque environnement.
+
+## Un pipeline typique
+
+<StepFlow
+  title="Du push à la production"
+  steps={[
+    { actor: "Développeur", title: "Pousser un commit", description: "Un développeur pousse du code vers un dépôt partagé, typiquement via une pull request.", detail: "git push origin feature/add-login" },
+    { actor: "Serveur CI", title: "Exécuter les vérifications automatisées", description: "Un service CI (GitHub Actions, GitLab CI, CircleCI) récupère automatiquement le code et exécute le linting, la vérification de types, et la suite de tests.", detail: "npm run lint && npm test" },
+    { actor: "Serveur CI", title: "Construire un artefact", description: "Si les vérifications passent, le pipeline construit un artefact déployable — souvent une image Docker — et l'étiquette, par exemple avec le hash du commit.", detail: "docker build -t app:a1b2c3d ." },
+    { actor: "Pipeline CD", title: "Déployer (avec ou sans approbation)", description: "La livraison continue s'arrête ici, attendant qu'un humain déclenche le déploiement ; le déploiement continu livre l'artefact en production automatiquement.", detail: "" },
+    { actor: "Production", title: "Nouvelle version en ligne", description: "La nouvelle version commence à servir du trafic — idéalement avec une stratégie (voir Deployment) qui évite les interruptions et permet un rollback rapide si quelque chose tourne mal.", detail: "" },
+  ]}
+/>
+
+## Pourquoi automatiser tout ça
+
+Le déploiement manuel est lent, facile à mal faire sous pression, et inconsistant — une étape sautée une fois parce que « c'est un petit changement » est exactement le genre d'étape sautée qui finit par causer un incident. Un pipeline exécute les mêmes vérifications, de la même manière, à chaque fois, et rend la livraison d'un correctif assez rapide pour qu'une release petite et fréquente soit moins risquée qu'une grosse et peu fréquente — des diffs plus petits sont plus faciles à relire, tester, et annuler si quelque chose tourne mal.
+
+## La configuration comme du code
+
+Les étapes d'un pipeline CI/CD sont elles-mêmes généralement définies dans un fichier commité aux côtés du code (un `.github/workflows/*.yml`, un `.gitlab-ci.yml`) — versionné, relisable dans une pull request comme n'importe quel autre changement, et reproductible sur chaque branche plutôt que de vivre comme des étapes manuelles non documentées dont une seule personne se souvient.
+
+## Voir aussi
+
+- **[Docker](/fr/devops/docker)** — le format d'artefact que la plupart des pipelines CI/CD construisent et livrent.
+- **[Deployment](/fr/devops/deployment)** — ce qui se passe réellement une fois que le CD a livré un artefact construit.
+- **[Testing](/fr/developer-tools/testing)** — les vérifications automatisées qu'un pipeline CI exécute sur chaque changement.

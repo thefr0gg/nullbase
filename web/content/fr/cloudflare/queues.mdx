@@ -1,0 +1,50 @@
+---
+title: Cloudflare Queues
+description: Une file de messages managée conçue pour Workers — les producteurs poussent des messages, un Worker consommateur les traite par lots, avec des retentatives intégrées et une dead-letter queue.
+category: Cloudflare
+weight: 5
+---
+
+**Cloudflare Queues** est une implémentation managée du pattern général de [queue](/fr/backend/queues), conçue précisément pour connecter des Workers entre eux — un Worker (le producteur) pousse des messages, et un autre Worker (le consommateur) est invoqué automatiquement pour les traiter par lots, sans qu'aucun des deux côtés n'ait besoin de faire tourner ou de mettre à l'échelle un broker de queue lui-même.
+
+## Producteur et consommateur
+
+```js
+// Producer — a Worker handling an incoming request
+export default {
+  async fetch(request, env) {
+    await env.MY_QUEUE.send({ orderId: 42, action: "send_receipt" });
+    return new Response("Queued");
+  },
+};
+
+// Consumer — a separate Worker configured to process this queue
+export default {
+  async queue(batch, env) {
+    for (const message of batch.messages) {
+      await sendReceipt(message.body);
+      message.ack();
+    }
+  },
+};
+```
+
+Le gestionnaire `queue` du consommateur (distinct du gestionnaire `fetch` qu'implémentent les Workers classiques) reçoit un **lot** de messages à la fois plutôt qu'un seul à la fois — le traitement par lots amortit la surcharge sur plusieurs messages au lieu d'invoquer le consommateur à neuf pour chacun d'entre eux.
+
+## Accusé de réception et retentatives
+
+Appeler `message.ack()` indique à Queues que le message a été traité avec succès et peut être écarté ; ne pas accuser réception d'un message (ou appeler explicitement `message.retry()`) le laisse être livré à nouveau, jusqu'à un nombre maximal configuré de tentatives. C'est la même garantie de livraison au moins une fois que font les files de messages en général — un consommateur doit être écrit en s'attendant à ce qu'un message puisse être livré et traité plus d'une fois, ce qui explique pourquoi un traitement idempotent compte ici exactement comme pour tout consommateur de queue.
+
+## Dead-letter queues
+
+Un message qui épuise sa limite de retentatives sans jamais avoir été accusé de réception est déplacé vers une **dead-letter queue** configurée plutôt que de disparaître ou de retenter indéfiniment — permettant de l'inspecter et de le retraiter manuellement plus tard, sans qu'il ne bloque ou boucle silencieusement la queue principale entre-temps.
+
+## Pourquoi ne pas simplement appeler directement le Worker en aval
+
+Un producteur *pourrait* se passer de Queues et appeler directement la logique du consommateur via un service binding — mais cela couple les deux : si le travail en aval est lent, échoue par intermittence, ou si le consommateur est temporairement surchargé, la propre requête du producteur attend désormais (ou échoue à cause de) quelque chose dont elle n'avait absolument pas besoin d'attendre. Queues les découple exactement comme le recommandent en général les [Background Jobs](/fr/backend/background-jobs) — la requête du producteur se termine dès que le message est mis en file de façon durable, quelle que soit la durée du traitement réel.
+
+## Voir aussi
+
+- **[Queues](/fr/backend/queues)** — le pattern général que ce produit implémente spécifiquement pour Workers.
+- **[Background Jobs](/fr/backend/background-jobs)** — la motivation plus large pour reporter du travail hors du chemin critique d'une requête.
+- **[Cron Triggers](/fr/cloudflare/cron-triggers)** — une autre façon d'exécuter un Worker en dehors d'une requête, selon un planning plutôt que via une queue.

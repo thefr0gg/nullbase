@@ -1,0 +1,31 @@
+---
+title: Backend
+description: Qué es lo que realmente se ejecuta detrás de un endpoint de API — servidores, middleware, trabajo en segundo plano, caché, y las preocupaciones operativas que todo backend acaba necesitando.
+category: Backend
+weight: 7
+---
+
+[Web APIs](/en/web-apis) cubre las formas que adoptan las solicitudes y respuestas; esta sección cubre lo que realmente se está ejecutando en el otro extremo de esa conexión — los servidores que la aceptan, las capas por las que pasa una solicitud antes de llegar al código de la aplicación, y las preocupaciones (trabajo en segundo plano, caché, subidas de archivos, registro, fallos) que aparecen en todo backend no trivial sin importar el lenguaje o framework.
+
+## Atender solicitudes
+
+- **[Servidores web](/es/backend/web-servers)** — el proceso que acepta una conexión y habla HTTP.
+- **[Servidores de aplicación](/es/backend/application-servers)** — dónde se ejecuta realmente tu código, y en qué se diferencia del servidor web que tiene delante.
+- **[Proxies inversos](/es/backend/reverse-proxies)** — enrutamiento, terminación TLS, y distribución de carga frente a un backend.
+- **[Middleware](/es/backend/middleware)** — la cadena de funciones por la que pasa cada solicitud antes de llegar a un manejador de ruta.
+
+## Trabajo que no ocurre en línea
+
+- **[Trabajos en segundo plano](/es/backend/background-jobs)** — trabajo diferido fuera del ciclo de solicitud/respuesta.
+- **[Colas](/es/backend/queues)** — el búfer duradero que hace fiables a los trabajos en segundo plano.
+
+## Estado y rendimiento
+
+- **[Caché](/es/backend/caching)** — evitar rehacer trabajo costoso que ya hiciste una vez.
+- **[Sesiones](/es/backend/sessions)** — dónde vive realmente el estado de sesión del lado del servidor cuando un backend corre en más de una máquina.
+
+## Manejar el mundo real
+
+- **[Subida de archivos](/es/backend/file-uploads)** — aceptar datos binarios de forma segura y a gran escala.
+- **[Registro (logging)](/es/backend/logging)** — el registro que deja un backend de lo que realmente hizo.
+- **[Manejo de errores](/es/backend/error-handling)** — fallar de una manera que sea recuperable, depurable, y segura de exponer.

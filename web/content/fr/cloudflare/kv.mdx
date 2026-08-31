@@ -1,0 +1,45 @@
+---
+title: Cloudflare KV
+description: Un store clé-valeur globalement répliqué optimisé pour des lectures rapides partout, au prix d'une cohérence à terme (et non immédiate) après une écriture.
+category: Cloudflare
+weight: 2
+---
+
+**Workers KV** stocke de simples paires clé-valeur, répliquées vers les emplacements en périphérie de Cloudflare dans le monde entier, si bien qu'une lecture depuis n'importe où est rapide et locale — le compromis explicite étant qu'une écriture n'est pas immédiatement visible partout à la fois, contrairement à une base de données traditionnelle mono-région.
+
+## Utilisation de base
+
+```js
+export default {
+  async fetch(request, env) {
+    await env.MY_KV.put("theme:user-42", "dark");
+    const theme = await env.MY_KV.get("theme:user-42");
+    return new Response(theme);
+  },
+};
+```
+
+`env.MY_KV` est un [binding](/fr/cloudflare/workers-bindings) vers un espace de noms KV spécifique ; `put`/`get`/`delete`/`list` constituent l'intégralité de l'API centrale — délibérément minimale comparée au langage de requête d'une base de données relationnelle, puisque KV ne cherche pas du tout à supporter des requêtes relationnelles.
+
+## La cohérence à terme, concrètement
+
+Un `put()` depuis un emplacement en périphérie peut prendre jusqu'à environ 60 secondes pour se propager à chaque autre emplacement dans le monde — une lecture pour cette même clé depuis un emplacement *différent* peu après l'écriture peut encore renvoyer l'ancienne valeur (ou aucune valeur du tout, s'il s'agit d'une nouvelle clé). Ce n'est pas un bug ; c'est le mécanisme qui rend les lectures KV rapides partout sans que chaque lecture n'ait besoin de vérifier d'abord une source unique faisant autorité. Les charges de travail nécessitant que chaque lecteur voie une écriture immédiatement, partout, sont mal adaptées à KV précisément à cause de cela.
+
+## Ce à quoi KV est réellement adapté
+
+<ItemExplorer
+  title="Bons et mauvais cas d'usage pour KV"
+  layout="pills"
+  items={[
+    { id: "config", label: "Configuration / feature flags", color: "green", detail: "Lu constamment, écrit rarement — la cohérence à terme sur une écriture peu fréquente n'est pas un problème, et les lectures sont extrêmement rapides partout." },
+    { id: "cache", label: "Cached computed values", color: "blue", detail: "Une correspondance naturelle pour le pattern cache-aside — voir Caching — où une valeur mise en cache légèrement obsolète est un compromis acceptable pour la vitesse." },
+    { id: "session-poor-fit", label: "Frequently-updated counters", color: "red", detail: "Mal adapté — KV n'est pas conçu pour des écritures à haute fréquence sur la même clé, et n'a aucune opération d'incrémentation atomique pour coordonner en toute sécurité des mises à jour concurrentes." },
+    { id: "durable-fit", label: "Strongly consistent coordination", color: "orange", detail: "Mal adapté — préférez un Durable Object, qui sérialise tout accès vers une instance spécifique unique plutôt que de répliquer à terme." },
+  ]}
+/>
+
+## Voir aussi
+
+- **[Caching](/fr/backend/caching)** — le pattern général dans lequel s'inscrit le point idéal de KV « à forte lecture, rarement écrit ».
+- **[Durable Objects](/fr/cloudflare/durable-objects)** — l'alternative fortement cohérente pour les charges de travail que la cohérence à terme de KV ne convient pas.
+- **[D1](/fr/cloudflare/d1)** — à privilégier quand les données ont réellement besoin de structure relationnelle ou de transactions.

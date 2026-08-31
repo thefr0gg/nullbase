@@ -1,0 +1,41 @@
+---
+title: CI/CD
+description: Probar y desplegar automáticamente cada cambio en lugar de hacerlo a mano — la integración continua detecta problemas pronto, la entrega/despliegue continuo envía la corrección rápido.
+category: DevOps & Infrastructure
+weight: 5
+interactive: true
+interactiveType: ["StepFlow"]
+---
+
+**CI/CD** es la práctica de automatizar lo que le ocurre al código entre "confirmado" y "en ejecución en producción" — ejecutar pruebas y comprobaciones en cada cambio (**integración continua**), y empaquetar y enviar automáticamente los cambios que las superan (**entrega/despliegue continuo**) — en lugar de que una persona ejecute las pruebas manualmente y despliegue a mano cada vez.
+
+## CI frente a CD, la distinción
+
+**Integración Continua** significa que cada cambio se compila y se prueba automáticamente en cuanto se sube, detectando roturas en minutos en lugar de descubrirlas días después, cuando ya se han acumulado varios cambios más encima. **Entrega Continua** significa que cada cambio que pasa CI se empaqueta automáticamente en un artefacto desplegable, listo para enviarse con una sola acción. **Despliegue Continuo** va un paso más allá y de hecho despliega ese artefacto a producción automáticamente, sin ningún paso de aprobación manual — el extremo más automatizado del espectro, y no siempre la opción correcta para cada equipo o cada entorno.
+
+## Un pipeline típico
+
+<StepFlow
+  title="Del push a producción"
+  steps={[
+    { actor: "Developer", title: "Push a commit", description: "A developer pushes code to a shared repository, typically via a pull request.", detail: "git push origin feature/add-login" },
+    { actor: "CI server", title: "Run automated checks", description: "A CI service (GitHub Actions, GitLab CI, CircleCI) automatically checks out the code and runs linting, type checking, and the test suite.", detail: "npm run lint && npm test" },
+    { actor: "CI server", title: "Build an artifact", description: "If checks pass, the pipeline builds a deployable artifact — often a Docker image — and tags it, e.g. with the commit hash.", detail: "docker build -t app:a1b2c3d ." },
+    { actor: "CD pipeline", title: "Deploy (with or without approval)", description: "Continuous delivery stops here, waiting for a human to trigger the deploy; continuous deployment ships the artifact to production automatically.", detail: "" },
+    { actor: "Production", title: "New version live", description: "The new version starts serving traffic — ideally with a strategy (see Deployment) that avoids downtime and allows a fast rollback if something's wrong.", detail: "" },
+  ]}
+/>
+
+## Por qué automatizar esto
+
+El despliegue manual es lento, fácil de hacer mal bajo presión, e inconsistente — un paso saltado una vez porque "es un cambio pequeño" es exactamente el tipo de paso saltado que acaba causando un incidente. Un pipeline ejecuta las mismas comprobaciones, de la misma forma, cada vez, y hace que enviar una corrección sea lo bastante rápido como para que un lanzamiento pequeño y frecuente sea menos arriesgado que uno grande e infrecuente — los diffs más pequeños son más fáciles de revisar, probar y revertir si algo sale mal.
+
+## Configuración como código
+
+Los pasos de un pipeline de CI/CD normalmente se definen a su vez en un archivo confirmado junto con el código (un `.github/workflows/*.yml`, un `.gitlab-ci.yml`) — con control de versiones, revisable en una pull request como cualquier otro cambio, y reproducible en cada rama, en lugar de vivir como pasos manuales indocumentados que solo una persona recuerda.
+
+## Ver también
+
+- **[Docker](/es/devops/docker)** — el formato de artefacto que la mayoría de los pipelines de CI/CD compilan y envían.
+- **[Despliegue](/es/devops/deployment)** — lo que realmente ocurre una vez que CD entrega un artefacto compilado.
+- **[Testing](/es/developer-tools/testing)** — las comprobaciones automatizadas que un pipeline de CI ejecuta en cada cambio.

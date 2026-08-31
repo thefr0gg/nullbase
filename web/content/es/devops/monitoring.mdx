@@ -1,0 +1,45 @@
+---
+title: Monitorización
+description: Saber que algo va mal antes de que un usuario tenga que decírtelo — métricas, alertas, y la diferencia entre monitorización y observabilidad.
+category: DevOps & Infrastructure
+weight: 7
+---
+
+La **monitorización** consiste en recopilar datos sobre la salud y el comportamiento de un sistema en ejecución — y, de forma crítica, alertar a una persona cuando esos datos indican un problema — de modo que una caída o degradación la detecte el propio sistema en lugar de descubrirse a través de las quejas de los usuarios.
+
+## Qué se monitoriza
+
+<ItemExplorer
+  title="Categorías comunes de métricas"
+  layout="pills"
+  items={[
+    { id: "availability", label: "Disponibilidad", color: "green", detail: "¿Está el servicio respondiendo siquiera? Normalmente una simple solicitud periódica de health-check desde fuera del sistema." },
+    { id: "latency", label: "Latencia", color: "blue", detail: "Cuánto tardan las solicitudes — a menudo se registra como percentiles (p50, p95, p99) en lugar de como una media, ya que una media oculta lo mala que es en realidad la cola de solicitudes más lentas." },
+    { id: "error-rate", label: "Tasa de errores", color: "red", detail: "Qué fracción de las solicitudes están fallando (respuestas 5xx, excepciones) — un pico repentino suele ser la señal más clara de que algo acaba de romperse." },
+    { id: "saturation", label: "Saturación", color: "orange", detail: "Lo cerca que está un recurso (CPU, memoria, pool de conexiones, disco) de su límite — un indicador anticipado de problemas antes de que se conviertan en una caída." },
+  ]}
+/>
+
+Estas cuatro (latencia, errores, tráfico y saturación) se conocen habitualmente como las "cuatro señales doradas" — un punto de partida ampliamente usado sobre qué instrumentar en cualquier servicio, independientemente de lo que haga realmente.
+
+## Métricas, logs y trazas
+
+- **Métricas** — mediciones numéricas a lo largo del tiempo (solicitudes por segundo, uso de memoria), baratas de almacenar y graficar, buenas para detectar tendencias y disparar alertas sobre umbrales.
+- **[Logs](/es/backend/logging)** — registros discretos y detallados de eventos concretos, buenos para entender exactamente qué ocurrió durante un incidente en particular.
+- **Trazas** — el camino que siguió una única solicitud a través de varios servicios, mostrando exactamente dónde se empleó el tiempo — esencial en cuanto una solicitud puede pasar por una docena de servicios internos distintos antes de devolver una respuesta.
+
+Estas tres juntas suelen llamarse "observabilidad" — no solo saber *que* algo va mal (el trabajo de la monitorización) sino tener suficiente detalle para averiguar *por qué*, lo cual normalmente requiere que las tres trabajen juntas.
+
+## Alertas, y fatiga por alertas
+
+Una alerta que se dispara por algo que en realidad no necesita atención humana inmediata entrena a la gente para ignorar las alertas en general — un modo de fallo real y común llamado **fatiga por alertas**. Una buena estrategia de alertas está ligada a algo que genuinamente requiere acción (una tasa de errores que supera un umbral que indica un impacto real en los usuarios) en lugar de a cualquier anomalía que una métrica pudiera teóricamente mostrar, y se dirige a quien realmente puede actuar sobre ella en lugar de bombardear a todo un equipo por cada pequeño sobresalto.
+
+## SLIs, SLOs y SLAs
+
+Un **Service Level Indicator** (indicador de nivel de servicio) es un valor medido concreto (por ejemplo, "el 99,95% de las solicitudes tienen éxito"); un **Service Level Objective** (objetivo de nivel de servicio) es la meta interna para ese indicador; un **Service Level Agreement** (acuerdo de nivel de servicio) es un compromiso externo, a menudo contractual, con los clientes — normalmente un objetivo más laxo que el SLO interno, dejando un margen para que fallar el SLO no se convierta automáticamente en una promesa incumplida al cliente.
+
+## Ver también
+
+- **[Logging](/es/backend/logging)** — el registro detallado hacia el que apuntan las alertas de monitorización al investigar.
+- **[Balanceo de carga](/es/devops/load-balancing)** — los health checks son una forma simple y específica de monitorización de disponibilidad.
+- **[Manejo de errores](/es/backend/error-handling)** — lo que realmente produce la señal de tasa de errores que rastrea la monitorización.

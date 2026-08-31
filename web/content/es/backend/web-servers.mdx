@@ -1,0 +1,30 @@
+---
+title: Servidores Web
+description: El proceso que acepta una conexión cruda y habla HTTP — separado del código de aplicación que decide qué contiene realmente una respuesta.
+category: Backend
+weight: 0
+---
+
+Un **servidor web** es el proceso que escucha en un puerto, acepta conexiones TCP, y habla [HTTP](/es/web-fundamentals/http) lo suficientemente bien como para recibir una solicitud y devolver una respuesta. Es un trabajo más limitado de lo que suena — un servidor web no necesita saber nada sobre las rutas, la base de datos, o la lógica de negocio de tu aplicación; necesita manejar conexiones, interpretar solicitudes, y entregarlas a otra cosa que se encarga de eso.
+
+## Lo que realmente hace un servidor web
+
+- **Acepta conexiones** — gestiona el handshake de [TCP](/en/networking/tcp) y mantiene una conexión abierta a través de múltiples solicitudes cuando el cliente lo pide (`Connection: keep-alive`).
+- **Interpreta HTTP** — convierte bytes crudos en un método, ruta, cabeceras, y cuerpo estructurados.
+- **Termina TLS** — descifra una conexión HTTPS para que todo lo que hay detrás pueda hablar HTTP plano, si es la capa más externa.
+- **Sirve archivos estáticos directamente** — imágenes, CSS, HTML prempaquetado — sin involucrar nunca código de aplicación, lo cual suele ser mucho más rápido que enrutar un recurso estático a través de todo el stack de aplicación.
+- **Entrega solicitudes dinámicas** — a un [servidor de aplicación](/es/backend/application-servers) mediante un protocolo construido para ese traspaso (WSGI/ASGI en Python, un proceso Node.js, FastCGI, o un pass-through de proxy inverso).
+
+## Nginx, Apache, y «simplemente usa el propio servidor del runtime»
+
+Nginx y Apache son los dos servidores web dedicados de larga trayectoria — código C optimizado que puede mantener abiertas decenas de miles de conexiones inactivas de forma barata, manejar TLS, y servir archivos estáticos con una sobrecarga mínima. Muchos runtimes de aplicación (el módulo `http` de Node.js, `uvicorn` de Python, `net/http` de Go) también incluyen un servidor web capaz integrado, difuminando la línea — una app de Node.js puede vincularse directamente al puerto 443 sin ningún Nginx delante en absoluto, aunque los despliegues en producción comúnmente siguen poniendo un servidor web dedicado o un proxy inverso por delante de todos modos, para la terminación TLS, servir archivos estáticos, y el almacenamiento en búfer de solicitudes bajo carga.
+
+## Por qué esta capa existe por separado
+
+Separar «aceptar conexiones y hablar HTTP» de «ejecutar lógica de aplicación» significa que un servidor web puede reiniciarse, escalar, o fallar independientemente del código de aplicación que tiene detrás — una consulta lenta a la base de datos en la capa de aplicación no impide que el servidor web siga aceptando nuevas conexiones, y una caída del servidor web no necesariamente derriba cada proceso de aplicación al que estaba enrutando. Esta separación de responsabilidades es también lo que hace posible un [proxy inverso](/es/backend/reverse-proxies) en primer lugar: no es más que otro servidor web, posicionado para entregar solicitudes a otros servidores en vez de a código de aplicación local.
+
+## Ver también
+
+- **[Servidores de aplicación](/es/backend/application-servers)** — lo que realmente recibe una solicitud después de que el servidor web la entrega.
+- **[Proxies inversos](/es/backend/reverse-proxies)** — un servidor web usado específicamente para enrutar hacia otros servidores.
+- **[Certificados TLS](/en/security/tls-certificates)** — el certificado que un servidor web presenta al terminar HTTPS.

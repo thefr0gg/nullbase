@@ -1,0 +1,69 @@
+---
+title: Linux
+description: Le système d'exploitation faisant tourner l'écrasante majorité des serveurs — la hiérarchie du système de fichiers, les permissions, et la poignée de commandes à connaître par cœur.
+category: DevOps & Infrastructure
+weight: 0
+interactive: true
+interactiveType: ["InteractiveTerminal"]
+---
+
+Presque tous les serveurs sur internet — VMs cloud, conteneurs, les machines derrière la plupart des backends — font tourner une distribution Linux. Pas parce que Linux est requis, mais parce qu'il est gratuit, stable, bien compris, et dispose de décennies d'outillage construit exactement pour ce cas d'usage. Savoir se débrouiller dans un shell Linux est presque un prérequis pour le travail backend et DevOps en général.
+
+## La hiérarchie du système de fichiers
+
+Contrairement aux lettres de lecteur par disque de Windows, Linux a une arborescence de fichiers unique enracinée à `/`, avec un petit nombre de répertoires de premier niveau conventionnels :
+
+<ItemExplorer
+  title="Répertoires de premier niveau courants"
+  layout="table"
+  tableColumns={[{ key: "contains", label: "Contient typiquement" }]}
+  items={[
+    { id: "bin", label: "/bin, /usr/bin", color: "blue", columns: { contains: "Des programmes exécutables disponibles pour tous les utilisateurs." } },
+    { id: "etc", label: "/etc", color: "green", columns: { contains: "Des fichiers de configuration système." } },
+    { id: "home", label: "/home", color: "purple", columns: { contains: "Les fichiers personnels de chaque utilisateur, un sous-répertoire par utilisateur." } },
+    { id: "var", label: "/var", color: "orange", columns: { contains: "Des données qui changent à l'exécution — logs (/var/log), caches, bases de données." } },
+    { id: "tmp", label: "/tmp", color: "red", columns: { contains: "Des fichiers temporaires, souvent effacés au redémarrage." } },
+  ]}
+/>
+
+## Permissions
+
+Chaque fichier a un propriétaire, un groupe, et trois ensembles de permissions (propriétaire/groupe/autres), chacun avec des bits de lecture, écriture, et exécution — affichés par `ls -l` sous forme d'une chaîne comme `-rwxr-xr--`. `chmod 755 script.sh` définit le propriétaire en lecture/écriture/exécution (7), le groupe et les autres en lecture/exécution (5 chacun) — la forme numérique n'est que ces trois bits de permission lus comme des chiffres octaux. Un script qui n'est pas exécutable (`chmod +x`) refusera de s'exécuter directement même si son contenu est parfaitement valide.
+
+## Commandes à connaître par cœur
+
+```bash
+ls -la          # list files, including hidden ones, with details
+cd /var/log      # change directory
+pwd              # print working directory
+cat file.txt     # print a file's contents
+grep -r "TODO" . # search recursively for a pattern
+ps aux           # list running processes
+kill -9 1234     # forcibly terminate process 1234
+chmod +x run.sh  # make a file executable
+tail -f app.log  # follow a log file as it grows
+```
+
+`tail -f` en particulier est un outil quotidien pour quiconque exploite un service — observer un fichier de log se mettre à jour en temps réel pendant qu'un serveur traite des requêtes.
+
+## Essayez-le
+
+<InteractiveTerminal
+  title="Un shell Linux minimal"
+  initialFs={
+    {
+      "type": "dir",
+      "children": {
+        "var": { "type": "dir", "children": { "log": { "type": "dir", "children": { "app.log": { "type": "file", "content": "server started\nlistening on :8080\n" } } } } },
+        "home": { "type": "dir", "children": { "user": { "type": "dir", "children": { "notes.txt": { "type": "file", "content": "penser à faire tourner les logs\n" } } } } }
+      }
+    }
+  }
+  initialCwd={["home", "user"]}
+/>
+
+## Voir aussi
+
+- **[Processes](/fr/devops/processes)** — ce sur quoi `ps` et `kill` ci-dessus opèrent réellement.
+- **[Environment Variables](/fr/devops/environment-variables)** — la configuration lue depuis l'environnement du shell, pas un fichier de configuration.
+- **[Docker](/fr/devops/docker)** — un conteneur est, sous le capot, toujours un processus Linux avec des vues isolées des mêmes primitives du noyau couvertes ici.

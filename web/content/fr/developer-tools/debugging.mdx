@@ -1,0 +1,45 @@
+---
+title: Débogage
+description: Comprendre pourquoi le code ne fait pas ce qu'il est censé faire — points d'arrêt, débogage par affichage, et la discipline de formuler d'abord une hypothèse.
+category: Developer Tools
+weight: 9
+---
+
+Le **débogage** est le processus qui consiste à découvrir *pourquoi* le code ne se comporte pas comme prévu — à distinguer des tests, qui indiquent *que* quelque chose ne va pas mais expliquent rarement pourquoi à eux seuls.
+
+## Points d'arrêt et exécution pas à pas
+
+Un **point d'arrêt** (breakpoint) suspend l'exécution du code à une ligne précise, permettant d'inspecter la valeur actuelle de chaque variable, d'avancer ligne par ligne dans le code qui suit, et d'observer exactement comment l'état évolue — bien plus précis que de deviner à partir d'une poignée d'instructions d'affichage ce qui pourrait se passer à cet endroit. Chaque langage courant dispose d'un outillage de débogage intégré à son éditeur/IDE (le débogueur intégré de VS Code, Chrome DevTools pour le JavaScript côté navigateur) qui rend cela accessible en quelques clics plutôt qu'un outil en ligne de commande séparé à configurer.
+
+## Débogage par affichage
+
+```js
+console.log("user before update:", user);
+user = updateUser(user);
+console.log("user after update:", user);
+```
+
+Parsemer le code suspect de `console.log` (ou `print`, ou `dd()`, selon le langage) est la technique de débogage la plus ancienne, et reste réellement utile — en particulier pour les bugs dépendant du timing, où suspendre l'exécution avec un point d'arrêt modifierait lui-même le comportement étudié (une condition de course qui ne se reproduit que dans un timing réel). Son inconvénient est de devoir relancer le code après chaque ajout d'une ligne d'affichage, contrairement à un débogueur qui permet d'inspecter l'état de manière interactive sans redémarrer.
+
+## Formuler une hypothèse avant de tâtonner
+
+L'erreur de débogage la plus courante consiste à se lancer directement dans la modification du code et à le relancer, en espérant que quelque chose ait changé, sans d'abord formuler une hypothèse précise et réfutable sur ce qui ne va réellement pas. Une approche plus rigoureuse :
+
+1. **Le reproduire de façon fiable** — un bug qui ne se produit que parfois est bien plus difficile à corriger qu'un bug qu'on peut déclencher à volonté à chaque fois.
+2. **Localiser où** — découper le chemin de code par dichotomie (commenter la moitié, ou utiliser des points d'arrêt) jusqu'à isoler la plus petite région qui reproduit encore le problème.
+3. **Formuler une hypothèse** — « Je pense que `updateUser` modifie l'entrée au lieu de retourner un nouvel objet. »
+4. **Tester directement l'hypothèse** — vérifier spécifiquement ce point, plutôt que de fixer à nouveau l'ensemble de la fonction.
+
+## Le débogage au canard en plastique
+
+Expliquer un bug à voix haute, ligne par ligne, à une autre personne (ou littéralement à un canard en plastique posé sur son bureau) fait fréquemment apparaître le problème avant même que l'explication soit terminée — articuler une hypothèse oblige à réellement l'examiner, au lieu de la survoler silencieusement comme on pourrait le faire en lisant le code dans sa tête.
+
+## Lire réellement l'erreur
+
+Une quantité surprenante de temps de débogage est perdue à ne pas lire attentivement ce que dit réellement un message d'erreur et sa pile d'appels — la ligne précise, le type d'exception précis, les valeurs précises impliquées sont souvent juste là, et passer directement à des suppositions gaspille l'indice le plus direct disponible.
+
+## Voir aussi
+
+- **[Tests](/fr/developer-tools/testing)** — ce qui indique qu'un bug existe en premier lieu.
+- **[Journalisation](/fr/backend/logging)** — l'équivalent en production du débogage par affichage, pour les problèmes qui n'apparaissent qu'en dehors d'un environnement local.
+- **[Profilage](/fr/developer-tools/profiling)** — le processus équivalent pour un problème de performance plutôt que de correction.

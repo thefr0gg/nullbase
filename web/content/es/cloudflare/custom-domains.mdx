@@ -1,0 +1,39 @@
+---
+title: Cloudflare Custom Domains
+description: La alternativa más sencilla a Routes cuando un Worker debe ser dueño de un dominio o subdominio entero — Cloudflare gestiona el registro DNS por ti.
+category: Cloudflare
+weight: 10
+---
+
+Un **Custom Domain** conecta un Worker a un hostname completo — `api.example.com`, por ejemplo — y Cloudflare crea y gestiona automáticamente el registro DNS necesario, en lugar de que un autor configure manualmente un patrón de [ruta](/es/cloudflare/workers-routes) y una entrada DNS separada por su cuenta.
+
+## Cuándo recurrir a esto en lugar de a una ruta
+
+<ItemExplorer
+  title="Custom Domain frente a Route"
+  layout="pills"
+  items={[
+    { id: "whole-domain", label: "Un Worker es dueño de todo el (sub)dominio", color: "green", detail: "api.example.com siempre debe ir a este único Worker, nada más — un Custom Domain es más simple de configurar y de razonar que un patrón de ruta que coincida con cada ruta." },
+    { id: "shared-domain", label: "Un dominio sirve algo más que solo este Worker", color: "blue", detail: "example.com sirve un sitio web normal excepto en /api/* — esto necesita la coincidencia de patrones de una Route, ya que un Custom Domain no puede aislar solo una parte del tráfico de un hostname." },
+  ]}
+/>
+
+Esta es exactamente la división que usa la propia arquitectura de nullbase: `nullbase.wiki` es un Worker (el frontend estático), y `api.nullbase.wiki` es un Worker separado (la API) conectado mediante su propio Custom Domain — dos Workers independientes, cada uno dueño de un hostname distinto por completo, desplegados y escalados de forma totalmente independiente el uno del otro.
+
+## Qué configura automáticamente
+
+Configurar un Custom Domain para un Worker crea el registro DNS que apunta ese hostname a la red de Cloudflare (para que el tráfico dirigido a él llegue a Cloudflare siquiera), provisiona un certificado TLS que lo cubre, y conecta el enrutamiento internamente de modo que cada solicitud a ese hostname exacto llegue al Worker especificado — varios pasos manuales condensados en una sola acción de configuración.
+
+## Un Worker, un Custom Domain (por lo general)
+
+Un Custom Domain es un modelo mental más limpio precisamente porque asigna un hostname a un Worker sin ninguna ambigüedad de coincidencia de patrones — no hay nada equivalente a las reglas de precedencia de una ruta que razonar, ya que un hostname o bien tiene un Custom Domain que apunta a un Worker específico, o no lo tiene. Esta simplicidad es la contrapartida por perder la capacidad de una ruta de dividir el tráfico de un hostname entre varios Workers por ruta.
+
+## Requisitos
+
+Un Custom Domain requiere que el dominio (o su dominio padre) ya sea una zona activa en Cloudflare — el mismo requisito previo que tienen [Routes](/es/cloudflare/workers-routes) — ya que Cloudflare necesita controlar realmente el DNS de ese dominio para crear y gestionar el registro automáticamente.
+
+## Ver también
+
+- **[Workers Routes](/es/cloudflare/workers-routes)** — la alternativa basada en patrones para dividir el tráfico de un dominio entre varios Workers.
+- **[Cloudflare DNS](/es/cloudflare/cloudflare-dns)** — el registro DNS que un Custom Domain crea y gestiona automáticamente.
+- **[TLS Certificates](/en/security/tls-certificates)** — el certificado que Cloudflare provisiona automáticamente para un Custom Domain.

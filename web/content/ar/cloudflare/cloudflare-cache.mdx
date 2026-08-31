@@ -1,0 +1,58 @@
+---
+title: Cloudflare Cache
+description: طبقة تخزين مؤقت CDN التي تقف أمام كل شيء آخر — مفاتيح التخزين المؤقت، ترويسات حالة الكاش، وما يمكن لـ Worker التحكم فيه مباشرة عبر Cache API.
+category: Cloudflare
+weight: 13
+---
+
+يخزّن **Cache الخاص بـ Cloudflare** الاستجابات في مواقع الحافة القريبة من الزوّار، بحيث يمكن خدمة طلب متكرر لنفس المورد دون الوصول إلى الأصل (origin) (أو إلى [Worker](/ar/cloudflare/workers)) على الإطلاق — نفس فكرة [التخزين المؤقت](/ar/backend/caching) العامة، مطبَّقة على طبقة CDN التي تقف أمام موقع كامل.
+
+## حالة التخزين المؤقت
+
+تحمل كل استجابة قادمة من منطقة Cloudflare بروكسي (proxied) ترويسة `cf-cache-status` تُظهر بالضبط ما حدث:
+
+<ItemExplorer
+  title="قيم cf-cache-status"
+  layout="table"
+  tableColumns={[{ key: "meaning", label: "المعنى" }]}
+  items={[
+    { id: "hit", label: "HIT", color: "green", columns: { meaning: "خُدمت مباشرة من ذاكرة تخزين Cloudflare المؤقتة على الحافة — لم يُتصل بالأصل إطلاقاً." } },
+    { id: "miss", label: "MISS", color: "orange", columns: { meaning: "غير موجودة في الكاش؛ جلبتها Cloudflare من الأصل، وخزّنتها (إن كانت قابلة للتخزين) للمرة القادمة." } },
+    { id: "expired", label: "EXPIRED", color: "orange", columns: { meaning: "كانت مخزَّنة، لكن مدة صلاحية النسخة المخزَّنة (TTL) انتهت — أُعيد جلبها من الأصل." } },
+    { id: "bypass", label: "BYPASS", color: "default", columns: { meaning: "لم تُخزَّن عمداً — الاستجابة أو الطلب أو قاعدة تخزين مؤقت جعلتها غير قابلة للتخزين." } },
+  ]}
+/>
+
+## مفتاح التخزين المؤقت
+
+افتراضياً، يعتمد مفتاح تخزين Cloudflare المؤقت على رابط الطلب (بما فيه سلسلة الاستعلام افتراضياً) — يمكن لطلبين لنفس الرابط تماماً أن يشتركا في استجابة مخزَّنة، لكن رابطاً يختلف حتى بمعامل استعلام إضافي يُعامَل كمُدخَل تخزين مؤقت مختلف تماماً ما لم يُضبط خلاف ذلك. هذا مصدر شائع للالتباس عندما "لا يعمل" التخزين المؤقت: معامل استعلام للتحليلات أو التتبّع يُضاف بشكل غير متسق يمكن أن يجزّئ بصمت ما كان يجب أن يكون مُدخَلاً واحداً إلى عدة مُدخَلات، كل منها بارد على حدة.
+
+## التحكم بالتخزين المؤقت من Worker
+
+```js
+export default {
+  async fetch(request, env, ctx) {
+    const cache = caches.default;
+    let response = await cache.match(request);
+    if (!response) {
+      response = await fetch("https://origin.example.com" + new URL(request.url).pathname);
+      response = new Response(response.body, response);
+      response.headers.append("Cache-Control", "max-age=3600");
+      ctx.waitUntil(cache.put(request, response.clone()));
+    }
+    return response;
+  },
+};
+```
+
+تمنح Cache API (`caches.default`) للـ Worker تحكماً مباشراً وبرمجياً بنفس ذاكرة التخزين المؤقت على الحافة التي يستخدمها التخزين التلقائي لدى Cloudflare — التحقق أولاً من وجود استجابة مخزَّنة، وتخزين استجابة جديدة صراحةً (عبر `ctx.waitUntil`، بحيث لا يؤخر تخزين الاستجابة إرجاعها إلى العميل) عندما لا توجد واحدة.
+
+## Cache-Control ما زالت مهمة
+
+ما زالت ذاكرة Cloudflare المؤقتة على الحافة تحترم ترويسات HTTP القياسية للتخزين المؤقت (`Cache-Control`، `Expires`) القادمة من الأصل — استجابة موسومة بـ `no-store` لن تُخزَّن بغض النظر عن أي ضبط من جهة Cloudflare، وما زالت `max-age` تحكم المدة التي تُعتبر فيها نسخة مخزَّنة حديثة قبل أن تعاملها Cloudflare كـ `EXPIRED` وتعيد التحقق من صحتها مقابل الأصل.
+
+## طالع أيضاً
+
+- **[التخزين المؤقت](/ar/backend/caching)** — المفهوم العام الذي تطبّقه هذه الصفحة تحديداً على شبكة حافة Cloudflare.
+- **[CDNs](/ar/web-fundamentals/cdns)** — الفئة الأوسع من الخدمات التي يُعد كاش Cloudflare تطبيقاً واحداً منها.
+- **[Workers](/ar/cloudflare/workers)** — من أين تُستدعى Cache API أعلاه فعلياً.

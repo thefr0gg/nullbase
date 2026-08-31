@@ -1,0 +1,44 @@
+---
+title: GitHub
+description: L'endroit le plus utilisé pour héberger des dépôts Git — pull requests, revue de code, issues, et Actions, superposés à Git pur.
+category: Developer Tools
+weight: 1
+---
+
+**GitHub** héberge des dépôts [Git](/fr/developer-tools/git) et ajoute toute une couche de collaboration par-dessus Git pur : une interface web pour parcourir le code et l'historique, des pull requests pour relire les modifications avant qu'elles ne soient fusionnées, un suivi des issues, et du CI/CD via GitHub Actions. Git lui-même n'a aucune notion de tout cela — c'est purement un outil de contrôle de version ; GitHub est une plateforme construite autour de lui.
+
+## Pull requests
+
+Une **pull request (PR)** propose de fusionner une branche dans une autre, et c'est là que se déroule la majeure partie de la revue collaborative : les relecteurs commentent des lignes précises, les vérifications CI s'exécutent automatiquement contre la modification proposée, et la PR elle-même devient une trace permanente du *pourquoi* d'une modification, pas seulement du *quoi* (que l'historique des commits montre déjà à lui seul). Rien dans une pull request n'est spécifique à Git — c'est entièrement une fonctionnalité de GitHub (ou GitLab, ou Bitbucket) superposée aux branches de Git.
+
+## Forks contre branches
+
+Une **branche** vit à l'intérieur d'un dépôt auquel vous avez déjà un accès en écriture. Un **fork** est une copie complète du dépôt de quelqu'un d'autre dans votre propre compte — la manière standard de contribuer à un projet auquel vous n'avez pas d'accès en écriture direct : forker le dépôt, créer une branche et committer dans votre fork, puis ouvrir une pull request depuis la branche de votre fork vers le dépôt d'origine.
+
+## GitHub Actions
+
+GitHub Actions exécute des workflows [CI/CD](/fr/devops/ci-cd) définis dans des fichiers YAML sous `.github/workflows/`, déclenchés par des événements comme un push ou une pull request :
+
+```yaml
+name: CI
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci
+      - run: npm test
+```
+
+Chaque job s'exécute dans une machine virtuelle (ou un [conteneur](/fr/devops/containers)) fraîche et isolée, et un vaste écosystème d'« actions » réutilisables (comme `actions/checkout` ci-dessus) fait que la plupart des étapes de CI courantes n'ont pas besoin d'être écrites depuis zéro.
+
+## Issues et tableaux de projet
+
+Les issues GitHub suivent les bugs, les demandes de fonctionnalités et les tâches, chacune avec son propre fil de discussion, ses labels et ses assignés — souvent liées directement à la pull request qui les résout (fermant automatiquement une issue quand la PR liée est fusionnée). Les tableaux de projet superposent une vue de type Kanban (À faire / En cours / Terminé) par-dessus les issues et les PR, pour un suivi de projet léger sans avoir besoin d'un outil séparé.
+
+## Voir aussi
+
+- **[Git](/fr/developer-tools/git)** — le système de contrôle de version autour duquel GitHub est construit.
+- **[GitLab](/fr/developer-tools/gitlab)** — une alternative majeure couvrant un terrain similaire avec une histoire de CI/CD plus intégrée.
+- **[CI/CD](/fr/devops/ci-cd)** — la pratique générale dont GitHub Actions est une implémentation.

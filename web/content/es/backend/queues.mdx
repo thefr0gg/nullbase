@@ -1,0 +1,32 @@
+---
+title: Colas
+description: El búfer duradero y ordenado que se sitúa entre algo que produce trabajo y algo que lo consume — lo que hace que los trabajos en segundo plano sobrevivan a un fallo.
+category: Backend
+weight: 5
+---
+
+Una **cola** es un búfer de mensajes duradero, ordenado (o al menos justo) que se sitúa entre un **productor** (algo que crea trabajo) y uno o más **consumidores** (algo que lo procesa). Los [trabajos en segundo plano](/es/backend/background-jobs) son la razón más común por la que un backend necesita una, pero el patrón es general: en cualquier lugar donde el trabajo necesite entregarse sin que el productor y el consumidor corran en sincronía estricta.
+
+## Por qué la durabilidad es lo esencial
+
+Un array en memoria de jobs pendientes desaparece en el instante en que el proceso que lo contiene se cae o se reinicia. Una cola real (RabbitMQ, Amazon SQS, Redis Streams, Kafka, [Cloudflare Queues](/es/cloudflare/queues)) persiste los mensajes independientemente de cualquier proceso productor o consumidor concreto, de modo que un fallo en cualquiera de los dos lados no pierde silenciosamente trabajo que ya estaba encolado — el mensaje sigue ahí cuando un consumidor vuelve.
+
+## Entrega al menos una vez e idempotencia
+
+La mayoría de las colas garantizan que un mensaje se entrega **al menos una vez**, no exactamente una vez — un consumidor puede caerse *después* de procesar un mensaje pero *antes* de confirmarlo, y la cola volverá a entregar ese mensaje a otro consumidor, sin tener forma de saber que el trabajo ya ocurrió. Esto hace de la **idempotencia** — diseñar un job de modo que procesarlo dos veces tenga el mismo efecto que procesarlo una vez (por ejemplo `UPDATE ... SET status = 'shipped'` en vez de hacer `INSERT` de un nuevo registro de envío cada vez) — un requisito real y común para los consumidores de colas, no una simple cortesía defensiva.
+
+## Orden y fan-out
+
+Una cola básica entrega los mensajes más o menos en el orden en que llegaron, a cualquier consumidor que esté libre — bien para jobs independientes, pero insuficiente si algunos jobs deben procesarse en un orden relativo específico (todos los eventos de un mismo usuario, por ejemplo). Sistemas como Kafka abordan esto con **particiones**: los mensajes con la misma clave siempre van a la misma partición, y una partición solo se consume en orden, dando garantías de orden por clave sin serializar toda la cola detrás de un único consumidor.
+
+Una variante **pub/sub** reparte un mensaje a *todos* los suscriptores en vez de exactamente a un consumidor — útil cuando varios sistemas independientes necesitan reaccionar todos al mismo evento (que se haga un pedido dispara tanto un correo como una actualización de inventario), algo que una cola de trabajo tradicional (un solo consumidor toma cada mensaje) no soporta directamente.
+
+## Colas de mensajes muertos (dead-letter queues)
+
+Un job que falla repetidamente — un mensaje permanentemente malformado, un bug que hace que cada reintento falle idénticamente — no debería reintentarse para siempre, consumiendo recursos por algo que nunca va a tener éxito. Una **dead-letter queue** es a donde va un mensaje después de superar un límite de reintentos, de modo que deja de bloquear la cola principal y puede inspeccionarse manualmente en vez de desaparecer silenciosamente.
+
+## Ver también
+
+- **[Trabajos en segundo plano](/es/backend/background-jobs)** — el patrón que las colas soportan más comúnmente.
+- **[Cloudflare Queues](/es/cloudflare/queues)** — un producto de colas gestionado con reintentos y soporte de dead-letter queue integrados.
+- **[Caché](/es/backend/caching)** — una forma distinta de evitar trabajo repetido, que resuelve un problema diferente al de una cola.

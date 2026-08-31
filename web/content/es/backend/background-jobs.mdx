@@ -1,0 +1,36 @@
+---
+title: Trabajos en Segundo Plano
+description: Trabajo movido deliberadamente fuera del ciclo de solicitud/respuesta — para que un cliente no espere por algo que tarda más de lo que una respuesta debería tardar jamás.
+category: Backend
+weight: 4
+interactive: true
+interactiveType: ["StepFlow"]
+---
+
+Un **trabajo en segundo plano** es trabajo disparado por una solicitud pero no completado antes de que se envíe la respuesta de esa solicitud — enviar un correo de confirmación, redimensionar una imagen subida, generar un informe, reentrenar un modelo de recomendación. Si no necesita terminar antes de que se le pueda decir al cliente «listo», ejecutarlo en línea simplemente hace que el cliente espere por algo que en realidad no necesita esperar.
+
+## El patrón
+
+<StepFlow
+  title="Diferir Trabajo a un Job en Segundo Plano"
+  steps={[
+    { actor: "Cliente", title: "Llega la solicitud", description: "Un usuario se registra, disparando la creación de la cuenta y (por separado) un correo de bienvenida.", detail: "POST /signup" },
+    { actor: "Servidor", title: "Encolar en vez de ejecutar en línea", description: "El servidor crea la cuenta de forma síncrona (el cliente necesita saber que esto tuvo éxito), y luego empuja un job de \"enviar correo de bienvenida\" a una cola en vez de enviarlo directamente.", detail: "queue.push({ job: 'send_welcome_email', userId: 42 })" },
+    { actor: "Servidor", title: "Responder de inmediato", description: "La respuesta vuelve al cliente enseguida — el registro tuvo éxito, y el cliente no tiene ninguna razón para saber o preocuparse de que el correo aún no se haya enviado.", detail: "201 Created" },
+    { actor: "Worker", title: "Un worker separado procesa el job", description: "Un proceso worker independiente, consultando o suscrito a la cola, recoge el job en cuanto está disponible y envía el correo real — segundos o incluso minutos después está bien.", detail: "worker.process('send_welcome_email') -> sends email" },
+  ]}
+/>
+
+## Por qué no simplemente usar una llamada lenta en línea
+
+Nada impide que un manejador de solicitudes llame directamente a la API del proveedor de correo y espere — pero eso ata el tiempo de respuesta de la solicitud a la latencia y fiabilidad de un servicio de terceros. Si el proveedor de correo está lento o caído momentáneamente, todo registro se vuelve lento o falla, por una tarea que el usuario en realidad nunca estuvo esperando. Diferirla desacopla las dos cosas: el registro tiene éxito o falla solo en función de la escritura en la base de datos, y el envío del correo puede reintentarse de forma independiente sin que el usuario note nunca un retraso.
+
+## Qué hace que un job sea «en segundo plano» y no solo asíncrono
+
+Disparar una promesa y no esperarla (`sendEmail(user)` sin `await`) se parece pero no es lo mismo — si el proceso se cae o se reinicia un momento después, ese trabajo en curso simplemente se pierde, sin ningún registro de que debía suceder. Un sistema de trabajos en segundo plano de verdad persiste el job (usualmente en una [cola](/es/backend/queues)) antes de considerar terminada la solicitud que lo disparó, de modo que un fallo entre «encolado» y «procesado» sigue dejando el job recuperable en vez de descartado silenciosamente.
+
+## Ver también
+
+- **[Colas](/es/backend/queues)** — el búfer duradero sobre el que se construyen los trabajos en segundo plano.
+- **[Cloudflare Queues](/es/cloudflare/queues)** — un producto de colas gestionado, construido específicamente para este patrón.
+- **[Manejo de errores](/es/backend/error-handling)** — un trabajo en segundo plano fallido necesita su propia estrategia de reintento/fallo, ya que no queda ningún cliente esperando para ver un error.

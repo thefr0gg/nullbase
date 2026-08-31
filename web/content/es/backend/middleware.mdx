@@ -1,0 +1,48 @@
+---
+title: Middleware
+description: La cadena de funciones por la que pasa cada solicitud antes de llegar a un manejador de ruta — y por la que pasa de vuelta cada respuesta al salir.
+category: Backend
+weight: 3
+---
+
+El **middleware** es una función que se sitúa entre la llegada de una solicitud y la ejecución real de un manejador de ruta, con la capacidad de inspeccionar o modificar la solicitud, cortocircuitarla por completo, o dejarla continuar hacia lo siguiente en la cadena. Casi todo framework de backend está construido alrededor de alguna versión de este patrón, porque gran parte de lo que un backend necesita hacer en *toda* solicitud (no solo en una ruta específica) encaja en él de forma natural.
+
+## La cadena, en concreto
+
+```js
+app.use(logRequest);       // runs first
+app.use(parseJsonBody);
+app.use(authenticate);
+app.use(rateLimit);
+app.get("/users/:id", getUserHandler); // the actual route
+```
+
+Cada función de middleware típicamente llama a un callback `next()` (o retorna/espera con `await`, según el framework) para pasar el control hacia adelante. Omitir esa llamada — porque la autenticación falló, porque se alcanzó un límite de tasa — detiene la cadena justo ahí y envía una respuesta de inmediato, sin que el manejador de ruta llegue siquiera a ejecutarse.
+
+## Usos comunes
+
+<ItemExplorer
+  title="Qué Hace Comúnmente el Middleware"
+  layout="pills"
+  items={[
+    { id: "logging", label: "Registro de solicitudes", color: "blue", detail: "Registra método, ruta, estado, y duración de cada solicitud — ver Logging — sin que cada manejador de ruta necesite su propio código de logging." },
+    { id: "auth", label: "Autenticación", color: "green", detail: "Verifica una sesión o token una sola vez, adjuntando la identidad resuelta a la solicitud para que cada manejador posterior pueda simplemente leerla." },
+    { id: "cors", label: "Cabeceras CORS", color: "purple", detail: "Añade cabeceras Access-Control-Allow-* a cada respuesta sin que cada ruta necesite recordar hacerlo." },
+    { id: "parsing", label: "Parseo del cuerpo", color: "orange", detail: "Lee un cuerpo de solicitud crudo y lo parsea (JSON, datos de formulario) en un objeto estructurado antes de que ningún manejador lo necesite." },
+    { id: "rate-limit", label: "Limitación de tasa", color: "red", detail: "Rechaza una solicitud antes de que llegue siquiera a la lógica de aplicación costosa, si un cliente ha superado algún umbral." },
+  ]}
+/>
+
+## El orden importa
+
+El middleware se ejecuta en el orden en que se registra, y ese orden suele ser determinante — el middleware de autenticación tiene que ejecutarse antes que cualquier cosa que asuma que existe un usuario con sesión iniciada; el middleware de parseo del cuerpo tiene que ejecutarse antes de que un manejador intente leer el cuerpo ya parseado; el middleware de manejo de errores en frameworks como Express se registra por convención *al final*, específicamente para poder capturar errores lanzados en cualquier punto anterior de la cadena. Un bug de middleware es desproporcionadamente a menudo en realidad un bug de orden.
+
+## Middleware frente a un manejador de ruta
+
+La distinción realmente tiene que ver con el alcance: un manejador de ruta es específico de una ruta; el middleware se escribe una vez y se aplica a muchas rutas (a veces a todas) sin duplicar esa lógica en cada manejador. Es la misma motivación de «no repitas lógica transversal en cada punto de llamada» detrás de los [interceptores](/en/web-apis) en un cliente de API, aplicada del lado del servidor en su lugar.
+
+## Ver también
+
+- **[Servidores de aplicación](/es/backend/application-servers)** — el proceso dentro del cual realmente se ejecutan las cadenas de middleware.
+- **[Manejo de errores](/es/backend/error-handling)** — comúnmente implementado como el último middleware de la cadena.
+- **[Autenticación](/en/security/authentication)** — la preocupación que implementa específicamente el middleware de autenticación.

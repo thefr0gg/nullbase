@@ -1,0 +1,50 @@
+---
+title: Cloudflare Workers Bindings
+description: Cómo obtiene realmente un Worker acceso a D1, KV, R2, secretos y otros Workers — una conexión tipada y dirigida por configuración en lugar de una cadena de conexión.
+category: Cloudflare
+weight: 8
+---
+
+Un **binding** es la forma en que un Worker obtiene acceso a otro recurso de Cloudflare — una base de datos, un bucket de almacenamiento, un secreto, incluso otro Worker — declarado en la configuración de [Wrangler](/es/cloudflare/wrangler) y expuesto al código del Worker como una propiedad del objeto `env` que se pasa a cada handler.
+
+## Declarar y usar uno
+
+```jsonc
+// wrangler.jsonc
+{
+  "d1_databases": [{ "binding": "DB", "database_name": "my-database", "database_id": "..." }],
+  "kv_namespaces": [{ "binding": "CACHE", "id": "..." }],
+  "r2_buckets": [{ "binding": "UPLOADS", "bucket_name": "my-uploads" }]
+}
+```
+
+```js
+export default {
+  async fetch(request, env) {
+    const rows = await env.DB.prepare("SELECT 1").all();   // D1
+    const cached = await env.CACHE.get("key");              // KV
+    const file = await env.UPLOADS.get("path/to/file");     // R2
+    return Response.json({ rows, cached: !!cached, hasFile: !!file });
+  },
+};
+```
+
+Cada nombre de binding (`DB`, `CACHE`, `UPLOADS`) es arbitrario — se elige en la configuración, no lo fija la plataforma — y aparece en `env` con la API específica del recurso correspondiente ya conectada, sin necesitar inicialización de SDK, cadena de conexión ni configuración de biblioteca cliente por separado.
+
+## Por qué esto en lugar de una cadena de conexión
+
+Un servicio tradicional llega a una base de datos mediante una cadena de conexión (`postgres://user:pass@host/db`) que el código de la aplicación tiene que analizar y usar para establecer su propia conexión, normalmente agrupada y gestionada manualmente. Un binding lo resuelve el propio runtime de Workers antes incluso de que se ejecute el código del Worker — no hay conexión que abrir, ni credenciales incrustadas en una variable de entorno que puedan filtrarse en los registros, ni lógica de pooling que se pueda hacer mal, porque el acceso subyacente lo gestiona por completo la plataforma.
+
+## Service bindings
+
+Un Worker también puede enlazarse directamente a *otro* Worker mediante un **service binding**, permitiendo que un Worker llame a otro sin ninguna de las sobrecargas de un viaje de ida y vuelta HTTP real por internet pública — la llamada ocurre dentro de la propia infraestructura de Cloudflare. Esta es una forma habitual de dividir un sistema más grande en varios Workers (un Worker de API y un Worker de procesamiento en segundo plano separado, por ejemplo) que aun así necesitan llamarse entre sí de forma directa y eficiente.
+
+## Los secretos también son bindings
+
+Un secreto configurado mediante `wrangler secret put` también aparece en `env` exactamente igual que cualquier otro binding, solo que contiene un valor de cadena plano en lugar de un objeto cliente — el mismo patrón de acceso (`env.API_KEY`) se aplica de manera uniforme sin importar si el binding es una base de datos, un bucket o una cadena secreta.
+
+## Ver también
+
+- **[Wrangler](/es/cloudflare/wrangler)** — dónde se declara realmente cada binding.
+- **[D1](/es/cloudflare/d1)**, **[KV](/es/cloudflare/kv)**, **[R2](/es/cloudflare/r2)** — los productos de almacenamiento a los que más comúnmente se accede mediante un binding.
+- **[Environment Variables](/es/devops/environment-variables)** — el concepto general que los bindings extienden mucho más allá de simples cadenas.

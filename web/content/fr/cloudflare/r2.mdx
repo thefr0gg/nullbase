@@ -1,0 +1,54 @@
+---
+title: Cloudflare R2
+description: Un stockage d'objets compatible S3 sans frais de sortie — pour stocker et servir de gros objets binaires comme des uploads, des sauvegardes et des médias.
+category: Cloudflare
+weight: 3
+---
+
+**R2** est le produit de stockage d'objets de Cloudflare — conçu précisément pour le type de données binaires volumineuses et non structurées ([uploads de fichiers](/fr/backend/file-uploads), sauvegardes, médias, exports) qui n'ont pas leur place dans une base de données relationnelle comme [D1](/fr/cloudflare/d1) ou un petit store clé-valeur comme [KV](/fr/cloudflare/kv). Il est délibérément compatible avec l'API d'Amazon S3, le standard de longue date pour cette catégorie, si bien que les outils et bibliothèques clientes S3 existants fonctionnent en grande partie avec R2 avec un simple changement de point de terminaison.
+
+## Utilisation de base
+
+```js
+export default {
+  async fetch(request, env) {
+    if (request.method === "PUT") {
+      await env.MY_BUCKET.put("uploads/photo.jpg", request.body);
+      return new Response("Uploaded");
+    }
+    const object = await env.MY_BUCKET.get("uploads/photo.jpg");
+    return new Response(object?.body, {
+      headers: { "content-type": object?.httpMetadata?.contentType ?? "application/octet-stream" },
+    });
+  },
+};
+```
+
+Les objets sont stockés et récupérés par clé (`uploads/photo.jpg`) — R2 n'a pas de véritable structure de répertoires sous-jacente ; une clé contenant des slashes est simplement une chaîne qui *ressemble* à une hiérarchie, la même convention qu'utilise S3 lui-même.
+
+## Pas de frais de sortie
+
+La différence principale avec S3 et la plupart des stockages d'objets concurrents : R2 facture le stockage et les opérations, mais pas l'**egress** — la bande passante utilisée pour renvoyer des données vers Internet. De nombreux fournisseurs de stockage d'objets facturent significativement l'egress, ce qui peut rendre la diffusion de gros fichiers (vidéo, assets téléchargeables) à grande échelle étonnamment coûteuse, quel que soit le faible coût du stockage lui-même ; le modèle de tarification de R2 supprime entièrement ce coût spécifique.
+
+## URLs pré-signées pour les uploads directs
+
+Plutôt que de faire transiter chaque upload volumineux par un Worker (dépensant du temps d'exécution et du CPU Worker sur des données qu'il ne fait que faire transiter), un Worker peut générer une **URL pré-signée** — une accréditation de courte durée et à portée limitée que le client utilise pour uploader directement vers R2, contournant entièrement le Worker pour le transfert de fichier réel. Cela reflète le même pattern traité de façon générale dans [File Uploads](/fr/backend/file-uploads), avec R2 comme destination de stockage concrète.
+
+## R2 contre KV contre D1
+
+<ItemExplorer
+  title="Produits de stockage Cloudflare, comparés"
+  layout="table"
+  tableColumns={[{ key: "shape", label: "Forme des données" }, { key: "fit", label: "Cas d'usage idéal" }]}
+  items={[
+    { id: "d1", label: "D1", color: "blue", columns: { shape: "Lignes/tables relationnelles", fit: "Données applicatives structurées nécessitant des requêtes SQL ou des jointures" } },
+    { id: "kv", label: "KV", color: "green", columns: { shape: "Petites paires clé-valeur", fit: "Configuration ou valeurs de cache rapides, lues globalement, rarement écrites" } },
+    { id: "r2", label: "R2", color: "purple", columns: { shape: "Gros objets binaires", fit: "Fichiers, médias, sauvegardes, tout ce qui se mesure en mégaoctets ou plus" } },
+  ]}
+/>
+
+## Voir aussi
+
+- **[File Uploads](/fr/backend/file-uploads)** — le pattern général dont R2 est une destination concrète.
+- **[D1](/fr/cloudflare/d1)** et **[KV](/fr/cloudflare/kv)** — les deux autres produits de stockage de Cloudflare, pour les données structurées et les petites valeurs respectivement.
+- **[Workers Bindings](/fr/cloudflare/workers-bindings)** — comment un Worker obtient `env.MY_BUCKET` ci-dessus.

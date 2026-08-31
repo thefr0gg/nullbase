@@ -1,0 +1,35 @@
+---
+title: Servidores de Aplicación
+description: El proceso que realmente ejecuta tu código — enrutando una solicitud ya interpretada hacia un manejador, gestionando procesos worker, y manteniendo vivo el estado de la aplicación entre solicitudes.
+category: Backend
+weight: 1
+---
+
+Mientras que un [servidor web](/es/backend/web-servers) se detiene en «interpretar HTTP y entregar la solicitud», un **servidor de aplicación** es donde realmente se ejecuta tu código — el enrutador del framework hace corresponder una ruta con un manejador, el manejador se ejecuta, y vuelve una respuesta. En muchos stacks esto es el mismo proceso que el servidor web (una app de Node.js escuchando en su propio puerto); en otros es una capa genuinamente separada (workers de PHP-FPM detrás de Nginx, un pool de procesos Gunicorn/uvicorn detrás de un proxy inverso, un servidor de aplicaciones JVM detrás de Apache).
+
+## Modelos de proceso y worker
+
+Un servidor de aplicación tiene que decidir cómo manejar muchas solicitudes a la vez sin que una solicitud lenta bloquee a todas las demás:
+
+<ItemExplorer
+  title="Modelos de Concurrencia"
+  layout="table"
+  tableColumns={[{ key: "how", label: "Cómo maneja la concurrencia" }, { key: "tradeoff", label: "Compromiso" }]}
+  items={[
+    { id: "multi-process", label: "Múltiples procesos worker", color: "blue", columns: { how: "El SO ejecuta varias copias independientes de la app, cada una manejando una solicitud a la vez (o un pequeño pool)", tradeoff: "Simple y aislado ante fallos — que un worker muera no derriba a los demás — pero cada proceso duplica memoria (código cargado, datos en caché)." } },
+    { id: "threaded", label: "Pool de hilos por proceso", color: "green", columns: { how: "Un proceso, muchos hilos del SO, cada uno bloqueándose de forma independiente mientras espera E/S", tradeoff: "Comparte memoria entre hilos, pero exige que el lenguaje/runtime maneje el acceso concurrente de forma segura." } },
+    { id: "event-loop", label: "Bucle de eventos de un solo hilo", color: "purple", columns: { how: "Un hilo, E/S no bloqueante — una llamada lenta a la base de datos devuelve el control para atender otras solicitudes en vez de bloquear", tradeoff: "Sin problemas de seguridad entre hilos, pero un manejador genuinamente intensivo en CPU bloquea todo lo demás hasta que termina." } },
+  ]}
+/>
+
+Node.js es el ejemplo canónico de bucle de eventos; Gunicorn (Python) y Puma (Ruby) suelen configurarse con múltiples procesos worker, cada uno de los cuales puede además usar hilos o un bucle de eventos asíncrono internamente — los despliegues reales combinan con frecuencia más de uno de estos modelos a la vez.
+
+## Estado entre solicitudes
+
+Como un proceso de servidor de aplicación permanece en ejecución a lo largo de muchas solicitudes (a diferencia de, digamos, un único script PHP que se ejecuta una vez por solicitud en el modelo CGI clásico), puede mantener estado en memoria entre ellas — un pool de conexiones a la base de datos, una caché de plantillas compiladas, una caché en memoria de consultas recientes. Esto es una capacidad real, pero también es la razón por la que ejecutar más de una instancia de un servidor de aplicación (por escalado o fiabilidad) implica que el estado en memoria no se comparte entre instancias — un valor cacheado en la memoria del worker A no significa nada para el worker B, que es exactamente el problema con el que se topan [caché](/es/backend/caching) y [sesiones](/es/backend/sessions) en cuanto un backend escala más allá de un proceso.
+
+## Ver también
+
+- **[Servidores web](/es/backend/web-servers)** — la capa delantera que entrega una solicitud interpretada al servidor de aplicación.
+- **[Middleware](/es/backend/middleware)** — la cadena de funciones por la que pasa una solicitud dentro del servidor de aplicación antes de llegar a un manejador de ruta.
+- **[Trabajos en segundo plano](/es/backend/background-jobs)** — trabajo que un servidor de aplicación difiere deliberadamente en vez de hacerlo en línea.

@@ -1,0 +1,49 @@
+---
+title: Cloudflare Workers Routes
+description: Asignar patrones de URL en un dominio existente a un Worker específico — funcionando junto con otro tráfico en la misma zona, en lugar de ser dueño de ella por completo.
+category: Cloudflare
+weight: 9
+---
+
+Una **route** (ruta) asigna un patrón de URL en un dominio que ya usa Cloudflare (una "zona") a un Worker específico — permitiendo que un Worker gestione solo algunas rutas, o un subdominio específico, mientras que todo lo demás en ese dominio sigue sirviéndose con normalidad (un sitio web normal, otro Worker distinto, u otro servidor de origen por completo).
+
+## Patrones de ruta
+
+```jsonc
+// wrangler.jsonc
+{
+  "routes": [
+    { "pattern": "example.com/api/*", "zone_name": "example.com" }
+  ]
+}
+```
+
+`*` coincide con cualquier segmento de ruta restante — `example.com/api/*` coincide con `example.com/api/users`, `example.com/api/users/42`, y así sucesivamente, pero no con `example.com/blog`, que sigue siendo gestionado por lo que fuera que lo sirviera antes de que existiera el Worker.
+
+## Routes frente a custom domains
+
+<ItemExplorer
+  title="Routes frente a Custom Domains"
+  layout="table"
+  tableColumns={[{ key: "when", label: "Usar cuando" }, { key: "flexibility", label: "Flexibilidad" }]}
+  items={[
+    { id: "routes", label: "Routes", color: "blue", columns: { when: "Un Worker debe gestionar solo algunas rutas de un dominio que también sirve otro contenido", flexibility: "Coincidencia de patrones detallada, varios Workers pueden compartir una zona por ruta" } },
+    { id: "custom-domains", label: "Custom Domains", color: "green", columns: { when: "Un Worker debe ser dueño de un dominio o subdominio entero", flexibility: "Más sencillo de configurar — no hay patrón que equivocar — pero es todo o nada para ese hostname" } },
+  ]}
+/>
+
+Los patrones de ruta son la herramienta adecuada exactamente para el tipo de configuración que usa este propio sitio: un frontend estático servido desde un Worker, con rutas de estilo `/api/*` (o, en el caso de nullbase, un subdominio `api.` totalmente separado) enrutadas a un Worker completamente distinto — ver [Custom Domains](/es/cloudflare/custom-domains) para esa alternativa más simple, de subdominio completo.
+
+## Varios Workers, una zona
+
+Como las rutas se basan en patrones en lugar de en el dominio completo, una única zona de Cloudflare puede tener varios Workers activos simultáneamente, cada uno gestionando un conjunto de rutas distinto y sin solapamientos — un patrón habitual cuando distintas partes de un sistema realmente se benefician de desplegarse y escalarse de forma independiente (un Worker de API separado de un Worker que sirve activos estáticos), aunque de cara a los visitantes sigan pareciendo un único dominio coherente.
+
+## Precedencia de rutas
+
+Cuando una solicitud podría coincidir con más de una ruta configurada, Cloudflare la resuelve por especificidad — un patrón más específico (`example.com/api/users/*`) tiene precedencia sobre uno más general (`example.com/api/*`) que también coincidiría. Equivocarse en esto (dos rutas que se solapan de forma ambigua) es una fuente habitual de confusión del tipo "por qué está gestionando esta solicitud el Worker equivocado" cuando una zona tiene varios Workers configurados.
+
+## Ver también
+
+- **[Custom Domains](/es/cloudflare/custom-domains)** — la alternativa más sencilla cuando un Worker debe ser dueño de un hostname completo.
+- **[Wrangler](/es/cloudflare/wrangler)** — dónde se declaran las rutas junto con el resto de la configuración de un Worker.
+- **[Cloudflare DNS](/es/cloudflare/cloudflare-dns)** — un dominio ya tiene que estar en Cloudflare (una zona activa) antes de poder configurarle una ruta.

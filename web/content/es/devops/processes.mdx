@@ -1,0 +1,38 @@
+---
+title: Procesos
+description: La unidad de código en ejecución del sistema operativo — qué es realmente un PID, cómo se aíslan los procesos entre sí, y en qué resulta ser un contenedor en el fondo.
+category: DevOps & Infrastructure
+weight: 1
+---
+
+Un **proceso** es una instancia en ejecución de un programa — su propio espacio de memoria, sus propios descriptores de archivo, su propio estado de ejecución — rastreada por el sistema operativo bajo un **PID** (identificador de proceso) único. Casi cualquier otro concepto de esta sección (un [servidor web](/es/backend/web-servers), un [contenedor](/es/devops/containers), un worker en segundo plano) es, por debajo, uno o más procesos del sistema operativo.
+
+## Lo que realmente tiene un proceso
+
+- **Su propio espacio de memoria virtual** — un proceso no puede leer ni escribir directamente en la memoria de otro; el sistema operativo impone este aislamiento a nivel de hardware mediante la unidad de gestión de memoria de la CPU.
+- **Descriptores de archivo** — manejadores a archivos abiertos, sockets de red y pipes, numerados a partir de 0 (stdin), 1 (stdout), 2 (stderr).
+- **Un padre** — todo proceso excepto el primero de todos (`init`, PID 1) fue creado por otro proceso que llamó a `fork()` o similar, formando un árbol. Matar a un padre puede (según el manejo de señales) dejar procesos hijo "huérfanos".
+- **Un código de salida** — un número devuelto cuando termina, `0` significa convencionalmente éxito y cualquier otro valor algún tipo de fallo, comprobado por scripts y gestores de procesos para decidir qué hacer a continuación.
+
+## Proceso frente a hilo
+
+Un **hilo** es una unidad de ejecución *dentro* de un proceso, que comparte el espacio de memoria de ese proceso con otros hilos del mismo proceso — más barato de crear y entre los que cambiar que un proceso completamente nuevo, pero sin el aislamiento de memoria: un fallo en un hilo puede corromper datos de los que depende otro hilo del mismo proceso. Este es el mismo trade-off que navegan los [servidores de aplicaciones](/es/backend/application-servers) al elegir un modelo de concurrencia.
+
+## Señales
+
+El sistema operativo permite que un proceso le pida a otro que haga algo mediante una **señal** — `SIGTERM` le pide educadamente a un proceso que se apague (dándole la oportunidad de limpiar conexiones abiertas, terminar el trabajo en curso); `SIGKILL` lo termina de inmediato sin ninguna oportunidad de reaccionar. Las herramientas de despliegue y los gestores de procesos se apoyan en esta distinción: un reinicio ordenado envía `SIGTERM` y espera, escalando a `SIGKILL` solo si el proceso no termina dentro de un cierto tiempo límite.
+
+```bash
+kill -TERM 1234   # ask nicely
+kill -KILL 1234   # no negotiation (same as kill -9)
+```
+
+## Por qué un contenedor es "solo" procesos
+
+Un [contenedor](/es/devops/containers) no ejecuta un sistema operativo aparte — es un proceso de Linux normal (o un grupo de procesos) al que se le da una *vista* aislada del sistema (su propio sistema de archivos, su interfaz de red, su lista de procesos) mediante características del kernel como los namespaces y los cgroups, mientras sigue compartiendo el mismo kernel subyacente que el host. Por eso los contenedores arrancan en milisegundos y una máquina virtual, que sí arranca un sistema operativo completo y separado, tarda mucho más.
+
+## Ver también
+
+- **[Servidores de aplicaciones](/es/backend/application-servers)** — modelos de concurrencia de proceso/hilo/bucle de eventos en la práctica.
+- **[Contenedores](/es/devops/containers)** — el mecanismo de aislamiento construido sobre estas mismas primitivas de proceso.
+- **[Linux](/es/devops/linux)** — los comandos `ps`/`kill` usados para inspeccionar y enviar señales a procesos directamente.

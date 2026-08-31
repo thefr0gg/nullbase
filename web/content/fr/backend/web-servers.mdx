@@ -1,0 +1,30 @@
+---
+title: Web Servers
+description: Le processus qui accepte une connexion brute et parle HTTP — distinct du code applicatif qui décide de ce que contient réellement une réponse.
+category: Backend
+weight: 0
+---
+
+Un **serveur web** est le processus qui écoute sur un port, accepte les connexions TCP, et parle [HTTP](/fr/web-fundamentals/http) suffisamment bien pour recevoir une requête et renvoyer une réponse. C'est une tâche plus restreinte qu'il n'y paraît — un serveur web n'a pas besoin de connaître quoi que ce soit sur les routes, la base de données, ou la logique métier de votre application ; il doit gérer les connexions, analyser les requêtes, et les transmettre à autre chose qui s'en charge.
+
+## Ce qu'un serveur web fait réellement
+
+- **Accepte les connexions** — gère la poignée de main [TCP](/en/networking/tcp) et garde une connexion ouverte à travers plusieurs requêtes lorsque le client le demande (`Connection: keep-alive`).
+- **Analyse HTTP** — transforme des octets bruts en une méthode, un chemin, des headers et un corps structurés.
+- **Termine TLS** — déchiffre une connexion HTTPS pour que tout ce qui se trouve derrière puisse parler HTTP en clair, s'il constitue la couche la plus externe.
+- **Sert directement les fichiers statiques** — images, CSS, HTML pré-construit — sans jamais impliquer le code applicatif, ce qui est généralement bien plus rapide que de faire transiter un asset statique par toute une stack applicative.
+- **Transmet les requêtes dynamiques** — à un [application server](/fr/backend/application-servers) via un protocole conçu pour cette transmission (WSGI/ASGI en Python, un processus Node.js, FastCGI, ou un passage par reverse proxy).
+
+## Nginx, Apache, et « utiliser simplement le serveur intégré au runtime »
+
+Nginx et Apache sont les deux serveurs web dédiés historiques — du code C optimisé capable de maintenir ouvertes à moindre coût des dizaines de milliers de connexions inactives, de gérer TLS, et de servir des fichiers statiques avec un minimum de surcharge. De nombreux runtimes applicatifs (le module `http` de Node.js, `uvicorn` de Python, `net/http` de Go) embarquent aussi un serveur web capable intégré, brouillant la frontière — une application Node.js peut se lier directement au port 443 sans aucun Nginx devant elle, bien que les déploiements en production placent quand même couramment un serveur web dédié ou un reverse proxy devant, pour la terminaison TLS, le service de fichiers statiques, et la mise en tampon des requêtes sous charge.
+
+## Pourquoi cette couche existe séparément
+
+Séparer « accepter les connexions et parler HTTP » de « exécuter la logique applicative » signifie qu'un serveur web peut redémarrer, scaler, ou échouer indépendamment du code applicatif qui se trouve derrière — une requête base de données lente dans la couche applicative n'empêche pas le serveur web de continuer à accepter de nouvelles connexions, et un crash du serveur web n'entraîne pas nécessairement la chute de chaque processus applicatif vers lequel il routait. Cette séparation des préoccupations est aussi ce qui rend possible un [reverse proxy](/fr/backend/reverse-proxies) en premier lieu : ce n'est jamais qu'un autre serveur web, positionné pour transmettre les requêtes à d'autres serveurs plutôt qu'au code applicatif local.
+
+## Voir aussi
+
+- **[Application Servers](/fr/backend/application-servers)** — ce qui reçoit réellement une requête une fois que le serveur web l'a transmise.
+- **[Reverse Proxies](/fr/backend/reverse-proxies)** — un serveur web utilisé spécifiquement pour router vers d'autres serveurs.
+- **[TLS Certificates](/en/security/tls-certificates)** — le certificat qu'un serveur web présente lors de la terminaison HTTPS.

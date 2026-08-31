@@ -1,0 +1,31 @@
+---
+title: Backend
+description: Ce qui tourne réellement derrière un endpoint d'API — serveurs, middleware, travail en arrière-plan, cache, et les préoccupations opérationnelles dont tout backend finit par avoir besoin.
+category: Backend
+weight: 7
+---
+
+[Web APIs](/en/web-apis) couvre les formes que prennent les requêtes et les réponses ; cette section couvre ce qui tourne réellement à l'autre bout de cette connexion — les serveurs qui l'acceptent, les couches qu'une requête traverse avant d'atteindre le code applicatif, et les préoccupations (travail en arrière-plan, cache, uploads, logging, échecs) présentes dans tout backend non trivial, quel que soit le langage ou le framework.
+
+## Servir les requêtes
+
+- **[Web Servers](/fr/backend/web-servers)** — le processus qui accepte une connexion et parle HTTP.
+- **[Application Servers](/fr/backend/application-servers)** — là où votre code s'exécute réellement, et en quoi il diffère du serveur web placé devant lui.
+- **[Reverse Proxies](/fr/backend/reverse-proxies)** — routage, terminaison TLS, et distribution de charge devant un backend.
+- **[Middleware](/fr/backend/middleware)** — la chaîne de fonctions que traverse chaque requête avant d'atteindre un gestionnaire de route.
+
+## Le travail qui ne se fait pas en ligne
+
+- **[Background Jobs](/fr/backend/background-jobs)** — le travail reporté hors du cycle requête/réponse.
+- **[Queues](/fr/backend/queues)** — le tampon durable qui rend les tâches en arrière-plan fiables.
+
+## État et performance
+
+- **[Caching](/fr/backend/caching)** — éviter de refaire un travail coûteux déjà effectué une fois.
+- **[Sessions](/fr/backend/sessions)** — où vit réellement l'état de session côté serveur quand un backend tourne sur plus d'une machine.
+
+## Gérer le monde réel
+
+- **[File Uploads](/fr/backend/file-uploads)** — accepter des données binaires en toute sécurité et à grande échelle.
+- **[Logging](/fr/backend/logging)** — la trace qu'un backend laisse de ce qu'il a réellement fait.
+- **[Error Handling](/fr/backend/error-handling)** — échouer d'une manière récupérable, débogable, et sûre à exposer.

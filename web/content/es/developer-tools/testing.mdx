@@ -1,0 +1,55 @@
+---
+title: Testing
+description: Verificar que el código se comporta correctamente, de forma automática, en cada cambio — la pirámide de testing, y por qué tests rápidos y fiables importan más que unos exhaustivos.
+category: Developer Tools
+weight: 8
+interactive: true
+interactiveType: ["PredictOutput"]
+---
+
+El **testing automatizado** ejecuta código contra entradas conocidas y comprueba que la salida coincide con lo esperado, sin que un humano tenga que ir haciendo clic manualmente por la aplicación cada vez. El valor se acumula a lo largo de la vida de un proyecto: un test escrito una vez sigue comprobando ese comportamiento en cada cambio futuro, detectando regresiones que un revisor humano no tendría motivo para notar.
+
+## La pirámide de testing
+
+<ItemExplorer
+  title="Tipos de tests"
+  layout="table"
+  tableColumns={[{ key: "scope", label: "Alcance" }, { key: "speed", label: "Velocidad" }]}
+  items={[
+    { id: "unit", label: "Tests unitarios", color: "green", columns: { scope: "Una función o módulo aislado, con las dependencias simuladas (mock/stub)", speed: "Muy rápidos — milisegundos cada uno, pueden ejecutarse miles en segundos" } },
+    { id: "integration", label: "Tests de integración", color: "blue", columns: { scope: "Varios componentes reales trabajando juntos (p. ej. un route handler + una base de datos real)", speed: "Más lentos — implican E/S real" } },
+    { id: "e2e", label: "Tests de extremo a extremo (E2E)", color: "purple", columns: { scope: "El sistema completo, a menudo manejando un navegador real contra una aplicación en ejecución", speed: "Los más lentos — segundos por test, a veces más" } },
+  ]}
+/>
+
+La forma de «pirámide» es una recomendación, no una ley: muchos tests unitarios rápidos en la base, menos tests de integración, y solo un pequeño número de costosos tests E2E en la cima — porque una suite de tests que es mayoritariamente tests E2E lentos tarda demasiado en ejecutarse en cada cambio como para realmente ejecutarse en cada cambio, anulando el propósito.
+
+## Pruébalo
+
+<PredictOutput
+  code={`function add(a, b) {
+  return a + b;
+}
+
+test("adds two numbers", () => {
+  expect(add(2, 2)).toBe(5);
+});`}
+  options={["El test pasa", "El test falla", "Un error de sintaxis", "No pasa nada"]}
+  correctIndex={1}
+  explanation="La aserción espera 5, pero add(2, 2) en realidad devuelve 4 — el error está en el propio test, no en el código que prueba. Un test solo es útil si su valor esperado es realmente correcto; una aserción incorrecta puede pasar por la razón equivocada con la misma facilidad con la que puede fallar por la correcta."
+  actualOutput="FAIL: expected 5, received 4"
+/>
+
+## Mocking
+
+Un **mock** sustituye una dependencia real (una base de datos, una API de terceros, la hora actual) por un sustituto falso y controlable — permitiendo que un test unitario aísle exactamente la lógica que se está probando sin depender de que una base de datos real esté disponible, de que una API real no limite la tasa de la ejecución del test, o de que el resultado de un test cambie según qué día se ejecute. Abusar de los mocks también tiene un coste real: un test que simula tanto que ya no se parece a cómo se comporta el código de verdad puede pasar mientras la integración real está rota — un equilibrio que cada equipo tiene que buscar deliberadamente en lugar de simularlo todo por defecto.
+
+## Tests inestables (flaky)
+
+Un **test inestable (flaky)** pasa y falla de forma inconsistente sin que haya habido ningún cambio de código entre medio — normalmente causado por una condición de carrera, una dependencia de los tiempos, o un estado compartido/remanente entre ejecuciones de tests. Los tests inestables son peores que no tener ningún test en un sentido concreto: entrenan a un equipo para volver a ejecutar los fallos y asumir que son espurios, lo que eventualmente hace que un test genuinamente roto (o un código genuinamente roto) se descarte de la misma manera.
+
+## Ver también
+
+- **[CI/CD](/es/devops/ci-cd)** — donde una suite de tests normalmente se ejecuta automáticamente en cada cambio.
+- **[Linters](/es/developer-tools/linters)** — detecta una clase de problema distinta (estilo/patrones de posibles errores) a la que detecta un test (comportamiento real).
+- **[Depuración](/es/developer-tools/debugging)** — a lo que recurres una vez que un test te dice que algo está mal, pero no por qué.

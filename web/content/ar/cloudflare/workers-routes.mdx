@@ -1,0 +1,49 @@
+---
+title: Cloudflare Workers Routes
+description: ربط أنماط عناوين URL على نطاق (domain) موجود بـ Worker محدد — يعمل جنباً إلى جنب مع حركة مرور أخرى على نفس المنطقة (zone)، بدلاً من امتلاكها بالكامل.
+category: Cloudflare
+weight: 9
+---
+
+يربط **route** نمط عنوان URL على نطاق يستخدم Cloudflare بالفعل ("zone") بـ Worker محدد — ما يتيح لـ Worker معالجة بعض المسارات فقط، أو نطاق فرعي محدد، بينما يستمر كل شيء آخر على ذلك النطاق في العمل بشكل طبيعي (موقع ويب عادي، أو Worker مختلف، أو خادم أصل آخر كلياً).
+
+## أنماط المسارات
+
+```jsonc
+// wrangler.jsonc
+{
+  "routes": [
+    { "pattern": "example.com/api/*", "zone_name": "example.com" }
+  ]
+}
+```
+
+يطابق `*` أي أجزاء مسار متبقية — يطابق `example.com/api/*` كلاً من `example.com/api/users` و`example.com/api/users/42` وهكذا، لكن ليس `example.com/blog`، الذي يستمر في المعالجة بواسطة ما كان يقدّمه قبل وجود Worker أصلاً.
+
+## Routes مقابل النطاقات المخصصة
+
+<ItemExplorer
+  title="Routes مقابل Custom Domains"
+  layout="table"
+  tableColumns={[{ key: "when", label: "استخدمها عندما" }, { key: "flexibility", label: "المرونة" }]}
+  items={[
+    { id: "routes", label: "Routes", color: "blue", columns: { when: "يجب أن يعالج Worker بعض المسارات فقط على نطاق يقدّم أيضاً محتوى آخر", flexibility: "مطابقة أنماط دقيقة، ويمكن لعدة Workers مشاركة منطقة واحدة حسب المسار" } },
+    { id: "custom-domains", label: "Custom Domains", color: "green", columns: { when: "يجب أن يمتلك Worker نطاقاً أو نطاقاً فرعياً بأكمله صراحة", flexibility: "أبسط في الإعداد — لا نمط يمكن أن يُخطأ فيه — لكن كل شيء أو لا شيء لذلك المضيف (hostname)" } },
+  ]}
+/>
+
+أنماط Routes هي الأداة الصحيحة تحديداً لنوع الإعداد الذي يستخدمه هذا الموقع نفسه: واجهة أمامية ثابتة تُقدَّم من Worker واحد، مع مسارات على شاكلة `/api/*` (أو في حالة nullbase، نطاق فرعي `api.` منفصل كلياً) موجَّهة إلى Worker مختلف كلياً — طالع [Custom Domains](/ar/cloudflare/custom-domains) للبديل الأبسط الخاص بنطاق فرعي كامل.
+
+## عدة Workers، منطقة واحدة
+
+بما أن Routes قائمة على الأنماط لا على النطاق بأكمله، يمكن لمنطقة Cloudflare واحدة أن تحوي عدة Workers نشطة في آنٍ واحد، يعالج كل منها مجموعة مسارات مميزة وغير متداخلة — نمط شائع حين تستفيد أجزاء مختلفة من نظام فعلياً من كونها منشورة ومُوسَّعة (scaled) بشكل مستقل (Worker خاص بواجهة API منفصل عن Worker لتقديم الأصول الثابتة)، مع أنها تظهر للزوّار كنطاق واحد متماسك.
+
+## أسبقية Routes
+
+حين يمكن لطلب أن يطابق أكثر من route مُعدّ، تحلّ Cloudflare الأمر حسب الدقة — يأخذ نمط أدق (`example.com/api/users/*`) الأسبقية على نمط أعم (`example.com/api/*`) كان سيطابق أيضاً لولا ذلك. الوقوع في خطأ هذا (routeان يتداخلان بشكل غامض) مصدر شائع لالتباس "لماذا يعالج Worker الخطأ هذا الطلب" حين تحتوي منطقة على عدة Workers مُعدَّة.
+
+## طالع أيضاً
+
+- **[Custom Domains](/ar/cloudflare/custom-domains)** — البديل الأبسط حين يجب أن يمتلك Worker مضيفاً كاملاً.
+- **[Wrangler](/ar/cloudflare/wrangler)** — أين تُعلَن Routes إلى جانب إعدادات Worker الأخرى.
+- **[Cloudflare DNS](/ar/cloudflare/cloudflare-dns)** — يجب أن يكون النطاق على Cloudflare بالفعل (zone نشطة) قبل أن يمكن إعداد route له.

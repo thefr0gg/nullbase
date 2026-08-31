@@ -1,0 +1,40 @@
+---
+title: Serverless
+description: Ejecutar código sin gestionar un servidor en absoluto — la plataforma asigna capacidad por solicitud, y se factura por ejecución, no por tiempo activo inactivo.
+category: DevOps & Infrastructure
+weight: 9
+---
+
+**Serverless** no significa que no haya servidor — significa que el desarrollador nunca aprovisiona, parchea ni escala uno. El código se despliega como una función o un manejador pequeño; la plataforma ([Cloudflare Workers](/es/cloudflare/workers), AWS Lambda, similares) decide dónde y cuándo ejecutarlo realmente, levantando capacidad bajo demanda y desmontándola cuando está inactiva.
+
+## Qué cambia frente a un servidor tradicional
+
+<ItemExplorer
+  title="Serverless frente a un servidor tradicional"
+  layout="table"
+  tableColumns={[{ key: "traditional", label: "Servidor tradicional" }, { key: "serverless", label: "Serverless" }]}
+  items={[
+    { id: "provisioning", label: "Aprovisionamiento", color: "blue", columns: { traditional: "Tú eliges y gestionas un servidor (o una flota de ellos)", serverless: "La plataforma asigna capacidad por solicitud automáticamente" } },
+    { id: "billing", label: "Facturación", color: "green", columns: { traditional: "Pagas por el servidor gestione o no tráfico", serverless: "Pagas por invocación / tiempo de ejecución — la inactividad no cuesta nada" } },
+    { id: "scaling", label: "Escalado", color: "purple", columns: { traditional: "Autoescalado manual o configurado, con un tiempo de arranque real", serverless: "Escala a cero y de vuelta arriba automáticamente, a menudo casi al instante" } },
+    { id: "state", label: "Estado en memoria entre solicitudes", color: "orange", columns: { traditional: "Persiste mientras el proceso siga en ejecución", serverless: "No garantizado — una instancia de función inactiva puede desmontarse por completo entre invocaciones" } },
+  ]}
+/>
+
+## Cold starts
+
+La primera solicitud a una función serverless tras un periodo de inactividad puede sufrir un **cold start** — la plataforma tiene que inicializar realmente un nuevo entorno de ejecución antes de ejecutar el código, añadiendo una latencia que un servidor tradicional ya en marcha no tiene. Cuánto importa esto varía enormemente según la plataforma y el runtime: una función ligera de JavaScript en una plataforma de edge puede arrancar en frío en milisegundos de un solo dígito, mientras que un runtime más pesado con un árbol de dependencias grande puede tardar mucho más.
+
+## En qué es bueno serverless
+
+Las cargas de trabajo que son naturalmente irregulares o poco frecuentes (un endpoint de API al que se accede unas pocas veces por minuto, un manejador de webhooks, trabajos por lotes programados) encajan muy bien — no hay coste de servidor inactivo durante los periodos tranquilos, y escalar para un pico repentino de tráfico es problema de la plataforma, no algo que necesite capacidad preaprovisionada para absorberlo. Encaja peor con cargas de trabajo que necesitan estado en memoria de larga duración, un rendimiento de baja latencia extremadamente predecible bajo cualquier carga, o tiempos de ejecución más largos que el límite que impone una plataforma.
+
+## Por qué la ausencia de estado es la restricción real
+
+Como una plataforma serverless puede levantar, reutilizar o descartar un entorno de ejecución a voluntad, el código tiene que asumir que ningún estado sobrevive de forma fiable entre invocaciones — las [sesiones](/es/backend/sessions), la [caché](/es/backend/caching), y cualquier otro estado compartido tienen que vivir en algo externo (una base de datos, una caché compartida, [KV](/es/cloudflare/kv)) en lugar de en una variable local en memoria, que funcionaría por accidente a veces y fallaría de forma impredecible el resto.
+
+## Ver también
+
+- **[Cloudflare Workers](/es/cloudflare/workers)** — una plataforma serverless que se ejecuta específicamente en el edge de la red.
+- **[Edge Computing](/es/devops/edge-computing)** — ejecutar código serverless físicamente cerca de los usuarios, no en una única región central.
+- **[Contenedores](/es/devops/containers)** — la tecnología de aislamiento sobre la que muchas plataformas serverless construyen sus sandboxes de ejecución.

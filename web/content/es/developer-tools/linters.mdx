@@ -1,0 +1,51 @@
+---
+title: Linters
+description: Detectar posibles errores y problemas de estilo analizando el código sin ejecutarlo — la diferencia entre un linter y un comprobador de tipos, y por qué las reglas son configurables.
+category: Developer Tools
+weight: 6
+---
+
+Un **linter** analiza estáticamente el código fuente — sin ejecutarlo — buscando patrones que probablemente sean errores, estilo inconsistente, o infracciones de las convenciones acordadas por un equipo. ESLint (JavaScript/TypeScript), Pylint/Ruff (Python), y RuboCop (Ruby) son los ejemplos habituales; casi todo lenguaje habitual tiene al menos un linter ampliamente usado.
+
+## Qué detecta realmente un linter
+
+```js
+function getUser(id) {
+  if (id = 42) {         // ⚠ assignment in a condition — almost certainly meant ===
+    return admin;
+  }
+  const x = 1;
+  const x = 2;            // ⚠ 'x' is already declared
+  return unusedVar;       // ⚠ 'unusedVar' is not defined
+}
+```
+
+Ninguno de estos es un error de sintaxis — el código analizaría bien — pero cada uno es un error directo (`=` en lugar de `===`) o una señal fuerte de que algo está mal (una variable redeclarada, una referencia a algo que nunca se definió). Todo el valor de un linter está en detectar exactamente esta categoría de error: sintaxis válida que aun así casi con toda seguridad no es lo que el autor pretendía.
+
+## Linting frente a comprobación de tipos
+
+Un linter busca *patrones* en el código sin importar si entiende los tipos reales que fluyen por él; un comprobador de tipos (TypeScript, mypy) verifica que los valores se usan de forma consistente con sus tipos declarados o inferidos. Ambos detectan clases de problemas distintas, casi sin solaparse — un linter puede señalar un `==` que debería ser `===` sin saber nada sobre tipos, y un comprobador de tipos puede detectar que se pasa un `string` donde se espera un `number` sin preocuparse en absoluto por el estilo del código. La mayoría de los proyectos reales usan ambos.
+
+## Reglas configurables
+
+```json
+{
+  "rules": {
+    "no-unused-vars": "error",
+    "no-console": "warn",
+    "eqeqeq": "error"
+  }
+}
+```
+
+Las reglas pueden configurarse como error (falla la compilación/CI), warn (se reporta pero no falla nada), o desactivadas por completo — permitiendo que un equipo imponga exactamente las convenciones que le importan sin adoptar todas las reglas que un linter trae por defecto. Las configuraciones compartidas (como `eslint-config-airbnb` o el propio preset recomendado de un framework) permiten a los equipos partir de una base razonable en lugar de configurar cientos de reglas individuales desde cero.
+
+## Autocorrección
+
+Muchas reglas de linter son mecánicamente corregibles — una importación sin usar puede simplemente eliminarse, `==` puede reescribirse automáticamente como `===` — y la mayoría de los linters admiten un modo de autocorrección (`eslint --fix`) que aplica todas las infracciones corregibles sin que un humano tenga que editar cada una manualmente. Las reglas que requieren un juicio real (una variable genuinamente sin usar que podría indicar un error real, no solo código muerto) normalmente se dejan para que las resuelva un humano.
+
+## Ver también
+
+- **[Formateadores](/es/developer-tools/formatters)** — una herramienta relacionada pero distinta, que se ocupa de espacios/estilo puro en lugar de patrones de lógica.
+- **[CI/CD](/es/devops/ci-cd)** — donde el linting normalmente se ejecuta automáticamente en cada cambio.
+- **[Testing](/es/developer-tools/testing)** — detecta errores de comportamiento que el análisis estático de un linter no puede, ejecutando realmente el código.

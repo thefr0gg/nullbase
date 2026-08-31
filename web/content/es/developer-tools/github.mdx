@@ -1,0 +1,44 @@
+---
+title: GitHub
+description: El lugar más usado para alojar repositorios Git — pull requests, revisión de código, issues, y Actions, todo por encima de Git puro.
+category: Developer Tools
+weight: 1
+---
+
+**GitHub** aloja repositorios [Git](/es/developer-tools/git) y añade toda una capa de colaboración sobre Git puro: una interfaz web para explorar el código y el historial, pull requests para revisar cambios antes de fusionarlos, seguimiento de issues, y CI/CD mediante GitHub Actions. Git en sí no tiene ningún concepto de nada de esto — es puramente una herramienta de control de versiones; GitHub es una plataforma construida a su alrededor.
+
+## Pull requests
+
+Un **pull request (PR)** propone fusionar una rama en otra, y es donde realmente ocurre la mayor parte de la revisión colaborativa: los revisores comentan líneas específicas, las comprobaciones de CI se ejecutan automáticamente contra el cambio propuesto, y el propio PR se convierte en un registro permanente de *por qué* se hizo un cambio, no solo de *qué* cambió (lo cual el historial de commits por sí solo ya muestra). Nada en un pull request es específico de Git — es enteramente una característica de GitHub (o GitLab, o Bitbucket) construida sobre las ramas de Git.
+
+## Forks frente a ramas
+
+Una **rama** vive dentro de un repositorio al que ya tienes acceso de escritura. Un **fork** es una copia completa del repositorio de otra persona en tu propia cuenta — la forma estándar de contribuir a un proyecto sobre el que no tienes acceso de escritura directo: haces fork, creas ramas y haces commits dentro de tu fork, y luego abres un pull request desde la rama de tu fork de vuelta al repositorio original.
+
+## GitHub Actions
+
+GitHub Actions ejecuta flujos de trabajo de [CI/CD](/es/devops/ci-cd) definidos en archivos YAML bajo `.github/workflows/`, disparados por eventos como un push o un pull request:
+
+```yaml
+name: CI
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci
+      - run: npm test
+```
+
+Cada job se ejecuta en una máquina virtual (o [contenedor](/es/devops/containers)) nueva y aislada, y un extenso ecosistema de «actions» reutilizables (como `actions/checkout` arriba) hace que la mayoría de los pasos de CI habituales no tengan que escribirse desde cero.
+
+## Issues y tableros de proyecto
+
+GitHub Issues rastrea errores, solicitudes de funcionalidades y tareas, cada uno con su propio hilo de discusión, etiquetas y responsables asignados — a menudo enlazado directamente con el pull request que lo resuelve (cerrando un issue automáticamente cuando el PR enlazado se fusiona). Los tableros de proyecto añaden una vista estilo Kanban (Por hacer / En progreso / Hecho) sobre los issues y PR para un seguimiento de proyecto ligero sin necesitar una herramienta aparte.
+
+## Ver también
+
+- **[Git](/es/developer-tools/git)** — el sistema de control de versiones sobre el que se construye GitHub.
+- **[GitLab](/es/developer-tools/gitlab)** — una alternativa importante que cubre terreno similar con una propuesta de CI/CD más integrada.
+- **[CI/CD](/es/devops/ci-cd)** — la práctica general de la que GitHub Actions es una implementación.

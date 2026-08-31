@@ -1,0 +1,39 @@
+---
+title: Cloudflare DNS
+description: Cloudflare en tant que fournisseur DNS faisant autorité — ce que l'icône du nuage orange active réellement, et en quoi un enregistrement proxifié diffère d'un simple enregistrement DNS-only.
+category: Cloudflare
+weight: 11
+---
+
+Le produit d'origine de Cloudflare est l'hébergement [DNS](/fr/web-fundamentals/dns) et une couche de reverse-proxy/CDN placée devant le trafic réel d'un domaine — presque tout le reste de cette section (Workers, Custom Domains, mise en cache) dépend du fait qu'un domaine soit déjà une zone Cloudflare active.
+
+## DNS-only contre proxifié (« le nuage orange »)
+
+<ItemExplorer
+  title="Nuage gris vs nuage orange"
+  layout="table"
+  tableColumns={[{ key: "traffic", label: "Where traffic goes" }, { key: "gets", label: "What you get" }]}
+  items={[
+    { id: "dns-only", label: "DNS only (grey cloud)", color: "default", columns: { traffic: "Directement vers l'IP de l'enregistrement — Cloudflare ne répond qu'à la résolution DNS elle-même", gets: "Uniquement la résolution DNS, rien d'autre — pas de mise en cache, pas de protection DDoS, pas d'IP d'origine masquée" } },
+    { id: "proxied", label: "Proxied (orange cloud)", color: "orange", columns: { traffic: "D'abord à travers le réseau de Cloudflare, qui transmet ensuite à l'origine réelle", gets: "Mise en cache, protection DDoS, terminaison TLS, règles WAF, et l'IP réelle du serveur d'origine masquée à l'Internet public" } },
+  ]}
+/>
+
+Un enregistrement **proxifié** fait de Cloudflare un véritable [reverse proxy](/fr/backend/reverse-proxies) placé devant la véritable infrastructure du domaine — les visiteurs résolvent le domaine vers l'une des propres IP de Cloudflare, jamais vers celle du serveur d'origine réel, ce qui explique aussi pourquoi la fuite ailleurs de la véritable IP d'origine d'un domaine proxifié (un ancien enregistrement DNS, un en-tête de serveur exposé) peut être une réelle préoccupation de sécurité : c'est précisément l'adresse que toute autre protection est censée garder cachée.
+
+## Types d'enregistrements courants
+
+- **A / AAAA** — un nom d'hôte vers une adresse IPv4 ou IPv6 directement.
+- **CNAME** — un nom d'hôte vers un *autre* nom d'hôte, qui est ensuite résolu à son tour — couramment utilisé pour faire pointer un sous-domaine vers un nom d'hôte géré par une plateforme sans avoir besoin de connaître ou de coder en dur son IP.
+- **MX** — où le courrier électronique d'un domaine doit être livré, entièrement séparé de l'endroit où son site web est servi.
+- **TXT** — du texte arbitraire, couramment utilisé pour la vérification de propriété de domaine et les enregistrements d'authentification d'email (SPF, DKIM).
+
+## Pourquoi un Worker a besoin d'une zone active
+
+Une [Workers Route](/fr/cloudflare/workers-routes) ou un [Custom Domain](/fr/cloudflare/custom-domains) ne fonctionne que sur un domaine pour lequel Cloudflare fait déjà autorité — Cloudflare doit être ce qui résout et route réellement le trafic de ce domaine avant de pouvoir en confier une partie à un Worker. C'est pourquoi le déploiement d'un Worker sur un nouveau domaine commence toujours par pointer d'abord les serveurs de noms de ce domaine vers Cloudflare.
+
+## Voir aussi
+
+- **[DNS](/fr/web-fundamentals/dns)** — le protocole général et les types d'enregistrements que cette page suppose déjà connus.
+- **[Reverse Proxies](/fr/backend/reverse-proxies)** — le motif général qu'un enregistrement DNS proxifié implémente à l'échelle de Cloudflare.
+- **[Cloudflare Cache](/fr/cloudflare/cloudflare-cache)** — l'une des choses précises qu'un enregistrement proxifié active réellement.

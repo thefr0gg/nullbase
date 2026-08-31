@@ -1,0 +1,39 @@
+---
+title: Despliegue
+description: Conseguir que una nueva versión de una aplicación se ejecute realmente en producción — y hacerlo sin tiempo de inactividad ni un error irrecuperable.
+category: DevOps & Infrastructure
+weight: 8
+---
+
+El **despliegue** es el acto de reemplazar la versión antigua de una aplicación en ejecución por una nueva. Hecho de forma ingenua — parar la versión antigua, arrancar la nueva — esto provoca un hueco visible en el que el servicio queda completamente caído; la mayoría de las estrategias de despliegue reales existen específicamente para evitar ese hueco, o para limitar el radio de impacto si la nueva versión resulta estar rota.
+
+## Estrategias de despliegue
+
+<ItemExplorer
+  title="Estrategias de despliegue"
+  layout="table"
+  tableColumns={[{ key: "how", label: "Cómo funciona" }, { key: "tradeoff", label: "Compromiso" }]}
+  items={[
+    { id: "rolling", label: "Rolling", color: "blue", columns: { how: "Reemplaza las instancias de una en una (o unas pocas a la vez), manteniendo al resto sirviendo tráfico durante todo el proceso", tradeoff: "Sin tiempo de inactividad, pero las versiones antigua y nueva sirven tráfico simultáneamente durante un tiempo — deben ser compatibles." } },
+    { id: "blue-green", label: "Blue-green", color: "green", columns: { how: "Despliega la nueva versión por completo junto a la antigua, y luego cambia todo el tráfico de golpe", tradeoff: "Corte instantáneo y limpio, y rollback instantáneo (volver a cambiar), pero requiere ejecutar dos entornos completos a la vez." } },
+    { id: "canary", label: "Canary", color: "purple", columns: { how: "Envía un pequeño porcentaje del tráfico a la nueva versión, observa las métricas, y luego lo aumenta gradualmente", tradeoff: "Limita el radio de impacto de un lanzamiento defectuoso a una pequeña fracción de usuarios, pero tarda más en desplegarse por completo." } },
+  ]}
+/>
+
+## Rollbacks
+
+Por muy cuidadoso que sea el rollout, una nueva versión puede resultar estar rota de una forma que solo se manifiesta bajo tráfico real de producción. Un **rollback** rápido y fiable — volver a la última versión conocida como buena — importa tanto como el propio mecanismo de despliegue; los despliegues blue-green hacen que esto sea lo más parecido a instantáneo (devolver el tráfico al entorno que nunca se tocó), mientras que el rollback de un despliegue rolling es en sí mismo otro despliegue rolling, solo que a la inversa.
+
+## Las migraciones de base de datos complican todo esto
+
+El código normalmente puede desplegarse y revertirse con libertad, pero un cambio de esquema de base de datos a menudo no puede revertirse de forma tan limpia — eliminar una columna que el código nuevo necesita rompe el código nuevo, pero un rollback al código antiguo después de que la columna ya se haya eliminado también rompe el código antiguo. Por eso los cambios de esquema normalmente se hacen en pasos retrocompatibles (añadir una columna nueva sin eliminar todavía la antigua, desplegar código que pueda manejar ambas, eliminar la columna antigua solo en un despliegue posterior y separado) en lugar de como un único cambio atómico junto con el código que la usa.
+
+## Feature flags
+
+Un **feature flag** desacopla desplegar código de activar realmente una funcionalidad — el código nuevo se envía a producción detrás de un flag que está desactivado por defecto, y se activa para un subconjunto de usuarios (o para todos) con independencia de cualquier despliegue posterior. Esto permite activar gradualmente una funcionalidad arriesgada, o desactivarla al instante si algo sale mal, sin necesitar un redespliegue o rollback completo en ninguna de las dos direcciones.
+
+## Ver también
+
+- **[CI/CD](/es/devops/ci-cd)** — el pipeline que normalmente dispara un despliegue automáticamente.
+- **[Balanceo de carga](/es/devops/load-balancing)** — lo que realmente encamina el tráfico durante un despliegue rolling o canary.
+- **[Monitorización](/es/devops/monitoring)** — lo que observa un despliegue canary antes de decidir si continúa desplegándose.

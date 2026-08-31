@@ -1,0 +1,49 @@
+---
+title: Cloudflare Pages
+description: Hébergement de sites statiques basé sur Git avec déploiements de prévisualisation automatiques — et comment cela converge avec Workers vers une plateforme unifiée.
+category: Cloudflare
+weight: 12
+---
+
+**Cloudflare Pages** héberge des sites statiques (et des sites avec une logique côté serveur légère via les Pages Functions) avec un déploiement piloté directement par un dépôt Git — poussez un commit, obtenez un nouveau déploiement automatiquement, chaque pull request obtenant sa propre URL de prévisualisation avant toute fusion en production.
+
+## Le flux de travail de base
+
+1. Connecter un dépôt GitHub ou GitLab.
+2. Configurer une commande de build (`npm run build`) et un répertoire de sortie (`dist`, `out`).
+3. Chaque push vers la branche de production déclenche automatiquement un nouveau déploiement de production.
+4. Chaque autre branche et pull request obtient sa propre URL de prévisualisation unique, pour que les relecteurs puissent voir le résultat réellement rendu avant d'approuver, pas seulement le diff.
+
+Ce modèle piloté par Git supprime entièrement l'étape manuelle « build en local, puis upload des fichiers quelque part » — l'historique de déploiement *est* l'historique des commits, et annuler un mauvais déploiement se résume à re-promouvoir un déploiement antérieur connu comme fonctionnel.
+
+## Pages Functions
+
+Au-delà du simple hébergement statique, les Pages Functions permettent à des routes spécifiques d'exécuter du code côté serveur — utilisant le même runtime Workers sous-jacent, mais avec une convention de routage basée sur les fichiers (`functions/api/hello.js` devient automatiquement `/api/hello`) plutôt qu'un unique gestionnaire `fetch` routant tout lui-même.
+
+```js
+// functions/api/hello.js
+export async function onRequest(context) {
+  return new Response("Hello from a Pages Function");
+}
+```
+
+## Convergence avec Workers
+
+Cloudflare unifie progressivement Pages et les [Workers](/fr/cloudflare/workers) classiques en une seule plateforme — un projet Workers peut désormais servir des assets statiques directement (exactement ce qui alimente le propre frontend de nullbase, un export Next.js statique servi par une configuration d'assets statiques Workers plutôt qu'un projet Pages séparé), ce qui fait de plus en plus de « Pages contre Workers » moins une bifurcation nette qu'une question de savoir quel flux de déploiement (push-Git-vers-déploiement ou `wrangler deploy`) convient le mieux au processus d'une équipe donnée.
+
+## Choisir entre les deux aujourd'hui
+
+<ItemExplorer
+  title="Pages vs un Worker à assets statiques"
+  layout="pills"
+  items={[
+    { id: "pages-fit", label: "Prefer Pages when...", color: "blue", detail: "Vous voulez un déploiement par push Git et des URL de prévisualisation automatiques par pull request prêtes à l'emploi, avec une configuration Wrangler minimale." },
+    { id: "worker-fit", label: "Prefer a Workers project when...", color: "green", detail: "Le frontend et toute logique d'API doivent être déployés et versionnés ensemble sous un seul flux piloté par Wrangler, ou vous avez besoin d'un contrôle plus fin sur le routage/la mise en cache que ce que les conventions de Pages fournissent." },
+  ]}
+/>
+
+## Voir aussi
+
+- **[Workers](/fr/cloudflare/workers)** — le runtime sur lequel les Pages Functions s'exécutent réellement.
+- **[CI/CD](/fr/devops/ci-cd)** — la pratique générale dont le déploiement par push Git de Pages est une implémentation spécialisée et prête à l'emploi.
+- **[Deployment](/fr/devops/deployment)** — les déploiements de prévisualisation sont en pratique une forme légère du pattern canary/staging traité là-bas.

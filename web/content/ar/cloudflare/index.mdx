@@ -1,0 +1,34 @@
+---
+title: Cloudflare
+description: منصة Cloudflare للمطورين — Workers، ومنتجات التخزين (D1 وKV وR2 وDurable Objects)، وطبقة الأدوات والشبكات المحيطة بها.
+category: Cloudflare
+weight: 10
+---
+
+بدأت Cloudflare كخدمة CDN وحماية من هجمات DDoS تقف أمام خوادم أطراف أخرى، ثم بنت منذ ذلك الحين منصة تطبيقات كاملة على نفس شبكة الحافة العالمية — [حوسبة serverless](/ar/devops/serverless) وعدة منتجات تخزين مختلفة، تعمل جميعها في مئات المواقع حول العالم بدلاً من منطقة مركزية واحدة. يتناول هذا القسم تلك المنصة تحديداً، كتطبيق فعلي وملموس لمفاهيم [الحوسبة على الحافة](/ar/devops/edge-computing) المشروحة بشكل عام في مكان آخر.
+
+## الحوسبة
+
+- **[Workers](/ar/cloudflare/workers)** — بيئة التشغيل serverless التي يتصل بها كل ما تبقى في هذا القسم.
+- **[Durable Objects](/ar/cloudflare/durable-objects)** — حالة وتنسيق قويّا الاتساق، بنسخة واحدة، على الحافة.
+
+## التخزين
+
+- **[D1](/ar/cloudflare/d1)** — قاعدة بيانات SQLite مُدارة.
+- **[KV](/ar/cloudflare/kv)** — مخزن مفتاح-قيمة مُكرَّر عالمياً وقائم على الاتساق النهائي.
+- **[R2](/ar/cloudflare/r2)** — تخزين كائنات متوافق مع S3 بلا رسوم إخراج بيانات.
+- **[Queues](/ar/cloudflare/queues)** — طابور رسائل مُدار لـ Workers.
+
+## الجدولة والأدوات
+
+- **[Cron Triggers](/ar/cloudflare/cron-triggers)** — تشغيل Worker بجدول زمني بدلاً من الاستجابة لطلب.
+- **[Wrangler](/ar/cloudflare/wrangler)** — واجهة سطر الأوامر المستخدَمة لتطوير وضبط ونشر كل ما في هذا القسم.
+- **[Workers Bindings](/ar/cloudflare/workers-bindings)** — كيف يحصل Worker فعلياً على وصول إلى D1 وKV وR2 وغيرها.
+
+## الشبكات
+
+- **[Workers Routes](/ar/cloudflare/workers-routes)** — ربط أنماط URL بـ Worker معيّن.
+- **[Custom Domains](/ar/cloudflare/custom-domains)** — البديل الأبسط عن Routes لعامل Worker يجب أن يمتلك نطاقاً كاملاً.
+- **[Cloudflare DNS](/ar/cloudflare/cloudflare-dns)** — Cloudflare كمزوّد DNS موثوق، وما تعنيه أيقونة السحابة البرتقالية فعلياً.
+- **[Cloudflare Pages](/ar/cloudflare/cloudflare-pages)** — استضافة مواقع ثابتة بعمليات نشر مرتبطة بـ Git، تتقارب الآن مع Workers.
+- **[Cloudflare Cache](/ar/cloudflare/cloudflare-cache)** — طبقة تخزين مؤقت CDN التي تقف أمام كل شيء آخر.

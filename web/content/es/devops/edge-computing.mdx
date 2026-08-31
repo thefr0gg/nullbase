@@ -1,0 +1,38 @@
+---
+title: Edge Computing
+description: Ejecutar código físicamente cerca del usuario en lugar de en un único centro de datos central — lo que realmente aporta y las limitaciones reales que introduce.
+category: DevOps & Infrastructure
+weight: 10
+---
+
+El **edge computing** ejecuta código en muchas ubicaciones distribuidas geográficamente — "puntos de presencia" cercanos a los usuarios finales — en lugar de un pequeño número de centros de datos grandes y centralizados (una única región de AWS, por ejemplo). El objetivo es simple: un round trip de red tiene un suelo físico de latencia impuesto por la velocidad de la luz, y ninguna cantidad de optimización del servidor puede superar a un usuario en Tokio hablando simplemente con un servidor en Tokio en lugar de con uno en Virginia.
+
+## Qué se ejecuta en el edge
+
+<ItemExplorer
+  title="Cargas de trabajo comunes en el edge"
+  layout="pills"
+  items={[
+    { id: "static", label: "Recursos estáticos", color: "blue", detail: "La carga de trabajo de edge original y más simple — una CDN cacheando imágenes, CSS y JS cerca de cada usuario. Ver CDNs." },
+    { id: "compute", label: "Cómputo en tiempo de solicitud", color: "green", detail: "Lógica de aplicación real — comprobaciones de autenticación, enrutamiento de pruebas A/B, personalización, incluso respuestas de API completas — ejecutándose en el edge en lugar de en un único servidor de origen. Esto es precisamente lo que plataformas como Cloudflare Workers permiten." },
+    { id: "data", label: "Datos replicados en el edge", color: "purple", detail: "Bases de datos y almacenes clave-valor (como Cloudflare KV o D1) que replican los datos en muchas ubicaciones, de modo que las lecturas en el edge no necesitan un round trip de vuelta a un único origen central." },
+  ]}
+/>
+
+## El trade-off: consistencia y coordinación
+
+Distribuir el cómputo entre decenas o cientos de ubicaciones facilita las lecturas de baja latencia, pero dificulta cualquier cosa que requiera consistencia fuerte entre ubicaciones — si dos ubicaciones de edge pueden aceptar ambas una escritura sobre la "misma" pieza de datos simultáneamente, algo tiene que reconciliarlas, y esa reconciliación en sí misma lleva tiempo o exige aceptar garantías de consistencia más débiles. Por eso las plataformas de edge suelen distinguir claramente entre las cargas de trabajo que leen mucho más de lo que escriben (un encaje excelente) y las que necesitan escrituras estrictas, inmediatamente consistentes en todas las ubicaciones a la vez (un encaje mucho más difícil, que a veces requiere un mecanismo específico como [Durable Objects](/es/cloudflare/durable-objects) que ancla la coordinación a una única ubicación por unidad lógica de estado).
+
+## Edge frente a serverless tradicional
+
+El edge computing y el [serverless](/es/devops/serverless) se solapan mucho pero no son idénticos: el serverless trata fundamentalmente de no gestionar tú mismo la capacidad del servidor, mientras que el edge trata de *dónde* se ejecuta esa capacidad. Una función serverless puede ejecutarse en una única región central (la mayoría de las plataformas serverless tradicionales hacen exactamente esto); una plataforma de edge ejecuta específicamente la misma lógica en muchas regiones simultáneamente, encaminando cada solicitud hacia la que esté más cerca.
+
+## Por qué esto importa más allá de la velocidad bruta
+
+Más allá de la latencia, ejecutarse cerca de los usuarios también puede significar que los datos permanezcan más cerca de donde la normativa lo exige (una solicitud de un usuario de la UE gestionada por una ubicación de edge basada en la UE), y una solicitud que nunca tiene que salir de la propia región del usuario para comprobaciones simples (validación de autenticación, limitación de tasa) reduce la carga sobre — y la dependencia de la disponibilidad de — un único origen central.
+
+## Ver también
+
+- **[CDNs](/es/web-fundamentals/cdns)** — la forma más temprana y consolidada de edge computing.
+- **[Cloudflare Workers](/es/cloudflare/workers)** y **[Durable Objects](/es/cloudflare/durable-objects)** — una plataforma de cómputo en el edge concreta y su respuesta al problema de coordinación anterior.
+- **[Serverless](/es/devops/serverless)** — el modelo de ejecución sobre el que también suelen construirse las plataformas de edge.

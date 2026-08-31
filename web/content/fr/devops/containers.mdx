@@ -1,0 +1,47 @@
+---
+title: Containers
+description: Le mécanisme du noyau Linux sous Docker — namespaces et cgroups — et en quoi un conteneur diffère d'une machine virtuelle complète.
+category: DevOps & Infrastructure
+weight: 4
+---
+
+[Docker](/fr/devops/docker) est l'outil que la plupart des gens ont en tête quand ils disent « conteneurs », mais la conteneurisation est en réalité un ensemble de fonctionnalités du noyau Linux que Docker empaquette dans une interface facile à utiliser. Comprendre ce qui se passe réellement en dessous explique à la fois pourquoi les conteneurs sont si légers et où se situe réellement leur frontière d'isolation.
+
+## Les deux fonctionnalités du noyau qui rendent cela possible
+
+<ItemExplorer
+  title="Primitives du noyau derrière un conteneur"
+  layout="pills"
+  items={[
+    { id: "namespaces", label: "Namespaces", color: "blue", detail: "Donnent à un processus sa propre *vue* isolée d'une ressource globale — sa propre liste de processus (namespace PID), ses propres interfaces réseau (namespace réseau), ses propres points de montage de système de fichiers (namespace mount) — sans réellement dupliquer cette ressource au niveau matériel." },
+    { id: "cgroups", label: "cgroups (control groups)", color: "green", detail: "Limitent et comptabilisent la quantité d'une ressource réelle (CPU, mémoire, E/S disque) qu'un groupe de processus peut utiliser — ce qui empêche un conteneur d'affamer en mémoire tous les autres conteneurs du même hôte." },
+  ]}
+/>
+
+Un conteneur est, concrètement, un ou plusieurs processus s'exécutant avec un ensemble spécifique de namespaces (afin qu'il ne puisse pas voir les autres processus ou interfaces réseau de l'hôte) et de limites cgroup (afin qu'il ne puisse pas dépasser son allocation de ressources) — tout en s'exécutant sur exactement le même noyau que l'hôte et tous les autres conteneurs de cette machine.
+
+## Conteneur vs machine virtuelle
+
+<ItemExplorer
+  title="Conteneurs vs machines virtuelles"
+  layout="table"
+  tableColumns={[{ key: "container", label: "Conteneur" }, { key: "vm", label: "Machine virtuelle" }]}
+  items={[
+    { id: "kernel", label: "Noyau", color: "blue", columns: { container: "Partage le noyau de l'hôte", vm: "Exécute son propre noyau complet et séparé" } },
+    { id: "startup", label: "Temps de démarrage", color: "green", columns: { container: "Millisecondes — aucun démarrage d'OS nécessaire", vm: "Secondes à minutes — un OS complet démarre" } },
+    { id: "overhead", label: "Surcoût en ressources", color: "purple", columns: { container: "Faible — pas de noyau/OS dupliqué par instance", vm: "Plus élevé — chaque VM embarque un OS complet" } },
+    { id: "isolation", label: "Force de l'isolation", color: "orange", columns: { container: "Au niveau processus, frontière plus faible (un noyau partagé est une surface d'attaque partagée)", vm: "Virtualisée matériellement, une frontière de sécurité plus forte" } },
+  ]}
+/>
+
+C'est un véritable compromis de sécurité, pas seulement de performance : parce que les conteneurs sur un même hôte partagent un noyau, une vulnérabilité au niveau du noyau peut potentiellement permettre à un processus de s'échapper de l'isolation de son conteneur et d'affecter l'hôte ou d'autres conteneurs — quelque chose auquel la frontière renforcée matériellement d'une VM complète résiste bien mieux. C'est exactement pourquoi l'exécution de code réellement non fiable (du code arbitraire soumis par un utilisateur, par exemple) nécessite généralement soit une frontière au niveau VM, soit un sandboxing supplémentaire au-delà d'un simple conteneur.
+
+## Pourquoi cela compte en pratique
+
+Comprendre qu'un conteneur n'est « qu'» un ensemble de processus Linux isolés explique beaucoup de comportements de conteneur qui sembleraient surprenants autrement : `docker exec` dans un conteneur en cours d'exécution ne fait qu'exécuter un nouveau processus à l'intérieur de ses namespaces existants ; un conteneur qui dépasse sa limite cgroup de mémoire est tué par l'OOM killer du noyau exactement comme n'importe quel autre processus le serait ; et la liste de processus d'un conteneur, vue de l'intérieur, croit sincèrement qu'elle est le PID 1 sur sa propre machine, même si l'hôte le voit comme un processus ordinaire parmi tant d'autres.
+
+## Voir aussi
+
+- **[Processes](/fr/devops/processes)** — l'unité OS à laquelle s'appliquent les namespaces et les cgroups.
+- **[Docker](/fr/devops/docker)** — la couche d'outillage qui rend ces fonctionnalités du noyau pratiques à utiliser.
+- **[Serverless](/fr/devops/serverless)** — souvent implémenté en utilisant cette même technologie de conteneur/isolation en coulisses, entièrement cachée au développeur.

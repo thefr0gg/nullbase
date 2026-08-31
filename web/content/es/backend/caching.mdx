@@ -1,0 +1,40 @@
+---
+title: Caché
+description: Evitar rehacer trabajo costoso que ya hiciste una vez — dónde vive una caché, cómo se mantiene fresca, y los dos problemas difíciles de los que todo el mundo bromea.
+category: Backend
+weight: 6
+---
+
+El **caché** almacena el resultado de trabajo costoso (una consulta a la base de datos, un valor calculado, una página renderizada) para que una solicitud posterior de lo mismo pueda responderse al instante en vez de rehacerlo. El chiste clásico — «solo hay dos cosas difíciles en ciencias de la computación: la invalidación de caché y ponerle nombre a las cosas» — existe porque una caché solo es correcta mientras no sirva datos **obsoletos**, y saber exactamente cuándo descartar un valor cacheado es genuinamente difícil de acertar.
+
+## Dónde vive una caché
+
+<ItemExplorer
+  title="Capas de Caché"
+  layout="table"
+  tableColumns={[{ key: "speed", label: "Velocidad" }, { key: "shared", label: "¿Compartida entre instancias?" }]}
+  items={[
+    { id: "in-process", label: "Memoria en proceso", color: "blue", columns: { speed: "La más rápida — sin ningún salto de red", shared: "No — cada instancia de la aplicación tiene su propia copia separada" } },
+    { id: "shared-cache", label: "Caché compartida (Redis, Memcached)", color: "green", columns: { speed: "Rápida — un salto de red, pero uno real", shared: "Sí — cada instancia lee/escribe en el mismo almacén" } },
+    { id: "cdn", label: "CDN / caché en el edge", color: "purple", columns: { speed: "La más rápida para el cliente — servida desde una ubicación de borde cercana", shared: "Sí, globalmente — ver CDNs" } },
+    { id: "http-cache", label: "Cabeceras de caché HTTP", color: "orange", columns: { speed: "Instantánea cuando acierta — servida desde el propio navegador", shared: "No — por navegador, por dispositivo" } },
+  ]}
+/>
+
+Una caché en proceso es la más barata de añadir, pero deja de ayudar en cuanto un backend corre en más de una instancia — que la instancia A cachee un valor no hace nada por una solicitud que aterriza en la instancia B, y peor aún, las dos instancias pueden estar en desacuerdo silencioso sobre cuál es el valor actual. Una caché compartida arregla esto al costo de un salto de red real por cada búsqueda, que normalmente sigue siendo mucho más barato que el trabajo que se está cacheando.
+
+## Estrategias de invalidación
+
+- **TTL (tiempo de vida)** — un valor cacheado simplemente expira tras N segundos, haya cambiado o no realmente el dato subyacente. Simple, pero puede servir datos obsoletos durante toda la ventana del TTL, o recalcular innecesariamente datos frescos que en realidad no habían cambiado.
+- **Invalidación explícita** — el código que cambia el dato subyacente también borra o actualiza la entrada de caché en ese momento. Más preciso, pero solo tan correcto como que cada ruta de código que puede cambiar el dato recuerde hacerlo.
+- **Cache-aside** — la aplicación consulta primero la caché, y en caso de fallo (miss), calcula el valor y lo escribe en la caché antes de devolverlo — el patrón más común, ya que solo invierte esfuerzo en cachear cosas que realmente se están solicitando.
+
+## Qué merece la pena cachear
+
+Los mejores candidatos para caché son de lectura intensiva, costosos de calcular, y no necesitan estar frescos al milisegundo — una página de listado de productos, un resumen analítico calculado, un fragmento de plantilla renderizado. Los datos que cambian en cada lectura, o donde la obsolescencia tiene consecuencias reales (un saldo de cuenta justo antes de un retiro), son un mal candidato sin importar lo costoso que sea calcularlos, a menos que la estrategia de invalidación sea genuinamente hermética.
+
+## Ver también
+
+- **[CDNs](/es/web-fundamentals/cdns)** — caché empujada hasta el borde de la red, lo más cerca posible del cliente.
+- **[Cloudflare KV](/es/cloudflare/kv)** y **[Cloudflare Cache](/es/cloudflare/cloudflare-cache)** — productos de caché gestionados en dos capas distintas.
+- **[Sesiones](/es/backend/sessions)** — el estado de sesión es algo específico y común para lo que se recurre a una caché compartida.

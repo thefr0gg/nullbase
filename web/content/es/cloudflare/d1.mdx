@@ -1,0 +1,56 @@
+---
+title: Cloudflare D1
+description: Una base de datos SQLite gestionada, hecha para Workers — el SQL que ya conoces, con replicación y un modelo de conexión limitado al ámbito de la solicitud, moldeado por el borde.
+category: Cloudflare
+weight: 1
+---
+
+**D1** es el producto de base de datos gestionada de Cloudflare — [SQLite](/en/databases/sqlite) por debajo, al que se accede desde un [Worker](/es/cloudflare/workers) mediante un [binding](/es/cloudflare/workers-bindings) en lugar de una cadena de conexión persistente tradicional. Elegir SQLite específicamente (en vez de construir desde cero algo parecido a un Postgres distribuido) significa que D1 hereda el SQL que probablemente ya conoces, sin ninguna de las preocupaciones habituales de gestión de conexiones separadas de una base de datos cliente/servidor típica.
+
+## Consultas desde un Worker
+
+```js
+export default {
+  async fetch(request, env) {
+    const { results } = await env.DB
+      .prepare("SELECT * FROM users WHERE age > ?")
+      .bind(20)
+      .all();
+    return Response.json(results);
+  },
+};
+```
+
+`env.DB` es el binding configurado en `wrangler.jsonc`; `.prepare().bind().all()` es una consulta parametrizada — vincular el valor por separado del texto de la consulta, el mismo patrón seguro frente a [inyección SQL](/en/security/sql-injection) que sigue cualquier consulta parametrizada, sin importar la base de datos.
+
+## Sin conexiones persistentes
+
+Un cliente de base de datos tradicional abre una conexión TCP de larga duración y la mantiene abierta a través de muchas consultas. El modelo de ejecución de un Worker, basado en isolates y de corta duración, no encaja en ese patrón — en su lugar, D1 se accede internamente más bien como una API HTTP, con cada consulta efectivamente autocontenida en lugar de depender de un objeto de conexión que haya que agrupar y reutilizar cuidadosamente entre invocaciones. Esto evita toda una categoría de problemas de "demasiadas conexiones abiertas" por los que las funciones serverless que llaman a bases de datos tradicionales son tristemente conocidas.
+
+## Migraciones
+
+```sql
+-- migrations/0001_create_users.sql
+CREATE TABLE users (
+  id INTEGER PRIMARY KEY,
+  name TEXT NOT NULL,
+  age INTEGER NOT NULL
+);
+```
+
+```bash
+wrangler d1 migrations apply my-database --local   # local dev
+wrangler d1 migrations apply my-database --remote   # production
+```
+
+Los mismos archivos de migración `.sql` planos se aplican tanto a un archivo SQLite local usado durante el desarrollo como a la base de datos D1 remota real en producción — una única fuente de verdad para el esquema, sin herramientas de migración locales y de producción separadas que mantener sincronizadas.
+
+## Cuándo D1 encaja y cuándo no
+
+D1 encaja bien con datos de aplicación relacionales, típicos y con predominio de lectura — cuentas de usuario, contenido, registros estructurados — la misma carga de trabajo para la que SQLite siempre ha sido adecuado. Encaja peor con requisitos de throughput de escritura extremadamente alto o cargas de trabajo que necesitan consistencia global estricta e inmediata en cada escritura a través de regiones simultáneamente, donde un [Durable Object](/es/cloudflare/durable-objects) — con todas las lecturas y escrituras serializadas a través de una instancia específica — o una base de datos distribuida diseñada a medida encajan mejor.
+
+## Ver también
+
+- **[SQL](/en/databases/sql)** y **[SQLite](/en/databases/sqlite)** — el lenguaje y el motor sobre los que corre D1.
+- **[Workers Bindings](/es/cloudflare/workers-bindings)** — cómo llega realmente `env.DB` de arriba.
+- **[KV](/es/cloudflare/kv)** — una buena opción cuando los datos no necesitan estructura relacional ni consistencia fuerte en absoluto.

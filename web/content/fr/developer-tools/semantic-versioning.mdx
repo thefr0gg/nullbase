@@ -1,0 +1,43 @@
+---
+title: Versionnage sémantique
+description: La convention MAJOR.MINOR.PATCH qui rend possibles les mises à jour automatisées des dépendances — ce que chaque nombre promet réellement, et ce qui se passe quand cette promesse est rompue.
+category: Developer Tools
+weight: 5
+---
+
+Le **versionnage sémantique (SemVer)** est une convention de numérotation des versions — `MAJOR.MINOR.PATCH` (par ex. `4.18.2`) — où chaque position porte une signification précise et convenue sur le type de changement survenu depuis la dernière version. Tout l'intérêt est qu'un outil (ou un humain) puisse regarder un seul numéro de version et savoir si une mise à jour est sûre.
+
+## Ce que signifie chaque nombre
+
+<ItemExplorer
+  title="MAJOR.MINOR.PATCH"
+  layout="table"
+  tableColumns={[{ key: "meaning", label: "Incrémenté quand" }, { key: "example", label: "Exemple" }]}
+  items={[
+    { id: "major", label: "MAJOR", color: "red", columns: { meaning: "Un changement cassant — le code existant utilisant ce paquet peut devoir être modifié pour continuer à fonctionner", example: "3.2.1 -> 4.0.0" } },
+    { id: "minor", label: "MINOR", color: "blue", columns: { meaning: "Une nouvelle fonctionnalité rétrocompatible a été ajoutée", example: "4.18.0 -> 4.19.0" } },
+    { id: "patch", label: "PATCH", color: "green", columns: { meaning: "Une correction de bug rétrocompatible, sans nouvelle fonctionnalité", example: "4.18.1 -> 4.18.2" } },
+  ]}
+/>
+
+## Pourquoi cela rend les mises à jour automatisées possibles
+
+Les [gestionnaires de paquets](/fr/developer-tools/package-managers) permettent à la version déclarée d'une dépendance d'être une *plage* plutôt qu'une version exacte figée — `^4.18.0` signifie « toute version compatible avec 4.18.0 selon les règles de SemVer », ce qui en pratique signifie tout ce qui va de `4.18.0` jusqu'à (sans l'inclure) `5.0.0`. Un outil peut appliquer automatiquement des mises à jour mineures et de patch dans cette plage avec une confiance raisonnable qu'elles ne casseront rien, précisément parce que le numéro MAJOR est une promesse qu'aucun changement cassant n'a eu lieu. Rien de tout cela ne fonctionne si les mainteneurs ne suivent pas réellement la convention.
+
+## Quand la promesse est rompue
+
+SemVer est une convention sociale que rien n'impose sinon la discipline du mainteneur du paquet — rien n'empêche une release « patch » d'introduire accidentellement un changement cassant, et cela arrive régulièrement dans les écosystèmes réels, ce qui explique précisément pourquoi les fichiers de verrouillage (qui enregistrent les versions résolues exactes, pas seulement des plages) sont importants : ils font qu'une release patch cassante inattendue n'est pas silencieusement intégrée à une build tant que quelqu'un ne met pas délibérément à jour le fichier de verrouillage et ne peut pas d'abord tester le changement.
+
+## Suffixe de pré-version et métadonnées de build
+
+SemVer définit aussi un suffixe optionnel de pré-version (`4.18.0-beta.1`) — trié comme *inférieur* au `4.18.0` simple qu'il précède, permettant à un paquet de publier et de laisser les premiers utilisateurs tester une version avant qu'elle ne soit considérée comme stable — et des métadonnées de build (`4.18.0+20260115`), qui sont purement informatives et entièrement ignorées lors de la comparaison de la préséance des versions.
+
+## `0.x.y` est un cas particulier
+
+Selon les propres règles de SemVer, une version `0.x.y` signifie que le paquet est encore en développement initial et que *tout* peut changer à tout moment, même entre des releases patch — la garantie selon laquelle le numéro MAJOR signifie un changement cassant ne commence formellement qu'à `1.0.0`. En pratique, cette convention est respectée de manière inégale ; certains paquets `0.x` sont traités comme stables par leurs mainteneurs et utilisateurs, quoi qu'il en soit.
+
+## Voir aussi
+
+- **[npm](/fr/developer-tools/npm)** — la syntaxe de plages de versions (`^`, `~`) construite directement sur les règles de SemVer.
+- **[Gestionnaires de paquets](/fr/developer-tools/package-managers)** — les outils qui résolvent réellement ces plages en versions installées.
+- **[CI/CD](/fr/devops/ci-cd)** — où une mise à jour automatisée des dépendances est généralement testée avant d'être fusionnée.

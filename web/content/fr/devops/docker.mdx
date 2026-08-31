@@ -1,0 +1,50 @@
+---
+title: Docker
+description: Empaqueter une application avec tout ce dont elle a besoin pour tourner — son code, ses dépendances, et son runtime — pour qu'elle se comporte de manière identique sur n'importe quelle machine capable d'exécuter Docker.
+category: DevOps & Infrastructure
+weight: 3
+interactive: true
+interactiveType: ["StepFlow"]
+---
+
+**Docker** empaquette une application avec ses dépendances, son runtime et sa configuration en une seule unité portable — une **image** — qui s'exécute de manière identique sur le laptop d'un développeur, un serveur CI, et en production, parce qu'elle transporte son propre environnement au lieu de dépendre de ce qui se trouve déjà installé sur l'hôte.
+
+## Un Dockerfile
+
+```dockerfile
+FROM node:20-slim
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --production
+COPY . .
+EXPOSE 3000
+CMD ["node", "server.js"]
+```
+
+Chaque instruction ajoute une **couche (layer)** à l'image résultante ; Docker met les couches en cache, donc relancer une build après avoir seulement changé le code applicatif (l'étape `COPY . .`) réutilise la couche `npm ci` antérieure et inchangée plutôt que de réinstaller chaque dépendance depuis zéro — c'est exactement pourquoi `package.json` est copié et installé *avant* le reste du code source, et non après.
+
+## Construire et exécuter
+
+<StepFlow
+  title="Du Dockerfile au conteneur en cours d'exécution"
+  steps={[
+    { actor: "Développeur", title: "Construire l'image", description: "docker build lit le Dockerfile et produit une image versionnée et immuable contenant l'application et tout ce dont elle dépend.", detail: "docker build -t myapp:1.0 ." },
+    { actor: "Développeur", title: "En lancer un conteneur", description: "docker run démarre un conteneur — une instance en cours d'exécution de cette image — en mappant un port de l'hôte vers le port exposé du conteneur.", detail: "docker run -p 3000:3000 myapp:1.0" },
+    { actor: "Docker", title: "Le conteneur s'exécute isolé", description: "Le processus à l'intérieur voit son propre système de fichiers (issu de l'image) et sa propre vue du réseau, partageant le noyau de l'hôte mais rien d'autre par défaut.", detail: "" },
+    { actor: "Registre", title: "Publier pour que d'autres puissent la récupérer", description: "Une image construite peut être poussée vers un registre (Docker Hub, un registre privé) pour que n'importe quelle autre machine puisse récupérer et exécuter exactement le même artefact.", detail: "docker push myregistry.io/myapp:1.0" },
+  ]}
+/>
+
+## Images vs conteneurs
+
+Une **image** est l'artefact construit et immuable — un ensemble de snapshots de système de fichiers en couches plus des métadonnées sur la façon de l'exécuter. Un **conteneur** est une instance en cours d'exécution (ou arrêtée) d'une image, avec sa propre couche accessible en écriture par-dessus pour tout changement effectué pendant son exécution. De nombreux conteneurs peuvent être démarrés à partir de la même image simultanément, chacun isolé des autres, de la même manière que de nombreux processus peuvent s'exécuter à partir du même fichier exécutable.
+
+## Pourquoi ceci plutôt que « installer simplement les dépendances sur le serveur »
+
+Installer les dépendances directement sur un serveur signifie que l'état exact du serveur (version de l'OS, bibliothèques installées, leurs versions) devient une partie de ce qui fait fonctionner l'application — « ça marche sur ma machine » est un symptôme direct de ceci. Une image Docker fige tout cet environnement dans un seul artefact versionné, de sorte que la même image qui a passé les tests en CI est exactement ce qui s'exécute en production, sans dérive entre les deux.
+
+## Voir aussi
+
+- **[Containers](/fr/devops/containers)** — le mécanisme sous-jacent du noyau Linux (namespaces, cgroups) sur lequel Docker est construit.
+- **[CI/CD](/fr/devops/ci-cd)** — là où une image Docker est typiquement construite et testée automatiquement.
+- **[Deployment](/fr/devops/deployment)** — faire tourner concrètement une image construite en production.

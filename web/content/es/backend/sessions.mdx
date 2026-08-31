@@ -1,0 +1,36 @@
+---
+title: Sesiones
+description: Dónde vive realmente el estado de sesión del lado del servidor una vez que un backend escala más allá de una sola máquina — no la mecánica de las cookies, sino la arquitectura de almacenamiento detrás de ellas.
+category: Backend
+weight: 7
+---
+
+[Sesiones](/en/security/sessions) cubre el mecanismo de cookies — un ID de sesión emitido al iniciar sesión, devuelto en cada solicitud. Esta página trata sobre una pregunta que solo se vuelve real una vez que un backend escala más allá de un solo proceso: **¿dónde vive realmente el dato de la sesión**, dado que cualquiera de varias instancias de backend podría manejar la siguiente solicitud de ese mismo navegador?
+
+## El problema que una sola instancia nunca tiene
+
+En un solo servidor, almacenar sesiones en un objeto simple en memoria funciona bien — cada solicitud llega al mismo proceso, así que a la misma memoria. En el instante en que hay una segunda instancia detrás de un [proxy inverso](/es/backend/reverse-proxies) o [balanceador de carga](/es/devops/load-balancing), eso deja de ser cierto: un inicio de sesión manejado por la instancia A no significa nada para la instancia B, que nunca ha oído hablar de ese ID de sesión.
+
+## Tres formas de solucionarlo
+
+<ItemExplorer
+  title="Estrategias de Sesión Multi-Instancia"
+  layout="pills"
+  items={[
+    { id: "sticky", label: "Sticky sessions", color: "blue", detail: "Configurar el balanceador de carga para enrutar siempre a un cliente dado hacia la misma instancia de backend (mediante una cookie o la IP del cliente). Mantiene funcionando las sesiones en memoria, pero un reinicio o reducción de escala de una instancia igual pierde toda sesión anclada a ella, y la distribución de carga se vuelve desigual." },
+    { id: "shared-store", label: "Almacén de sesión compartido", color: "green", detail: "Mover el dato de sesión fuera de la memoria de cualquier instancia hacia una caché compartida (Redis es la elección clásica) o base de datos que cada instancia lee. Cualquier instancia ahora puede manejar cualquier solicitud — la solución estándar y más robusta." },
+    { id: "stateless-tokens", label: "Tokens sin estado (JWT)", color: "purple", detail: "Saltarse por completo el almacenamiento de sesión del lado del servidor — codificar identidad/claims en un token firmado que mantiene el cliente. No se necesita ningún almacén compartido, a costa de una revocación anticipada más difícil (ver JWT)." },
+  ]}
+/>
+
+Un almacén compartido es la recomendación por defecto para la mayoría de los backends: no requiere ninguna configuración especial del balanceador de carga, sobrevive a que una instancia individual se reinicie o sea reemplazada, y mantiene la mecánica real de la cookie de sesión de la página de seguridad completamente sin cambios — solo cambia *a dónde va la búsqueda de la sesión*.
+
+## Qué va realmente en una sesión
+
+El almacenamiento de sesión debería en general contener lo mínimo práctico — un ID de usuario y quizás algunas banderas de corta duración, no una copia completa de los datos de perfil del usuario (que pertenecen a la base de datos y pueden obtenerse por ID cuando se necesiten). Una sesión abultada añade latencia a cada solicitud que tiene que leerla y crea un lugar más donde el mismo dato puede desincronizarse de su fuente de verdad.
+
+## Ver también
+
+- **[Sesiones](/en/security/sessions)** — el mecanismo de cookies y las banderas de seguridad que esta página asume.
+- **[Caché](/es/backend/caching)** — la misma infraestructura de almacén compartido (Redis, Memcached) suele respaldar tanto las sesiones como una caché general.
+- **[Balanceo de carga](/es/devops/load-balancing)** — donde realmente se configura el enrutamiento de sticky sessions.

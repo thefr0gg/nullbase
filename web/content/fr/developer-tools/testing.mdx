@@ -1,0 +1,55 @@
+---
+title: Tests
+description: Vérifier que le code se comporte correctement, automatiquement, à chaque modification — la pyramide de tests, et pourquoi des tests rapides et fiables comptent plus que des tests exhaustifs.
+category: Developer Tools
+weight: 8
+interactive: true
+interactiveType: ["PredictOutput"]
+---
+
+Les **tests automatisés** exécutent le code avec des entrées connues et vérifient que la sortie correspond à ce qui est attendu, sans qu'un humain doive cliquer manuellement dans l'application à chaque fois. La valeur s'accumule sur la durée de vie d'un projet : un test écrit une fois continue de vérifier ce comportement à chaque modification future, détectant des régressions qu'un relecteur humain n'aurait aucune raison de remarquer.
+
+## La pyramide de tests
+
+<ItemExplorer
+  title="Types de tests"
+  layout="table"
+  tableColumns={[{ key: "scope", label: "Portée" }, { key: "speed", label: "Vitesse" }]}
+  items={[
+    { id: "unit", label: "Tests unitaires", color: "green", columns: { scope: "Une seule fonction ou un seul module isolé, dépendances simulées/bouchonnées", speed: "Très rapide — quelques millisecondes chacun, des milliers peuvent s'exécuter en quelques secondes" } },
+    { id: "integration", label: "Tests d'intégration", color: "blue", columns: { scope: "Plusieurs composants réels fonctionnant ensemble (par ex. un gestionnaire de route + une vraie base de données)", speed: "Plus lent — des E/S réelles sont impliquées" } },
+    { id: "e2e", label: "Tests de bout en bout (E2E)", color: "purple", columns: { scope: "Le système entier, pilotant souvent un vrai navigateur contre une application en cours d'exécution", speed: "Le plus lent — quelques secondes par test, parfois plus" } },
+  ]}
+/>
+
+La forme en « pyramide » est une recommandation, pas une loi : beaucoup de tests unitaires rapides à la base, moins de tests d'intégration, et seulement un petit nombre de tests E2E coûteux au sommet — parce qu'une suite de tests composée majoritairement de tests E2E lents prend trop de temps à exécuter à chaque modification pour être réellement exécutée à chaque modification, ce qui va à l'encontre du but recherché.
+
+## Essayez
+
+<PredictOutput
+  code={`function add(a, b) {
+  return a + b;
+}
+
+test("adds two numbers", () => {
+  expect(add(2, 2)).toBe(5);
+});`}
+  options={["Le test réussit", "Le test échoue", "Une erreur de syntaxe", "Rien ne se passe"]}
+  correctIndex={1}
+  explanation="L'assertion attend 5, mais add(2, 2) retourne en réalité 4 — c'est le test lui-même qui a un bug, pas le code qu'il teste. Un test n'est utile que si sa valeur attendue est réellement correcte ; une assertion erronée peut réussir pour la mauvaise raison tout aussi facilement qu'elle peut échouer pour la bonne."
+  actualOutput="FAIL: expected 5, received 4"
+/>
+
+## Simulation (mocking)
+
+Un **mock** remplace une dépendance réelle (une base de données, une API tierce, l'heure actuelle) par un substitut factice et contrôlable — permettant à un test unitaire d'isoler exactement la logique testée sans dépendre de la disponibilité d'une vraie base de données, d'une vraie API qui ne limite pas le débit de l'exécution du test, ou d'un résultat de test qui changerait selon le jour où il s'exécute. Abuser des mocks a aussi un coût réel : un test qui simule tellement de choses qu'il ne ressemble plus au comportement réel du code peut réussir alors que l'intégration réelle est cassée — un équilibre que chaque équipe doit trouver délibérément plutôt que de tout simuler par défaut.
+
+## Tests instables (flaky)
+
+Un **test instable** (flaky test) réussit et échoue de manière incohérente sans qu'aucune modification de code n'ait eu lieu entre les deux — généralement causé par une condition de course, une dépendance au timing, ou un état partagé/résiduel entre les exécutions de tests. Les tests instables sont pires que l'absence de test d'une manière précise : ils entraînent une équipe à relancer les échecs en supposant qu'ils sont fallacieux, ce qui finit par faire qu'un test réellement cassé (ou un code réellement cassé) soit écarté de la même façon.
+
+## Voir aussi
+
+- **[CI/CD](/fr/devops/ci-cd)** — où une suite de tests s'exécute généralement automatiquement à chaque modification.
+- **[Linters](/fr/developer-tools/linters)** — détecte une classe de problème différente (style/motifs de bugs probables) de celle détectée par un test (comportement réel).
+- **[Débogage](/fr/developer-tools/debugging)** — ce vers quoi on se tourne une fois qu'un test indique que quelque chose ne va pas, mais pas pourquoi.

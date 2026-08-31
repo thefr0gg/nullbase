@@ -1,0 +1,50 @@
+---
+title: Cloudflare Cron Triggers
+description: Ejecutar un Worker según una programación en lugar de en respuesta a una solicitud — la misma sintaxis cron que ya conoces, invocando un handler programado en lugar de fetch.
+category: Cloudflare
+weight: 6
+---
+
+Un **Cron Trigger** ejecuta un Worker según una programación — cada hora, cada noche, cada cinco minutos — en lugar de en respuesta a una solicitud HTTP entrante. Es la respuesta de la plataforma Workers a una necesidad que todo backend termina teniendo: tareas de limpieza, informes programados, sincronizaciones periódicas de datos, ninguna de las cuales se activa de forma natural cuando un usuario visita una URL.
+
+## Configuración
+
+```jsonc
+// wrangler.jsonc
+{
+  "triggers": {
+    "crons": ["0 3 * * *"]  // every day at 03:00 UTC
+  }
+}
+```
+
+La programación usa la sintaxis cron estándar — cinco campos para minuto, hora, día del mes, mes y día de la semana — el mismo formato que usa `crontab` en cualquier sistema Unix, así que la familiaridad previa con expresiones cron se traslada directamente.
+
+## El handler programado
+
+```js
+export default {
+  async fetch(request, env) {
+    return new Response("This Worker also handles normal requests");
+  },
+  async scheduled(event, env, ctx) {
+    await cleanupExpiredSessions(env.DB);
+  },
+};
+```
+
+Un único Worker puede implementar tanto `fetch` (para solicitudes HTTP normales) como `scheduled` (invocado automáticamente en cada hora cron configurada) — son puntos de entrada independientes al mismo Worker implementado, que comparten los mismos [bindings](/es/cloudflare/workers-bindings) y código, pero se activan mediante eventos completamente distintos.
+
+## Por qué esto encaja de forma natural con el modelo de Workers
+
+Como un Worker ya es de corta duración y sin estado por diseño, una invocación programada es arquitectónicamente idéntica a una activada por una solicitud — arranca, se ejecuta hasta terminar y sale, sin necesitar un proceso siempre activo aparte solo para mantener un reloj en marcha en algún lugar. Este es un modelo notablemente distinto al de un cron job tradicional, que requiere un servidor real (o al menos un proceso persistente) esperando únicamente para estar disponible a la hora programada.
+
+## Qué hacer realmente dentro de un handler programado
+
+Los usos habituales incluyen expirar datos obsoletos, sincronizar periódicamente una fuente de datos externa, enviar correos de resumen programados y rotar o limpiar registros — en general, cualquier cosa que necesite ocurrir con regularidad pero que no sea una respuesta directa a ninguna acción específica de un usuario. Dado que los handlers `scheduled` siguen sujetos a los mismos límites de tiempo de CPU que los handlers `fetch`, el trabajo por lotes genuinamente largo suele modelarse mejor haciendo que el handler programado *encole* el trabajo (ver [Queues](/es/cloudflare/queues)) en lugar de intentar hacerlo todo en línea dentro de una sola invocación.
+
+## Ver también
+
+- **[Wrangler](/es/cloudflare/wrangler)** — dónde se configuran e implementan los cron triggers.
+- **[Background Jobs](/es/backend/background-jobs)** y **[Queues](/es/cloudflare/queues)** — a qué suele delegar un handler programado el trabajo más pesado.
+- **[Workers](/es/cloudflare/workers)** — el runtime dentro del que se ejecuta un handler programado, junto a `fetch`.
