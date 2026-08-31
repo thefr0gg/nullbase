@@ -1,0 +1,30 @@
+---
+title: Networking
+description: How machines actually find and talk to each other — addressing, the protocols that move bytes reliably or fast, and how a packet gets from here to there.
+category: Networking
+weight: 5
+---
+
+[TCP/IP](/en/web-fundamentals/tcp-ip) already introduced the layered model the internet runs on. This section goes deeper into the protocols living at that model's network and transport layers — how addresses are assigned and structured, what happens when something goes wrong, and how a packet actually finds its way across networks it was never specifically told about.
+
+## Transport: reliable vs fast
+
+- **[TCP](/en/networking/tcp)** — the connection-oriented protocol behind the handshake, with guaranteed, ordered delivery.
+- **[UDP](/en/networking/udp)** — no handshake, no guarantees, just send the packet.
+
+## Addressing
+
+- **[IP](/en/networking/ip)** — the address every device on a network needs, and the packet format that carries it.
+- **[IPv4](/en/networking/ipv4)** — the 32-bit address space still running most of the internet, and why it ran out.
+- **[IPv6](/en/networking/ipv6)** — the 128-bit successor built to never run out again.
+- **[Network Addressing](/en/networking/network-addressing)** — subnet masks, CIDR notation, and splitting one network into many.
+
+## Getting an address, and staying reachable
+
+- **[DHCP](/en/networking/dhcp)** — how a device gets an IP address automatically instead of someone typing one in.
+- **[NAT](/en/networking/nat)** — how an entire home network shares one public IP address.
+- **[ICMP](/en/networking/icmp)** — the protocol behind `ping` and "why didn't that packet arrive."
+
+## Getting there
+
+- **[Routing](/en/networking/routing)** — how a packet crosses networks its sender has never heard of.

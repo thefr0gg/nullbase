@@ -1,0 +1,41 @@
+---
+title: IPv4
+description: The 32-bit address space that still routes most of the internet — dotted-decimal notation, private ranges, and why it ran out.
+category: Networking
+weight: 3
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+**IPv4** addresses are 32 bits, almost always written as four dot-separated decimal numbers 0–255 (`192.168.1.1`). Thirty-two bits sounds like a lot until you count it out: about 4.3 billion possible addresses, for a planet that now has far more than 4.3 billion internet-connected devices — the core reason [IPv6](/en/networking/ipv6) exists.
+
+## Private address ranges
+
+Three blocks are reserved for private networks and never routed on the public internet — this is what makes home routers and [NAT](/en/networking/nat) work at all:
+
+<ItemExplorer
+  title="Private IPv4 Ranges (RFC 1918)"
+  layout="table"
+  tableColumns={[{ key: "size", label: "Size" }, { key: "typical", label: "Typically seen as" }]}
+  items={[
+    { id: "10", label: "10.0.0.0/8", color: "blue", columns: { size: "~16.7 million addresses", typical: "Large private/corporate networks" } },
+    { id: "172", label: "172.16.0.0/12", color: "green", columns: { size: "~1 million addresses", typical: "Docker's default bridge network, some corporate networks" } },
+    { id: "192", label: "192.168.0.0/16", color: "purple", columns: { size: "~65,000 addresses", typical: "Home routers — 192.168.1.x, 192.168.0.x" } },
+  ]}
+/>
+
+A packet addressed to one of these can only be delivered on the local network it belongs to; a router on the public internet won't forward it, which is exactly the point — it lets every home network reuse the same private ranges without colliding.
+
+## Why it ran out
+
+IPv4 addresses were originally handed out in wasteful fixed-size blocks (Class A/B/C), and the explosion of connected devices — servers, phones, IoT — long ago outpaced 4.3 billion. [NAT](/en/networking/nat) delayed the crisis for decades by letting many private devices share one public address, and [Network Addressing](/en/networking/network-addressing)'s CIDR scheme replaced the wasteful fixed classes with flexible-sized blocks — but neither creates new addresses, it just makes existing ones stretch further.
+
+## Special addresses worth knowing
+
+`127.0.0.1` (localhost) always loops back to the machine it's requested from, never touching a real network. `0.0.0.0` means "any address" when a server binds to it, and `255.255.255.255` is the broadcast address, delivered to every host on the local network segment.
+
+## See also
+
+- **[Network Addressing](/en/networking/network-addressing)** — CIDR notation and how a /24 differs from a /16.
+- **[NAT](/en/networking/nat)** — how a private IPv4 address reaches the public internet at all.
+- **[IPv6](/en/networking/ipv6)** — the address space designed to never run out.

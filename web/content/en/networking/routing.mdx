@@ -1,0 +1,46 @@
+---
+title: Routing
+description: How a packet crosses networks its sender was never told about — routing tables, static vs. dynamic routes, and the protocols routers use to build them.
+category: Networking
+weight: 8
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+Every router makes the same decision for every packet: given this destination address, which of my directly connected links gets it one hop closer? That decision comes from a **routing table** — a list of destination networks and the "next hop" to reach each one. No router needs to know the entire path; it only needs to know the next step, and trust the router after it to know the step after that.
+
+## A routing table, roughly
+
+```text
+Destination        Next Hop         Interface
+192.168.1.0/24      directly connected  eth0
+10.0.0.0/8          10.0.0.1            eth1
+0.0.0.0/0           203.0.113.1         eth2   (default route)
+```
+
+The `0.0.0.0/0` entry is the **default route** — "anywhere not otherwise listed goes here" — which is why a home router only needs one entry to send all outbound internet traffic to your ISP, without knowing anything about the internet's actual structure.
+
+## Static vs. dynamic routing
+
+A **static route** is entered by hand and never changes on its own — fine for a small, stable network, but it doesn't adapt if a link fails. **Dynamic routing** protocols let routers exchange information and recompute routes automatically when the topology changes:
+
+<ItemExplorer
+  title="Dynamic Routing Protocols"
+  layout="table"
+  tableColumns={[{ key: "scope", label: "Scope" }, { key: "how", label: "How it picks a route" }]}
+  items={[
+    { id: "rip", label: "RIP", color: "blue", columns: { scope: "Small networks", how: "Hop count — fewest hops wins, capped at 15 (16 means unreachable)." } },
+    { id: "ospf", label: "OSPF", color: "green", columns: { scope: "Within a single organization (an autonomous system)", how: "Link cost, computed from bandwidth — every router builds a full map of the network." } },
+    { id: "bgp", label: "BGP", color: "purple", columns: { scope: "Between organizations — the protocol that runs the actual internet", how: "Policy and path attributes, not pure shortest-path — an ISP can prefer routes for business reasons, not just distance." } },
+  ]}
+/>
+
+## Why the internet doesn't have one giant routing table
+
+No router holds a complete map of every device on Earth — that would be an unworkable amount of state. Instead, [network addressing](/en/networking/network-addressing)'s hierarchical structure lets routers aggregate: a single BGP entry can represent millions of addresses behind one ISP, and a router only needs detail about networks it's actually close to. This is the same principle a postal system uses — a local post office doesn't need to know which street a house is on in another country, only which country's mail center to forward it to.
+
+## See also
+
+- **[Network Addressing](/en/networking/network-addressing)** — the CIDR blocks routing tables actually match against.
+- **[IP](/en/networking/ip)** — the TTL field that stops a routing loop from forwarding a packet forever.
+- **[ICMP](/en/networking/icmp)** — how a router signals that no route exists for a packet's destination.

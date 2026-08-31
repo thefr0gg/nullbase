@@ -1,0 +1,39 @@
+---
+title: IPv6
+description: The 128-bit address space built to replace IPv4 — enough addresses for every device on Earth many times over, with a few genuinely different design decisions.
+category: Networking
+weight: 4
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+**IPv6** addresses are 128 bits — written as eight groups of four hex digits separated by colons (`2001:0db8:85a3:0000:0000:8a2e:0370:7334`), usually shortened by dropping leading zeros in each group and collapsing one run of all-zero groups to `::`. 128 bits isn't just "bigger than 32" — it's roughly 340 undecillion addresses, enough that address scarcity, and the [NAT](/en/networking/nat) it forced on [IPv4](/en/networking/ipv4), stops being a design constraint at all.
+
+## Address types
+
+Unlike IPv4, IPv6 was designed with distinct address categories from the start rather than retrofitting them:
+
+<ItemExplorer
+  title="IPv6 Address Types"
+  layout="pills"
+  items={[
+    { id: "unicast", label: "Unicast", color: "blue", detail: "Delivered to exactly one interface — the normal case, equivalent to a regular IPv4 address." },
+    { id: "multicast", label: "Multicast", color: "green", detail: "Delivered to every interface that joined a multicast group — replaces IPv4 broadcast entirely, since IPv6 has no broadcast address." },
+    { id: "anycast", label: "Anycast", color: "purple", detail: "Assigned to multiple interfaces; a packet goes to whichever one is topologically nearest. Used heavily by DNS root servers and CDNs." },
+    { id: "link-local", label: "Link-local", color: "orange", detail: "Valid only on the local network segment (fe80::/10) — auto-assigned to every interface, used for neighbor discovery before any routable address exists." },
+  ]}
+/>
+
+## What changed on purpose
+
+IPv6 dropped the IPv4 header checksum (redundant with checksums at the link and transport layers) and NAT-driven address translation is no longer structurally necessary, since every device can have a real, globally routable address. Address configuration can also happen without [DHCP](/en/networking/dhcp) at all: **SLAAC** (Stateless Address Autoconfiguration) lets a device derive its own address from a router advertisement and its network interface identifier.
+
+## Adoption is still partial
+
+IPv6 and IPv4 are not wire-compatible — a device needs a stack for each, and most of the internet runs **dual-stack**, capable of both, falling back to IPv4 wherever IPv6 isn't yet supported end-to-end. This is why IPv4 addresses are still very much alive decades after IPv6 shipped: the transition is additive, not a cutover.
+
+## See also
+
+- **[IPv4](/en/networking/ipv4)** — the address space IPv6 was built to eventually replace.
+- **[DHCP](/en/networking/dhcp)** — the stateful alternative to SLAAC for assigning addresses.
+- **[Network Addressing](/en/networking/network-addressing)** — subnetting concepts that carry over from IPv4, adapted to IPv6's much larger address blocks.

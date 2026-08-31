@@ -1,0 +1,37 @@
+---
+title: TLS Certificates
+description: How a browser knows it's actually talking to the server it thinks it is — certificate chains, certificate authorities, and what a browser warning actually means.
+category: Security
+weight: 11
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+[TLS](/en/web-fundamentals/tls) encrypts a connection, but encryption alone doesn't prove *who* you're encrypting it with — nothing stops an attacker from establishing an equally well-encrypted connection while pretending to be your bank. A **certificate** is what closes that gap: a signed statement binding a public key to a domain name, and a chain of trust back to an authority the browser already trusts.
+
+## The chain of trust
+
+<ItemExplorer
+  title="Certificate Chain"
+  layout="pills"
+  items={[
+    { id: "root", label: "Root CA", color: "purple", detail: "A small set of Certificate Authorities whose public keys ship pre-trusted inside every browser and OS. Root certificates are kept offline and almost never used directly." },
+    { id: "intermediate", label: "Intermediate CA", color: "blue", detail: "Signed by a root CA, and used for day-to-day certificate issuance — keeping the root key itself out of routine use limits the damage if an intermediate is ever compromised." },
+    { id: "leaf", label: "Leaf (server) certificate", color: "green", detail: "The certificate for the actual domain (e.g. nullbase.wiki), signed by an intermediate CA — this is what the server presents to a connecting browser." },
+  ]}
+/>
+
+A browser verifies a server's certificate by walking this chain: the leaf is signed by the intermediate, the intermediate is signed by a root, and that root is already in the browser's trust store. If every link in that chain checks out and the domain name matches, the browser trusts the connection; if any link is missing, expired, or signed by an unrecognized authority, it shows a warning instead of silently proceeding.
+
+## What a certificate actually contains
+
+A certificate binds a public key to an identity: the domain name(s) it's valid for, an expiry date, the issuing CA, and a signature over all of that from the issuing CA's own key. The server proves it actually holds the corresponding *private* key during the TLS handshake — possessing that private key is what distinguishes the legitimate server from anyone who merely copied the public certificate.
+
+## Why certificates expire
+
+A fixed lifetime (historically up to a few years, now often 90 days with automated tools like Let's Encrypt) limits how long a compromised or mis-issued certificate can be abused before it stops working on its own — even if revocation, which relies on browsers actually checking a revocation list, fails to catch it in time.
+
+## See also
+
+- **[TLS](/en/web-fundamentals/tls)** — the protocol that uses this certificate to establish an encrypted, authenticated connection.
+- **[Secrets Management](/en/security/secrets-management)** — a certificate's private key is itself a secret that needs the same careful handling.

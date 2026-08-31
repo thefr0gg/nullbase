@@ -1,0 +1,38 @@
+---
+title: DHCP
+description: How a device gets an IP address, subnet mask, and gateway automatically the moment it joins a network — no manual configuration required.
+category: Networking
+weight: 5
+interactive: true
+interactiveType: ["StepFlow"]
+---
+
+**DHCP (Dynamic Host Configuration Protocol)** is why a laptop or phone gets a working IP address the instant it joins a Wi-Fi network, with no one typing an address in by hand. A DHCP server on the network hands out addresses from a configured pool, along with the subnet mask, default gateway, and DNS server the device needs to actually communicate.
+
+## The DORA process
+
+A device with no address yet can't be reached directly, so DHCP starts with a broadcast — this exchange is traditionally remembered by the acronym **DORA**:
+
+<StepFlow
+  title="DHCP: DORA"
+  steps={[
+    { actor: "Client", title: "Discover", description: "The new device broadcasts a DHCPDISCOVER to the whole local network — it has no IP yet, so it can't address anything directly.", detail: "Client (0.0.0.0) -> broadcast (255.255.255.255)" },
+    { actor: "Server", title: "Offer", description: "Any DHCP server that hears the broadcast replies with a DHCPOFFER, proposing an available IP address and lease terms.", detail: "Server -> broadcast: offered IP, lease time, subnet mask" },
+    { actor: "Client", title: "Request", description: "The client broadcasts a DHCPREQUEST explicitly accepting one offer — broadcast again, so any other server that made an offer knows it was declined.", detail: "Client -> broadcast: \"I accept this offer\"" },
+    { actor: "Server", title: "Acknowledge", description: "The chosen server confirms with a DHCPACK, finalizing the lease. The client can now use the address — configuration is complete.", detail: "Server -> Client: DHCPACK, lease confirmed" },
+  ]}
+/>
+
+## Leases aren't permanent
+
+An assigned address is a **lease**, not a permanent grant — it expires after a configured duration, and the client has to renew it before then (typically at 50% of the lease time) or risk losing the address to another device. This is what lets a DHCP pool serve far more devices over time than it has addresses, as laptops and phones come and go.
+
+## What else DHCP hands out
+
+Beyond the IP address itself, a DHCP response typically includes the subnet mask (so the device knows which addresses are local vs. need routing), the default gateway (where to send traffic leaving the local network), and one or more DNS server addresses — without which a device could reach IPs but couldn't resolve any domain name at all.
+
+## See also
+
+- **[Network Addressing](/en/networking/network-addressing)** — the subnet mask a DHCP lease includes, explained.
+- **[NAT](/en/networking/nat)** — the private address DHCP hands out is usually only usable after NAT translates it.
+- **[UDP](/en/networking/udp)** — DHCP runs over UDP, since a device can't open a TCP connection before it has an address.

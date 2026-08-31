@@ -1,0 +1,43 @@
+---
+title: OAuth 2.0
+description: How one service can grant another limited access to a user's data without ever handing over a password — the authorization code flow, step by step.
+category: Security
+weight: 5
+interactive: true
+interactiveType: ["StepFlow"]
+---
+
+**OAuth 2.0** solves a specific problem: letting a third-party app access part of a user's data on another service — read their calendar, post to their account — without that app ever seeing the user's actual password. Instead, the user grants a scoped, revocable **access token** through the service that owns the data.
+
+## The Authorization Code flow
+
+This is the most common and most secure flow, used whenever a server-side app is involved (as opposed to a pure single-page app):
+
+<StepFlow
+  title="OAuth 2.0 Authorization Code Flow"
+  steps={[
+    { actor: "App", title: "Redirect to the authorization server", description: "The app sends the user's browser to the service that owns their data (e.g. Google), specifying what access (scope) it's requesting.", detail: "GET https://accounts.example.com/authorize?client_id=...&scope=calendar.read&redirect_uri=..." },
+    { actor: "User", title: "User approves", description: "The user logs into the authorization server directly (never through the requesting app) and approves the specific scope requested.", detail: "\"App X wants to: read your calendar. Allow?\"" },
+    { actor: "Authorization server", title: "Redirect back with a code", description: "The authorization server redirects back to the app with a short-lived authorization code — not the access token itself yet.", detail: "GET https://app.example.com/callback?code=abc123" },
+    { actor: "App", title: "Exchange the code for a token", description: "The app's own backend (not the browser) exchanges the code for an access token, authenticating itself with a client secret the browser never sees.", detail: "POST /token\n{ code: 'abc123', client_id, client_secret }" },
+    { actor: "Authorization server", title: "Issue the access token", description: "The app now holds a scoped access token it can use to call the data-owning service's API on the user's behalf — still without ever having seen the user's password.", detail: "{ access_token: '...', expires_in: 3600 }" },
+  ]}
+/>
+
+## Why the code is exchanged in a second step
+
+The authorization code arrives via a browser redirect — a channel that can leak into browser history or referrer headers. Splitting the flow so the *code* travels through the browser but the *actual token exchange* happens server-to-server (authenticated with a client secret only the app's backend holds) means a leaked code alone isn't enough to get a token; the client secret is also required.
+
+## Scopes limit the blast radius
+
+An access token is issued for a specific, narrow **scope** (`calendar.read`, not blanket account access) — so a compromised token only exposes what it was actually granted, and a user can see exactly what they're approving before granting it.
+
+## OAuth is authorization, not authentication
+
+OAuth by itself only proves an app has permission to access certain data — it doesn't, on its own, prove *who the user is* to the app. **OpenID Connect** is a thin identity layer built on top of OAuth 2.0 specifically to add that piece, issuing an identity token (typically a [JWT](/en/security/jwt)) alongside the access token.
+
+## See also
+
+- **[JWT](/en/security/jwt)** — the typical format an OAuth access or ID token takes.
+- **[Authentication](/en/security/authentication)** — the separate question OAuth alone doesn't answer.
+- **[Authorization](/en/security/authorization)** — OAuth scopes are a form of exactly this.

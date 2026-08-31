@@ -1,0 +1,46 @@
+---
+title: Content Security Policy
+description: A response header that tells the browser exactly what a page is allowed to load and execute — a second line of defense when output escaping alone isn't enough.
+category: Security
+weight: 10
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+**Content Security Policy (CSP)** is a response header that declares, explicitly, what a page is allowed to load — which script sources, which style sources, which domains for images and fonts. The browser enforces it directly: anything the policy doesn't allow simply doesn't execute or load, even if it somehow made it into the page's HTML.
+
+## Why it matters even with proper escaping
+
+Escaping output (see [XSS](/en/security/xss)) should already stop injected markup from becoming a real `<script>` tag — but CSP is defense in depth for the cases that escaping misses: a forgotten escape somewhere, a library with its own vulnerability, a dependency compromised upstream. A strict CSP means even a successful injection often still fails to execute, because the browser refuses to run an inline script or load a script from an unlisted domain.
+
+## Common directives
+
+<ItemExplorer
+  title="CSP Directives"
+  layout="table"
+  tableColumns={[{ key: "controls", label: "Controls" }]}
+  items={[
+    { id: "default-src", label: "default-src", color: "blue", columns: { controls: "The fallback for any directive not specified explicitly." } },
+    { id: "script-src", label: "script-src", color: "green", columns: { controls: "Which sources scripts may load from — omitting 'unsafe-inline' here blocks inline <script> tags entirely, which is most of what makes CSP effective against XSS." } },
+    { id: "style-src", label: "style-src", color: "purple", columns: { controls: "Which sources stylesheets may load from." } },
+    { id: "connect-src", label: "connect-src", color: "orange", columns: { controls: "Which origins fetch/XHR/WebSocket calls may target — relevant to stopping an injected script from exfiltrating data even if it does run." } },
+    { id: "frame-ancestors", label: "frame-ancestors", color: "red", columns: { controls: "Which sites may embed this page in an iframe — the modern replacement for the older X-Frame-Options header, guarding against clickjacking." } },
+  ]}
+/>
+
+## A real header
+
+```http
+Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.example.com; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'
+```
+
+This allows scripts only from the page's own origin and one trusted CDN, blocks the page from being framed by anyone, and falls back to same-origin-only for everything else not explicitly listed.
+
+## Report-only mode
+
+`Content-Security-Policy-Report-Only` enforces nothing — it just logs what *would* have been blocked to a reporting endpoint. This is the standard way to roll out a new policy safely: watch what a strict policy would break in production traffic before actually turning on enforcement and breaking it for real.
+
+## See also
+
+- **[XSS](/en/security/xss)** — the vulnerability class CSP is primarily a second line of defense against.
+- **[CORS](/en/security/cors)** — a different header-based browser restriction, governing cross-origin reads rather than what a page can load.

@@ -1,0 +1,44 @@
+---
+title: JWT
+description: A signed, self-contained token that carries identity and claims without a server-side session store — and the ways it's routinely misused.
+category: Security
+weight: 4
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+A **JWT (JSON Web Token)** packs identity and claims directly into a token the client holds, signed so the server can verify it hasn't been tampered with — no server-side session lookup required, unlike [sessions](/en/security/sessions). That self-contained nature is JWT's whole appeal for distributed systems, and also the source of most of its real-world footguns.
+
+## Three dot-separated parts
+
+```text
+eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI0MiIsImV4cCI6MTcwMDAwMDAwMH0.dBjftJeZ4CVP-mB92K...
+└──────header──────┘ └───────────payload──────────┘ └─────signature─────┘
+```
+
+<ItemExplorer
+  title="JWT Parts"
+  layout="table"
+  tableColumns={[{ key: "contents", label: "Contents" }]}
+  items={[
+    { id: "header", label: "Header", color: "blue", columns: { contents: "Algorithm and token type, e.g. { \"alg\": \"HS256\", \"typ\": \"JWT\" } — base64url-encoded, not encrypted." } },
+    { id: "payload", label: "Payload", color: "green", columns: { contents: "The actual claims — user ID, roles, expiry (exp). Also just base64url-encoded, meaning anyone can decode and read it without the signing key." } },
+    { id: "signature", label: "Signature", color: "purple", columns: { contents: "HMAC or a private-key signature over the header and payload — this is the only part that actually requires the secret to produce." } },
+  ]}
+/>
+
+The critical detail hiding in that table: the payload is *encoded*, not *encrypted*. Anyone holding a JWT can read every claim inside it — the signature only proves the claims haven't been altered, it doesn't hide them. Never put a password or a secret directly inside a JWT payload.
+
+## The `alg: none` attack
+
+Some early JWT libraries trusted the `alg` field in the token's own header to decide how to verify it — which meant a forged token claiming `"alg": "none"` could be accepted with no signature check at all. Correctly written verification code hardcodes the *expected* algorithm on the server side and rejects anything else, rather than trusting whatever the token claims about itself.
+
+## Revocation is the hard part
+
+Because a JWT is self-contained, a server can't invalidate one early without some extra mechanism — unlike deleting a row from a session store. Real systems handle this with short expiry times plus refresh tokens, or a server-side blocklist for the rare case a token must be revoked before it naturally expires — which reintroduces exactly the server-side state JWTs were meant to avoid, just for a smaller set of tokens.
+
+## See also
+
+- **[Sessions](/en/security/sessions)** — the server-stored alternative JWT trades statelessness for.
+- **[OAuth 2.0](/en/security/oauth-2-0)** — commonly issues JWTs as its access tokens.
+- **[Authorization](/en/security/authorization)** — roles and permissions are often encoded directly into a JWT's claims.

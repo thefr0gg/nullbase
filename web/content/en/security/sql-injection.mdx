@@ -1,0 +1,53 @@
+---
+title: SQL Injection
+description: How unsanitized input turns into part of an executed query — and why parameterized queries close the door entirely, rather than just reducing risk.
+category: Security
+weight: 8
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+**SQL injection** happens when user input is concatenated directly into a [SQL](/en/databases/sql) query string, letting an attacker supply text that changes the query's actual structure rather than just its data. The vulnerable pattern is always some version of building a query by string concatenation instead of keeping data and code separate.
+
+## A textbook example
+
+```js
+const query = `SELECT * FROM users WHERE username = '${username}' AND password = '${password}'`;
+```
+
+A normal login supplies a username and password as data. But if `username` arrives as `' OR '1'='1`, the assembled query becomes:
+
+```sql
+SELECT * FROM users WHERE username = '' OR '1'='1' AND password = '...'
+```
+
+`'1'='1'` is always true, so the `WHERE` clause matches every row — the attacker is logged in as the first user in the table without ever knowing a real password. This is the classic example, but the same flaw lets an attacker read arbitrary tables, modify data, or in some database configurations execute commands on the underlying server.
+
+## Why sanitizing input isn't the real fix
+
+Blocklisting dangerous characters (quotes, semicolons) is fragile — there's usually another encoding or syntax trick an attacker can use that the blocklist didn't anticipate. The actual fix is structural, not defensive:
+
+<ItemExplorer
+  title="Defenses"
+  layout="table"
+  tableColumns={[{ key: "why", label: "Why it works" }]}
+  items={[
+    { id: "parameterized", label: "Parameterized queries", color: "green", columns: { why: "The query structure and the data are sent to the database separately — user input is never parsed as SQL syntax at all, no matter what it contains." } },
+    { id: "orm", label: "ORMs / query builders", color: "blue", columns: { why: "Generate parameterized queries under the hood by default, so injection requires deliberately bypassing them (e.g. a raw-query escape hatch)." } },
+    { id: "least-privilege", label: "Least-privilege DB accounts", color: "purple", columns: { why: "Limits the damage even if injection succeeds — an app account with only SELECT on the tables it needs can't drop tables or read others." } },
+  ]}
+/>
+
+A parameterized version of the query above looks like this — the `?` placeholders are filled in by the database driver, never by string interpolation:
+
+```js
+db.prepare("SELECT * FROM users WHERE username = ? AND password = ?").get(username, password);
+```
+
+No matter what `username` contains, it's treated purely as a string value being compared, never as part of the query's grammar — the `' OR '1'='1` trick above simply becomes a username that doesn't match anything.
+
+## See also
+
+- **[SQL](/en/databases/sql)** — the query language SQL injection abuses.
+- **[Authentication](/en/security/authentication)** — login forms are the most common target for this attack.
+- **[Password Hashing](/en/security/password-hashing)** — why a successful injection still shouldn't reveal usable plaintext passwords.

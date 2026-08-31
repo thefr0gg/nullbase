@@ -1,0 +1,36 @@
+---
+title: Authorization
+description: Deciding what an already-identified user is allowed to do — role-based, attribute-based, and access-list models for that decision.
+category: Security
+weight: 1
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+**Authorization** happens after [authentication](/en/security/authentication) and answers a different question entirely: given that this really is who it claims to be, what is it allowed to do? A system can authenticate a user with complete confidence and still need to refuse that exact user access to another user's data — that refusal is authorization's job.
+
+## Three common models
+
+<ItemExplorer
+  title="Authorization Models"
+  layout="pills"
+  items={[
+    { id: "rbac", label: "RBAC", color: "blue", detail: "Role-Based Access Control — permissions attach to roles (admin, editor, viewer), and users are assigned roles. Simple to reason about, but coarse — hard to express \"editor, but only for their own posts.\"" },
+    { id: "abac", label: "ABAC", color: "green", detail: "Attribute-Based Access Control — a decision considers attributes of the user, the resource, and context together (\"finance department, business hours, own region\"). More expressive, harder to audit." },
+    { id: "acl", label: "ACL", color: "purple", detail: "Access Control List — permissions attach directly to a specific resource, listing exactly which identities can do what to it. Common for file systems and per-document sharing." },
+  ]}
+/>
+
+## The failure mode that matters most: broken object-level authorization
+
+The single most common real-world authorization bug isn't a missing role check — it's forgetting to verify that the *specific object* being requested actually belongs to the requester. An endpoint like `GET /orders/{id}` that checks "is this user logged in" but not "does this order belong to this user" lets anyone view anyone else's order just by changing the ID in the URL. This class of bug (often called IDOR — Insecure Direct Object Reference) is consistently near the top of real-world vulnerability reports precisely because it's easy to authenticate correctly and still get this part wrong.
+
+## Least privilege
+
+A recurring principle across all three models: grant the minimum access actually needed, not the maximum that's convenient. A service account that only ever reads one table should not have write access to the whole database — not because it's expected to misuse that access, but because a future bug or compromised credential can only do as much damage as the permissions it was given.
+
+## See also
+
+- **[Authentication](/en/security/authentication)** — establishing identity, the step authorization always assumes already happened.
+- **[JWT](/en/security/jwt)** — a common place to encode roles or permissions directly into the token itself.
+- **[Sessions](/en/security/sessions)** — where a server-side authorization check typically looks up the current user's permissions.

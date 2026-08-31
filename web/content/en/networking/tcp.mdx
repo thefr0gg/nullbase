@@ -1,0 +1,55 @@
+---
+title: TCP
+description: The connection-oriented transport protocol underneath most of the internet — how it numbers, acknowledges, and retransmits every byte it sends.
+category: Networking
+weight: 0
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+**TCP (Transmission Control Protocol)** turns [IP](/en/networking/ip)'s best-effort delivery into a reliable, ordered, connection-oriented stream. Before any application data moves, the two sides complete a three-way handshake (`SYN`, `SYN-ACK`, `ACK`) — covered in [TCP/IP](/en/web-fundamentals/tcp-ip) — and from then on every byte is numbered and acknowledged.
+
+## What's inside a TCP segment
+
+A TCP header carries far more than a normal packet needs, because reliability has to be tracked somewhere:
+
+```text
+Source Port | Destination Port
+Sequence Number
+Acknowledgment Number
+Flags (SYN, ACK, FIN, RST, PSH, URG)
+Window Size
+Checksum
+```
+
+The **sequence number** lets the receiver reassemble bytes in the right order even if segments arrive out of order; the **acknowledgment number** tells the sender exactly how much has safely arrived, so only the missing part ever needs retransmitting.
+
+## Flags: what each one means
+
+<ItemExplorer
+  title="TCP Flags"
+  layout="table"
+  tableColumns={[{ key: "meaning", label: "Meaning" }]}
+  items={[
+    { id: "syn", label: "SYN", color: "blue", columns: { meaning: "Synchronize — opens a connection, carries the initial sequence number." } },
+    { id: "ack", label: "ACK", color: "green", columns: { meaning: "Acknowledge — confirms data (or a SYN) was received. Set on almost every segment after the handshake." } },
+    { id: "fin", label: "FIN", color: "purple", columns: { meaning: "Finish — the sender has no more data; begins the graceful close." } },
+    { id: "rst", label: "RST", color: "red", columns: { meaning: "Reset — abruptly tears down a connection, usually after an error or a connection to a closed port." } },
+    { id: "psh", label: "PSH", color: "orange", columns: { meaning: "Push — deliver buffered data to the application immediately rather than waiting to fill a buffer." } },
+    { id: "urg", label: "URG", color: "orange", columns: { meaning: "Urgent — flags out-of-band data that should jump the queue. Rarely used today." } },
+  ]}
+/>
+
+## Flow control and congestion control
+
+TCP throttles itself in two independent ways. **Flow control** uses the receiver's advertised **window size** so a fast sender can't overwhelm a slow receiver's buffer. **Congestion control** is about the *network* rather than the receiver: TCP starts sending slowly (slow start), ramps up while acknowledgments keep arriving on time, and backs off sharply the moment it detects loss — a dropped or delayed ACK is treated as a signal that something in the path is congested, not just that one packet got unlucky.
+
+## Closing a connection
+
+Unlike opening, closing is asymmetric — each direction shuts down independently with its own `FIN`/`ACK` pair, since one side might still have data left to send after the other is done. A connection that skips this and gets torn down with `RST` instead is being abandoned, not finished.
+
+## See also
+
+- **[UDP](/en/networking/udp)** — the connectionless alternative with none of this overhead.
+- **[Ports & Sockets](/en/web-fundamentals/ports-sockets)** — how a TCP connection is uniquely identified alongside thousands of others.
+- **[IP](/en/networking/ip)** — the layer TCP segments travel inside.

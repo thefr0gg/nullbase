@@ -1,0 +1,42 @@
+---
+title: ICMP
+description: The protocol IP uses to report problems about itself — no ports, no payload for an application, just diagnostic messages between hosts and routers.
+category: Networking
+weight: 7
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+**ICMP (Internet Control Message Protocol)** is how routers and hosts report problems that [IP](/en/networking/ip) itself has no way to signal — a destination that can't be reached, a packet that expired, a network that's unreachable. It isn't a transport protocol like [TCP](/en/networking/tcp) or [UDP](/en/networking/udp): there's no port number, no connection, and it's not something application code typically sends directly.
+
+## Common message types
+
+<ItemExplorer
+  title="ICMP Message Types"
+  layout="pills"
+  items={[
+    { id: "echo-request", label: "Echo Request", color: "blue", detail: "Type 8 — \"are you there?\" This is what ping sends." },
+    { id: "echo-reply", label: "Echo Reply", color: "green", detail: "Type 0 — the answer to an Echo Request. A ping response." },
+    { id: "unreachable", label: "Destination Unreachable", color: "red", detail: "Type 3 — sent by a router that can't forward a packet (no route, or a firewall blocked it), with sub-codes for why." },
+    { id: "ttl-exceeded", label: "Time Exceeded", color: "orange", detail: "Type 11 — sent when a packet's TTL hits zero. traceroute deliberately triggers these to map a path hop by hop." },
+    { id: "redirect", label: "Redirect", color: "purple", detail: "Type 5 — a router telling a host a better next hop exists for a given destination." },
+  ]}
+/>
+
+## How `ping` actually works
+
+`ping` sends an ICMP Echo Request to a target and waits for an Echo Reply — round-trip time and packet loss are just measured directly from whether and how fast the reply comes back. No handshake, no port, nothing but "did you answer, and how long did it take."
+
+## How `traceroute` abuses TTL exceeded
+
+`traceroute` sends a series of packets with **TTL = 1, then 2, then 3**, and so on. Each one dies at the router that many hops away, and that router sends back a Time Exceeded message — revealing its own address in the process. By collecting one such message per hop, traceroute reconstructs the entire path to the destination without any single router needing to cooperate beyond standard ICMP behavior.
+
+## Why some pings never come back
+
+Many networks rate-limit or block ICMP entirely at firewalls, since ICMP has occasionally been abused for reconnaissance or denial-of-service traffic. A host that never responds to ping isn't necessarily down — it may simply be configured to ignore ICMP while still serving TCP traffic on other ports perfectly normally.
+
+## See also
+
+- **[Routing](/en/networking/routing)** — the hop-by-hop forwarding that ICMP Time Exceeded messages expose.
+- **[IP](/en/networking/ip)** — the TTL field ICMP's Time Exceeded message is triggered by.
+- **[UDP](/en/networking/udp)** — like ICMP, connectionless, but carries application data rather than diagnostics.

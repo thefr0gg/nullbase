@@ -1,0 +1,45 @@
+---
+title: NAT
+description: How an entire private network shares one public IP address — rewriting addresses (and ports) in-flight as traffic crosses a router.
+category: Networking
+weight: 6
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+**NAT (Network Address Translation)** rewrites the source address of outgoing packets from a private [IPv4](/en/networking/ipv4) address to a router's public one, and rewrites it back on the way home. It's the reason a home network with a dozen private-range devices only ever needs one public IP — and, historically, one of the biggest reasons IPv4 address exhaustion didn't become a crisis decades sooner.
+
+## Three flavors
+
+<ItemExplorer
+  title="Types of NAT"
+  layout="table"
+  tableColumns={[{ key: "mapping", label: "Mapping" }, { key: "use", label: "Typical use" }]}
+  items={[
+    { id: "static", label: "Static NAT", color: "blue", columns: { mapping: "One private address permanently mapped to one public address", use: "Exposing a specific internal server (e.g. a mail server) at a fixed public IP" } },
+    { id: "dynamic", label: "Dynamic NAT", color: "green", columns: { mapping: "Private addresses mapped to any address from a shared public pool, on demand", use: "Organizations with more internal hosts than a single address, but multiple public addresses available" } },
+    { id: "pat", label: "PAT (NAT overload)", color: "purple", columns: { mapping: "Many private addresses share one public address, distinguished by port number", use: "Home routers — the overwhelmingly common case" } },
+  ]}
+/>
+
+## How PAT actually distinguishes devices
+
+Since every device shares the router's single public IP, the router has to tell responses apart some other way — it does this by rewriting the **source port** too, and keeping a translation table:
+
+```text
+Private side                Public side
+192.168.1.10:51000   <-->   203.0.113.5:40001
+192.168.1.11:51000   <-->   203.0.113.5:40002
+```
+
+Two internal devices can use the identical private port (`51000`) simultaneously, because the router maps each to a distinct public port. A reply arriving at `203.0.113.5:40002` gets translated back to `192.168.1.11:51000` by looking up that table entry — this is exactly the same `(IP, port)` pairing idea behind a [socket](/en/web-fundamentals/ports-sockets).
+
+## What NAT breaks
+
+Because an external host only ever sees the router's public address, it can't initiate a connection *into* a NAT'd device unless the router is explicitly configured to forward a port there. This is by accident a form of firewalling — but it's also why peer-to-peer protocols (VoIP, some multiplayer games) need extra techniques (STUN, TURN, hole punching) just to establish a direct connection through NAT at all.
+
+## See also
+
+- **[IPv4](/en/networking/ipv4)** — the limited address space that made NAT necessary.
+- **[Ports & Sockets](/en/web-fundamentals/ports-sockets)** — the same port-based addressing NAT relies on to multiplex one public IP.
+- **[IPv6](/en/networking/ipv6)** — designed with enough addresses that NAT is no longer structurally required.

@@ -1,0 +1,43 @@
+---
+title: IP
+description: The network-layer protocol responsible for addressing and routing every packet — best-effort delivery, with reliability left to the layers above it.
+category: Networking
+weight: 2
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+**IP (Internet Protocol)** gives every device a unique address and routes packets toward it, hop by hop, across networks that were never told about each other in advance. It's deliberately minimal: IP doesn't guarantee a packet arrives, arrives once, or arrives in order — that's left entirely to [TCP](/en/networking/tcp) when an application needs it.
+
+## Best-effort delivery
+
+"Best effort" means every router along the path does its honest best to forward a packet closer to its destination, but nothing retries a packet that gets dropped — routers discard packets under congestion, and a corrupted or misdirected packet is simply gone unless something above IP notices and asks again.
+
+## What's in an IP packet
+
+<ItemExplorer
+  title="IP Header Fields"
+  layout="table"
+  tableColumns={[{ key: "purpose", label: "Purpose" }]}
+  items={[
+    { id: "src-dst", label: "Source / Destination", color: "blue", columns: { purpose: "The sending and receiving addresses — the whole reason IP exists." } },
+    { id: "ttl", label: "TTL (Time to Live)", color: "orange", columns: { purpose: "A hop counter, decremented by every router — hits zero and the packet is discarded, preventing infinite routing loops." } },
+    { id: "protocol", label: "Protocol", color: "green", columns: { purpose: "Which transport protocol the payload belongs to — 6 for TCP, 17 for UDP, 1 for ICMP." } },
+    { id: "fragment", label: "Fragmentation fields", color: "purple", columns: { purpose: "Identification, flags, and offset — let a packet too large for a link be split and reassembled." } },
+    { id: "checksum", label: "Header Checksum", color: "red", columns: { purpose: "Detects corruption in the header itself (IPv4 only — IPv6 dropped it, relying on lower/upper layers instead)." } },
+  ]}
+/>
+
+## Fragmentation
+
+Every network link has a maximum transmission unit (MTU) — the largest packet it can carry in one piece. If a packet is bigger than the next link's MTU, IPv4 routers can split it into fragments that get reassembled at the destination. This costs performance and complicates things enough that modern stacks generally avoid it, instead discovering the path's smallest MTU up front (Path MTU Discovery) and sizing packets to fit.
+
+## Why TTL matters more than it sounds
+
+Without a hop limit, a routing misconfiguration that creates a loop would circulate the same packet forever, consuming bandwidth indefinitely. TTL guarantees every packet eventually dies — and the "TTL exceeded" message it triggers is itself the mechanism `traceroute` uses to map a path, one hop at a time (see [ICMP](/en/networking/icmp)).
+
+## See also
+
+- **[IPv4](/en/networking/ipv4)** and **[IPv6](/en/networking/ipv6)** — the two address formats IP actually uses today.
+- **[Routing](/en/networking/routing)** — how each hop decides where to forward a packet next.
+- **[ICMP](/en/networking/icmp)** — how routers and hosts report problems IP itself has no way to signal.

@@ -1,0 +1,38 @@
+---
+title: CSRF
+description: How a malicious site tricks a victim's already-logged-in browser into making a request it never intended — and the token that stops it.
+category: Security
+weight: 7
+interactive: true
+interactiveType: ["StepFlow"]
+---
+
+**CSRF (Cross-Site Request Forgery)** doesn't need to steal anything or inject any script, unlike [XSS](/en/security/xss) — it just needs the victim's browser to send a request the victim never intended, riding on credentials (a [session](/en/security/sessions) cookie) the browser attaches automatically.
+
+## How the attack actually plays out
+
+<StepFlow
+  title="A CSRF Attack Against a Bank Transfer"
+  steps={[
+    { actor: "Victim", title: "Log into the real bank site", description: "The victim logs into bank.example.com normally — the browser now holds a valid session cookie for that origin.", detail: "Cookie: sid=8f3e... (set for bank.example.com)" },
+    { actor: "Attacker", title: "Victim visits a malicious page", description: "Without logging out, the victim visits evil.example, which contains a hidden auto-submitting form targeting the bank's transfer endpoint.", detail: "<form action=\"https://bank.example.com/transfer\" method=\"POST\">\n  <input name=\"to\" value=\"attacker-account\">\n  <input name=\"amount\" value=\"5000\">\n</form>\n<script>document.forms[0].submit()</script>" },
+    { actor: "Browser", title: "Browser attaches the cookie automatically", description: "The browser has no idea the request originated from an untrustworthy page — it just sees a request to bank.example.com and attaches that origin's cookie, exactly as it would for a legitimate transfer.", detail: "POST /transfer\nCookie: sid=8f3e...\nto=attacker-account&amount=5000" },
+    { actor: "Bank server", title: "Server processes it as a valid request", description: "Nothing about the request looks wrong to a server that only checks \"is there a valid session cookie\" — the transfer completes, entirely without the victim's knowledge.", detail: "Transfer processed: $5000 to attacker-account" },
+  ]}
+/>
+
+## Why cookies alone aren't proof of intent
+
+The core problem: a cookie proves *which browser session* is making a request, but says nothing about *whether the user meant to make it*. Any page the victim's browser visits can trigger a request to any other origin — the browser attaches cookies based on the destination, not based on where the request originated.
+
+## What actually stops it
+
+- **CSRF tokens** — a random, unpredictable value the legitimate page embeds in its own forms and the server checks on submission. `evil.example` has no way to read or guess that token, so its forged request fails validation.
+- **`SameSite` cookies** — setting a session cookie's `SameSite` attribute to `Lax` or `Strict` tells the browser not to send it on requests originating from another site at all, closing off the attack at the browser level (see [Sessions](/en/security/sessions)).
+- **Checking `Origin`/`Referer`** — a weaker, supplementary check that a state-changing request actually originated from the expected site.
+
+## See also
+
+- **[Sessions](/en/security/sessions)** — the cookie mechanism CSRF specifically exploits.
+- **[XSS](/en/security/xss)** — a different vulnerability class; XSS can often bypass CSRF tokens too, since it can read the page's DOM directly.
+- **[CORS](/en/security/cors)** — a related but distinct browser boundary, about reading responses rather than sending requests.

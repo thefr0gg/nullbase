@@ -1,0 +1,36 @@
+---
+title: Security
+description: Proving who someone is, deciding what they're allowed to do, and closing off the common ways web applications get exploited.
+category: Security
+weight: 6
+---
+
+Every request that carries [Sessions](/en/security/sessions), a [JWT](/en/security/jwt), or an `Authorization` header from [HTTP](/en/web-fundamentals/http) is ultimately answering one of two questions: *who is this*, and *what are they allowed to do*. This section covers how those questions get answered safely, and the specific ways applications get that wrong.
+
+## Proving identity
+
+- **[Authentication](/en/security/authentication)** — verifying who someone claims to be.
+- **[Password Hashing](/en/security/password-hashing)** — storing a password so even a stolen database doesn't reveal it.
+- **[Sessions](/en/security/sessions)** — staying recognized across requests after logging in once.
+- **[JWT](/en/security/jwt)** — a self-contained, signed token carrying identity without a server-side session store.
+- **[OAuth 2.0](/en/security/oauth-2-0)** — letting one service grant another limited access, without handing over a password.
+
+## Deciding what's allowed
+
+- **[Authorization](/en/security/authorization)** — deciding what an authenticated identity can actually do.
+
+## Common vulnerabilities
+
+- **[XSS](/en/security/xss)** — injecting a script into a page another user views.
+- **[CSRF](/en/security/csrf)** — tricking a logged-in browser into making a request it didn't mean to.
+- **[SQL Injection](/en/security/sql-injection)** — smuggling SQL into a query through unsanitized input.
+
+## Browser-enforced boundaries
+
+- **[CORS](/en/security/cors)** — the rule that stops one site's script from freely reading another site's responses.
+- **[Content Security Policy](/en/security/content-security-policy)** — a header that tells the browser what a page is even allowed to load or run.
+
+## Keeping the pipes themselves secure
+
+- **[TLS Certificates](/en/security/tls-certificates)** — how a browser knows it's actually talking to the server it thinks it is.
+- **[Secrets Management](/en/security/secrets-management)** — keeping API keys and credentials out of source code and version control.

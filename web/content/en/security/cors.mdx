@@ -1,0 +1,37 @@
+---
+title: CORS
+description: The browser-enforced rule that stops one site's script from freely reading another site's responses — same-origin policy, preflight requests, and the headers that relax it.
+category: Security
+weight: 9
+interactive: true
+interactiveType: ["StepFlow"]
+---
+
+Browsers enforce a **same-origin policy**: a script running on `a.example` can't read the response from a request to `b.example` unless `b.example` explicitly allows it. **CORS (Cross-Origin Resource Sharing)** is the mechanism for that explicit permission — a set of response headers a server sends to tell the browser which other origins are allowed to read its responses.
+
+## The request still happens — reading the response is what's blocked
+
+A common misconception: CORS does not stop the cross-origin request from being sent. The request goes out; the server can process it. What CORS blocks is the *browser handing the response back to the requesting script* if the server didn't explicitly allow that origin. This is a different mechanism from [CSRF](/en/security/csrf), which is about triggering an unwanted request in the first place, not about reading its response.
+
+## Simple requests vs. preflight
+
+<StepFlow
+  title="A Preflighted Cross-Origin Request"
+  steps={[
+    { actor: "Browser", title: "Detects a non-simple request", description: "A request using a method other than GET/POST/HEAD, or custom headers (like Authorization), doesn't qualify as \"simple\" — the browser sends a preflight check first, before the real request.", detail: "OPTIONS /api/data\nOrigin: https://app.example.com\nAccess-Control-Request-Method: PUT" },
+    { actor: "Server", title: "Server responds with what it allows", description: "The server answers the preflight declaring which origins, methods, and headers it permits — without ever running the actual request handler.", detail: "Access-Control-Allow-Origin: https://app.example.com\nAccess-Control-Allow-Methods: GET, PUT, POST" },
+    { actor: "Browser", title: "Browser decides whether to proceed", description: "If the preflight response allows this origin and method, the browser sends the real request. If not, it never sends it at all — the actual PUT never reaches the server.", detail: "" },
+    { actor: "Server", title: "Real request, real response", description: "Assuming the preflight passed, the actual request is sent and answered normally, with the same Access-Control-Allow-Origin header repeated so the browser knows it's still safe to expose the response.", detail: "PUT /api/data -> 200 OK\nAccess-Control-Allow-Origin: https://app.example.com" },
+  ]}
+/>
+
+A plain `GET` with no custom headers usually qualifies as "simple" and skips the preflight — the browser still enforces `Access-Control-Allow-Origin` on the response, it just doesn't need to ask permission first.
+
+## `Access-Control-Allow-Origin: *` is a real trade-off
+
+A wildcard allows any origin to read the response — fine for a public, unauthenticated API, but dangerous alongside `Access-Control-Allow-Credentials: true`, which browsers refuse to combine with a wildcard for exactly this reason: it would let any site on the internet read a response made with the victim's cookies attached.
+
+## See also
+
+- **[CSRF](/en/security/csrf)** — a related but distinct cross-origin problem: sending an unwanted request, rather than reading its response.
+- **[Content Security Policy](/en/security/content-security-policy)** — another browser-enforced header-based restriction, governing what a page can load rather than what it can read across origins.

@@ -1,0 +1,40 @@
+---
+title: Network Addressing
+description: Subnet masks and CIDR notation — how one address block gets split into smaller networks, and how a router decides what's local.
+category: Networking
+weight: 9
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+Every [IPv4](/en/networking/ipv4) address is really two parts glued together: a **network** portion and a **host** portion. A **subnet mask** marks where that split happens — it's what lets a device answer "is this destination on my local network, or does it need to go through a router?" without asking anyone.
+
+## CIDR notation
+
+**CIDR (Classless Inter-Domain Routing)** writes the split as a suffix — `192.168.1.0/24` means the first 24 bits are the network portion, leaving 8 bits (256 addresses, 254 usable) for hosts. It replaced IPv4's original fixed-size Class A/B/C blocks, which wasted huge numbers of addresses whenever an organization needed a size that didn't fit neatly into a class.
+
+<ItemExplorer
+  title="Common CIDR Blocks"
+  layout="table"
+  tableColumns={[{ key: "mask", label: "Subnet Mask" }, { key: "hosts", label: "Usable Hosts" }]}
+  items={[
+    { id: "8", label: "/8", color: "blue", columns: { mask: "255.0.0.0", hosts: "~16.7 million" } },
+    { id: "16", label: "/16", color: "green", columns: { mask: "255.255.0.0", hosts: "~65,000" } },
+    { id: "24", label: "/24", color: "purple", columns: { mask: "255.255.255.0", hosts: "254" } },
+    { id: "30", label: "/30", color: "orange", columns: { mask: "255.255.255.252", hosts: "2 — a common size for a point-to-point router link" } },
+  ]}
+/>
+
+## Subnetting: splitting one block into many
+
+Borrowing bits from the host portion into the network portion divides one block into smaller ones — a single `/24` (254 usable hosts) can become four `/26` subnets (62 usable hosts each), letting an organization separate, say, engineering and finance onto isolated segments without requesting more address space. Every extra bit borrowed halves the number of usable hosts per subnet while doubling how many subnets exist.
+
+## Network and broadcast addresses
+
+Within any subnet, the very first address identifies the **network itself** and the very last is the **broadcast address** for that subnet — neither is assignable to a host. That's why a `/30` (4 total addresses) yields only 2 usable ones: one end is the network address, the other is broadcast, leaving exactly enough for two routers on either end of a link.
+
+## See also
+
+- **[IPv4](/en/networking/ipv4)** — the address space this subnetting math applies to.
+- **[Routing](/en/networking/routing)** — routing tables are built entirely out of CIDR blocks like these.
+- **[DHCP](/en/networking/dhcp)** — hands out the subnet mask along with every leased address.

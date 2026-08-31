@@ -1,0 +1,39 @@
+---
+title: Authentication
+description: Verifying that someone is who they claim to be — the factors that can prove it, and why authentication is a different question from authorization.
+category: Security
+weight: 0
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+**Authentication** answers exactly one question: *is this really who it claims to be?* It's easy to conflate with [authorization](/en/security/authorization) ("what is this identity allowed to do") because they usually happen back to back, but they're independent — a system can authenticate someone perfectly and still refuse them access to something, and vice versa a broken authorization check can leak data to a perfectly legitimately authenticated user.
+
+## The three factors
+
+Authentication proves identity with one or more of three fundamentally different kinds of evidence:
+
+<ItemExplorer
+  title="Authentication Factors"
+  layout="table"
+  tableColumns={[{ key: "example", label: "Example" }, { key: "weakness", label: "Weakness" }]}
+  items={[
+    { id: "know", label: "Something you know", color: "blue", columns: { example: "Password, PIN, security question", weakness: "Can be phished, guessed, or leaked in a breach elsewhere and reused (credential stuffing)." } },
+    { id: "have", label: "Something you have", color: "green", columns: { example: "Phone (SMS/authenticator app), hardware security key, smart card", weakness: "Can be lost, stolen, or (for SMS) intercepted via SIM-swap." } },
+    { id: "are", label: "Something you are", color: "purple", columns: { example: "Fingerprint, face recognition", weakness: "Can't be rotated if compromised — you only get one face." } },
+  ]}
+/>
+
+## Multi-factor authentication
+
+**MFA** requires evidence from at least two *different* factor categories — a password plus an authenticator app code, not a password plus a security question, since both of those are "something you know" and a phisher who gets one likely gets the other too. This is why MFA meaningfully raises the bar: compromising two independent categories of evidence is far harder than compromising one, even a strong one.
+
+## What "logged in" actually means afterward
+
+Authentication itself is a single moment — the login request succeeding. Staying recognized across every subsequent request is a separate mechanism, typically [sessions](/en/security/sessions) or a [JWT](/en/security/jwt); authentication proves identity once, and one of those carries proof of that identity forward.
+
+## See also
+
+- **[Authorization](/en/security/authorization)** — the separate question of what an authenticated identity can do.
+- **[Password Hashing](/en/security/password-hashing)** — how the "something you know" factor is stored safely.
+- **[OAuth 2.0](/en/security/oauth-2-0)** — delegated authentication and access without sharing a password directly.

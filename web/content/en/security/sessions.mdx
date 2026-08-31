@@ -1,0 +1,37 @@
+---
+title: Sessions
+description: How a server keeps recognizing a user across many requests after they log in once — session identifiers, cookies, and where session state actually lives.
+category: Security
+weight: 3
+interactive: true
+interactiveType: ["StepFlow"]
+---
+
+[HTTP](/en/web-fundamentals/http) is stateless — the server has no memory of a previous request unless something explicitly reminds it. A **session** is that reminder: after [authentication](/en/security/authentication) succeeds once, the server issues an identifier the browser sends back on every subsequent request, so "who is this" doesn't have to be re-proven on every single page load.
+
+## The typical lifecycle
+
+<StepFlow
+  title="Cookie-Based Session Lifecycle"
+  steps={[
+    { actor: "Client", title: "Login", description: "The user submits credentials once, over a request that itself proves nothing is remembered yet.", detail: "POST /login\n{ username, password }" },
+    { actor: "Server", title: "Create session, set cookie", description: "On success, the server generates a random, unguessable session ID, stores it (in memory, a database, or Redis) alongside the user's identity, and sends it back as a cookie.", detail: "Set-Cookie: sid=8f3e...; HttpOnly; Secure; SameSite=Lax" },
+    { actor: "Client", title: "Cookie sent automatically", description: "The browser attaches that cookie to every subsequent request to the same origin, without any JavaScript needing to manage it.", detail: "Cookie: sid=8f3e..." },
+    { actor: "Server", title: "Look up session on each request", description: "The server looks the session ID up in its store to find out which user this is — the request itself carries no other proof of identity.", detail: "session_store.get('8f3e...') -> { userId: 42 }" },
+    { actor: "Server", title: "Logout / expiry", description: "Logging out deletes the server-side session record, and an old or unused session typically expires on its own after a timeout — either way, the cookie stops working.", detail: "session_store.delete('8f3e...')" },
+  ]}
+/>
+
+## The cookie flags that actually matter
+
+`HttpOnly` stops JavaScript from reading the cookie at all, closing off the main way [XSS](/en/security/xss) could steal a session token. `Secure` ensures the cookie is only ever sent over HTTPS, not plaintext HTTP. `SameSite` restricts whether the cookie is sent on requests originating from another site, which is the primary defense against [CSRF](/en/security/csrf). Skipping any of these three on a session cookie is a genuine, common vulnerability, not a theoretical one.
+
+## Session vs. token-based auth
+
+A session ID is meaningless without the server-side store behind it — it's a pointer, not the data itself. That's the opposite trade-off from a [JWT](/en/security/jwt), which is self-contained and needs no server-side lookup, at the cost of being harder to revoke early.
+
+## See also
+
+- **[JWT](/en/security/jwt)** — the stateless alternative to a server-stored session.
+- **[CSRF](/en/security/csrf)** — the attack a cookie's `SameSite` flag specifically defends against.
+- **[Authentication](/en/security/authentication)** — the step that creates a session in the first place.

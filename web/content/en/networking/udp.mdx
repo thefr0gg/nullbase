@@ -1,0 +1,43 @@
+---
+title: UDP
+description: The connectionless transport protocol that skips TCP's handshake and guarantees entirely — trading reliability for speed and simplicity.
+category: Networking
+weight: 1
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+**UDP (User Datagram Protocol)** sends a datagram and moves on — no handshake, no acknowledgment, no retransmission, no guaranteed order. That sounds strictly worse than [TCP](/en/networking/tcp) until you notice what it buys back: none of TCP's setup latency or per-segment bookkeeping, which matters enormously for traffic where a late packet is worse than a missing one.
+
+## A much smaller header
+
+```text
+Source Port | Destination Port
+Length
+Checksum
+```
+
+That's the entire header — eight bytes, versus TCP's twenty-plus. There's no sequence number because UDP never reorders anything, and no window size because UDP never throttles itself; an application that needs either has to implement it itself on top.
+
+## Where UDP actually wins
+
+<ItemExplorer
+  title="Common UDP Use Cases"
+  layout="pills"
+  items={[
+    { id: "dns", label: "DNS", color: "blue", detail: "A lookup is one small request and one small response — retransmission on timeout is cheaper than a full TCP handshake for every query." },
+    { id: "video", label: "Video/voice calls", color: "green", detail: "A dropped frame from a second ago is useless once it arrives late — better to skip it than stall the whole stream waiting for a retransmit." },
+    { id: "gaming", label: "Online games", color: "purple", detail: "Position updates arrive dozens of times a second; the next one supersedes a late one anyway." },
+    { id: "dhcp", label: "DHCP", color: "orange", detail: "Address assignment happens before a device even has a usable IP, so there's no TCP connection to open yet." },
+  ]}
+/>
+
+## Reliability becomes the application's job
+
+Nothing stops an application from building acknowledgments, retransmission, or ordering on top of UDP — QUIC (which HTTP/3 runs on) does exactly this, reimplementing the reliability pieces it wants while keeping UDP's low setup cost and avoiding TCP's head-of-line blocking, where one lost segment stalls everything behind it.
+
+## See also
+
+- **[TCP](/en/networking/tcp)** — the reliable, ordered alternative UDP deliberately gives up.
+- **[ICMP](/en/networking/icmp)** — another protocol that, like UDP, doesn't establish a connection.
+- **[Ports & Sockets](/en/web-fundamentals/ports-sockets)** — UDP uses the same port numbering scheme as TCP, independently.
