@@ -52,6 +52,8 @@ export interface Dictionary {
   stepFlow: {
     previous: string;
     next: string;
+    play: string;
+    pause: string;
     /** `{current}`, `{total}` */
     stepOf: string;
     defaultTitle: string;
@@ -101,6 +103,66 @@ export interface Dictionary {
   };
   interactive: {
     simulated: string;
+  };
+  diagramExplorer: {
+    defaultTitle: string;
+    closeDetail: string;
+  };
+  stateMachine: {
+    defaultTitle: string;
+    currentStateLabel: string;
+    reset: string;
+    step: string;
+    /** `{from}`, `{to}` */
+    transitionAriaLabel: string;
+  };
+  codePlayground: {
+    run: string;
+    running: string;
+    reset: string;
+    copy: string;
+    copied: string;
+    outputLabel: string;
+    errorLabel: string;
+    languageLabel: string;
+    comingSoon: string;
+    loadingSandbox: string;
+    timeoutError: string;
+    emptyOutput: string;
+  };
+  exercise: {
+    moveUp: string;
+    moveDown: string;
+    submit: string;
+    retry: string;
+    showAnswer: string;
+    correct: string;
+    incorrect: string;
+    yourOrderLabel: string;
+    correctOrderLabel: string;
+  };
+  predictOutput: {
+    submit: string;
+    retry: string;
+    correct: string;
+    incorrect: string;
+    actualOutputLabel: string;
+    explanationLabel: string;
+  };
+  terminal: {
+    inputAriaLabel: string;
+    reset: string;
+    hint: string;
+    commandNotFound: string;
+    exerciseComplete: string;
+  };
+  underTheHood: {
+    showMore: string;
+    showLess: string;
+  };
+  glossary: {
+    learnMore: string;
+    closeDefinition: string;
   };
   pageActions: {
     /** Shared by the Like and Feedback cards' rate-limit cooldown display. */

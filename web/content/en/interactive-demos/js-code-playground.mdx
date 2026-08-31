@@ -1,0 +1,28 @@
+---
+title: JavaScript Code Playground
+description: Editable, runnable JavaScript — executed in a sandboxed iframe with no access to this page's cookies or DOM, never on a server.
+category: Interactive Demos
+weight: 4
+interactive: true
+interactiveType: ["CodePlayground"]
+---
+
+Edit the code below and press **Run**. It executes inside a sandboxed `<iframe sandbox="allow-scripts">` with `allow-same-origin` deliberately left off — the sandboxed frame gets an opaque origin, so it has no way to read this page's cookies, storage, or DOM, and no ambient-credentialed network access. `console.log` output is captured and shown below; an uncaught error or an infinite loop (via a timeout) is reported instead of hanging the page.
+
+<CodePlayground
+  title="Try it"
+  initialCode={`function fib(n) {
+  if (n <= 1) return n;
+  return fib(n - 1) + fib(n - 2);
+}
+
+for (let i = 0; i < 8; i++) {
+  console.log(i, fib(i));
+}`}
+/>
+
+Only JavaScript actually runs today — the architecture (`lib/execution/ExecutionProvider`) is deliberately generic so another language could be added later as its own sandboxed provider, without changing this component.
+
+## See also
+
+- **[Predict the Output](/en/interactive-demos/predict-the-output)** — guess what a snippet logs before running it.

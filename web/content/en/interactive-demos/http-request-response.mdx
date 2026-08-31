@@ -1,0 +1,19 @@
+---
+title: HTTP Request & Response
+description: Build a real HTTP request by hand and see a simulated response — method, path, headers, and the raw request/response text.
+category: Interactive Demos
+weight: 1
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+An <GlossaryTerm id="api">API</GlossaryTerm> request is just text over a connection — a method, a path, a version, headers, and (sometimes) a body. Pick a method and path below, adjust the headers if you like, and send it. Nothing here leaves your browser: a small set of routes are simulated client-side (see `web/components/interactive/mock-api.ts`), but the request you see constructed is exactly what a real client would send.
+
+<RequestPlayground protocol="http" defaultTarget="/api/users/1" defaultMethod="GET" />
+
+Try changing the method to `POST` against `/api/users` with a JSON body, or request `/api/rate-limited` a few times in a row to see a simulated `429` kick in.
+
+## See also
+
+- **[HTTP Fundamentals](/en/web-fundamentals/http)** — methods, status codes, and headers explained.
+- **[HTTP Request Lifecycle](/en/interactive-demos/http-state-machine)** — the states a request/response cycle moves through.

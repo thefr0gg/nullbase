@@ -1,4 +1,4 @@
-import type { ElementType, ReactNode } from "react";
+import type { ElementType, HTMLAttributes, ReactNode } from "react";
 import clsx from "clsx";
 import { Badge } from "@/app/_components/ui";
 
@@ -18,7 +18,7 @@ export function PlaygroundShell({
   children,
   className,
 }: {
-  children: ReactNode;
+  children?: ReactNode;
   className?: string;
 }) {
   return (
@@ -116,6 +116,29 @@ export function SimulatedTag({ className, label = "Simulated" }: { className?: s
     <Badge color="default" className={clsx("shrink-0", className)}>
       {label}
     </Badge>
+  );
+}
+
+/**
+ * Forces left-to-right rendering for a technical value (a URL, header, path,
+ * command, identifier) shown inside an interactive component, regardless of
+ * the surrounding page's `dir` — mirrors `app/mdx.css`'s `.mdx-pre-plain`/
+ * `.mdx-code-inline` treatment of Shiki-rendered fences, which the
+ * interactive-component library doesn't inherit since it isn't part of that
+ * MDX pipeline. Use the `block` variant for a `<pre>`/multi-line snippet,
+ * the default `inline` variant for a single value inside a line of prose.
+ */
+export function Ltr({
+  children,
+  as = "span",
+  className,
+  ...props
+}: { children?: ReactNode; as?: ElementType; className?: string } & HTMLAttributes<HTMLElement>) {
+  const Tag = as;
+  return (
+    <Tag dir="ltr" className={clsx("[unicode-bidi:isolate]", className)} {...props}>
+      {children}
+    </Tag>
   );
 }
 

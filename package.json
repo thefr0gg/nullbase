@@ -14,6 +14,7 @@
     "dev:all": "concurrently -n web,api -c blue,green \"npm:dev:web\" \"npm:dev:api\"",
     "build": "npm run build -w web",
     "lint": "npm run lint -w web && npm run typecheck -w api",
+    "test": "npm run test -w web",
     "deploy:web": "npm run build -w web && cd web && npx wrangler deploy",
     "deploy:api": "cd api && npx wrangler deploy",
     "db:migrate": "npm run db:migrate -w api",

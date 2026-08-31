@@ -1,0 +1,31 @@
+---
+title: URL Anatomy & Lifecycle
+description: Break a URL into its parts, then walk through everything that happens between typing it and seeing a page render.
+category: Interactive Demos
+weight: 0
+interactive: true
+interactiveType: ["UrlAnatomy", "DiagramExplorer"]
+---
+
+import { urlLifecycleRows } from "./url-lifecycle-rows";
+
+A <GlossaryTerm id="dns">DNS</GlossaryTerm>-resolvable, <GlossaryTerm id="tls">TLS</GlossaryTerm>-secured request all starts as one plain string. Before any of that machinery runs, the browser has to split the string itself into meaningful parts:
+
+<UrlAnatomy
+  parts={[
+    { text: "https", label: "Scheme", color: "blue" },
+    { text: "://", label: "", color: "default" },
+    { text: "example.com", label: "Host", color: "green" },
+    { text: ":443", label: "Port", color: "orange" },
+    { text: "/users", label: "Path", color: "purple" },
+    { text: "?id=42", label: "Query", color: "red" },
+  ]}
+/>
+
+## Then the lifecycle begins
+
+Every stage below is clickable — select one to see what it does and why it's necessary.
+
+<DiagramExplorer title="What happens after you press Enter" rows={urlLifecycleRows} />
+
+This is a simulation: nothing on this page makes a real network request. For the real thing, see [TCP/IP](/en/web-fundamentals/tcp-ip), [TLS](/en/web-fundamentals/tls), and [DNS](/en/web-fundamentals/dns).

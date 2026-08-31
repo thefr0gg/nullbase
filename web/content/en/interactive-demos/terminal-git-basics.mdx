@@ -1,0 +1,25 @@
+---
+title: "Terminal: Git Basics"
+description: A simulated shell with a small in-memory filesystem and git subset — check the status, stage a file, and make your first commit.
+category: Interactive Demos
+weight: 9
+interactive: true
+interactiveType: ["InteractiveTerminal"]
+---
+
+import { gitBasicsFs, gitBasicsCwd, gitBasicsExpectedCommands } from "./git-basics-fs";
+
+This is a real command interpreter (not a video or a script) running against a small in-memory filesystem — nothing here touches an actual shell or a real Git repository. Try `pwd`, `ls`, `cat README.md`, and then work through the exercise below with `git status`, `git add`, and `git commit`.
+
+<InteractiveTerminal
+  title="Try it"
+  initialFs={gitBasicsFs}
+  initialCwd={gitBasicsCwd}
+  expectedCommands={gitBasicsExpectedCommands}
+/>
+
+Use the hint if you get stuck — it shows the exact next command expected. Reset starts the exercise over from a clean working tree.
+
+## See also
+
+- **[Interactive Demos](/en/interactive-demos)** — the rest of this system's working examples.

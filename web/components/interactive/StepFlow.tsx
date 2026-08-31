@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import { Button } from "@/app/_components/ui";
 import { useInteractiveDict } from "@/lib/i18n/step-flow-context";
 import { format } from "@/lib/i18n/format";
-import { DetailPanel, EyebrowLabel, PlaygroundSection, PlaygroundShell } from "./_shared";
+import { DetailPanel, EyebrowLabel, Ltr, PlaygroundSection, PlaygroundShell } from "./_shared";
+
+const AUTOPLAY_INTERVAL_MS = 2600;
 
 /**
  * Clickable, step-by-step process walkthrough — the one genuinely new
@@ -85,17 +87,35 @@ export interface StepFlowStep {
 export interface StepFlowProps {
   steps: StepFlowStep[];
   title?: string;
+  /** Show a Play/Pause control that auto-advances through the steps.
+   *  Off by default — most StepFlow content reads better step-at-a-time. */
+  autoPlay?: boolean;
 }
 
-export default function StepFlow({ steps, title }: StepFlowProps) {
+export default function StepFlow({ steps, title, autoPlay = false }: StepFlowProps) {
   const [index, setIndex] = useState(0);
+  const [playing, setPlaying] = useState(false);
   const dict = useInteractiveDict().stepFlow;
   const total = steps.length;
   const step = steps[index];
-  if (!step) return null;
 
   const atStart = index === 0;
   const atEnd = index === total - 1;
+
+  // Respect the user's reduced-motion preference by never auto-advancing —
+  // stepping remains fully available via the Next button either way. Only
+  // ever schedules a timeout here (never calls setState synchronously in
+  // the effect body itself) — reaching the end just stops scheduling the
+  // next tick, rather than needing to reset `playing` from inside the effect.
+  const isPlaying = playing && !atEnd;
+  useEffect(() => {
+    if (!isPlaying) return;
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const id = setTimeout(() => setIndex((i) => Math.min(total - 1, i + 1)), AUTOPLAY_INTERVAL_MS);
+    return () => clearTimeout(id);
+  }, [isPlaying, index, total]);
+
+  if (!step) return null;
 
   return (
     <PlaygroundShell>
@@ -137,7 +157,8 @@ export default function StepFlow({ steps, title }: StepFlowProps) {
           <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">{step.description}</p>
           {step.detail && (
             <DetailPanel className="mt-3 overflow-x-auto bg-background p-3">
-              <pre
+              <Ltr
+                as="pre"
                 className="font-mono text-xs leading-6 text-text-primary"
                 dangerouslySetInnerHTML={{ __html: highlightDetail(step.detail) }}
               />
@@ -146,19 +167,43 @@ export default function StepFlow({ steps, title }: StepFlowProps) {
         </div>
       </PlaygroundSection>
 
-      <PlaygroundSection divider="top" tone="muted" className="flex items-center justify-between">
+      <PlaygroundSection divider="top" tone="muted" className="flex items-center justify-between gap-2">
         <Button
           variant="secondary"
-          onClick={() => setIndex((i) => Math.max(0, i - 1))}
+          onClick={() => {
+            setPlaying(false);
+            setIndex((i) => Math.max(0, i - 1));
+          }}
           disabled={atStart}
           className="text-sm"
         >
           <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
           {dict.previous}
         </Button>
+        {autoPlay && (
+          <Button
+            variant="ghost"
+            onClick={() => {
+              if (isPlaying) {
+                setPlaying(false);
+                return;
+              }
+              if (atEnd) setIndex(0);
+              setPlaying(true);
+            }}
+            aria-label={isPlaying ? dict.pause : dict.play}
+            className="text-sm"
+          >
+            {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+            {isPlaying ? dict.pause : dict.play}
+          </Button>
+        )}
         <Button
           variant="primary"
-          onClick={() => setIndex((i) => Math.min(total - 1, i + 1))}
+          onClick={() => {
+            setPlaying(false);
+            setIndex((i) => Math.min(total - 1, i + 1));
+          }}
           disabled={atEnd}
           className="text-sm"
         >

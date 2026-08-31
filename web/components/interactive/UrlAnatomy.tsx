@@ -1,4 +1,5 @@
 import type { BadgeColor } from "@/app/_components/ui";
+import { Ltr } from "./_shared";
 
 /**
  * A hand-built "annotated string" diagram — not a sequence/flow, so Mermaid
@@ -41,19 +42,19 @@ export default function UrlAnatomy({ parts }: UrlAnatomyProps) {
   return (
     <div className="my-8 overflow-hidden rounded-2xl border border-border bg-surface p-5 shadow-card">
       <div className="overflow-x-auto">
-        <div className="whitespace-nowrap font-mono text-sm text-text-primary">
+        <Ltr as="div" className="whitespace-nowrap font-mono text-sm text-text-primary">
           {parts.map((part, i) => (
             <span key={i} className={`border-b-2 pb-1 ${BORDER_CLASSES[part.color]}`}>
-              {part.text || " "}
+              {part.text || " "}
             </span>
           ))}
-        </div>
+        </Ltr>
       </div>
       <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
         {parts.map((part, i) => (
           <div key={i} className="flex items-center gap-1.5 text-xs">
             <span className={`h-2 w-2 shrink-0 rounded-full ${DOT_CLASSES[part.color]}`} />
-            <span className="font-mono text-text-primary">{part.text || "(none)"}</span>
+            <Ltr className="font-mono text-text-primary">{part.text || "(none)"}</Ltr>
             <span className="text-text-secondary">— {part.label}</span>
           </div>
         ))}

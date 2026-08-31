@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import type { ReactNode } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import clsx from "clsx";
@@ -204,6 +204,8 @@ function TableLayout({
   columns: { key: string; label: string }[];
   title?: string;
 }) {
+  const [openId, setOpenId] = useState<string | null>(null);
+
   return (
     <div className="my-6">
       {title && (
@@ -231,18 +233,60 @@ function TableLayout({
             </tr>
           </thead>
           <tbody>
-            {items.map((item) => (
-              <tr key={item.id} className="last:[&>td]:border-b-0">
-                <td className="border-b border-border px-4 py-2.5 font-semibold text-text-primary">
-                  <Badge color={item.color ?? "default"}>{item.label}</Badge>
-                </td>
-                {columns.map((col) => (
-                  <td key={col.key} className="border-b border-border px-4 py-2.5 text-text-primary">
-                    {item.columns?.[col.key] ?? "—"}
-                  </td>
-                ))}
-              </tr>
-            ))}
+            {items.map((item) => {
+              const expandable = Boolean(item.detail);
+              const open = openId === item.id;
+              return (
+                <Fragment key={item.id}>
+                  <tr
+                    className={clsx("last:[&>td]:border-b-0", expandable && "cursor-pointer hover:bg-background/40")}
+                    onClick={expandable ? () => setOpenId(open ? null : item.id) : undefined}
+                  >
+                    <td className="border-b border-border px-4 py-2.5 font-semibold text-text-primary">
+                      {expandable ? (
+                        <button
+                          type="button"
+                          aria-expanded={open}
+                          className="flex items-center gap-1.5"
+                        >
+                          <Badge color={item.color ?? "default"}>{item.label}</Badge>
+                          {open ? (
+                            <ChevronUp className="h-3.5 w-3.5 shrink-0 text-text-secondary" />
+                          ) : (
+                            <ChevronDown className="h-3.5 w-3.5 shrink-0 text-text-secondary" />
+                          )}
+                        </button>
+                      ) : (
+                        <Badge color={item.color ?? "default"}>{item.label}</Badge>
+                      )}
+                    </td>
+                    {columns.map((col) => (
+                      <td key={col.key} className="border-b border-border px-4 py-2.5 text-text-primary">
+                        {item.columns?.[col.key] ?? "—"}
+                      </td>
+                    ))}
+                  </tr>
+                  {expandable && (
+                    <tr>
+                      <td colSpan={columns.length + 1} className="border-b border-border p-0 last:border-b-0">
+                        <div
+                          className={clsx(
+                            "grid grid-cols-1 transition-[grid-template-rows] duration-300 ease-out",
+                            open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+                          )}
+                        >
+                          <div className="min-w-0 overflow-hidden">
+                            <div className="bg-background/40 px-4 pb-4 pt-3 text-sm text-text-secondary">
+                              {item.detail}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              );
+            })}
           </tbody>
         </table>
       </DetailPanel>

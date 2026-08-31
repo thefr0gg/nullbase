@@ -1,0 +1,26 @@
+---
+title: Order the Request
+description: Reorder the pieces of a raw HTTP request into the correct sequence — a request line, then headers, then a required blank line.
+category: Interactive Demos
+weight: 8
+interactive: true
+interactiveType: ["OrderingExercise"]
+---
+
+A raw HTTP request isn't just a bag of lines — order matters. Put these back in the sequence a real client would send them in.
+
+<OrderingExercise
+  title="HTTP request, scrambled"
+  prompt="Put these HTTP request components in the correct order."
+  items={[
+    { id: "accept", label: "Accept: text/html", explanation: "Headers can appear in any order relative to each other, but they must all come after the request line and before the blank line." },
+    { id: "blank", label: "(blank line)", explanation: "The blank line marks the end of headers — without it, a server can't tell where headers end and the body begins." },
+    { id: "request-line", label: "GET / HTTP/1.1", explanation: "The request line — method, path, version — always comes first." },
+    { id: "host", label: "Host: example.com", explanation: "Host is a header like any other, and (for HTTP/1.1) required — but it still comes after the request line." },
+  ]}
+  correctOrder={["request-line", "host", "accept", "blank"]}
+/>
+
+## See also
+
+- **[HTTP Request & Response](/en/interactive-demos/http-request-response)** — build one interactively instead of just reordering it.

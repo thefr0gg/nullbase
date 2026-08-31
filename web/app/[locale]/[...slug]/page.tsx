@@ -77,6 +77,14 @@ export default async function SlugPage({
         stepFlow: dict.stepFlow,
         requestPlayground: dict.requestPlayground,
         simulated: dict.interactive.simulated,
+        diagramExplorer: dict.diagramExplorer,
+        stateMachine: dict.stateMachine,
+        codePlayground: dict.codePlayground,
+        exercise: dict.exercise,
+        predictOutput: dict.predictOutput,
+        terminal: dict.terminal,
+        underTheHood: dict.underTheHood,
+        glossary: dict.glossary,
       }}
     />
   );

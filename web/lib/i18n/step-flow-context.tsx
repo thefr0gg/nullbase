@@ -17,12 +17,22 @@ export interface InteractiveDict {
   stepFlow: Dictionary["stepFlow"];
   requestPlayground: Dictionary["requestPlayground"];
   simulated: string;
+  diagramExplorer: Dictionary["diagramExplorer"];
+  stateMachine: Dictionary["stateMachine"];
+  codePlayground: Dictionary["codePlayground"];
+  exercise: Dictionary["exercise"];
+  predictOutput: Dictionary["predictOutput"];
+  terminal: Dictionary["terminal"];
+  underTheHood: Dictionary["underTheHood"];
+  glossary: Dictionary["glossary"];
 }
 
 const DEFAULT_DICT: InteractiveDict = {
   stepFlow: {
     previous: "Previous",
     next: "Next",
+    play: "Play",
+    pause: "Pause",
     stepOf: "Step {current} of {total}",
     defaultTitle: "Step-by-step",
     stepsAriaLabel: "Steps",
@@ -67,6 +77,65 @@ const DEFAULT_DICT: InteractiveDict = {
     sseWaiting: "Waiting for events…",
   },
   simulated: "Simulated",
+  diagramExplorer: {
+    defaultTitle: "Diagram",
+    closeDetail: "Close",
+  },
+  stateMachine: {
+    defaultTitle: "State machine",
+    currentStateLabel: "Current state",
+    reset: "Reset",
+    step: "Step",
+    transitionAriaLabel: "Transition from {from} to {to}",
+  },
+  codePlayground: {
+    run: "Run",
+    running: "Running…",
+    reset: "Reset",
+    copy: "Copy",
+    copied: "Copied",
+    outputLabel: "Output",
+    errorLabel: "Error",
+    languageLabel: "Language",
+    comingSoon: "Coming soon",
+    loadingSandbox: "Starting sandbox…",
+    timeoutError: "Execution took too long and was stopped.",
+    emptyOutput: "(no output)",
+  },
+  exercise: {
+    moveUp: "Move up",
+    moveDown: "Move down",
+    submit: "Check answer",
+    retry: "Try again",
+    showAnswer: "Show answer",
+    correct: "Correct!",
+    incorrect: "Not quite.",
+    yourOrderLabel: "Your order",
+    correctOrderLabel: "Correct order",
+  },
+  predictOutput: {
+    submit: "Check answer",
+    retry: "Try again",
+    correct: "Correct!",
+    incorrect: "Not quite.",
+    actualOutputLabel: "Actual output",
+    explanationLabel: "Why",
+  },
+  terminal: {
+    inputAriaLabel: "Terminal input",
+    reset: "Reset",
+    hint: "Hint",
+    commandNotFound: "command not found",
+    exerciseComplete: "Done — you ran the expected command.",
+  },
+  underTheHood: {
+    showMore: "Show me what actually happens",
+    showLess: "Hide the details",
+  },
+  glossary: {
+    learnMore: "Learn more",
+    closeDefinition: "Close",
+  },
 };
 
 const InteractiveDictContext = createContext<InteractiveDict>(DEFAULT_DICT);

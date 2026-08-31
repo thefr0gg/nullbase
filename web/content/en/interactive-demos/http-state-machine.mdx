@@ -1,0 +1,26 @@
+---
+title: HTTP Request Lifecycle (State Machine)
+description: The states a single HTTP request/response cycle moves through, as a clickable, steppable state machine instead of a static diagram.
+category: Interactive Demos
+weight: 3
+interactive: true
+interactiveType: ["StateMachine"]
+---
+
+import { httpLifecycleStates, httpLifecycleTransitions } from "./http-lifecycle-machine";
+
+A single request/response cycle isn't instantaneous — it moves through a small number of distinct states, and not every transition is available from every state (you can't jump straight from "idle" to "receiving"). Click a transition to fire it, or use **Step** to follow the first available one automatically.
+
+<StateMachine
+  title="One request/response cycle"
+  states={httpLifecycleStates}
+  transitions={httpLifecycleTransitions}
+  initial="idle"
+/>
+
+This same shape — a small set of states, a fixed set of valid transitions between them — describes far more than HTTP: see [TCP](/en/networking/tcp)'s connection lifecycle, a WebSocket's connecting/open/closing/closed states, or an OAuth authorization flow.
+
+## See also
+
+- **[HTTP Request & Response](/en/interactive-demos/http-request-response)** — build and send an actual simulated request.
+- **[Sessions](/en/security/sessions)** — a longer-lived state machine layered on top of many request/response cycles.

@@ -1,0 +1,60 @@
+---
+title: TCP vs UDP
+description: A click-to-expand comparison of TCP and UDP, plus a slider showing what TCP's window size actually controls.
+category: Interactive Demos
+weight: 2
+interactive: true
+interactiveType: ["ItemExplorer", "InteractiveSlider"]
+---
+
+import TcpWindowVisual from "./tcp-window-visual";
+
+<GlossaryTerm id="tcp">TCP</GlossaryTerm> and <GlossaryTerm id="udp">UDP</GlossaryTerm> sit at the same layer and solve the same basic problem — getting bytes from one host to another — with opposite trade-offs. Click a row for more detail on that difference.
+
+<ItemExplorer
+  title="TCP vs UDP"
+  layout="table"
+  tableColumns={[{ key: "tcp", label: "TCP" }, { key: "udp", label: "UDP" }]}
+  items={[
+    {
+      id: "connection",
+      label: "Connection",
+      color: "blue",
+      columns: { tcp: "Connection-oriented (handshake required)", udp: "Connectionless" },
+      detail: "TCP spends a round trip on a three-way handshake before any data moves. UDP has nothing to set up — the first packet sent is already real data.",
+    },
+    {
+      id: "reliability",
+      label: "Reliability",
+      color: "green",
+      columns: { tcp: "Guaranteed delivery, retransmits lost segments", udp: "Best effort — a lost packet is just gone" },
+      detail: "TCP tracks every byte with sequence numbers and acknowledgments, retransmitting anything unacknowledged. UDP has no such bookkeeping, which is exactly what makes it cheap.",
+    },
+    {
+      id: "ordering",
+      label: "Ordering",
+      color: "purple",
+      columns: { tcp: "Delivered in order", udp: "No ordering guarantee" },
+      detail: "TCP reassembles segments by sequence number even if they arrive out of order. UDP hands datagrams to the application in whatever order they arrive.",
+    },
+    {
+      id: "use-cases",
+      label: "Typical use",
+      color: "orange",
+      columns: { tcp: "HTTP, file transfer, email", udp: "DNS, video calls, gaming" },
+      detail: "Anything where a stale or missing update is worse than a delayed one favors UDP; anything where correctness matters more than a few extra milliseconds favors TCP.",
+    },
+  ]}
+/>
+
+## What TCP's window size actually does
+
+TCP doesn't send one byte at a time and wait for each acknowledgment — it sends up to a **window** of unacknowledged bytes at once. A bigger window means more data in flight before the sender has to pause and wait.
+
+<InteractiveSlider label="TCP window size (KB)" min={1} max={64} defaultValue={16}>
+  <TcpWindowVisual />
+</InteractiveSlider>
+
+## See also
+
+- **[TCP](/en/networking/tcp)** and **[UDP](/en/networking/udp)** — the full reference pages.

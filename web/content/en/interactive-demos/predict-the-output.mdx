@@ -1,0 +1,34 @@
+---
+title: Predict the Output
+description: Two short JavaScript quizzes — guess what each snippet logs, then see the real output and why.
+category: Interactive Demos
+weight: 5
+interactive: true
+interactiveType: ["PredictOutput"]
+---
+
+A quick way to test whether a piece of JavaScript's behavior matches your mental model. Pick an answer, check it, and read the explanation either way.
+
+<PredictOutput
+  title="Array + array"
+  code={`console.log([1, 2, 3] + [4, 5, 6]);`}
+  options={["1,2,34,5,6", "[1,2,3,4,5,6]", "7", "Error"]}
+  correctIndex={0}
+  explanation="The + operator on two objects (arrays included) coerces both to strings first. [1,2,3].toString() is '1,2,3', [4,5,6].toString() is '4,5,6', and string concatenation just joins them with nothing in between."
+  actualOutput="1,2,34,5,6"
+/>
+
+<PredictOutput
+  title="var inside a loop"
+  code={`for (var i = 0; i < 3; i++) {
+  setTimeout(() => console.log(i), 0);
+}`}
+  options={["0, 1, 2", "3, 3, 3", "0, 0, 0", "Error"]}
+  correctIndex={1}
+  explanation="var is function-scoped, not block-scoped — all three callbacks close over the same i, which has already reached 3 by the time any of them actually runs (setTimeout always defers, even with a 0ms delay). Replacing var with let would give each iteration its own binding, printing 0, 1, 2 instead."
+  actualOutput="3, 3, 3"
+/>
+
+## See also
+
+- **[JavaScript Code Playground](/en/interactive-demos/js-code-playground)** — run your own snippets instead of just these two.

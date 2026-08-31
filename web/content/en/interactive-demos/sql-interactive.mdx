@@ -1,0 +1,29 @@
+---
+title: SQL Interactive
+description: A real, embedded SQLite database compiled to WebAssembly, running entirely in your browser — genuine SQL execution against a small seed dataset.
+category: Interactive Demos
+weight: 6
+interactive: true
+interactiveType: ["SqlPlayground"]
+---
+
+Unlike most widgets on this site, this one isn't scripted — it's real <GlossaryTerm id="sql">SQL</GlossaryTerm> executed by an actual SQLite engine (via `sql.js`, SQLite compiled to WebAssembly) running entirely client-side. The query below runs against a small in-memory `users` table seeded when the page loads.
+
+<SqlPlayground
+  title="Try a query"
+  schema={`
+CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL, age INTEGER NOT NULL);
+INSERT INTO users (id, name, age) VALUES
+  (1, 'Alice', 21),
+  (2, 'Bob', 25),
+  (3, 'Charlie', 19);
+`}
+  defaultQuery={`SELECT name FROM users WHERE age > 20;`}
+/>
+
+Try changing the condition, adding an `ORDER BY`, or intentionally writing a broken query — the error you get back is a genuine SQLite parser error, not a scripted one.
+
+## See also
+
+- **[SQL](/en/databases/sql)** — the full reference on the query language itself.
+- **[SQL Injection](/en/security/sql-injection)** — what goes wrong when untrusted input reaches a query like this one unguarded.
