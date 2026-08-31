@@ -120,7 +120,7 @@ export function AdminLikesPanel({ pageTitles }: { pageTitles: Record<string, str
               inside the card rather than clipping (Card's own rounded
               corners come from overflow-hidden on the outer element above;
               this inner div is the one that actually scrolls). */}
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto scroll-shadow-x">
             <table className="w-full min-w-[26rem] text-sm">
               <thead>
                 <tr className="border-b border-border bg-background/60 text-left text-xs uppercase tracking-wide text-text-secondary">

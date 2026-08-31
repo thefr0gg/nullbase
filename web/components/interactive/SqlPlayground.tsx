@@ -206,7 +206,7 @@ export default function SqlPlayground({ title, schema, defaultQuery = "", enforc
 
 function ResultTable({ result }: { result: QueryExecResult }) {
   return (
-    <DetailPanel className="overflow-x-auto">
+    <DetailPanel className="overflow-x-auto scroll-shadow-x">
       <table className="w-full min-w-max border-collapse text-sm">
         <thead>
           <tr className="bg-background/60">

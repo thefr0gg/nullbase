@@ -215,7 +215,7 @@ function TableLayout({
           </EyebrowLabel>
         </div>
       )}
-      <DetailPanel className="overflow-x-auto">
+      <DetailPanel className="overflow-x-auto scroll-shadow-x">
         <table className="w-full min-w-max border-collapse text-sm">
           <thead>
             <tr className="bg-background/60">

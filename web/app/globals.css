@@ -19,6 +19,15 @@
   --mdx-table-header-bg: color-mix(in oklch, var(--text-primary) 5%, var(--surface));
   --mdx-table-stripe-bg: color-mix(in oklch, var(--text-primary) 2.5%, transparent);
 
+  /* Reusable "scroll shadow" background for any horizontally scrollable
+     box (see .scroll-shadow-x below) — a faint edge shadow that only
+     shows while there's more content to scroll toward, so a scrollable
+     table/panel doesn't look like it's just been clipped. */
+  --scroll-shadow-cover: linear-gradient(to right, var(--surface) 30%, transparent),
+    linear-gradient(to left, var(--surface) 30%, transparent);
+  --scroll-shadow-edge: linear-gradient(to right, color-mix(in oklch, var(--text-primary) 22%, transparent), transparent),
+    linear-gradient(to left, color-mix(in oklch, var(--text-primary) 22%, transparent), transparent);
+
   /* Body/heading font, overridden per-script below — Arabic pages need a
      dedicated Arabic-script family (Latin fonts don't cover Arabic glyphs),
      with a separate, more geometric family for headings only. */
@@ -141,6 +150,22 @@
   .shadow-card {
     box-shadow: var(--shadow-card);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  /* A horizontally scrollable box (a wide table, a table-layout
+     ItemExplorer) otherwise gives no visual sign there's more to scroll to
+     — on mobile, where the scrollbar itself is usually invisible, content
+     just looks clipped. This shows a faint shadow at whichever edge still
+     has unscrolled content, and nothing once you've scrolled all the way
+     to that edge — the classic "local + scroll background-attachment"
+     scroll-shadow technique, pure CSS, no JS. */
+  .scroll-shadow-x {
+    background-color: var(--surface);
+    background-image: var(--scroll-shadow-cover), var(--scroll-shadow-edge);
+    background-repeat: no-repeat;
+    background-size: 32px 100%, 32px 100%, 12px 100%, 12px 100%;
+    background-position: 0 0, 100% 0, 0 0, 100% 0;
+    background-attachment: local, local, scroll, scroll;
   }
 }
 

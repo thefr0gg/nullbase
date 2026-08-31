@@ -172,7 +172,7 @@ export const components = {
 
   table: (props: ComponentProps<"table">) => (
     <div className="mdx-table-wrap">
-      <div className="mdx-table-scroll">
+      <div className="mdx-table-scroll scroll-shadow-x">
         <table {...props} className="mdx-table" />
       </div>
     </div>
