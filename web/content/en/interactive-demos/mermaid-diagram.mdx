@@ -1,0 +1,44 @@
+---
+title: Mermaid Diagram
+description: A declarative, text-in/SVG-out diagram — flowcharts, sequence diagrams, state diagrams, and more, themed to match light/dark mode automatically.
+category: Interactive Demos
+weight: 10
+interactive: true
+interactiveType: ["MermaidDiagram"]
+---
+
+`MermaidDiagram` is the other end of the spectrum from `DiagramExplorer`: instead of an author describing nodes and edges as data, they write a small text description in [Mermaid](https://mermaid.js.org/) syntax and the library lays it out and renders it to SVG client-side. Good for anything Mermaid already has a diagram type for (flowcharts, sequence diagrams, state diagrams, ER diagrams, Gantt charts) — reach for `DiagramExplorer` instead when you need each node to be clickable with its own explanation panel, which Mermaid's static SVG output doesn't support.
+
+## A flowchart
+
+<MermaidDiagram
+  title="A simple decision"
+  chart={`flowchart TD
+    A[Request arrives] --> B{Cache hit?}
+    B -->|Yes| C[Return cached response]
+    B -->|No| D[Query the database]
+    D --> E[Store in cache]
+    E --> C`}
+/>
+
+## A sequence diagram
+
+<MermaidDiagram
+  title="Two services and a shared cache"
+  chart={`sequenceDiagram
+    participant Client
+    participant API
+    participant Cache
+    Client->>API: GET /products/42
+    API->>Cache: get("product:42")
+    Cache-->>API: miss
+    API->>API: query database
+    API->>Cache: set("product:42", ...)
+    API-->>Client: 200 OK`}
+/>
+
+The library itself (~600KB) is dynamically imported only on pages that render this component, and the diagram's colors adapt to the site's light/dark theme automatically.
+
+## See also
+
+- **[URL Anatomy & Lifecycle](/en/interactive-demos/url-anatomy-and-lifecycle)** — `DiagramExplorer`, the clickable alternative to a static Mermaid diagram.

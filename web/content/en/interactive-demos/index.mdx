@@ -5,26 +5,34 @@ category: Interactive Demos
 weight: 100
 ---
 
-Nullbase's reference pages aren't limited to prose and static code blocks — most of the interactive widgets used across the site are built from a small, reusable set of primitives (see `web/components/interactive/`). This section is a working tour of that system: each page below embeds one primitive with real, runnable data, so you can see exactly what a content author writes to get it.
+Nullbase's reference pages aren't limited to prose and static code blocks — most of the interactive widgets used across the site are built from a small, reusable set of primitives (see `web/components/interactive/`). This section is a working tour of that system: each page below embeds one primitive with real, runnable data, so you can see exactly what a content author writes to get it, and which existing primitive to reach for before building a new one.
+
+This section is **internal reference only** — available in `next dev`, excluded entirely from the production build (see `INTERNAL_ONLY_ROOTS` in `web/lib/content/loader.ts`). It never ships to real visitors, isn't in the sitemap or search index, and won't appear in `next build`'s static output.
 
 ## Diagrams and flows
 
-- **[URL Anatomy & Lifecycle](/en/interactive-demos/url-anatomy-and-lifecycle)** — breaking a URL into its parts, then walking through what happens to it.
-- **[Under the Hood: a URL Request](/en/interactive-demos/under-the-hood-url-request)** — progressive disclosure hiding a full request lifecycle behind one button.
-- **[HTTP Request Lifecycle (State Machine)](/en/interactive-demos/http-state-machine)** — clickable states and transitions instead of a static diagram.
+- **[URL Anatomy & Lifecycle](/en/interactive-demos/url-anatomy-and-lifecycle)** — breaking a URL into its parts, then walking through what happens to it. (`UrlAnatomy`, `DiagramExplorer`)
+- **[Under the Hood: a URL Request](/en/interactive-demos/under-the-hood-url-request)** — progressive disclosure hiding a full request lifecycle behind one button. (`UnderTheHood`, `StepFlow` with `autoPlay`)
+- **[HTTP Request Lifecycle (State Machine)](/en/interactive-demos/http-state-machine)** — clickable states and transitions instead of a static diagram. (`StateMachine`)
+- **[Mermaid Diagram](/en/interactive-demos/mermaid-diagram)** — declarative flowcharts/sequence diagrams when nodes don't need their own click-to-explain panel. (`MermaidDiagram`)
 
 ## Protocols and comparisons
 
-- **[HTTP Request & Response](/en/interactive-demos/http-request-response)** — build a real request, see a simulated response.
-- **[TCP vs UDP](/en/interactive-demos/tcp-vs-udp)** — a click-to-expand comparison, plus a slider showing what TCP window size actually controls.
+- **[HTTP Request & Response](/en/interactive-demos/http-request-response)** — build a real request, see a simulated response. (`RequestPlayground`)
+- **[TCP vs UDP](/en/interactive-demos/tcp-vs-udp)** — a click-to-expand comparison, plus a slider showing what TCP window size actually controls. (`ItemExplorer`, `InteractiveSlider`)
 
 ## Code and data
 
-- **[JavaScript Code Playground](/en/interactive-demos/js-code-playground)** — editable, runnable JavaScript in a sandboxed iframe.
-- **[SQL Interactive](/en/interactive-demos/sql-interactive)** — real SQLite, compiled to WebAssembly, running in your browser.
+- **[JavaScript Code Playground](/en/interactive-demos/js-code-playground)** — editable, runnable JavaScript in a sandboxed iframe. (`CodePlayground`)
+- **[SQL Interactive](/en/interactive-demos/sql-interactive)** — real SQLite, compiled to WebAssembly, running in your browser. (`SqlPlayground`)
+- **[Codec (Base64 / URL Encoding)](/en/interactive-demos/codec)** — the one primitive that's genuinely live, not simulated. (`Codec`)
 
 ## Practice
 
-- **[Predict the Output](/en/interactive-demos/predict-the-output)** — a short JavaScript quiz with an explanation.
-- **[Order the Request](/en/interactive-demos/ordering-exercise)** — drag or reorder an HTTP request's parts into the right sequence.
-- **[Terminal: Git Basics](/en/interactive-demos/terminal-git-basics)** — a simulated shell with a small `git` command exercise.
+- **[Predict the Output](/en/interactive-demos/predict-the-output)** — a short JavaScript quiz with an explanation. (`PredictOutput`)
+- **[Order the Request](/en/interactive-demos/ordering-exercise)** — drag or reorder an HTTP request's parts into the right sequence. (`OrderingExercise`)
+- **[Terminal: Git Basics](/en/interactive-demos/terminal-git-basics)** — a simulated shell with a small `git` command exercise. (`InteractiveTerminal`)
+
+## Everything else in the registry
+
+`GlossaryTerm` and `ItemExplorer`'s `grid`/`pills` layouts are used inline throughout the pages above rather than getting their own demo — see any page's rendered `<GlossaryTerm>` mentions, or `ItemExplorer`'s `layout="table"` usage on the TCP vs UDP page, for how those read in practice. `legacy.tsx`'s `HttpRequest`/`StatusCodeExplorer` are intentionally undocumented here — they're compatibility aliases for pre-refactor content only, not something new pages should reach for.

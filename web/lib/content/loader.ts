@@ -56,6 +56,21 @@ function parseFrontmatter(source: string): PageFrontmatter {
   return parsed.data;
 }
 
+/**
+ * Top-level content folders that are a living reference for site authors —
+ * "here's every interactive primitive we have, working, with real data" —
+ * rather than public reference material. Available at `/interactive-demos`
+ * in `next dev` so anyone building new content can see what already exists
+ * before reaching for a new component; excluded entirely from the
+ * production build (not statically generated, not in the sidebar/search
+ * index/sitemap) so it never ships to real visitors.
+ */
+const INTERNAL_ONLY_ROOTS = new Set(["interactive-demos"]);
+
+function isInternalOnly(slug: string[]): boolean {
+  return slug.length > 0 && INTERNAL_ONLY_ROOTS.has(slug[0]);
+}
+
 // Build-time cache, keyed by locale: the content tree never changes during a
 // single build, but `getPage` is called from `generateStaticParams`,
 // `generateMetadata` and the page itself. In dev we bypass the cache so
@@ -71,11 +86,14 @@ export function getAllPages(locale: Locale): CollectedPage[] {
     return [];
   }
   const files = readMdxFiles(root);
-  const pages: CollectedPage[] = files.map((file) => ({
+  let pages: CollectedPage[] = files.map((file) => ({
     slug: fileToSlug(root, file),
     frontmatter: parseFrontmatter(fs.readFileSync(file, "utf-8")),
     fileRel: fileToRel(root, file),
   }));
+  if (process.env.NODE_ENV === "production") {
+    pages = pages.filter((p) => !isInternalOnly(p.slug));
+  }
   cache.set(locale, pages);
   return pages;
 }
@@ -139,16 +157,18 @@ export function getSearchIndex(locale: Locale): SearchEntry[] {
   const root = contentRoot(locale);
   if (!fs.existsSync(root)) return [];
   const files = readMdxFiles(root);
-  return files.map((file) => {
-    const source = fs.readFileSync(file, "utf-8");
-    const { data, content } = matter(source);
-    const parsed = PageFrontmatterSchema.safeParse(data);
-    const slug = fileToSlug(root, file);
-    return {
-      slug,
-      title: parsed.success ? parsed.data.title : slug.join("/"),
-      description: parsed.success ? parsed.data.description : undefined,
-      content: cleanForSearch(content),
-    };
-  });
+  return files
+    .map((file) => {
+      const source = fs.readFileSync(file, "utf-8");
+      const { data, content } = matter(source);
+      const parsed = PageFrontmatterSchema.safeParse(data);
+      const slug = fileToSlug(root, file);
+      return {
+        slug,
+        title: parsed.success ? parsed.data.title : slug.join("/"),
+        description: parsed.success ? parsed.data.description : undefined,
+        content: cleanForSearch(content),
+      };
+    })
+    .filter((entry) => process.env.NODE_ENV !== "production" || !isInternalOnly(entry.slug));
 }
