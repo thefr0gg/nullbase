@@ -1,0 +1,49 @@
+---
+title: REST Architecture
+description: The architectural constraints Roy Fielding actually defined for REST, and why most "RESTful" APIs only implement a fraction of them.
+category: Software Architecture
+weight: 6
+---
+
+**REST (Representational State Transfer)** is an architectural style for distributed hypermedia systems, defined by Roy Fielding in his 2000 doctoral dissertation as a description of the constraints that made the web itself scale — not a spec for building JSON APIs. Fielding derived REST by starting from a null style and adding constraints one at a time, keeping each one only if it improved some property of the system (scalability, simplicity, evolvability). What's commonly called "REST" today — a handful of HTTP verbs mapped onto resource URLs, see [REST](/en/web-apis/rest) for that shape — is a small, practical subset of a much stricter architectural style. This page is about the style; the linked page is about the endpoint conventions people build on top of it.
+
+## Client-server
+
+The client and server evolve independently as long as the interface between them doesn't change. The client doesn't need to know how the server stores or computes anything, and the server doesn't need to know whether it's talking to a browser, a mobile app, or another server. This separation is what lets a backend team ship a database migration and a frontend team ship a redesign in the same week without coordinating a single line of code.
+
+## Statelessness
+
+Every request from a client to a server must contain all the information needed to understand and process it. The server holds no session state about the client between requests — no "remembering" that you logged in three requests ago. Any state that looks session-like (identity, in-progress workflow position) either travels with every request or lives on the client. This is a genuinely strict constraint: it's why a truly stateless API can route any request to any server instance behind a load balancer with zero coordination, and why a server crash loses nothing about "where the client was."
+
+## Cacheability
+
+Responses must, implicitly or explicitly, label themselves as cacheable or not. If a response is cacheable, a client (or an intermediary, like a proxy) is allowed to reuse it for a later equivalent request instead of hitting the server again. This is a first-class architectural constraint, not an optimization bolted on afterward — it's the reason `Cache-Control` and `ETag` headers exist as part of HTTP itself rather than as an application-level convention.
+
+## Uniform interface
+
+This is the constraint that most defines REST's character, and it has four sub-parts:
+
+- **Resources are identified in requests** — a URI names a "thing" (a user, an order), not an action.
+- **Resources are manipulated through representations** — a client never touches the server's internal data directly; it exchanges representations of it (a JSON document, typically), and a resource can have more than one representation (JSON, HTML, XML) without changing its identity.
+- **Self-descriptive messages** — each message includes enough information (media type, headers) for a recipient to know how to process it, without out-of-band knowledge baked into the client.
+- **Hypermedia as the engine of application state (HATEOAS)** — a client interacts with the API entirely through hypermedia links provided dynamically by server responses, the same way a person navigates the web by clicking links rather than typing in URLs they've memorized in advance.
+
+That last sub-constraint is the one almost no production API actually implements. Nearly every API documented as "RESTful" hands a client a fixed set of URL templates up front (`/api/users/{id}`, `/api/orders/{id}/items`) that the client hardcodes, rather than responses that tell the client where it can go next. That's a reasonable trade-off — hardcoded URL templates are simpler to build, document, and generate client SDKs for than a fully hypermedia-driven client — but it means most "REST APIs" are really "resource-oriented HTTP APIs that skip HATEOAS." Fielding himself pushed back publicly on this drift, arguing that an API without hypermedia controls isn't REST at all, just HTTP.
+
+## Layered system
+
+A client can't usually tell whether it's talking directly to the origin server or to an intermediary (a load balancer, a caching proxy, a gateway) along the way, and it shouldn't need to. Each layer only knows about the layer immediately adjacent to it. This is what allows a REST-style system to insert a CDN, an API gateway, or a rate-limiting proxy in front of an existing service without touching the service itself or breaking clients — see [Layered Architecture](/en/software-architecture/layered-architecture) for the more general version of "components stacked so each one only depends on its neighbor."
+
+## Code-on-demand (optional)
+
+The only optional constraint: a server can temporarily extend client functionality by sending executable code (Java applets originally; a browser downloading and running JavaScript today). Most API design discussions ignore this one, since it barely applies outside of browsers loading web pages.
+
+## Why the gap matters
+
+None of this makes hardcoded-URL, non-hypermedia APIs wrong to build — they're easier to reason about and cover the vast majority of real integration needs. But it matters when someone claims a "RESTful" API gives the loose coupling REST promises: without HATEOAS, a client's hardcoded URL structure is itself a form of coupling to the server's implementation, exactly what the full style was designed to avoid.
+
+## See also
+
+- **[REST](/en/web-apis/rest)** — the practical endpoint shape (verbs, status codes, resource URLs) built on top of this style.
+- **[API Versioning](/en/web-apis/api-versioning)** — one direct consequence of skipping HATEOAS: URL structure becomes a contract that has to be versioned explicitly.
+- **[Layered Architecture](/en/software-architecture/layered-architecture)** — the general pattern behind REST's layered-system constraint.

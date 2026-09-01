@@ -1,0 +1,50 @@
+---
+title: Event-Driven Architecture
+description: Components that communicate by announcing events instead of calling each other directly — loose coupling and async processing, traded for eventual consistency and harder tracing.
+category: Software Architecture
+weight: 5
+interactive: true
+interactiveType: ["MermaidDiagram"]
+---
+
+**Event-driven architecture** structures a system around components that communicate by producing and reacting to **events** — "this happened" facts, like `OrderPlaced` or `UserSignedUp` — rather than calling each other's functions or APIs directly. Instead of a caller saying "do this now and tell me the result," a **producer** announces that something happened and moves on, and one or more **consumers** react to it independently, on their own schedule, without the producer needing to know they exist.
+
+## Producers, consumers, and the broker between them
+
+The three pieces that make this work:
+
+- **Producers** emit events when something notable happens in their part of the system — they don't know or care who, if anyone, is listening.
+- **An event broker** (or message bus) sits between producers and consumers, receiving events and delivering them onward. This is often the same kind of durable buffer covered in [Queues](/en/backend/queues) — Kafka, Cloudflare Queues, SQS/SNS, Redis Streams — with one addition: event-driven systems commonly use a **pub/sub** delivery model, where every interested consumer gets its own copy of the event, rather than a work queue's "exactly one consumer takes each message."
+- **Consumers** subscribe to the events they care about and react — sending an email, updating a read model, kicking off another process — whenever one arrives.
+
+<MermaidDiagram
+  title="One event, three independent consumers"
+  chart={`graph LR
+    P[Order Service<br/>produces OrderPlaced] --> B[Event Broker]
+    B --> C1[Email Service]
+    B --> C2[Inventory Service]
+    B --> C3[Analytics Service]
+`}
+/>
+
+## What this buys you
+
+- **Loose coupling.** The order service that emits `OrderPlaced` doesn't need to know that an email service, an inventory service, and an analytics pipeline all react to it — new consumers can start listening for an existing event without the producer changing at all, which is a much smaller change than adding a new outbound call to every producer that needs to reach a new destination.
+- **Asynchronous processing.** The producer doesn't block waiting for every consumer to finish its work — it emits the event and moves on immediately, so a slow downstream consumer (a third-party email API having a bad day) doesn't slow down the request that triggered the event in the first place.
+- **A natural audit trail.** A stream of "this happened" events, kept around, is inherently a record of everything the system did over time — useful for debugging, for rebuilding derived state from scratch, or for satisfying an audit requirement, in a way that a system built purely on direct calls doesn't give you automatically.
+
+## What it costs
+
+- **Eventual consistency.** Because consumers react asynchronously, there's a window — often milliseconds, but not always — where the rest of the system hasn't caught up yet: inventory hasn't been decremented, the analytics dashboard hasn't updated. Code and users downstream have to be able to tolerate that gap, which is a real design constraint, not just an implementation detail.
+- **Harder to trace a request's full path.** A direct function call has an obvious call stack. An event can trigger a consumer, which emits its own event, which triggers another consumer several hops away — the full chain of what happened as a result of one initial action isn't visible from any single place unless the system invests deliberately in distributed tracing or correlation IDs threaded through every event.
+- **Debugging a chain of events is genuinely harder.** When something goes wrong three consumers downstream of the original event, root-causing it means reconstructing a sequence of asynchronous reactions across possibly-separate services and logs, rather than reading one synchronous stack trace top to bottom.
+
+## Where it fits
+
+Event-driven patterns tend to earn their cost specifically where the "who needs to know about this" list is open-ended or growing (adding a new interested party shouldn't mean changing the producer), where slow downstream work shouldn't block the action that triggered it, or where a durable history of what happened has real value on its own. For a tightly-scoped interaction where the caller genuinely needs an immediate result to proceed, a direct synchronous call — or a plain [client-server](/en/software-architecture/client-server-architecture) request — is usually simpler and easier to reason about than routing it through an event and waiting for a consumer to react.
+
+## See also
+
+- **[Queues](/en/backend/queues)** — the durable buffer that usually implements the broker in an event-driven system.
+- **[Microservices](/en/software-architecture/microservices)** — the architecture event-driven communication most often shows up inside, as an alternative to services calling each other directly.
+- **[Background Jobs](/en/backend/background-jobs)** — work deferred out of the request cycle, often triggered by an event rather than run inline.

@@ -1,0 +1,43 @@
+---
+title: Layered Architecture
+description: Organizing code into horizontal layers — presentation, business logic, data access — where each layer only talks to the one directly below it.
+category: Software Architecture
+weight: 7
+interactive: true
+interactiveType: ["MermaidDiagram"]
+---
+
+**Layered architecture** organizes a codebase into horizontal layers stacked by responsibility — typically presentation, business logic, and data access — where each layer only calls into the layer immediately below it and knows nothing about the layers above. It's the default shape most developers reach for without naming it: a route handler that calls a service, which calls a repository, which talks to a database is already a layered architecture, whether or not anyone drew the diagram first.
+
+<MermaidDiagram title="A typical three-layer stack" chart={`graph TD
+    A[Presentation layer<br/>HTTP routes, controllers, UI] --> B[Business logic layer<br/>services, domain rules]
+    B --> C[Data access layer<br/>repositories, queries]
+    C --> D[(Database)]
+`} />
+
+## The rule
+
+The core rule is directional: a layer may depend downward, never upward, and (in the strict version) only on the layer directly beneath it, not layers further down. The presentation layer knows the business logic layer exists and calls into it; the business logic layer has no idea the presentation layer exists at all. This one-directional dependency is what makes each layer swappable in principle — replace a REST API with a CLI and the business logic and data layers don't need to change, because they never depended on the presentation layer to begin with.
+
+## Why teams reach for it
+
+- **Separation of concerns.** HTTP parsing, validation, and response shaping live in one place; the actual rules of the domain (can this order be cancelled? is this discount valid?) live in another; SQL and query construction live in a third. Nobody has to hold all three concerns in their head to change one of them.
+- **Independent testability.** The business logic layer can be unit tested without spinning up an HTTP server or a real database, because it depends on an abstraction of the data layer rather than the data layer itself. Swap in a fake repository and the business rules are testable in isolation.
+- **Independent replaceability.** A team can swap the database engine, or add a second API surface (GraphQL alongside REST), by touching only the layer that actually changed, as long as the layer boundaries were respected in the first place.
+- **A shared mental model.** Because it's such a common pattern, a new developer can guess where a given piece of logic lives — "where does order-cancellation validation go?" has an obvious answer in a well-maintained layered codebase, which lowers onboarding cost.
+
+## Where it breaks down
+
+The classic failure mode is the **sinking layer** (sometimes called an anemic or pass-through layer): a layer that exists in the diagram but does no actual work, just forwarding calls straight through to the layer below with no transformation, validation, or decision-making of its own. A "service" method that does nothing but call a single repository method and return its result verbatim isn't adding separation of concerns — it's adding a function call for no reason. This tends to happen when a team adopts the pattern by rote for every feature regardless of whether the feature has any real business logic to separate out, and it's the main argument against reaching for layered architecture reflexively on genuinely simple CRUD screens, where "list, create, read, update, delete with no rules attached" doesn't have a business logic layer worth writing — the layer boundary is pure indirection with nothing behind it.
+
+The other common cost is that strict layer isolation can push logic into the wrong place to satisfy the diagram rather than the problem. A validation rule that's really about the shape of an HTTP request (is this field present in the body?) gets awkwardly relocated into "business logic" because that's where validation is supposed to live, even though it has nothing to do with the domain and everything to do with the transport. Layered architecture describes *where things go by technical concern* — it says nothing about *why a dependency should or shouldn't exist*, which is the gap [Clean Architecture](/en/software-architecture/clean-architecture) is specifically trying to close.
+
+## A practical middle ground
+
+Most production codebases that call themselves "layered" are looser than the strict definition — a service layer might call two repositories instead of exactly one layer down, or a controller might reach directly into a lightweight query helper for a trivial read. That's a reasonable trade-off as long as the core rule (business logic doesn't know about HTTP, data access doesn't know about business rules) holds; the strict "only the layer directly below" version is more useful as a discipline to reason with than as a rule to enforce with static analysis on every single call site.
+
+## See also
+
+- **[Clean Architecture](/en/software-architecture/clean-architecture)** — organizes by dependency direction rather than technical concern, specifically to avoid business logic depending on infrastructure.
+- **[Domain-Driven Design](/en/software-architecture/domain-driven-design)** — a way to decide what actually belongs in the business logic layer once you have one.
+- **[Middleware](/en/backend/middleware)** — a concrete instance of layered thinking applied to a single request's path through a backend.

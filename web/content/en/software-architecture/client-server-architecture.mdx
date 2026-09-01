@@ -1,0 +1,51 @@
+---
+title: Client-Server Architecture
+description: The split between a client that asks and a server that answers — the pattern underneath nearly everything else in this reference.
+category: Software Architecture
+weight: 1
+interactive: true
+interactiveType: ["MermaidDiagram"]
+---
+
+**Client-server architecture** splits a system into two roles: a **client** that initiates requests, and a **server** that listens for them and sends back responses. It sounds almost too simple to name, but it's the load-bearing assumption underneath the [Web APIs](/en/web-apis) section, the [Backend](/en/backend) section, and most of what this site covers — every HTTP request, every database query, every API call is one instance of a client asking and a server answering.
+
+## What makes something a client vs a server
+
+The distinction isn't about hardware or code complexity — it's about who initiates. A **server** is a process that binds to an address, sits idle, and waits for incoming connections; it doesn't know or care who's going to talk to it until a request actually arrives. A **client** is a process that knows (or looks up) the server's address and initiates a connection when it has something to ask. The same machine can run both roles for different relationships — a backend service is a server to the browser in front of it and a client to the database behind it.
+
+<MermaidDiagram
+  title="A single request/response cycle"
+  chart={`sequenceDiagram
+    participant C as Client (browser)
+    participant S as Server (API)
+    C->>S: HTTP request (GET /v1/pages/123)
+    S->>S: look up data, apply business logic
+    S-->>C: HTTP response (200 OK + JSON body)
+`}
+/>
+
+## Why split the roles at all
+
+The obvious alternative is a single program that does everything locally — no network, no protocol, no separate deploy. That works fine until more than one person needs access to the same data at the same time. Splitting client and server buys two things that are hard to get any other way:
+
+- **Separation of concerns.** The server owns the data and the rules for changing it correctly; the client owns presentation and user interaction. Neither side needs to know how the other is implemented, only the shape of the requests and responses between them — which is exactly what an API contract formalizes.
+- **One server, many clients.** A server doesn't care whether it's talking to a phone app, a browser tab, or another backend service — as long as they speak the same protocol, they can all reach the same shared, consistently-updated data. Centralizing the data and logic in one place (or a small, coordinated set of places) is what makes multi-user, multi-device systems possible at all.
+
+## Thin clients vs thick clients
+
+How much logic lives on the client side is a real design choice, not a fixed law:
+
+- A **thin client** does as little as possible — render what the server sends, forward user input back, keep almost no local state or logic. A server-rendered multi-page website is close to this end: nearly every interaction is a fresh request to the server.
+- A **thick client** (a modern single-page app, a native mobile app) keeps significant logic and state locally — routing, form validation, cached data, even offline functionality — and talks to the server mainly to sync or fetch data, not to render every pixel.
+
+Neither is strictly better. A thin client is simpler to reason about and easier to keep consistent, since the server is the only place logic lives; a thick client can feel dramatically faster to the user and survive flaky connectivity, at the cost of duplicating some logic (and some trust decisions — a thick client's validation is a UX nicety, never a substitute for the server enforcing the same rules) on both sides.
+
+## The shape it gives everything else
+
+Once you see client-server as the base pattern, most of the rest of this site is elaboration on it. A [reverse proxy](/en/backend/reverse-proxies) sits in front of a server without changing which side is which. [Caching](/en/backend/caching) exists to avoid making the client wait on the server redoing work it already did. Even architectures that look like they've moved past client-server — [microservices](/en/software-architecture/microservices), [event-driven systems](/en/software-architecture/event-driven-architecture) — are built from many client-server relationships wired together, not a replacement for the pattern itself. Learning to spot "who's the client here, who's the server" in an unfamiliar system is one of the fastest ways to understand how it actually works.
+
+## See also
+
+- **[Monoliths](/en/software-architecture/monoliths)** — the simplest way to build the server side of this split.
+- **[Microservices](/en/software-architecture/microservices)** — what happens when the server side is itself split into many client-server relationships.
+- **[Web Servers](/en/backend/web-servers)** — the process that plays the server role in an HTTP client-server exchange.

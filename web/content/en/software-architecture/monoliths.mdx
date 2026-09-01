@@ -1,0 +1,35 @@
+---
+title: Monoliths
+description: A single deployable unit containing all of an application's logic — why nearly every project starts here, and what actually goes wrong when it grows.
+category: Software Architecture
+weight: 2
+---
+
+A **monolith** is an application built and deployed as a single unit — one codebase, one build artifact, one running process (or a set of identical replicas of that process) containing all of the application's logic: the API, the business rules, often the background jobs too, all compiled or bundled together and shipped as one thing. "Monolith" gets used as an insult in a lot of architecture discourse, but the term itself just describes a structure, and it's worth being honest about that: a huge number of successful, profitable systems have run as a monolith for their entire lifetime and never needed to be anything else.
+
+## Why teams start there
+
+Almost every project that later becomes something more elaborate started as a monolith, and not by accident. A single codebase means a function call is just a function call — no network, no serialization, no partial failure to think about. A single deploy means there's exactly one thing to build, test, and ship, and exactly one place to look when something breaks. Local development is simple: clone one repo, run one process, and the whole application is in front of you. None of the coordination overhead that distributed systems require — service discovery, network retries, distributed tracing — exists yet, because there's nothing distributed to coordinate.
+
+This isn't a starter-kit compromise to be embarrassed about. For a team of a handful of engineers, or a product whose different parts don't actually have wildly different scaling or release needs, a monolith is very often the *correct* long-term choice, not just the easy first one.
+
+## Where it actually starts to hurt
+
+The pain shows up specifically as the codebase and the team both grow, and it clusters around a few recurring shapes:
+
+- **Coupled deploys.** If the entire application ships as one artifact, then shipping a one-line fix to the checkout flow requires redeploying (and re-testing, and re-verifying) the entire application, including parts nobody touched. As the codebase grows, the blast radius of every deploy grows with it.
+- **Shared failure domain.** A memory leak, an infinite loop, or an unhandled exception in one feature can take down the process serving every *other* feature too, since they all run inside the same process and share the same resources (memory, CPU, database connection pool).
+- **Scaling the whole thing to scale one part.** If only the image-processing endpoint is under heavy load, a monolith's answer is still "run more copies of the entire application" — you can't scale just the hot path without paying to scale everything bundled alongside it.
+- **Organizational friction.** Multiple teams committing to the same codebase and the same deploy pipeline inevitably start stepping on each other — merge conflicts, one team's broken build blocking everyone else's release, and an ever-longer test suite that every team pays the cost of on every change, regardless of whose code it's actually testing.
+
+## The honest tradeoff
+
+None of this means a monolith is wrong to build or wrong to keep. It means the pain points above are specifically about deploy independence, failure isolation, and organizational scale — problems that only bite once a system and team are big enough to feel them. A five-person team serving a modest amount of traffic gains nothing from paying [microservices](/en/software-architecture/microservices)' operational tax up front; a **modular monolith** — one deployable unit internally organized into well-separated modules with clear boundaries — often captures most of the maintainability benefit people actually want from "breaking things up," without any of the network calls, without giving up the simplicity of one deploy, and without foreclosing a later split if and when the pain actually arrives.
+
+The decision to split a monolith should generally follow a real, felt problem — a specific team blocked by another team's release cadence, a specific component that needs to scale independently — rather than being made preemptively on the assumption that a bigger system will eventually need it. Splitting too early buys all of microservices' costs before the org is big enough to need any of its benefits.
+
+## See also
+
+- **[Microservices](/en/software-architecture/microservices)** — the usual next step, and what it actually costs to take it.
+- **[Client-Server Architecture](/en/software-architecture/client-server-architecture)** — the base pattern a monolith still sits on top of, on the server side of the split.
+- **[Application Servers](/en/backend/application-servers)** — the process a monolith typically runs as.

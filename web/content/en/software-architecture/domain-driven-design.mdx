@@ -1,0 +1,40 @@
+---
+title: Domain-Driven Design
+description: Modeling software around the actual business domain and the language its experts use, instead of around database tables or technical layers.
+category: Software Architecture
+weight: 9
+---
+
+**Domain-Driven Design (DDD)**, a term coined by Eric Evans, is an approach to building software that puts the actual business domain — the real-world problem the software exists to solve, and the people who understand it deeply — at the center of the design, rather than letting the shape of the database or the framework dictate how the code is organized. The core premise is that most complexity in a genuinely hard business problem isn't technical (it isn't hard to store a row in a database); it's in correctly understanding and modeling the rules, exceptions, and vocabulary of the domain itself, so DDD spends its effort on getting that model right before worrying about frameworks or infrastructure.
+
+## Ubiquitous language
+
+The most immediately practical idea in DDD is the **ubiquitous language**: a vocabulary shared, word for word, between developers and domain experts, and used consistently in conversation, documentation, and the code itself. If underwriters and claims adjusters at an insurance company talk about a "policy lapsing," the code should have a `lapse()` method or a `Lapsed` state — not a generic `status = 3` that a developer privately maps to "lapsed" in their head. When the same word means the same thing to everyone in the room, translation errors between "what the business asked for" and "what the code does" mostly disappear, because there was never a translation step to begin with — the domain expert can read a use case described in the ubiquitous language and recognize their own business in it.
+
+This sounds like a communication practice more than an architecture pattern, and it is — but it's the foundation everything else in DDD sits on. Without a shared, precise vocabulary, the modeling that follows tends to drift into either technical abstractions nobody outside engineering understands, or vague business-speak that doesn't map onto any actual code structure.
+
+## Bounded contexts
+
+A large business domain rarely has one single, consistent meaning for its central terms. In an e-commerce system, "Product" in the catalog context means something with a description, images, and category tags; "Product" in the shipping context means something with a weight, dimensions, and a warehouse location; "Product" in the billing context means something with a price and a tax code. Forcing all three into one shared `Product` model produces a bloated class full of fields that matter to some parts of the system and are meaningless noise everywhere else, and a change made for shipping's benefit risks silently breaking billing's assumptions.
+
+A **bounded context** is DDD's answer: an explicit boundary (often, but not necessarily, a service or module boundary) within which a term has exactly one consistent meaning, and outside of which that meaning doesn't need to apply. The catalog, shipping, and billing contexts each get their own model of "Product," tailored to what that context actually needs, and they translate between each other at their edges rather than sharing one model that satisfies nobody well. This is what makes bounded contexts different from just "bad naming" — the same word legitimately meaning different things in different contexts is expected and healthy, as long as each context stays internally consistent and the boundaries are deliberate rather than accidental.
+
+## Entities, value objects, and aggregates — the shape of a model
+
+At the level of an individual bounded context, DDD gives a small conceptual vocabulary for how to shape a domain model, without requiring the full weight of its tactical patterns to get value from the idea:
+
+- An **entity** has a persistent identity that matters independently of its current attributes — two orders with identical line items are still two different orders, distinguished by their order ID, and an order that changes its shipping address is still the same order.
+- A **value object** has no identity of its own — it's defined entirely by its attributes. Two `Money` objects representing "$50 USD" are interchangeable; nothing distinguishes one instance from another, so they can be freely compared, copied, and replaced.
+- An **aggregate** is a cluster of entities and value objects treated as one consistency boundary, with a single entity (the aggregate root) as the only entry point other code may reference directly. An `Order` aggregate might contain `LineItem` value objects internally, but other code interacts with the order only through the `Order` root, which keeps invariants (line items can't exceed stock, a cancelled order can't gain new items) enforceable in exactly one place instead of scattered across every caller.
+
+None of this requires going deep into DDD's full tactical toolkit (repositories, domain events, specifications) to be useful — even just consistently asking "does this thing have an identity, or is it just a value" clarifies a surprising number of modeling decisions that otherwise get made ad hoc.
+
+## When it's the wrong tool
+
+DDD is a heavyweight investment: it asks for sustained collaboration with domain experts, deliberate modeling work before writing code, and discipline to maintain bounded context boundaries as a system grows. That investment pays off when the domain itself is genuinely complex — insurance underwriting, logistics routing, financial instruments — anything where the business rules are the hard part and getting them subtly wrong has real cost. It's the wrong tool for a simple CRUD app where the "domain" really is just database tables with a thin layer of validation; forcing entities, value objects, and bounded contexts onto a to-do list app adds ceremony with nothing underneath to justify the cost.
+
+## See also
+
+- **[Clean Architecture](/en/software-architecture/clean-architecture)** — a common pairing, since Clean Architecture's inner "entities" layer is exactly where a DDD-style domain model naturally sits.
+- **[Layered Architecture](/en/software-architecture/layered-architecture)** — the more common default when a domain doesn't warrant DDD's investment.
+- **[REST Architecture](/en/software-architecture/rest-architecture)** — resource naming in a REST API benefits from the same clarity a ubiquitous language provides, even without adopting DDD wholesale.

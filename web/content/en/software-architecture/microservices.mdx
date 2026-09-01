@@ -1,0 +1,51 @@
+---
+title: Microservices
+description: Independently deployable services owning their own data and talking over the network — real gains in autonomy, and the real distributed-systems tax that comes with them.
+category: Software Architecture
+weight: 3
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+**Microservices** split an application into multiple independently deployable services, each owning its own data and its own codebase, communicating with each other over the network rather than through in-process function calls. Where a [monolith](/en/software-architecture/monoliths) is one deployable unit, a microservices system might be dozens of them — an orders service, a billing service, a notifications service — each of which can be built, tested, deployed, and scaled on its own schedule.
+
+## What "independently deployable" actually buys
+
+The core promise of microservices is decoupling the *lifecycle* of different parts of the system from each other. A team can ship a fix to the notifications service on a Tuesday afternoon without coordinating with, testing against, or even notifying the team that owns billing — as long as the two services still agree on the shape of the requests between them. That independence compounds into a few concrete benefits:
+
+- **Independent scaling.** If the notifications service is CPU-heavy and the billing service is mostly idle, each can be scaled to match its own load, instead of a monolith's "scale everything together."
+- **Team autonomy.** Each service can have a clear owning team, its own release cadence, and its own on-call rotation, which scales much better organizationally than dozens of teams committing to one shared codebase and deploy pipeline.
+- **Technology diversity.** A service can pick the language, framework, or database best suited to its specific problem — a search service built around a specialized index doesn't need to share a runtime with a service doing simple CRUD.
+
+## What it actually costs
+
+None of this is free, and the costs are the reason "just split it into microservices" is bad advice for a system that isn't already feeling monolith-scale pain:
+
+- **Network calls replace function calls.** A call that used to be an in-process function invocation — cheap, synchronous, impossible to partially fail — is now a network request that can be slow, can time out, and can fail independently of the caller, all of which the caller now has to handle explicitly.
+- **Distributed transactions.** A single database transaction can no longer span an operation that touches two services' separate databases. Keeping data consistent across services generally means adopting patterns like the [saga pattern](https://microservices.io/patterns/data/saga.html) or eventual consistency instead of the atomic `COMMIT` a monolith gets for free.
+- **Operational complexity.** Every additional service is another thing to deploy, monitor, log, alert on, and secure. Debugging a single user-facing request now often means tracing it across several services' logs instead of reading one stack trace.
+- **Service discovery.** Services need a reliable way to find each other's current network address, especially as instances are created and destroyed by autoscaling — a problem that simply doesn't exist inside a single process.
+
+## The distributed monolith trap
+
+The failure mode worth knowing by name is the **distributed monolith**: a system split into separate services that still have to be deployed together because they're tightly coupled through shared databases, synchronous call chains, or a shared library that all of them depend on in lockstep. It has all of microservices' costs — network calls, operational overhead, more moving parts to monitor — and none of the benefit that was supposed to justify them, since nothing can actually ship independently. This usually happens when a system is split along the wrong seams (by technical layer instead of by business capability, say) rather than genuinely independent boundaries.
+
+<ItemExplorer
+  title="Monolith vs. microservices"
+  layout="table"
+  tableColumns={[{ key: "deploy", label: "Deployment" }, { key: "scaling", label: "Scaling" }, { key: "complexity", label: "Operational complexity" }]}
+  items={[
+    { id: "monolith", label: "Monolith", color: "blue", columns: { deploy: "One artifact, one pipeline", scaling: "Scale the whole app together", complexity: "Low — one thing to run and monitor" } },
+    { id: "microservices", label: "Microservices", color: "green", columns: { deploy: "Each service deploys on its own schedule", scaling: "Scale each service to its own load", complexity: "High — many services, network calls, and failure modes to manage" } },
+  ]}
+/>
+
+## When it's worth it
+
+Microservices tend to pay off once a system and its organization are big enough that a monolith's coupled deploys and shared failure domain are already causing real, recurring pain — not as a default starting architecture. The teams that get the most value from splitting are usually the ones that were forced into it by genuine scale, not the ones that adopted it preemptively because it's the pattern larger companies talk about.
+
+## See also
+
+- **[Monoliths](/en/software-architecture/monoliths)** — the starting point microservices are usually a response to.
+- **[Serverless Architecture](/en/software-architecture/serverless-architecture)** — another way to get independent scaling, without managing services yourself.
+- **[Event-Driven Architecture](/en/software-architecture/event-driven-architecture)** — a common way microservices communicate without calling each other directly.

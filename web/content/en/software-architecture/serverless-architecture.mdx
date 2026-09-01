@@ -1,0 +1,39 @@
+---
+title: Serverless Architecture
+description: Functions and managed backend services that scale to zero and bill per execution — no server to provision, and a different set of tradeoffs in exchange.
+category: Software Architecture
+weight: 4
+---
+
+**Serverless architecture** runs application code as short-lived functions (or leans on fully managed backend services) without the team provisioning, patching, or scaling any servers themselves. The name is a bit of a misnomer — servers obviously still exist somewhere — but the point of the term is that they're entirely the cloud provider's problem. You upload a function; the platform decides how many instances to run, where, and when, including running zero of them when nothing is happening.
+
+## Functions-as-a-service and managed services
+
+Serverless usually shows up in two related forms. **Functions-as-a-service (FaaS)** — AWS Lambda, Google Cloud Functions, Cloudflare Workers being well-known examples — runs a single function in response to a trigger (an HTTP request, a queue message, a scheduled timer) and shuts it down when it's done. Alongside FaaS sit **managed backend services** — a database, an object store, an auth provider — that are consumed as an API rather than run as a process you manage; together, "FaaS function + managed services" can assemble into a complete backend without a single always-on server anywhere in the stack. This very site is a real example of that shape: its API worker and the reference content you're reading are both deployed as [Cloudflare Workers](/en/cloudflare/workers) — see the [Cloudflare section](/en/cloudflare) for the specific building blocks (KV, D1, R2, Durable Objects) that fill in for the databases and stores a traditional backend would run itself.
+
+## Scale-to-zero and pay-per-execution
+
+The two properties that define the model, and that most other architectures can't offer, are:
+
+- **Scale to zero.** A function that isn't being invoked isn't running at all — no idle process consuming memory or CPU, no fixed monthly cost for capacity nobody's using. Traffic spikes get more instances spun up automatically; traffic drops back to nothing and so does the running footprint.
+- **Pay per execution.** Billing is typically based on actual invocations and the compute-time they consume (often down to the millisecond), not a fixed hourly rate for a server that sits there whether or not it's doing anything. For workloads with genuinely spiky or unpredictable traffic, this can be dramatically cheaper than provisioning for peak load and paying for it around the clock.
+
+## The real tradeoffs
+
+Scale-to-zero has a direct cost: a function that hasn't run recently has no warm instance waiting, so the very first request has to wait for one to start up — a **cold start**. Cold start latency varies a lot by platform and runtime (a lightweight isolate starts much faster than a full container booting a language runtime), but it's a real, user-visible tax that a warm always-on server simply doesn't pay.
+
+A few other constraints follow from the model:
+
+- **Execution time limits.** Most FaaS platforms cap how long a single invocation is allowed to run, which rules out long-lived connections or very long batch jobs living inside the function itself — that kind of work has to be broken up or moved to a different execution model.
+- **Vendor lock-in.** Serverless platforms differ meaningfully in their trigger formats, deployment tooling, and the managed services they push you toward, and a function written tightly around one provider's specifics is real work to port to another.
+- **Harder local testing and debugging.** A function designed to run inside a provider's specific runtime, wired to that provider's triggers and managed services, is harder to fully replicate locally than "run the server on my laptop" — most platforms ship a local emulator, but it's an approximation, not the real environment, and something will eventually behave differently in production than it did locally.
+
+## When it fits
+
+Serverless is the strongest fit for workloads that are naturally request-shaped or event-shaped and either bursty or intermittent — a webhook handler, an API endpoint hit unpredictably, a scheduled batch job that runs for two minutes once an hour. It's a weaker fit for workloads that need to hold long-lived state in memory across requests, need to run continuously regardless of load, or are latency-sensitive in a way that can't tolerate an occasional cold start.
+
+## See also
+
+- **[Edge Computing](/en/devops/edge-computing)** — running that same function-per-request model physically close to the user.
+- **[Cloudflare Workers](/en/cloudflare/workers)** — a concrete FaaS platform, and what this site itself runs on.
+- **[Microservices](/en/software-architecture/microservices)** — another way to get independent scaling, with a server process instead of a scale-to-zero function.

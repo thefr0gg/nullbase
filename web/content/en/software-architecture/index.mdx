@@ -1,0 +1,26 @@
+---
+title: Software Architecture
+description: The high-level shapes a system's code and deployment can take — how the pieces are split up, how they talk to each other, and the tradeoffs each shape trades away.
+category: Software Architecture
+weight: 13
+---
+
+Where [Backend](/en/backend) covers what runs inside a single server and [Web APIs](/en/web-apis) covers the shape of a request and response, this section is one level up: how an entire system's pieces are organized and deployed relative to each other, and how the internal code of a single service can itself be structured. None of these patterns are mutually exclusive — a real system is usually several of them layered together (a monolith organized with clean architecture inside, deployed behind a serverless edge function, communicating with another team's service over events).
+
+## How the system is split up
+
+- **[Client-Server Architecture](/en/software-architecture/client-server-architecture)** — the base pattern underneath almost everything else here: a client that asks, a server that answers.
+- **[Monoliths](/en/software-architecture/monoliths)** — one deployable unit holding all the application's logic.
+- **[Microservices](/en/software-architecture/microservices)** — independently deployable services owning their own data.
+- **[Serverless Architecture](/en/software-architecture/serverless-architecture)** — functions and managed services instead of servers you run yourself.
+- **[Event-Driven Architecture](/en/software-architecture/event-driven-architecture)** — components that communicate through events instead of direct calls.
+
+## How a service talks to the outside world
+
+- **[REST Architecture](/en/software-architecture/rest-architecture)** — the architectural constraints behind the term, not just "an API that returns JSON."
+
+## How the inside of a service is organized
+
+- **[Layered Architecture](/en/software-architecture/layered-architecture)** — code split into horizontal layers, each depending only on the one below it.
+- **[Clean Architecture](/en/software-architecture/clean-architecture)** — dependencies pointing inward toward framework-agnostic business logic instead of outward toward infrastructure.
+- **[Domain-Driven Design](/en/software-architecture/domain-driven-design)** — modeling the code around the business domain's own language and boundaries.

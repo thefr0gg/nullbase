@@ -1,0 +1,45 @@
+---
+title: Clean Architecture
+description: Robert C. Martin's dependency rule — business logic at the center, frameworks and infrastructure as replaceable details pointing inward toward it.
+category: Software Architecture
+weight: 8
+interactive: true
+interactiveType: ["MermaidDiagram"]
+---
+
+**Clean Architecture** is Robert C. Martin's name for an architectural style organized entirely around one rule: source code dependencies must always point inward, toward the business logic, and never outward, toward frameworks, databases, or UI. Martin drew it as concentric circles — entities and use cases at the center, infrastructure (web frameworks, databases, external services) on the outside — but the circles are really just a visualization of a single constraint, the **dependency rule**, that everything else follows from.
+
+## The dependency rule
+
+Nothing in an inner circle is allowed to know anything about an outer circle. The business rules at the core don't import a web framework, don't import a database driver, and don't even know whether they're being called from an HTTP handler or a CLI command or a test runner. Outer layers depend on inner layers, never the reverse — a controller can call into use-case logic, but use-case logic cannot call into a controller.
+
+<MermaidDiagram title="Dependencies point inward" chart={`graph TD
+    UI[UI / Web framework] --> Controllers[Controllers / Presenters]
+    DB[Database driver] --> Gateways[Repository implementations]
+    Controllers --> UseCases[Use cases]
+    Gateways -.implements.-> Ports[Repository interfaces / ports]
+    UseCases --> Ports
+    UseCases --> Entities[Entities / core business rules]
+`} />
+
+The trick that makes this work when an inner layer genuinely needs something from an outer one — the use-case layer needs to save data somewhere, which sounds like it needs the database — is dependency inversion: the inner layer defines an interface (a "port") describing what it needs, and the outer layer provides a concrete implementation (an "adapter") that satisfies it. The use case depends only on the interface it defined; the database code depends on that same interface too, but from the outside, implementing it. The arrow of control (database code gets called) and the arrow of source-code dependency (who imports whose interface) point in opposite directions, and it's the dependency direction that Clean Architecture cares about.
+
+## What this buys you
+
+The headline benefit is that the core business rules — the actual reason the software exists — have zero dependency on any specific framework, database, or delivery mechanism. Swap Express for a different web framework, swap Postgres for SQLite, add a CLI alongside the web API: none of it touches the use cases or entities, because they never depended on those choices to begin with. Testing follows the same logic: the core can be exercised with plain unit tests and fake implementations of its ports, no HTTP server or real database required.
+
+This is also, notably, the same "database port" idea nullbase's own API layer uses — `services/` and `repositories/` are written once against a `Database` interface, and the concrete D1 or SQLite implementation is a plug-in detail wired up at the edge, not something the business logic imports directly. That's Clean Architecture's dependency inversion in miniature, applied to one boundary rather than the whole codebase.
+
+## Clean Architecture vs. plain layered architecture
+
+The two look similar on a diagram — both draw stacked or nested boxes — but they organize by different axes. [Layered Architecture](/en/software-architecture/layered-architecture) organizes by **technical concern**: presentation code lives here, business logic there, data access over there, and the dependency generally flows top-to-bottom through the stack, business logic included depending on the data layer beneath it. Clean Architecture organizes by **dependency direction alone**: business logic is not allowed to depend on data access at all, in either direction — the data layer depends on an interface the business logic owns. A layered architecture can be built where the service layer directly imports a repository class; a Clean Architecture cannot, because that's an inner layer depending outward. The difference is subtle in a diagram and significant in practice: it's the difference between "the database is annoying to swap" and "the database can be swapped without opening the business logic files at all."
+
+## The real cost
+
+This is not a free upgrade over simpler layering. Defining ports for every external dependency, writing adapters to satisfy them, and maintaining the discipline that no inner-layer file ever imports an outer-layer concern is real, ongoing overhead — more files, more indirection, more places to look before you find where a rule actually lives. For a small CRUD application with one database, one API surface, and business rules thin enough to fit in a single service file, this structure is close to pure cost: the extra ports and adapters exist to enable a flexibility (swap the framework, swap the database, test without either) that a small project is unlikely to ever need. Clean Architecture earns its overhead on systems with genuinely complex business logic, a long expected lifetime, or infrastructure that's actually likely to change out from under the application — not on every project by default.
+
+## See also
+
+- **[Layered Architecture](/en/software-architecture/layered-architecture)** — the simpler, technical-concern-based cousin this refines.
+- **[Domain-Driven Design](/en/software-architecture/domain-driven-design)** — often paired with Clean Architecture, since both put the business domain (rather than infrastructure) at the center of the design.
+- **[REST Architecture](/en/software-architecture/rest-architecture)** — an example of a boundary (the API layer) that Clean Architecture would treat as an outer, replaceable detail rather than the center of the system.
