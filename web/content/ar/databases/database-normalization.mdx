@@ -1,0 +1,53 @@
+---
+title: تسوية قواعد البيانات
+description: هيكلة الجداول بحيث تُخزَّن كل حقيقة في مكان واحد بالضبط — القضاء على فئة الأخطاء التي تتناقض فيها نفس البيانات مع نفسها.
+category: Databases
+weight: 8
+interactive: true
+interactiveType: ["StepFlow", "SqlPlayground"]
+---
+
+import { normalizationSteps } from "./normalization-steps";
+
+التسوية هي انضباط هيكلة الجداول بحيث تُخزَّن كل حقيقة في مكان واحد بالضبط. المشكلة التي تحلّها: إذا تكرر بريد عميل إلكتروني في كل صف طلب، فإن تحديثه يعني إيجاد وتغيير كل صف على حدة — فوِّت واحداً، وتحتوي قاعدة البيانات الآن على إجابتين مختلفتين "صحيحتين" لسؤال "ما بريد هذا العميل الإلكتروني"، بلا طريقة لمعرفة أيهما الحالي فعلياً.
+
+## المرور بها
+
+"الصيغ الطبيعية" (1NF، 2NF، 3NF، وما بعدها) سلسلة من القواعد المتزايدة الصرامة — كل واحدة تصلح نوعاً محدداً من التكرار.
+
+<StepFlow title="تسوية جدول طلبات" steps={normalizationSteps} />
+
+## جرّبه — النسخة المُسوَّاة، مُعاد بناؤها بـ JOIN
+
+تقسيم البيانات إلى جداول منفصلة لا يفقد العرض المسطّح الأصلي — يُعاد بناؤه عند الطلب.
+
+<SqlPlayground
+  title="ثلاثة جداول مُسوَّاة -> العرض المسطّح الأصلي"
+  schema={`
+CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL);
+CREATE TABLE products (id INTEGER PRIMARY KEY, name TEXT NOT NULL, price REAL NOT NULL);
+CREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER REFERENCES customers(id), product_id INTEGER REFERENCES products(id), quantity INTEGER NOT NULL);
+INSERT INTO customers (id, name, email) VALUES (1, 'Ada Lovelace', 'ada@example.com'), (2, 'Alan Turing', 'alan@example.com');
+INSERT INTO products (id, name, price) VALUES (1, 'Widget', 9.99), (2, 'Gadget', 19.99);
+INSERT INTO orders (id, customer_id, product_id, quantity) VALUES (1, 1, 1, 3), (2, 1, 2, 1), (3, 2, 1, 2);
+`}
+  defaultQuery={`SELECT c.name AS customer, c.email, p.name AS product, p.price, o.quantity, (p.price * o.quantity) AS line_total
+FROM orders o
+JOIN customers c ON c.id = o.customer_id
+JOIN products p ON p.id = o.product_id;`}
+/>
+
+جرّب `UPDATE customers SET email = 'ada.lovelace@example.com' WHERE id = 1;` وأعِد تنفيذ الاستعلام أعلاه — تغيّر صف واحد في `customers`، وكل سطر طلب يخص Ada يعكس ذلك فوراً، لأن البريد الإلكتروني لم يُكرَّر أبداً أصلاً.
+
+## المقايضة: التسوية مقابل أداء القراءة
+
+كل مستوى تسوية هو `JOIN` إضافي يجب على استعلام القراءة القيام به لإعادة بناء الصورة الكاملة — بالنسبة لمعظم التطبيقات هذه التكلفة ضئيلة مقارنة بالصحة التي تشتريها، لكن الأنظمة عالية القراءة ومنخفضة الكتابة (لوحة معلومات تقارير، خط أنابيب تحليلات) تُلغي أحياناً التسوية عمداً — تُكرِّر البيانات مجدداً لسرعة القراءة، وتقبل مخاطرة اتساق التحديث كمقايضة واعية بدلاً من سهو.
+
+## ما وراء 3NF
+
+توجد صيغ طبيعية أبعد (BCNF، 4NF، 5NF) لحالات حدية أكثر ندرة تدريجياً في بنية التبعية — عملياً، الغالبية الساحقة من المخططات تتوقف عن التحسن بشكل ملموس بعد 3NF، ومعظم نقاشات تصميم المخططات في العالم الحقيقي لا تتجاوزها.
+
+## طالع أيضاً
+
+- **[المفاتيح الأجنبية](/ar/databases/foreign-keys)** — القيد الذي يبقي الجداول المنفصلة من الانحراف عن بعضها البعض.
+- **[SQL](/ar/databases/sql)** — الـ JOIN الذي يعيد بناء العرض المسطّح لمخطط مُسوَّى.

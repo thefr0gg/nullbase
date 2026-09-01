@@ -1,0 +1,50 @@
+---
+title: JavaScript
+description: Le langage qui s'exécute dans le navigateur — et la boucle d'événements monothread qui décide quand votre code s'exécute réellement.
+category: Web Platform
+weight: 2
+interactive: true
+interactiveType: ["StepFlow"]
+---
+
+import { eventLoopSteps } from "./javascript-event-loop-steps";
+
+JavaScript est le seul langage que les navigateurs exécutent nativement. Deux choses le rendent distinctif par rapport à la plupart des langages côté serveur : il est **monothread** (une seule pile d'appels, pas de véritable exécution parallèle de votre code), et presque tout ce qui touche au monde extérieur — un timer, une requête réseau, un événement DOM — est **asynchrone**, géré via des callbacks, des Promises, ou `async`/`await` plutôt qu'en bloquant cet unique thread.
+
+## La boucle d'événements
+
+C'est le mécanisme qui réconcilie « monothread » avec « asynchrone » : le code synchrone s'exécute toujours jusqu'au bout en premier, puis les callbacks asynchrones mis en file s'exécutent dans un ordre précis et déterministe — pas dès qu'ils se terminent par hasard.
+
+<StepFlow title="La boucle d'événements JavaScript" steps={eventLoopSteps} />
+
+## Pourquoi cet ordre surprend
+
+```js
+console.log("1");
+setTimeout(() => console.log("2"), 0);
+Promise.resolve().then(() => console.log("3"));
+console.log("4");
+// logs: 1, 4, 3, 2 — not 1, 2, 3, 4
+```
+
+Un `setTimeout(fn, 0)` ne signifie pas « exécuter immédiatement » — il signifie « mettre en file comme macrotâche une fois le délai écoulé (en pratique : dès que possible) », et la file de microtâches (que rejoignent les callbacks de Promise) est toujours entièrement vidée avant que la prochaine macrotâche ne s'exécute, même une mise en file avec un délai de 0 ms.
+
+## Promises et async/await
+
+`async`/`await` est du sucre syntaxique par-dessus les Promises, pas un modèle de concurrence différent — une fonction `async` retourne toujours une Promise, et `await` met en pause cette fonction (pas le thread entier) jusqu'à ce que la Promise attendue se règle, mettant en file le reste de la fonction comme une microtâche.
+
+```js
+async function getUser(id) {
+  const res = await fetch(`/api/users/${id}`); // pauses here, thread is free
+  return res.json();                            // resumes once the fetch settles
+}
+```
+
+## Où intervient le DOM
+
+Le JavaScript d'une page finit presque toujours par lire ou modifier le [DOM](/fr/web-platform/dom) — l'arbre vivant que le navigateur construit à partir du [HTML](/fr/web-platform/html) analysé. Les événements DOM (un clic, une frappe au clavier) sont exactement le genre de travail asynchrone décrit ci-dessus : un callback mis en file pour s'exécuter une fois le code synchrone actuel terminé.
+
+## Voir aussi
+
+- **[Le DOM](/fr/web-platform/dom)** — ce que JavaScript manipule habituellement.
+- **[Web Workers](/fr/web-platform/web-workers)** — exécuter du JavaScript sur un thread véritablement séparé, en dehors de ce modèle monothread.

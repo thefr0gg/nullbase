@@ -9,7 +9,7 @@ Un **serveur web** est le processus qui écoute sur un port, accepte les connexi
 
 ## Ce qu'un serveur web fait réellement
 
-- **Accepte les connexions** — gère la poignée de main [TCP](/en/networking/tcp) et garde une connexion ouverte à travers plusieurs requêtes lorsque le client le demande (`Connection: keep-alive`).
+- **Accepte les connexions** — gère la poignée de main [TCP](/fr/networking/tcp) et garde une connexion ouverte à travers plusieurs requêtes lorsque le client le demande (`Connection: keep-alive`).
 - **Analyse HTTP** — transforme des octets bruts en une méthode, un chemin, des headers et un corps structurés.
 - **Termine TLS** — déchiffre une connexion HTTPS pour que tout ce qui se trouve derrière puisse parler HTTP en clair, s'il constitue la couche la plus externe.
 - **Sert directement les fichiers statiques** — images, CSS, HTML pré-construit — sans jamais impliquer le code applicatif, ce qui est généralement bien plus rapide que de faire transiter un asset statique par toute une stack applicative.
@@ -27,4 +27,4 @@ Séparer « accepter les connexions et parler HTTP » de « exécuter la logique
 
 - **[Application Servers](/fr/backend/application-servers)** — ce qui reçoit réellement une requête une fois que le serveur web l'a transmise.
 - **[Reverse Proxies](/fr/backend/reverse-proxies)** — un serveur web utilisé spécifiquement pour router vers d'autres serveurs.
-- **[TLS Certificates](/en/security/tls-certificates)** — le certificat qu'un serveur web présente lors de la terminaison HTTPS.
+- **[TLS Certificates](/fr/security/tls-certificates)** — le certificat qu'un serveur web présente lors de la terminaison HTTPS.

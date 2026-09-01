@@ -1,0 +1,39 @@
+---
+title: Service Workers
+description: Un script que el navegador ejecuta por separado de cualquier página, situándose entre ella y la red — la base del soporte sin conexión.
+category: Web Platform
+weight: 7
+interactive: true
+interactiveType: ["StepFlow"]
+---
+
+import { serviceWorkerLifecycleSteps } from "./service-worker-lifecycle-steps";
+
+Un service worker es un archivo JavaScript que se ejecuta por su cuenta, separado de cualquier página en particular — no tiene acceso al [DOM](/es/web-platform/dom), sigue en ejecución (dirigido por eventos, no de forma continua) incluso después de que se cierre la página que lo registró, y puede interceptar cada solicitud de red que haga la página. Esa interceptación es lo que hace posible en un navegador el soporte sin conexión, la sincronización en segundo plano, y las notificaciones push.
+
+## El ciclo de vida
+
+Entender bien el ciclo de vida de un service worker — específicamente, comprender cuándo la *nueva* versión realmente toma el control de la anterior — es la fuente más común de la confusión de "por qué no aparece mi actualización".
+
+<StepFlow title="Ciclo de vida de un service worker" steps={serviceWorkerLifecycleSteps} />
+
+## Estrategias de caché
+
+Una vez que un service worker está interceptando eventos `fetch`, decide cómo responder a cada uno — esta decisión es el verdadero propósito de usar uno:
+
+- **Cache-first (caché primero)** — comprueba la caché, y solo va a la red si falla. Rápido y funciona sin conexión, pero puede servir contenido obsoleto si la caché no se invalida correctamente.
+- **Network-first (red primero)** — intenta la red, y recurre a la caché si falla. Más actualizado, pero más lento en cada solicitud e inútil sin conexión a menos que el intento de red falle rápido.
+- **Stale-while-revalidate (obsoleto mientras se revalida)** — sirve la respuesta en caché de inmediato, y luego obtiene una nueva en segundo plano para actualizar la caché para la próxima vez. Un término medio habitual.
+
+## Alcance (Scope)
+
+Un service worker solo controla las páginas dentro de su propio alcance de registro — uno registrado en `/app/sw.js` sin un alcance explícito controla solo `/app/*`, no todo el origen. Este es un límite de seguridad deliberado: un script en `/blog/sw.js` no puede interceptar solicitudes para `/admin/*`.
+
+## Por qué esto necesita HTTPS
+
+Los service workers pueden reescribir cualquier respuesta de red que reciba una página, lo cual es un poder enorme para darle a un script — los navegadores solo permiten registrar uno en un origen seguro (`https://`, o `localhost` para desarrollo) para que no pueda ser manipulado por un atacante a nivel de red en el camino hacia el navegador.
+
+## Ver también
+
+- **[Web Workers](/es/web-platform/web-workers)** — JavaScript en segundo plano para cómputo, no para interceptación de red — una herramienta distinta para un trabajo distinto.
+- **[Web Storage](/es/web-platform/web-storage)** y la Cache API son donde un service worker realmente almacena las respuestas en caché.

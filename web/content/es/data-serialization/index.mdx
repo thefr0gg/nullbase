@@ -1,0 +1,24 @@
+---
+title: Datos y Serialización
+description: Los formatos en los que los datos realmente viajan — convertir datos estructurados en bytes en la red, y de vuelta otra vez.
+category: Data & Serialization
+weight: 3
+---
+
+Cada solicitud y respuesta en [Web APIs](/es/web-apis) transporta datos como bytes — un objeto de JavaScript, un formulario, un archivo, todos tienen que convertirse en un flujo de bytes para viajar por la red, y volver a convertirse en datos estructurados en el otro extremo. Esta sección cubre los formatos y codificaciones que hacen posible esa traducción.
+
+## Formatos de datos estructurados
+
+- **[JSON](/es/data-serialization/json)** — el formato por defecto para casi cualquier API moderna.
+- **[XML](/es/data-serialization/xml)** — verboso, estricto, y todavía omnipresente en sistemas más antiguos y empresariales.
+- **[YAML](/es/data-serialization/yaml)** — amigable para humanos, basado en indentación — hoy en día sobre todo un formato de archivos de configuración.
+
+## Enviar y codificar datos
+
+- **[Form Data](/es/data-serialization/form-data)** — cómo se codifican realmente los campos de un formulario HTML para su envío.
+- **[Codificación de URL](/es/data-serialization/url-encoding)** — escapar caracteres que una URL no puede contener de forma segura.
+- **[Base64](/es/data-serialization/base64)** — representar datos binarios como texto plano.
+
+## Etiquetar datos
+
+- **[Tipos MIME](/es/data-serialization/mime-types)** — indicar al otro lado qué tipo de datos es en realidad.

@@ -1,0 +1,65 @@
+---
+title: YAML
+description: Un format de données convivial pour l'humain, basé sur l'indentation — rarement le format de transmission d'une API, mais le format par défaut de presque tous les fichiers de configuration.
+category: Data & Serialization
+weight: 2
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+YAML (« YAML Ain't Markup Language ») représente les mêmes données structurées que [JSON](/fr/data-serialization/json) — objets, tableaux, chaînes, nombres, booléens, null — avec la ponctuation remplacée par de l'indentation, optimisé pour qu'un humain le lise et l'écrive à la main plutôt que pour qu'une machine l'analyse rapidement. Il est rarement utilisé comme format réel de requête/réponse d'une API ; son véritable domaine est celui des fichiers de configuration (Docker Compose, manifestes Kubernetes, pipelines CI, la configuration de build de ce type même de site dans certaines stacks).
+
+```yaml
+id: 42
+name: Grace Hopper
+active: true
+roles:
+  - admin
+  - editor
+manager: null
+```
+
+Les mêmes données en JSON, à titre de comparaison :
+
+```json
+{ "id": 42, "name": "Grace Hopper", "active": true, "roles": ["admin", "editor"], "manager": null }
+```
+
+## Ce que YAML ajoute par rapport à JSON
+
+<ItemExplorer
+  layout="pills"
+  items={[
+    { id: "comments", label: "Commentaires", color: "blue", detail: "# un commentaire — vraiment utile dans les fichiers de configuration, et quelque chose que JSON ne peut pas faire du tout." },
+    { id: "anchors", label: "Ancres et alias", color: "green", detail: "&nom / *nom — définir une valeur une fois, la référencer ailleurs dans le même document, en évitant la duplication." },
+    { id: "multidoc", label: "Documents multiples", color: "purple", detail: "--- sépare plusieurs documents YAML dans un seul fichier/flux — les manifestes Kubernetes utilisent constamment cela." },
+    { id: "unquoted", label: "Chaînes sans guillemets", color: "orange", detail: "Les chaînes n'ont pas du tout besoin de guillemets dans la plupart des cas — c'est aussi le piège le plus tristement célèbre de YAML (voir plus bas)." },
+  ]}
+/>
+
+## L'indentation est significative, et intransigeante
+
+Contrairement aux accolades de JSON, la structure de YAML provient entièrement de l'indentation — mélanger tabulations et espaces, ou être décalé d'un seul espace, constitue une erreur d'analyse (ou pire, change silencieusement la structure) sans accolade fermante pour repérer visuellement l'erreur.
+
+```yaml
+parent:
+  child: value   # 2 spaces of indentation — a child of parent
+sibling: value    # 0 spaces — a top-level key, not nested
+```
+
+## Les fameux pièges
+
+Parce que YAML essaie de déduire les types à partir de valeurs sans guillemets, une poignée de chaînes spécifiques ne signifient pas ce qu'elles semblent signifier :
+
+```yaml
+country: NO        # parsed as the boolean false in YAML 1.1 (Norway's country code!)
+version: 1.10       # parsed as the number 1.1, not the string "1.10" — the trailing zero is lost
+enabled: yes         # parsed as boolean true
+```
+
+C'est un problème réel, pas hypothétique — on l'appelle couramment « le problème de la Norvège », et c'est pourquoi mettre explicitement une valeur entre guillemets (`country: "NO"`) est le choix sûr par défaut chaque fois qu'une chaîne pourrait être confondue avec un autre type.
+
+## Voir aussi
+
+- **[JSON](/fr/data-serialization/json)** — le même modèle de données, une syntaxe plus stricte, le format de transmission réel de la plupart des API.
+- **[XML](/fr/data-serialization/xml)** — la troisième option de données structurées, plus verbeuse mais avec un écosystème de validation de schéma mature que YAML n'égale pas.

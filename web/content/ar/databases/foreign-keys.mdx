@@ -1,0 +1,57 @@
+---
+title: المفاتيح الأجنبية
+description: قيد يوقف صفاً عن الإشارة إلى شيء غير موجود — تفرضه قاعدة البيانات نفسها، لا يُترَك لكود التطبيق ليتذكره.
+category: Databases
+weight: 9
+interactive: true
+interactiveType: ["SqlPlayground"]
+---
+
+المفتاح الأجنبي هو عمود (أو مجموعة أعمدة) في جدول يشير إلى المفتاح الأساسي لجدول آخر — `orders.customer_id` يشير إلى `customers.id`. الإعلان عنه كقيد `FOREIGN KEY` فعلي، بدلاً من مجرد عمود صحيح يصادف أنه يحمل معرّف عميل، يعني أن قاعدة البيانات نفسها ترفض أي صف من شأنه كسر المرجع — لا يمكن لطلب أن يشير أبداً إلى عميل غير موجود، يُفرَض تلقائياً، بلا كود تطبيق قد ينسى التحقق.
+
+## جرّبه — انتهاك قيد حقيقي
+
+لا تفرض SQLite المفاتيح الأجنبية افتراضياً (خاصية تاريخية، للتوافق مع الإصدارات السابقة) — يُفعِّلها هذا الملعب صراحة، لذا الخطأ الذي تراه أدناه فشل قيد حقيقي، وليس رسالة مُعَدّة سلفاً.
+
+<SqlPlayground
+  title="فرض المفتاح الأجنبي، مُفعَّل"
+  enforceForeignKeys
+  schema={`
+CREATE TABLE authors (id INTEGER PRIMARY KEY, name TEXT NOT NULL);
+CREATE TABLE books (
+  id INTEGER PRIMARY KEY,
+  title TEXT NOT NULL,
+  author_id INTEGER NOT NULL REFERENCES authors(id)
+);
+INSERT INTO authors (id, name) VALUES (1, 'Octavia Butler'), (2, 'Ursula K. Le Guin');
+INSERT INTO books (id, title, author_id) VALUES (1, 'Kindred', 1), (2, 'The Left Hand of Darkness', 2);
+`}
+  defaultQuery={`INSERT INTO books (title, author_id) VALUES ('Ghost Author Book', 999);`}
+/>
+
+يفشل ذلك بـ `FOREIGN KEY constraint failed` حقيقية — لا يوجد مؤلف بـ `id = 999`. الآن جرّب إدراجاً صالحاً بدلاً منه: `INSERT INTO books (title, author_id) VALUES ('Parable of the Sower', 1);` — ينجح فوراً، لأن المؤلف `1` موجود فعلياً.
+
+## سلوك `ON DELETE`
+
+يجب على المفتاح الأجنبي أيضاً تحديد ما يحدث عندما يُحذَف الصف الذي يشير إليه — يُضبَط هذا صراحة لكل قيد، وأخذه بشكل خاطئ مصدر حقيقي وشائع إما لصفوف يتيمة أو عمليات حذف تسلسلية غير مرغوبة.
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[{ key: "behavior", label: "عند حذف الصف المُشار إليه" }]}
+  items={[
+    { id: "restrict", label: "RESTRICT / NO ACTION", color: "blue", columns: { behavior: "يمنع الحذف تماماً طالما لا يزال أي صف يشير إليه — الافتراضي في معظم المحركات." } },
+    { id: "cascade", label: "CASCADE", color: "red", columns: { behavior: "يحذف كل صف مُشير أيضاً — حذف مؤلف سيحذف بصمت كل كتبه." } },
+    { id: "setnull", label: "SET NULL", color: "orange", columns: { behavior: "يضبط العمود المُشير إلى NULL — صالح فقط إذا كان ذلك العمود يسمح بـ NULL، أي أن المرجع اختياري." } },
+  ]}
+/>
+
+جرّب إضافة `ON DELETE CASCADE` إلى المخطط أعلاه (`author_id INTEGER NOT NULL REFERENCES authors(id) ON DELETE CASCADE`)، أعِد الضبط، ثم `DELETE FROM authors WHERE id = 1;` متبوعاً بـ `SELECT * FROM books;` — تختفي كتب Octavia Butler أيضاً، محذوفة تلقائياً مع مؤلفتها.
+
+## لماذا لا نتحقق فقط في كود التطبيق
+
+يمكن لتطبيق أن يتحقق "هل هذا المؤلف موجود" قبل كل إدراج بدلاً من الإعلان عن قيد — لكن هذا التحقق والإدراج ليسا ذريَّين ما لم يُغلَّفا في [معاملة](/ar/databases/transactions)، ويمكن لمسار كود ثانٍ (نص استيراد بالجملة، خدمة مختلفة، وصول مباشر إلى قاعدة البيانات) أن ينسى التحقق دائماً، والمفتاح الأجنبي سطر مخطط واحد بدلاً من منطق تطبيق يجب أن يكون صحيحاً ومكرَّراً في كل مكان تحدث فيه الكتابة. فرض قاعدة البيانات له أكثر موثوقية بشكل قاطع من الثقة بأن كل مستدعٍ سيتذكر.
+
+## طالع أيضاً
+
+- **[تسوية قواعد البيانات](/ar/databases/database-normalization)** — المفاتيح الأجنبية هي ما يبقي جداول مخطط مُسوَّى المنفصلة متسقة مع بعضها البعض.
+- **[المعاملات](/ar/databases/transactions)** — انتهاك مفتاح أجنبي في منتصف معاملة يسبب فشل تلك المعاملة وتراجعها.

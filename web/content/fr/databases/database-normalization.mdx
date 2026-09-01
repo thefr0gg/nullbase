@@ -1,0 +1,53 @@
+---
+title: Normalisation des bases de données
+description: Structurer les tables pour que chaque fait soit stocké à exactement un seul endroit — éliminant la classe de bugs où les mêmes données se contredisent elles-mêmes.
+category: Databases
+weight: 8
+interactive: true
+interactiveType: ["StepFlow", "SqlPlayground"]
+---
+
+import { normalizationSteps } from "./normalization-steps";
+
+La normalisation est la discipline consistant à structurer les tables pour que chaque fait soit stocké à exactement un seul endroit. Le problème qu'elle résout : si l'email d'un client est répété sur chaque ligne de commande, le mettre à jour signifie trouver et changer chaque ligne — en oublier une, et la base de données contient maintenant deux réponses « vraies » différentes à « quel est l'email de ce client », sans aucun moyen de dire laquelle est réellement actuelle.
+
+## Le parcourir étape par étape
+
+Les « formes normales » (1FN, 2FN, 3FN, et au-delà) sont une série de règles de plus en plus strictes — chacune corrige un type spécifique de duplication.
+
+<StepFlow title="Normalizing an orders table" steps={normalizationSteps} />
+
+## Essayez-le — la version normalisée, reconstruite avec un JOIN
+
+Séparer les données en tables distinctes ne fait pas perdre la vue plate d'origine — elle est reconstruite à la demande.
+
+<SqlPlayground
+  title="Trois tables normalisées -> la vue plate d'origine"
+  schema={`
+CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL);
+CREATE TABLE products (id INTEGER PRIMARY KEY, name TEXT NOT NULL, price REAL NOT NULL);
+CREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER REFERENCES customers(id), product_id INTEGER REFERENCES products(id), quantity INTEGER NOT NULL);
+INSERT INTO customers (id, name, email) VALUES (1, 'Ada Lovelace', 'ada@example.com'), (2, 'Alan Turing', 'alan@example.com');
+INSERT INTO products (id, name, price) VALUES (1, 'Widget', 9.99), (2, 'Gadget', 19.99);
+INSERT INTO orders (id, customer_id, product_id, quantity) VALUES (1, 1, 1, 3), (2, 1, 2, 1), (3, 2, 1, 2);
+`}
+  defaultQuery={`SELECT c.name AS customer, c.email, p.name AS product, p.price, o.quantity, (p.price * o.quantity) AS line_total
+FROM orders o
+JOIN customers c ON c.id = o.customer_id
+JOIN products p ON p.id = o.product_id;`}
+/>
+
+Essayez `UPDATE customers SET email = 'ada.lovelace@example.com' WHERE id = 1;` et relancez la requête ci-dessus — une ligne changée dans `customers`, et chaque ligne de commande impliquant Ada le reflète immédiatement, parce que l'email n'a jamais été dupliqué en premier lieu.
+
+## Le compromis : normalisation vs. performance en lecture
+
+Chaque niveau de normalisation ajoute un `JOIN` de plus qu'une requête de lecture doit effectuer pour reconstruire la vue complète — pour la plupart des applications, ce coût est négligeable face à la correction qu'il achète, mais les systèmes à forte lecture et faible écriture (un tableau de bord de rapports, un pipeline analytique) **dénormalisent** parfois délibérément — en dupliquant les données pour la vitesse de lecture, acceptant le risque de cohérence des mises à jour comme un compromis conscient plutôt qu'un oubli.
+
+## Au-delà de la 3FN
+
+D'autres formes normales existent (BCNF, 4FN, 5FN) pour des cas limites de plus en plus rares dans la structure des dépendances — en pratique, l'écrasante majorité des schémas cessent d'être significativement améliorés au-delà de la 3FN, et la plupart des discussions réelles sur la conception de schéma ne vont pas plus loin.
+
+## Voir aussi
+
+- **[Clés étrangères](/fr/databases/foreign-keys)** — la contrainte qui empêche les tables séparées de dériver et de devenir incohérentes entre elles.
+- **[SQL](/fr/databases/sql)** — le JOIN qui reconstruit la vue plate d'un schéma normalisé.

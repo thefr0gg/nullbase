@@ -1,0 +1,70 @@
+---
+title: Web Storage
+description: localStorage et sessionStorage — un stockage clé-valeur plus grand, plus simple, côté client uniquement, que le serveur ne voit jamais.
+category: Web Platform
+weight: 6
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+Contrairement aux [cookies](/fr/web-platform/cookies), Web Storage n'est jamais envoyé au serveur — c'est un simple magasin clé-valeur synchrone, entièrement côté client, accessible via deux objets presque identiques : `localStorage` et `sessionStorage`.
+
+```js
+localStorage.setItem("theme", "dark");
+localStorage.getItem("theme");   // "dark"
+localStorage.removeItem("theme");
+```
+
+Chaque valeur est stockée sous forme de chaîne — stocker un objet nécessite `JSON.stringify` à l'entrée et `JSON.parse` à la sortie ; la préférence de thème de ce site lui-même est stockée exactement de cette façon, voir [JSON](/fr/data-serialization/json).
+
+## Comparaison des options de stockage
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "sentToServer", label: "Envoyé au serveur ?" },
+    { key: "persists", label: "Persiste" },
+    { key: "capacity", label: "Capacité typique" },
+  ]}
+  items={[
+    {
+      id: "cookies",
+      label: "Cookies",
+      color: "blue",
+      columns: { sentToServer: "Oui, à chaque requête correspondante", persists: "Jusqu'à Max-Age/Expires (ou fin de session)", capacity: "~4 Ko par cookie" },
+    },
+    {
+      id: "localstorage",
+      label: "localStorage",
+      color: "green",
+      columns: { sentToServer: "Jamais", persists: "Jusqu'à un effacement explicite", capacity: "~5-10 Mo" },
+    },
+    {
+      id: "sessionstorage",
+      label: "sessionStorage",
+      color: "orange",
+      columns: { sentToServer: "Jamais", persists: "Jusqu'à la fermeture de l'onglet", capacity: "~5-10 Mo" },
+    },
+    {
+      id: "indexeddb",
+      label: "IndexedDB",
+      color: "purple",
+      columns: { sentToServer: "Jamais", persists: "Jusqu'à un effacement explicite", capacity: "Bien plus grande (centaines de Mo et plus), selon le navigateur" },
+    },
+  ]}
+/>
+
+`sessionStorage` est limité à un seul onglet — ouvrir le même site dans un second onglet obtient un `sessionStorage` complètement vide, même si les deux onglets partagent le même `localStorage`. Fermer l'onglet l'efface ; recharger la page dans le même onglet ne le fait pas.
+
+## Pourquoi IndexedDB existe
+
+L'API de Web Storage est synchrone et ne gère que des chaînes, ce qui convient pour de petits paramètres mais se prête mal à des données plus volumineuses ou structurées — une lecture/écriture synchrone d'une grande valeur bloque le thread principal. IndexedDB est une base de données complète, asynchrone, transactionnelle et indexée, intégrée au navigateur, pour un stockage client vraiment orienté données (le jeu de données local d'une application utilisable hors ligne, des réponses d'API mises en cache qu'un [Service Worker](/fr/web-platform/service-workers) doit servir).
+
+## Ce qu'il ne faut pas stocker ici
+
+Rien ici n'est chiffré, et c'est lisible par n'importe quel JavaScript s'exécutant sur la page — y compris une charge XSS réussie. Stocker un jeton d'authentification longue durée dans `localStorage` est une erreur courante en pratique, exactement pour cette raison ; un cookie `HttpOnly` (illisible par JavaScript, tout court) est l'endroit le plus sûr pour tout ce qui est sensible — voir l'attribut `HttpOnly` de [Cookies](/fr/web-platform/cookies).
+
+## Voir aussi
+
+- **[Cookies](/fr/web-platform/cookies)** — l'alternative qui *est* envoyée automatiquement au serveur.
+- **[JSON](/fr/data-serialization/json)** — comment les données structurées sont sérialisées pour tenir dans les valeurs sous forme de chaîne de Web Storage.

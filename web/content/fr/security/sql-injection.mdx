@@ -1,0 +1,53 @@
+---
+title: Injection SQL
+description: Comment une entrée non assainie finit par faire partie d'une requête exécutée — et pourquoi les requêtes paramétrées ferment la porte entièrement, plutôt que de simplement réduire le risque.
+category: Security
+weight: 8
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+L'**injection SQL** se produit quand une entrée utilisateur est concaténée directement dans une chaîne de requête [SQL](/fr/databases/sql), permettant à un attaquant de fournir un texte qui modifie la structure réelle de la requête plutôt que simplement ses données. Le schéma vulnérable est toujours une variante de la construction d'une requête par concaténation de chaînes au lieu de garder les données et le code séparés.
+
+## Un exemple d'école
+
+```js
+const query = `SELECT * FROM users WHERE username = '${username}' AND password = '${password}'`;
+```
+
+Une connexion normale fournit un nom d'utilisateur et un mot de passe comme données. Mais si `username` arrive sous la forme `' OR '1'='1`, la requête assemblée devient :
+
+```sql
+SELECT * FROM users WHERE username = '' OR '1'='1' AND password = '...'
+```
+
+`'1'='1'` est toujours vrai, donc la clause `WHERE` correspond à chaque ligne — l'attaquant est connecté en tant que premier utilisateur de la table sans jamais connaître un vrai mot de passe. C'est l'exemple classique, mais la même faille permet à un attaquant de lire des tables arbitraires, de modifier des données, ou dans certaines configurations de base de données d'exécuter des commandes sur le serveur sous-jacent.
+
+## Pourquoi assainir l'entrée n'est pas le vrai correctif
+
+Mettre sur liste noire des caractères dangereux (guillemets, points-virgules) est fragile — il existe généralement un autre encodage ou une astuce de syntaxe qu'un attaquant peut utiliser et que la liste noire n'avait pas anticipée. Le vrai correctif est structurel, pas défensif :
+
+<ItemExplorer
+  title="Défenses"
+  layout="table"
+  tableColumns={[{ key: "why", label: "Pourquoi ça marche" }]}
+  items={[
+    { id: "parameterized", label: "Requêtes paramétrées", color: "green", columns: { why: "La structure de la requête et les données sont envoyées séparément à la base de données — l'entrée utilisateur n'est jamais analysée comme syntaxe SQL, quel que soit son contenu." } },
+    { id: "orm", label: "ORM / générateurs de requêtes", color: "blue", columns: { why: "Génèrent des requêtes paramétrées en interne par défaut, donc l'injection nécessite de les contourner délibérément (par ex. un échappatoire de requête brute)." } },
+    { id: "least-privilege", label: "Comptes de base de données à moindre privilège", color: "purple", columns: { why: "Limite les dégâts même si l'injection réussit — un compte applicatif n'ayant qu'un SELECT sur les tables dont il a besoin ne peut pas supprimer de tables ni en lire d'autres." } },
+  ]}
+/>
+
+Une version paramétrée de la requête ci-dessus ressemble à ceci — les emplacements réservés `?` sont remplis par le pilote de base de données, jamais par interpolation de chaîne :
+
+```js
+db.prepare("SELECT * FROM users WHERE username = ? AND password = ?").get(username, password);
+```
+
+Quel que soit le contenu de `username`, il est traité uniquement comme une valeur de type chaîne à comparer, jamais comme faisant partie de la grammaire de la requête — l'astuce `' OR '1'='1` ci-dessus devient simplement un nom d'utilisateur qui ne correspond à rien.
+
+## Voir aussi
+
+- **[SQL](/fr/databases/sql)** — le langage de requête que l'injection SQL exploite.
+- **[Authentification](/fr/security/authentication)** — les formulaires de connexion sont la cible la plus courante de cette attaque.
+- **[Hachage de mots de passe](/fr/security/password-hashing)** — pourquoi une injection réussie ne devrait quand même pas révéler de mots de passe en clair exploitables.

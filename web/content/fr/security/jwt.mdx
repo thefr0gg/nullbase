@@ -1,0 +1,44 @@
+---
+title: JWT
+description: Un jeton signé et autoporteur qui transporte identité et revendications sans magasin de sessions côté serveur — et les façons dont il est régulièrement mal utilisé.
+category: Security
+weight: 4
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+Un **JWT (JSON Web Token)** regroupe directement identité et revendications dans un jeton détenu par le client, signé de sorte que le serveur puisse vérifier qu'il n'a pas été altéré — sans qu'une recherche de session côté serveur soit nécessaire, contrairement aux [sessions](/fr/security/sessions). Cette nature autoporteuse fait tout l'attrait du JWT pour les systèmes distribués, et aussi la source de la plupart de ses pièges réels.
+
+## Trois parties séparées par des points
+
+```text
+eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI0MiIsImV4cCI6MTcwMDAwMDAwMH0.dBjftJeZ4CVP-mB92K...
+└──────header──────┘ └───────────payload──────────┘ └─────signature─────┘
+```
+
+<ItemExplorer
+  title="Parties d'un JWT"
+  layout="table"
+  tableColumns={[{ key: "contents", label: "Contenu" }]}
+  items={[
+    { id: "header", label: "Header", color: "blue", columns: { contents: "Algorithme et type de jeton, ex. { \"alg\": \"HS256\", \"typ\": \"JWT\" } — encodé en base64url, pas chiffré." } },
+    { id: "payload", label: "Payload", color: "green", columns: { contents: "Les revendications elles-mêmes — identifiant utilisateur, rôles, expiration (exp). Également simplement encodé en base64url, ce qui signifie que n'importe qui peut le décoder et le lire sans la clé de signature." } },
+    { id: "signature", label: "Signature", color: "purple", columns: { contents: "Une signature HMAC ou à clé privée portant sur le header et le payload — c'est la seule partie qui nécessite réellement le secret pour être produite." } },
+  ]}
+/>
+
+Le détail critique caché dans ce tableau : le payload est *encodé*, pas *chiffré*. Quiconque détient un JWT peut lire chaque revendication qu'il contient — la signature prouve seulement que les revendications n'ont pas été modifiées, elle ne les cache pas. Ne jamais mettre un mot de passe ou un secret directement dans le payload d'un JWT.
+
+## L'attaque `alg: none`
+
+Certaines bibliothèques JWT anciennes faisaient confiance au champ `alg` du header du jeton lui-même pour décider comment le vérifier — ce qui signifiait qu'un jeton forgé prétendant `"alg": "none"` pouvait être accepté sans aucune vérification de signature. Un code de vérification correctement écrit fixe en dur l'algorithme *attendu* côté serveur et rejette tout le reste, plutôt que de faire confiance à ce que le jeton prétend de lui-même.
+
+## La révocation est la partie difficile
+
+Parce qu'un JWT est autoporteur, un serveur ne peut pas en invalider un plus tôt sans un mécanisme supplémentaire — contrairement à la suppression d'une ligne dans un magasin de sessions. Les systèmes réels gèrent cela avec des durées d'expiration courtes plus des jetons de rafraîchissement, ou une liste de blocage côté serveur pour le rare cas où un jeton doit être révoqué avant son expiration naturelle — ce qui réintroduit exactement l'état côté serveur que les JWT étaient censés éviter, mais pour un ensemble plus restreint de jetons.
+
+## Voir aussi
+
+- **[Sessions](/fr/security/sessions)** — l'alternative stockée côté serveur contre laquelle le JWT échange l'absence d'état.
+- **[OAuth 2.0](/fr/security/oauth-2-0)** — émet couramment des JWT comme jetons d'accès.
+- **[Autorisation](/fr/security/authorization)** — les rôles et permissions sont souvent encodés directement dans les revendications d'un JWT.

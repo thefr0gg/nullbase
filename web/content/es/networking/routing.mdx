@@ -1,0 +1,46 @@
+---
+title: Enrutamiento
+description: Cómo un paquete cruza redes de las que nunca se informó a su emisor — tablas de enrutamiento, rutas estáticas frente a dinámicas, y los protocolos que usan los routers para construirlas.
+category: Networking
+weight: 8
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+Todo router toma la misma decisión para cada paquete: dado este destino, ¿cuál de mis enlaces conectados directamente lo acerca un salto más? Esa decisión sale de una **tabla de enrutamiento** — una lista de redes de destino y el «siguiente salto» para alcanzar cada una. Ningún router necesita conocer la ruta completa; solo necesita conocer el siguiente paso, y confiar en que el router de después conozca el paso posterior a ese.
+
+## Una tabla de enrutamiento, a grandes rasgos
+
+```text
+Destination        Next Hop         Interface
+192.168.1.0/24      directly connected  eth0
+10.0.0.0/8          10.0.0.1            eth1
+0.0.0.0/0           203.0.113.1         eth2   (default route)
+```
+
+La entrada `0.0.0.0/0` es la **ruta por defecto** — «cualquier cosa que no esté listada de otro modo va por aquí» — que es por lo que un router doméstico solo necesita una entrada para enviar todo el tráfico saliente de Internet a tu ISP, sin saber nada sobre la estructura real de Internet.
+
+## Enrutamiento estático frente a dinámico
+
+Una **ruta estática** se introduce a mano y nunca cambia por sí sola — bien para una red pequeña y estable, pero no se adapta si un enlace falla. Los protocolos de **enrutamiento dinámico** permiten que los routers intercambien información y recalculen rutas automáticamente cuando cambia la topología:
+
+<ItemExplorer
+  title="Protocolos de Enrutamiento Dinámico"
+  layout="table"
+  tableColumns={[{ key: "scope", label: "Ámbito" }, { key: "how", label: "Cómo elige una ruta" }]}
+  items={[
+    { id: "rip", label: "RIP", color: "blue", columns: { scope: "Redes pequeñas", how: "Número de saltos — ganan los menos saltos, con un tope de 15 (16 significa inalcanzable)." } },
+    { id: "ospf", label: "OSPF", color: "green", columns: { scope: "Dentro de una única organización (un sistema autónomo)", how: "Coste de enlace, calculado a partir del ancho de banda — cada router construye un mapa completo de la red." } },
+    { id: "bgp", label: "BGP", color: "purple", columns: { scope: "Entre organizaciones — el protocolo que hace funcionar la Internet real", how: "Políticas y atributos de ruta, no puro camino más corto — un ISP puede preferir rutas por razones comerciales, no solo por distancia." } },
+  ]}
+/>
+
+## Por qué Internet no tiene una única tabla de enrutamiento gigante
+
+Ningún router guarda un mapa completo de cada dispositivo en la Tierra — sería una cantidad de estado inmanejable. En su lugar, la estructura jerárquica del [direccionamiento de red](/es/networking/network-addressing) permite que los routers agreguen: una única entrada BGP puede representar millones de direcciones detrás de un ISP, y un router solo necesita detalle sobre las redes de las que realmente está cerca. Es el mismo principio que usa un sistema postal — una oficina de correos local no necesita saber en qué calle está una casa en otro país, solo a qué centro de correos de ese país reenviar la carta.
+
+## Ver también
+
+- **[Direccionamiento de red](/es/networking/network-addressing)** — los bloques CIDR con los que realmente comparan las tablas de enrutamiento.
+- **[IP](/es/networking/ip)** — el campo TTL que impide que un bucle de enrutamiento reenvíe un paquete para siempre.
+- **[ICMP](/es/networking/icmp)** — cómo señala un router que no existe ruta para el destino de un paquete.

@@ -1,0 +1,45 @@
+---
+title: NAT
+description: Comment tout un réseau privé partage une seule adresse IP publique — en réécrivant les adresses (et les ports) à la volée quand le trafic traverse un routeur.
+category: Networking
+weight: 6
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+**NAT (Network Address Translation)** réécrit l'adresse source des paquets sortants, d'une adresse [IPv4](/fr/networking/ipv4) privée vers celle, publique, d'un routeur, et la réécrit de nouveau au retour. C'est la raison pour laquelle un réseau domestique avec une douzaine d'appareils en plage privée n'a jamais besoin que d'une seule IP publique — et, historiquement, l'une des principales raisons pour lesquelles l'épuisement des adresses IPv4 n'est pas devenu une crise des décennies plus tôt.
+
+## Trois variantes
+
+<ItemExplorer
+  title="Types de NAT"
+  layout="table"
+  tableColumns={[{ key: "mapping", label: "Correspondance" }, { key: "use", label: "Usage typique" }]}
+  items={[
+    { id: "static", label: "Static NAT", color: "blue", columns: { mapping: "Une adresse privée mappée en permanence à une adresse publique", use: "Exposer un serveur interne spécifique (par ex. un serveur mail) sur une IP publique fixe" } },
+    { id: "dynamic", label: "Dynamic NAT", color: "green", columns: { mapping: "Les adresses privées sont mappées à n'importe quelle adresse d'un pool public partagé, à la demande", use: "Organisations ayant plus d'hôtes internes qu'une seule adresse, mais disposant de plusieurs adresses publiques" } },
+    { id: "pat", label: "PAT (NAT overload)", color: "purple", columns: { mapping: "De nombreuses adresses privées partagent une adresse publique, distinguées par numéro de port", use: "Routeurs domestiques — le cas de très loin le plus courant" } },
+  ]}
+/>
+
+## Comment PAT distingue réellement les appareils
+
+Puisque chaque appareil partage l'unique IP publique du routeur, celui-ci doit distinguer les réponses d'une autre façon — il le fait en réécrivant aussi le **port source**, et en conservant une table de traduction :
+
+```text
+Private side                Public side
+192.168.1.10:51000   <-->   203.0.113.5:40001
+192.168.1.11:51000   <-->   203.0.113.5:40002
+```
+
+Deux appareils internes peuvent utiliser le même port privé (`51000`) simultanément, parce que le routeur mappe chacun à un port public distinct. Une réponse arrivant sur `203.0.113.5:40002` est retraduite vers `192.168.1.11:51000` en consultant cette entrée de la table — c'est exactement le même principe de paire `(IP, port)` derrière un [socket](/fr/web-fundamentals/ports-sockets).
+
+## Ce que NAT casse
+
+Comme un hôte externe ne voit jamais que l'adresse publique du routeur, il ne peut pas initier une connexion *vers* un appareil derrière le NAT à moins que le routeur ne soit explicitement configuré pour y rediriger un port. C'est par accident une forme de pare-feu — mais c'est aussi pourquoi les protocoles pair-à-pair (VoIP, certains jeux multijoueurs) ont besoin de techniques supplémentaires (STUN, TURN, hole punching) juste pour établir une connexion directe à travers le NAT.
+
+## Voir aussi
+
+- **[IPv4](/fr/networking/ipv4)** — l'espace d'adressage limité qui a rendu NAT nécessaire.
+- **[Ports & Sockets](/fr/web-fundamentals/ports-sockets)** — le même adressage par port sur lequel NAT s'appuie pour multiplexer une IP publique.
+- **[IPv6](/fr/networking/ipv6)** — conçu avec suffisamment d'adresses pour que NAT ne soit plus structurellement requis.

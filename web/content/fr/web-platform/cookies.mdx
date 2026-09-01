@@ -1,0 +1,52 @@
+---
+title: Cookies
+description: Un petit morceau d'état que le serveur demande au navigateur de conserver et de renvoyer — le mécanisme derrière les sessions connectées.
+category: Web Platform
+weight: 5
+interactive: true
+interactiveType: ["RequestPlayground", "ItemExplorer"]
+---
+
+HTTP lui-même est sans état — voir la contrainte de statelessness de [REST](/fr/web-apis/rest) — mais une session de navigateur doit généralement sembler avoir un état (« vous êtes toujours connecté »). Les cookies sont le moyen d'y parvenir : une réponse de serveur peut inclure un en-tête `Set-Cookie` demandant au navigateur de stocker un petit morceau de donnée, et le navigateur le renvoie automatiquement à chaque future requête vers cette même origine, sans code supplémentaire d'aucun côté.
+
+## Essayez-le
+
+`/api/login` dans l'API simulée de ce site retourne un en-tête `Set-Cookie` — envoyez la requête et regardez l'onglet Headers de la réponse.
+
+<RequestPlayground protocol="http" defaultMethod="POST" defaultTarget="/api/login" defaultHeaders="Content-Type: application/json" defaultBody={`{\n  "email": "demo@nullbase.wiki",\n  "password": "..."\n}`} />
+
+```http
+Set-Cookie: session=abc123; HttpOnly; Secure; SameSite=Lax; Max-Age=3600; Path=/
+```
+
+## Attributs
+
+Chaque attribut d'un en-tête `Set-Cookie` restreint précisément quand et comment le navigateur est autorisé à renvoyer le cookie — se tromper sur ces attributs est l'une des erreurs de sécurité web les plus courantes en pratique.
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "controls", label: "Contrôle" },
+  ]}
+  items={[
+    { id: "httponly", label: "HttpOnly", color: "blue", columns: { controls: "Bloque JavaScript (document.cookie) pour empêcher la lecture de ce cookie — la principale défense contre le vol d'un cookie de session via XSS." } },
+    { id: "secure", label: "Secure", color: "green", columns: { controls: "Envoyé uniquement en HTTPS, jamais en HTTP simple — empêche une fuite vers un observateur réseau." } },
+    { id: "samesite", label: "SameSite", color: "purple", columns: { controls: "Si le cookie est envoyé sur des requêtes cross-site. Strict = jamais ; Lax = uniquement lors d'une navigation de premier niveau (comportement par défaut des navigateurs modernes) ; None = toujours, mais nécessite Secure." } },
+    { id: "maxage", label: "Max-Age / Expires", color: "orange", columns: { controls: "Combien de temps le cookie persiste. Omis entièrement -> un « cookie de session », effacé à la fermeture du navigateur." } },
+    { id: "domain", label: "Domain", color: "default", columns: { controls: "Vers quels hôtes le cookie est envoyé — s'il est omis, il ne concerne par défaut que l'hôte exact qui l'a défini (pas de sous-domaines)." } },
+    { id: "path", label: "Path", color: "default", columns: { controls: "Pour quels chemins d'URL sur cet hôte le cookie est envoyé — la plupart des cookies utilisent simplement Path=/, c'est-à-dire partout." } },
+  ]}
+/>
+
+## SameSite et CSRF
+
+`SameSite=Lax` (le comportement par défaut des navigateurs modernes quand rien n'est précisé) est spécifiquement une défense contre le CSRF (Cross-Site Request Forgery) : sans lui, un site malveillant pourrait faire soumettre à votre navigateur une requête vers un site où vous êtes connecté, et votre cookie de session l'accompagnerait automatiquement, authentifiant une action que vous n'avez jamais voulue. `SameSite=Strict` ferme cette faille davantage mais casse un cas légitime courant (cliquer sur un lien depuis un e-mail directement vers une page connectée).
+
+## Cookies first-party vs. third-party
+
+Un cookie est « first-party » (première partie) s'il est défini par le site affiché dans la barre d'adresse du navigateur, et « third-party » (tierce partie) s'il est défini par un domaine différent intégré à cette page (un réseau publicitaire, un script d'analyse présent sur de nombreux sites à la fois) — les cookies tiers sont ce qui permet à un réseau de suivre un utilisateur à travers des sites sans rapport, raison pour laquelle les navigateurs les restreignent ou les bloquent progressivement par défaut.
+
+## Voir aussi
+
+- **[Web Storage](/fr/web-platform/web-storage)** — un stockage côté client uniquement qui, contrairement aux cookies, n'est jamais envoyé automatiquement au serveur.
+- **[API Authentication](/fr/web-apis/api-authentication)** — les cookies sont l'un des moyens de transporter une preuve d'identité ; les jetons Bearer en sont un autre courant.

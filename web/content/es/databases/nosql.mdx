@@ -1,0 +1,71 @@
+---
+title: NoSQL
+description: Cuando los datos no encajan limpiamente en filas y columnas, o la escala no cabe en una sola máquina — almacenes de documentos, clave-valor, columnas y grafos.
+category: Databases
+weight: 4
+interactive: true
+interactiveType: ["RequestPlayground", "ItemExplorer"]
+---
+
+"NoSQL" no es una sola tecnología — es un término genérico para bases de datos que deliberadamente no usan el modelo relacional en el que se basa [SQL](/es/databases/sql). Lo que comparten es normalmente un esquema más flexible (o ausente) y un diseño sesgado hacia el escalado horizontal a través de muchas máquinas, a costa de algunas de las garantías que una base de datos relacional te da por defecto (ver [ACID](/es/databases/acid)).
+
+## Pruébalo
+
+El endpoint simulado `/api/documents` de abajo no tiene un esquema fijo — envía un documento con los campos que quieras y se almacena tal cual, a diferencia de un `INSERT` de SQL que fallaría contra una tabla a la que le faltan esas columnas.
+
+<RequestPlayground
+  protocol="http"
+  defaultMethod="POST"
+  defaultTarget="/api/documents"
+  defaultHeaders="Content-Type: application/json"
+  defaultBody={`{\n  "name": "Katherine Johnson",\n  "field": "Orbital mechanics",\n  "awards": ["Presidential Medal of Freedom"]\n}`}
+  examplePaths={[{ method: "GET", path: "/api/documents", label: "listar todos" }]}
+/>
+
+Fíjate en que los dos documentos precargados de un `GET` no comparten los mismos campos — uno tiene `tags`, el otro tiene `notes` — y ninguno es un error. Esa flexibilidad es la propuesta entera de un almacén de documentos, y también su mayor compromiso: nada impide que dos documentos que *se suponía* que tenían la misma forma se separen silenciosamente.
+
+## Las cuatro categorías comunes
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[{ key: "shape", label: "Forma de los datos" }, { key: "example", label: "Ejemplo" }]}
+  items={[
+    {
+      id: "document",
+      label: "Documento",
+      color: "blue",
+      columns: { shape: "Documentos autocontenidos tipo JSON, agrupados en colecciones", example: "MongoDB, Couchbase" },
+    },
+    {
+      id: "keyvalue",
+      label: "Clave-valor",
+      color: "green",
+      columns: { shape: "Un valor opaco buscado por una única clave — sin lenguaje de consulta sobre el propio valor", example: "Redis, DynamoDB" },
+    },
+    {
+      id: "columnfamily",
+      label: "Familia de columnas",
+      color: "purple",
+      columns: { shape: "Filas con un conjunto de columnas flexible y disperso, optimizado para un volumen de escritura enorme a través de muchas máquinas", example: "Cassandra, HBase" },
+    },
+    {
+      id: "graph",
+      label: "Grafo",
+      color: "orange",
+      columns: { shape: "Nodos y relaciones tipadas entre ellos, optimizado para consultas de recorrido (traversal)", example: "Neo4j" },
+    },
+  ]}
+/>
+
+## Por qué renunciar a las garantías relacionales
+
+Los puntos fuertes del modelo relacional — normalización, joins, consistencia fuerte (ver [Normalización de bases de datos](/es/databases/database-normalization) y [ACID](/es/databases/acid)) — vienen con un costo: una única máquina potente (o un sharding cuidadoso y complejo) para hacerlos cumplir. Algunas bases de datos NoSQL cambian consistencia estricta por escala horizontal que es sencilla de razonar — muchas máquinas independientes, cada una poseyendo una porción de los datos, sin transacción entre máquinas que coordinar. Esto se resume a menudo como el teorema CAP: bajo una partición de red, un sistema distribuido tiene que elegir entre mantenerse totalmente **C**onsistente o mantenerse totalmente disponible (**A**vailable) — no puede garantizar ambas cosas.
+
+## No un reemplazo, generalmente un complemento
+
+Muy pocos sistemas reales son "solo NoSQL" — una forma de producción común usa una base de datos relacional como fuente de verdad para datos que genuinamente se benefician de consistencia fuerte y relaciones (usuarios, pedidos, facturación), junto con un almacén clave-valor para caché (Redis delante de consultas costosas) y quizás un almacén de documentos para una función específica que es naturalmente flexible en esquema (registros de actividad, contenido generado por el usuario con campos variables).
+
+## Ver también
+
+- **[Normalización de bases de datos](/es/databases/database-normalization)** — la disciplina relacional de la que las flexibles esquemas de NoSQL deliberadamente prescinden.
+- **[Paginación](/es/web-apis/pagination)** — la paginación basada en cursor en particular es el encaje natural para los conjuntos de datos con IDs no secuenciales y fragmentados (sharded) que suelen producir los almacenes NoSQL.

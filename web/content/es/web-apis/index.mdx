@@ -1,0 +1,32 @@
+---
+title: APIs Web
+description: Cómo se comunican los servicios entre sí y con los clientes — formas de solicitud, patrones de mensajes, autenticación, y las preocupaciones operativas que toda API real tiene que manejar.
+category: Web APIs
+weight: 1
+---
+
+HTTP lleva una solicitud de A a B. Lo que A y B realmente se dicen entre sí — cómo se da forma a una solicitud, cómo un cliente demuestra quién es, cómo un servidor se protege de verse desbordado — es una capa de diseño separada sobre eso. Esta sección cubre los patrones a partir de los cuales se construyen las APIs reales, independientemente de cualquier framework o lenguaje.
+
+## Patrones de solicitud
+
+- **[REST](/es/web-apis/rest)** — recursos, verbos HTTP, y ausencia de estado.
+- **[GraphQL](/es/web-apis/graphql)** — un solo endpoint, un lenguaje de consulta, pide exactamente los campos que necesitas.
+- **[RPC](/es/web-apis/rpc)** — llama a un método con nombre directamente en lugar de modelar un recurso.
+
+## Push y tiempo real
+
+- **[Webhooks](/es/web-apis/webhooks)** — el servidor te llama de vuelta cuando algo sucede.
+- **[WebSockets](/es/web-apis/websockets)** — una conexión persistente y bidireccional.
+- **[Server-Sent Events](/es/web-apis/server-sent-events)** — un flujo persistente y unidireccional del servidor al cliente.
+
+## Control de acceso
+
+- **[Autenticación de API](/es/web-apis/api-authentication)** — demostrar quién está llamando.
+- **[Autorización de API](/es/web-apis/api-authorization)** — decidir qué se le permite hacer.
+
+## Operar una API
+
+- **[Versionado de API](/es/web-apis/api-versioning)** — cambiar una API sin romper a todos los que la usan.
+- **[Limitación de tasa](/es/web-apis/rate-limiting)** — proteger un servicio de verse desbordado.
+- **[Paginación](/es/web-apis/pagination)** — devolver una gran cantidad de datos una página a la vez.
+- **[Idempotencia](/es/web-apis/idempotency)** — hacer que los reintentos sean seguros.

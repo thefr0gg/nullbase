@@ -1,0 +1,37 @@
+---
+title: Certificados TLS
+description: Cómo sabe un navegador que realmente está hablando con el servidor que cree que es — cadenas de certificados, autoridades certificadoras, y qué significa realmente una advertencia del navegador.
+category: Security
+weight: 11
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+[TLS](/es/web-fundamentals/tls) cifra una conexión, pero el cifrado por sí solo no prueba *con quién* la estás cifrando — nada impide que un atacante establezca una conexión igual de bien cifrada mientras finge ser tu banco. Un **certificado** es lo que cierra esa brecha: una declaración firmada que vincula una clave pública a un nombre de dominio, y una cadena de confianza de vuelta hasta una autoridad en la que el navegador ya confía.
+
+## La cadena de confianza
+
+<ItemExplorer
+  title="Cadena de Certificados"
+  layout="pills"
+  items={[
+    { id: "root", label: "CA raíz", color: "purple", detail: "Un pequeño conjunto de Autoridades Certificadoras cuyas claves públicas vienen preconfiguradas como confiables en cada navegador y sistema operativo. Los certificados raíz se mantienen desconectados y casi nunca se usan directamente." },
+    { id: "intermediate", label: "CA intermedia", color: "blue", detail: "Firmada por una CA raíz, y usada para la emisión de certificados del día a día — mantener la propia clave raíz fuera del uso rutinario limita el daño si una intermedia llega a verse comprometida." },
+    { id: "leaf", label: "Certificado hoja (de servidor)", color: "green", detail: "El certificado para el dominio real (p. ej. nullbase.wiki), firmado por una CA intermedia — esto es lo que el servidor presenta a un navegador que se conecta." },
+  ]}
+/>
+
+Un navegador verifica el certificado de un servidor recorriendo esta cadena: la hoja está firmada por la intermedia, la intermedia está firmada por una raíz, y esa raíz ya está en el almacén de confianza del navegador. Si cada eslabón de esa cadena se verifica y el nombre de dominio coincide, el navegador confía en la conexión; si falta algún eslabón, está expirado, o fue firmado por una autoridad no reconocida, muestra una advertencia en vez de proceder silenciosamente.
+
+## Qué contiene realmente un certificado
+
+Un certificado vincula una clave pública a una identidad: el (los) nombre(s) de dominio para el que es válido, una fecha de expiración, la CA emisora, y una firma sobre todo eso hecha con la propia clave de la CA emisora. El servidor prueba que realmente tiene la *clave privada* correspondiente durante el handshake TLS — poseer esa clave privada es lo que distingue al servidor legítimo de cualquiera que simplemente haya copiado el certificado público.
+
+## Por qué expiran los certificados
+
+Una vida útil fija (históricamente hasta unos pocos años, ahora a menudo 90 días con herramientas automatizadas como Let's Encrypt) limita cuánto tiempo puede abusarse de un certificado comprometido o mal emitido antes de que deje de funcionar por sí solo — incluso si la revocación, que depende de que los navegadores realmente comprueben una lista de revocación, falla en detectarlo a tiempo.
+
+## Ver también
+
+- **[TLS](/es/web-fundamentals/tls)** — el protocolo que usa este certificado para establecer una conexión cifrada y autenticada.
+- **[Gestión de secretos](/es/security/secrets-management)** — la clave privada de un certificado es en sí misma un secreto que necesita el mismo manejo cuidadoso.

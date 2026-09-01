@@ -1,0 +1,40 @@
+---
+title: Adressage réseau
+description: Masques de sous-réseau et notation CIDR — comment un bloc d'adresses est découpé en réseaux plus petits, et comment un routeur décide de ce qui est local.
+category: Networking
+weight: 9
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+Chaque adresse [IPv4](/fr/networking/ipv4) est en réalité deux parties collées ensemble : une portion **réseau** et une portion **hôte**. Un **masque de sous-réseau** marque où se situe cette séparation — c'est ce qui permet à un appareil de répondre « cette destination est-elle sur mon réseau local, ou doit-elle passer par un routeur ? » sans avoir à demander à personne.
+
+## La notation CIDR
+
+**CIDR (Classless Inter-Domain Routing)** écrit la séparation sous forme de suffixe — `192.168.1.0/24` signifie que les 24 premiers bits sont la portion réseau, laissant 8 bits (256 adresses, 254 utilisables) pour les hôtes. Cela a remplacé les blocs de classe A/B/C à taille fixe d'origine d'IPv4, qui gaspillaient un nombre énorme d'adresses dès qu'une organisation avait besoin d'une taille qui ne rentrait pas proprement dans une classe.
+
+<ItemExplorer
+  title="Blocs CIDR courants"
+  layout="table"
+  tableColumns={[{ key: "mask", label: "Masque de sous-réseau" }, { key: "hosts", label: "Hôtes utilisables" }]}
+  items={[
+    { id: "8", label: "/8", color: "blue", columns: { mask: "255.0.0.0", hosts: "~16,7 millions" } },
+    { id: "16", label: "/16", color: "green", columns: { mask: "255.255.0.0", hosts: "~65 000" } },
+    { id: "24", label: "/24", color: "purple", columns: { mask: "255.255.255.0", hosts: "254" } },
+    { id: "30", label: "/30", color: "orange", columns: { mask: "255.255.255.252", hosts: "2 — une taille courante pour un lien routeur point à point" } },
+  ]}
+/>
+
+## Sous-réseautage : découper un bloc en plusieurs
+
+Emprunter des bits de la portion hôte vers la portion réseau divise un bloc en blocs plus petits — un seul `/24` (254 hôtes utilisables) peut devenir quatre sous-réseaux `/26` (62 hôtes utilisables chacun), permettant à une organisation de séparer, disons, l'ingénierie et la finance sur des segments isolés sans demander plus d'espace d'adressage. Chaque bit supplémentaire emprunté divise par deux le nombre d'hôtes utilisables par sous-réseau tout en doublant le nombre de sous-réseaux existants.
+
+## Adresses réseau et de diffusion
+
+Dans tout sous-réseau, la toute première adresse identifie le **réseau lui-même** et la toute dernière est l'**adresse de diffusion** de ce sous-réseau — aucune des deux n'est assignable à un hôte. C'est pourquoi un `/30` (4 adresses au total) ne donne que 2 adresses utilisables : une extrémité est l'adresse réseau, l'autre est la diffusion, laissant exactement de quoi accueillir deux routeurs de part et d'autre d'un lien.
+
+## Voir aussi
+
+- **[IPv4](/fr/networking/ipv4)** — l'espace d'adressage auquel ces calculs de sous-réseau s'appliquent.
+- **[Routage](/fr/networking/routing)** — les tables de routage sont entièrement construites à partir de blocs CIDR comme ceux-ci.
+- **[DHCP](/fr/networking/dhcp)** — distribue le masque de sous-réseau avec chaque adresse louée.

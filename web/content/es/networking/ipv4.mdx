@@ -1,0 +1,41 @@
+---
+title: IPv4
+description: El espacio de direcciones de 32 bits que todavía enruta la mayor parte de Internet — notación decimal con puntos, rangos privados, y por qué se agotó.
+category: Networking
+weight: 3
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+Las direcciones **IPv4** tienen 32 bits, casi siempre escritas como cuatro números decimales separados por puntos entre 0 y 255 (`192.168.1.1`). Treinta y dos bits suena a mucho hasta que se cuenta: unas 4.300 millones de direcciones posibles, para un planeta que ahora tiene muchos más de 4.300 millones de dispositivos conectados a Internet — la razón principal por la que existe [IPv6](/es/networking/ipv6).
+
+## Rangos de direcciones privadas
+
+Tres bloques están reservados para redes privadas y nunca se enrutan en la Internet pública — esto es lo que hace posible que funcionen los routers domésticos y [NAT](/es/networking/nat):
+
+<ItemExplorer
+  title="Rangos IPv4 Privados (RFC 1918)"
+  layout="table"
+  tableColumns={[{ key: "size", label: "Tamaño" }, { key: "typical", label: "Uso típico" }]}
+  items={[
+    { id: "10", label: "10.0.0.0/8", color: "blue", columns: { size: "~16,7 millones de direcciones", typical: "Redes privadas/corporativas grandes" } },
+    { id: "172", label: "172.16.0.0/12", color: "green", columns: { size: "~1 millón de direcciones", typical: "Red bridge por defecto de Docker, algunas redes corporativas" } },
+    { id: "192", label: "192.168.0.0/16", color: "purple", columns: { size: "~65.000 direcciones", typical: "Routers domésticos — 192.168.1.x, 192.168.0.x" } },
+  ]}
+/>
+
+Un paquete dirigido a una de estas solo puede entregarse en la red local a la que pertenece; un router de la Internet pública no lo reenviará, que es exactamente el objetivo — permite que cada red doméstica reutilice los mismos rangos privados sin colisionar.
+
+## Por qué se agotó
+
+Las direcciones IPv4 se repartieron originalmente en bloques de tamaño fijo derrochadores (Clase A/B/C), y la explosión de dispositivos conectados — servidores, teléfonos, IoT — superó hace mucho los 4.300 millones. [NAT](/es/networking/nat) retrasó la crisis durante décadas al permitir que muchos dispositivos privados compartieran una dirección pública, y el esquema CIDR de [Direccionamiento de red](/es/networking/network-addressing) reemplazó las derrochadoras clases fijas por bloques de tamaño flexible — pero ninguno de los dos crea direcciones nuevas, solo hace que las existentes rindan más.
+
+## Direcciones especiales que conviene conocer
+
+`127.0.0.1` (localhost) siempre redirige de vuelta a la propia máquina que la solicita, sin tocar nunca una red real. `0.0.0.0` significa «cualquier dirección» cuando un servidor se enlaza a ella, y `255.255.255.255` es la dirección de difusión, entregada a todos los hosts del segmento de red local.
+
+## Ver también
+
+- **[Direccionamiento de red](/es/networking/network-addressing)** — la notación CIDR y en qué se diferencia un /24 de un /16.
+- **[NAT](/es/networking/nat)** — cómo llega siquiera una dirección IPv4 privada a la Internet pública.
+- **[IPv6](/es/networking/ipv6)** — el espacio de direcciones diseñado para no agotarse nunca.

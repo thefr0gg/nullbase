@@ -1,0 +1,36 @@
+---
+title: Seguridad
+description: Probar quién es alguien, decidir qué se le permite hacer, y cerrar las formas más comunes en que las aplicaciones web son explotadas.
+category: Security
+weight: 6
+---
+
+Cada solicitud que lleva [Sesiones](/es/security/sessions), un [JWT](/es/security/jwt), o una cabecera `Authorization` de [HTTP](/es/web-fundamentals/http) está respondiendo, en el fondo, a una de dos preguntas: *quién es este*, y *qué se le permite hacer*. Esta sección cubre cómo se responden esas preguntas de forma segura, y las formas específicas en que las aplicaciones se equivocan.
+
+## Probar identidad
+
+- **[Autenticación](/es/security/authentication)** — verificar quién dice ser alguien.
+- **[Hashing de contraseñas](/es/security/password-hashing)** — almacenar una contraseña de modo que incluso una base de datos robada no la revele.
+- **[Sesiones](/es/security/sessions)** — seguir siendo reconocido entre solicitudes tras iniciar sesión una sola vez.
+- **[JWT](/es/security/jwt)** — un token firmado y autocontenido que lleva la identidad sin un almacén de sesión en el servidor.
+- **[OAuth 2.0](/es/security/oauth-2-0)** — permitir que un servicio otorgue a otro acceso limitado, sin entregar una contraseña.
+
+## Decidir qué está permitido
+
+- **[Autorización](/es/security/authorization)** — decidir qué puede hacer realmente una identidad autenticada.
+
+## Vulnerabilidades comunes
+
+- **[XSS](/es/security/xss)** — inyectar un script en una página que otro usuario visualiza.
+- **[CSRF](/es/security/csrf)** — engañar a un navegador ya autenticado para que haga una solicitud que no pretendía.
+- **[Inyección SQL](/es/security/sql-injection)** — introducir SQL en una consulta a través de entradas no saneadas.
+
+## Fronteras impuestas por el navegador
+
+- **[CORS](/es/security/cors)** — la regla que impide que el script de un sitio lea libremente las respuestas de otro sitio.
+- **[Content Security Policy](/es/security/content-security-policy)** — una cabecera que le dice al navegador qué puede siquiera cargar o ejecutar una página.
+
+## Mantener seguras las propias tuberías
+
+- **[Certificados TLS](/es/security/tls-certificates)** — cómo sabe un navegador que realmente está hablando con el servidor que cree que es.
+- **[Gestión de secretos](/es/security/secrets-management)** — mantener las claves de API y credenciales fuera del código fuente y del control de versiones.

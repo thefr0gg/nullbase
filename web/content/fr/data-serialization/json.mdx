@@ -1,0 +1,54 @@
+---
+title: JSON
+description: JavaScript Object Notation — le format de données par défaut de presque toutes les API modernes, et le corps que chaque démo RequestPlayground de ce site envoie.
+category: Data & Serialization
+weight: 0
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+JSON (JavaScript Object Notation) est un format de données léger, textuel — malgré son nom, il est aujourd'hui indépendant du langage, avec un analyseur dans pratiquement chaque langage de programmation. C'est le format de corps de requête/réponse par défaut à travers [REST](/fr/web-apis/rest), la plupart des [RPC](/fr/web-apis/rpc), et [GraphQL](/fr/web-apis/graphql), et chaque réponse simulée de ce site est en JSON pour exactement cette raison.
+
+```json
+{
+  "id": 42,
+  "name": "Grace Hopper",
+  "active": true,
+  "roles": ["admin", "editor"],
+  "manager": null
+}
+```
+
+## Le système de types complet
+
+Le système de types de JSON compte six types au total — rien d'autre n'est valide, ce qui explique en partie pourquoi il est si facile à analyser de façon cohérente d'un langage à l'autre.
+
+<ItemExplorer
+  layout="pills"
+  items={[
+    { id: "string", label: "String", color: "green", detail: "Texte entre guillemets doubles uniquement — les guillemets simples ne sont pas valides en JSON, contrairement aux littéraux d'objet JavaScript." },
+    { id: "number", label: "Number", color: "orange", detail: "Aucune distinction entre entiers et flottants — juste « number ». Pas de NaN, pas d'Infinity — les deux sont invalides en JSON." },
+    { id: "boolean", label: "Boolean", color: "purple", detail: "true ou false, sans guillemets." },
+    { id: "null", label: "null", color: "default", detail: "Une valeur distincte signifiant « délibérément aucune valeur » — différente d'une clé totalement absente." },
+    { id: "object", label: "Object", color: "blue", detail: "Un ensemble non ordonné de propriétés à clé textuelle — les clés doivent toujours être des chaînes entre guillemets doubles." },
+    { id: "array", label: "Array", color: "blue", detail: "Une liste ordonnée de valeurs, de n'importe lequel de ces six types, mélangées librement." },
+  ]}
+/>
+
+## Ce que JSON ne peut pas représenter
+
+JSON n'a pas de type `Date` — les horodatages sont conventionnellement sérialisés en chaînes ISO 8601 (`"2024-01-15T09:00:00Z"`) et reconvertis en véritables objets date par le consommateur, pas automatiquement. Il ne peut pas non plus représenter `undefined`, des fonctions, ou des références circulaires — `JSON.stringify` supprime silencieusement les valeurs `undefined` et les fonctions, et lève une exception sur une référence circulaire.
+
+```js
+JSON.stringify({ a: undefined, b: () => {}, c: 1 });
+// '{"c":1}' — a and b are just gone, not null
+```
+
+## Une syntaxe stricte, volontairement
+
+Contrairement aux littéraux d'objet JavaScript, JSON n'a pas de virgules finales, pas de commentaires, pas de clés sans guillemets, et pas de chaînes entre guillemets simples — cette rigueur est délibérée : un analyseur n'a pas à deviner l'intention, ce qui est précisément ce qui rend JSON fiablement interopérable à travers l'implémentation de chaque langage.
+
+## Voir aussi
+
+- **[XML](/fr/data-serialization/xml)** et **[YAML](/fr/data-serialization/yaml)** — les mêmes données structurées, deux autres façons.
+- **[MIME Types](/fr/data-serialization/mime-types)** — JSON est étiqueté `application/json` sur le fil.

@@ -1,0 +1,57 @@
+---
+title: Clés étrangères
+description: Une contrainte qui empêche une ligne de référencer quelque chose qui n'existe pas — appliquée par la base de données elle-même, sans compter sur le code applicatif pour s'en souvenir.
+category: Databases
+weight: 9
+interactive: true
+interactiveType: ["SqlPlayground"]
+---
+
+Une clé étrangère est une colonne (ou un ensemble de colonnes) d'une table qui référence la clé primaire d'une autre — `orders.customer_id` référençant `customers.id`. La déclarer comme une véritable contrainte `FOREIGN KEY`, plutôt que comme une simple colonne entière qui se trouve contenir l'id d'un client, signifie que la base de données elle-même refuse toute ligne qui romprait la référence — une commande ne peut jamais pointer vers un client qui n'existe pas, appliqué automatiquement, sans aucun code applicatif qui pourrait oublier de vérifier.
+
+## Essayez-le — une vraie violation de contrainte
+
+SQLite n'applique pas les clés étrangères par défaut (une bizarrerie historique, pour la compatibilité ascendante) — ce playground l'active explicitement, donc l'erreur que vous voyez ci-dessous est un véritable échec de contrainte, pas un message scripté.
+
+<SqlPlayground
+  title="Foreign key enforcement, turned on"
+  enforceForeignKeys
+  schema={`
+CREATE TABLE authors (id INTEGER PRIMARY KEY, name TEXT NOT NULL);
+CREATE TABLE books (
+  id INTEGER PRIMARY KEY,
+  title TEXT NOT NULL,
+  author_id INTEGER NOT NULL REFERENCES authors(id)
+);
+INSERT INTO authors (id, name) VALUES (1, 'Octavia Butler'), (2, 'Ursula K. Le Guin');
+INSERT INTO books (id, title, author_id) VALUES (1, 'Kindred', 1), (2, 'The Left Hand of Darkness', 2);
+`}
+  defaultQuery={`INSERT INTO books (title, author_id) VALUES ('Ghost Author Book', 999);`}
+/>
+
+Cela échoue avec un véritable `FOREIGN KEY constraint failed` — il n'y a aucun auteur avec `id = 999`. Essayez maintenant une insertion valide à la place : `INSERT INTO books (title, author_id) VALUES ('Parable of the Sower', 1);` — réussit immédiatement, puisque l'auteur `1` existe réellement.
+
+## Comportement `ON DELETE`
+
+Une clé étrangère doit aussi décider ce qui se passe quand la ligne qu'elle référence est supprimée — ceci est défini explicitement par contrainte, et se tromper est une source réelle et courante soit de lignes orphelines, soit de suppressions en cascade non désirées.
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[{ key: "behavior", label: "À la suppression de la ligne référencée" }]}
+  items={[
+    { id: "restrict", label: "RESTRICT / NO ACTION", color: "blue", columns: { behavior: "Bloque entièrement la suppression tant qu'une ligne la référence encore — le comportement par défaut dans la plupart des moteurs." } },
+    { id: "cascade", label: "CASCADE", color: "red", columns: { behavior: "Supprime aussi chaque ligne référençant celle-ci — supprimer un auteur supprimerait silencieusement tous ses livres." } },
+    { id: "setnull", label: "SET NULL", color: "orange", columns: { behavior: "Met la colonne de référence à NULL — valide seulement si cette colonne autorise NULL, c'est-à-dire que la référence est optionnelle." } },
+  ]}
+/>
+
+Essayez d'ajouter `ON DELETE CASCADE` au schéma ci-dessus (`author_id INTEGER NOT NULL REFERENCES authors(id) ON DELETE CASCADE`), réinitialisez, puis `DELETE FROM authors WHERE id = 1;` suivi de `SELECT * FROM books;` — les livres d'Octavia Butler ont eux aussi disparu, supprimés automatiquement avec leur auteur.
+
+## Pourquoi ne pas simplement vérifier dans le code applicatif
+
+Une application pourrait vérifier « cet auteur existe-t-il » avant chaque insertion au lieu de déclarer une contrainte — mais cette vérification et l'insertion ne sont pas atomiques à moins d'être enveloppées dans une [transaction](/fr/databases/transactions), un second chemin de code (un script d'import en masse, un autre service, un accès direct à la base de données) peut toujours oublier la vérification, et une clé étrangère est une ligne de schéma au lieu d'une logique applicative qui doit être correcte et dupliquée partout où des écritures ont lieu. La base de données qui l'applique est strictement plus fiable que de faire confiance à chaque appelant pour s'en souvenir.
+
+## Voir aussi
+
+- **[Normalisation des bases de données](/fr/databases/database-normalization)** — les clés étrangères sont ce qui maintient la cohérence entre les tables séparées d'un schéma normalisé.
+- **[Transactions](/fr/databases/transactions)** — une violation de clé étrangère en cours de transaction fait échouer cette transaction et déclenche un rollback.

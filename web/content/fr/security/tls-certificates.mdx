@@ -1,0 +1,37 @@
+---
+title: Certificats TLS
+description: Comment un navigateur sait qu'il parle réellement au serveur qu'il croit joindre — chaînes de certificats, autorités de certification, et ce que signifie réellement un avertissement du navigateur.
+category: Security
+weight: 11
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+[TLS](/fr/web-fundamentals/tls) chiffre une connexion, mais le chiffrement seul ne prouve pas *avec qui* on la chiffre — rien n'empêche un attaquant d'établir une connexion tout aussi bien chiffrée en se faisant passer pour votre banque. Un **certificat** est ce qui comble cette faille : une déclaration signée liant une clé publique à un nom de domaine, et une chaîne de confiance remontant jusqu'à une autorité en laquelle le navigateur a déjà confiance.
+
+## La chaîne de confiance
+
+<ItemExplorer
+  title="Chaîne de certificats"
+  layout="pills"
+  items={[
+    { id: "root", label: "AC racine", color: "purple", detail: "Un petit ensemble d'autorités de certification dont les clés publiques sont livrées pré-approuvées dans chaque navigateur et système d'exploitation. Les certificats racine sont conservés hors ligne et presque jamais utilisés directement." },
+    { id: "intermediate", label: "AC intermédiaire", color: "blue", detail: "Signée par une AC racine, et utilisée pour l'émission quotidienne de certificats — garder la clé racine elle-même hors de l'usage courant limite les dégâts si une AC intermédiaire est un jour compromise." },
+    { id: "leaf", label: "Certificat feuille (serveur)", color: "green", detail: "Le certificat pour le domaine réel (par ex. nullbase.wiki), signé par une AC intermédiaire — c'est ce que le serveur présente à un navigateur qui se connecte." },
+  ]}
+/>
+
+Un navigateur vérifie le certificat d'un serveur en parcourant cette chaîne : la feuille est signée par l'intermédiaire, l'intermédiaire est signé par une racine, et cette racine est déjà dans le magasin de confiance du navigateur. Si chaque maillon de cette chaîne est valide et que le nom de domaine correspond, le navigateur fait confiance à la connexion ; si un maillon manque, est expiré, ou est signé par une autorité non reconnue, il affiche un avertissement au lieu de continuer silencieusement.
+
+## Ce qu'un certificat contient réellement
+
+Un certificat lie une clé publique à une identité : le ou les noms de domaine pour lesquels il est valide, une date d'expiration, l'AC émettrice, et une signature portant sur tout cela avec la propre clé de l'AC émettrice. Le serveur prouve qu'il détient réellement la *clé privée* correspondante pendant la négociation TLS — posséder cette clé privée est ce qui distingue le serveur légitime de quiconque a simplement copié le certificat public.
+
+## Pourquoi les certificats expirent
+
+Une durée de vie fixe (historiquement jusqu'à quelques années, désormais souvent 90 jours avec des outils automatisés comme Let's Encrypt) limite la durée pendant laquelle un certificat compromis ou mal émis peut être exploité avant de cesser de fonctionner de lui-même — même si la révocation, qui dépend du fait que les navigateurs vérifient réellement une liste de révocation, échoue à le détecter à temps.
+
+## Voir aussi
+
+- **[TLS](/fr/web-fundamentals/tls)** — le protocole qui utilise ce certificat pour établir une connexion chiffrée et authentifiée.
+- **[Gestion des secrets](/fr/security/secrets-management)** — la clé privée d'un certificat est elle-même un secret qui exige la même attention.

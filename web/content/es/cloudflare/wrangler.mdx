@@ -43,10 +43,10 @@ En lugar de versionar el runtime de Workers en sí de una forma que pudiera camb
 
 ## Secretos frente a variables planas
 
-Wrangler distingue entre valores de configuración planos (visibles en `wrangler.jsonc`, aptos para hacer commit) y **secretos** (`wrangler secret put`), que se cifran y nunca aparecen en el archivo de configuración ni en ningún lugar legible después de configurarlos — el lugar correcto para una clave de API o un secreto de firma, siguiendo el mismo principio cubierto de forma general en [Secrets Management](/en/security/secrets-management).
+Wrangler distingue entre valores de configuración planos (visibles en `wrangler.jsonc`, aptos para hacer commit) y **secretos** (`wrangler secret put`), que se cifran y nunca aparecen en el archivo de configuración ni en ningún lugar legible después de configurarlos — el lugar correcto para una clave de API o un secreto de firma, siguiendo el mismo principio cubierto de forma general en [Secrets Management](/es/security/secrets-management).
 
 ## Ver también
 
 - **[Workers Bindings](/es/cloudflare/workers-bindings)** — los bloques de configuración específicos que gestiona Wrangler.
 - **[CI/CD](/es/devops/ci-cd)** — `wrangler deploy` es el comando que normalmente ejecuta un pipeline de CI para desplegar un Worker automáticamente.
-- **[Secrets Management](/en/security/secrets-management)** — la práctica general que `wrangler secret` implementa específicamente para Workers.
+- **[Secrets Management](/es/security/secrets-management)** — la práctica general que `wrangler secret` implementa específicamente para Workers.

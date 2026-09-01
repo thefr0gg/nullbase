@@ -1,0 +1,48 @@
+---
+title: Idempotencia
+description: Hacer que los reintentos sean seguros — enviar la misma solicitud dos veces nunca debería significar que sucedió dos veces.
+category: Web APIs
+weight: 11
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+Una solicitud es **idempotente** si hacerla una vez tiene el mismo efecto que hacerla muchas veces. Esto importa porque las redes fallan de formas ambiguas: un cliente envía una solicitud, la respuesta nunca llega (timeout, caída de conexión), y el cliente no tiene forma de saber si el servidor realmente la procesó o no. El único movimiento seguro es reintentar — y la idempotencia es lo que hace eso seguro en lugar de peligroso.
+
+`GET`, `PUT`, y `DELETE` son idempotentes por definición en HTTP: obtener un recurso dos veces no lo cambia, reemplazarlo con el mismo valor dos veces lo deja en el mismo estado, eliminar un recurso ya eliminado sigue siendo "eliminado". `POST` es la excepción — por defecto, `POST /api/orders` dos veces crea dos pedidos, porque HTTP no le da a `POST` ninguna garantía de idempotencia.
+
+## Pruébalo
+
+Envía un `POST` a `/api/orders` con un header `Idempotency-Key`, luego envía exactamente la misma solicitud de nuevo con la misma clave — la segunda respuesta se reproduce byte por byte (observa `x-idempotent-replay: true`), en lugar de crear un segundo pedido. Cambia la clave y creará uno nuevo.
+
+<RequestPlayground
+  protocol="http"
+  defaultMethod="POST"
+  defaultTarget="/api/orders"
+  defaultHeaders={"Content-Type: application/json\nIdempotency-Key: order-attempt-1"}
+  defaultBody={`{\n  "item": "widget",\n  "quantity": 3\n}`}
+  examplePaths={[
+    { method: "POST", path: "/api/orders", label: "same key" },
+  ]}
+/>
+
+## Cómo funciona una clave de idempotencia
+
+El cliente genera una clave única (un UUID es típico) una vez por operación lógica — no por intento HTTP — y la envía en cada reintento de esa misma operación. El servidor, al ver una clave por primera vez, procesa la solicitud normalmente y **almacena la respuesta** indexada por esa clave. En cualquier solicitud posterior con la misma clave, devuelve la respuesta almacenada de inmediato sin volver a ejecutar la operación — así que reintentar una solicitud de "cobrar esta tarjeta" nunca cobra dos veces, incluso si el cliente genuinamente no puede saber si el primer intento tuvo éxito.
+
+```http
+POST /api/orders
+Idempotency-Key: 6c3a2e1e-...
+
+# First time: processed normally, response cached against this key.
+# Any retry with the same key: the cached response is replayed, unchanged.
+```
+
+## Dónde importa más esto
+
+Los pagos son el ejemplo canónico — Stripe, y la mayoría de las demás APIs de pago, requieren una clave de idempotencia en las solicitudes de creación de cargos exactamente por esta razón. Pero el mismo problema existe en cualquier lugar donde una solicitud `POST`/no idempotente tenga un efecto secundario en el mundo real que no debería ocurrir dos veces: enviar un correo, aprovisionar un recurso, incrementar un conteo de inventario.
+
+## Ver también
+
+- **[Limitación de tasa](/es/web-apis/rate-limiting)** — un cliente que retrocede y reintenta después de un `429` necesita que ese reintento sea idempotente.
+- **[Webhooks](/es/web-apis/webhooks)** — un receptor de webhooks necesita la misma deduplicación, indexada por el ID de evento del remitente en lugar de una clave generada por el cliente.

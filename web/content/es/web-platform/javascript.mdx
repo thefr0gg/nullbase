@@ -1,0 +1,50 @@
+---
+title: JavaScript
+description: El lenguaje que se ejecuta en el navegador — y el bucle de eventos de un solo hilo que decide cuándo se ejecuta realmente tu código.
+category: Web Platform
+weight: 2
+interactive: true
+interactiveType: ["StepFlow"]
+---
+
+import { eventLoopSteps } from "./javascript-event-loop-steps";
+
+JavaScript es el único lenguaje que los navegadores ejecutan de forma nativa. Dos cosas lo hacen distintivo frente a la mayoría de los lenguajes del lado del servidor: es **de un solo hilo** (una sola pila de llamadas, sin ejecución paralela real de tu código), y casi todo lo que toca el mundo exterior — un temporizador, una solicitud de red, un evento del DOM — es **asíncrono**, manejado mediante callbacks, Promises, o `async`/`await` en lugar de bloquear ese único hilo.
+
+## El bucle de eventos
+
+Este es el mecanismo que concilia "un solo hilo" con "asíncrono": el código síncrono siempre se ejecuta hasta completarse primero, y luego los callbacks asíncronos encolados se ejecutan en un orden específico y determinista — no en el momento en que casualmente terminen.
+
+<StepFlow title="El bucle de eventos de JavaScript" steps={eventLoopSteps} />
+
+## Por qué este orden sorprende a la gente
+
+```js
+console.log("1");
+setTimeout(() => console.log("2"), 0);
+Promise.resolve().then(() => console.log("3"));
+console.log("4");
+// logs: 1, 4, 3, 2 — not 1, 2, 3, 4
+```
+
+Un `setTimeout(fn, 0)` no significa "ejecutar inmediatamente" — significa "encolar como macrotarea una vez transcurrido el retraso (en la práctica: tan pronto como sea posible)", y la cola de microtareas (a la que se unen los callbacks de las Promises) siempre se vacía por completo antes de que se ejecute la siguiente macrotarea, incluso una encolada con un retraso de 0 ms.
+
+## Promises y async/await
+
+`async`/`await` es azúcar sintáctico sobre las Promises, no un modelo de concurrencia distinto — una función `async` siempre devuelve una Promise, y `await` pausa esa función (no todo el hilo) hasta que la Promise esperada se resuelve, encolando el resto de la función como una microtarea.
+
+```js
+async function getUser(id) {
+  const res = await fetch(`/api/users/${id}`); // pauses here, thread is free
+  return res.json();                            // resumes once the fetch settles
+}
+```
+
+## Dónde entra el DOM
+
+El JavaScript en un navegador casi siempre termina leyendo o modificando el [DOM](/es/web-platform/dom) — el árbol vivo que el navegador construye a partir del [HTML](/es/web-platform/html) analizado. Los eventos del DOM (un clic, una pulsación de tecla) son exactamente el tipo de trabajo asíncrono descrito arriba: un callback encolado para ejecutarse una vez que termine el código síncrono actual.
+
+## Ver también
+
+- **[El DOM](/es/web-platform/dom)** — lo que JavaScript suele manipular.
+- **[Web Workers](/es/web-platform/web-workers)** — ejecutar JavaScript en un hilo genuinamente separado, fuera de este modelo de un solo hilo.

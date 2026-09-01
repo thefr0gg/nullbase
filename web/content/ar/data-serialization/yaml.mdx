@@ -1,0 +1,65 @@
+---
+title: YAML
+description: صيغة بيانات ودودة للإنسان قائمة على المسافات البادئة — نادراً ما تكون صيغة سلك لواجهة برمجة تطبيقات، لكنها الافتراضية لتقريباً كل ملف إعداد.
+category: Data & Serialization
+weight: 2
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+يمثِّل YAML ("YAML Ain't Markup Language") نفس البيانات المُهيكلة التي يمثِّلها [JSON](/ar/data-serialization/json) — كائنات، مصفوفات، سلاسل نصية، أرقام، قيم منطقية، null — مع استبدال علامات الترقيم بالمسافات البادئة، مُحسَّنة ليقرأها الإنسان ويكتبها يدوياً بدلاً من أن تُحلَّل بسرعة آلياً. نادراً ما تُستخدَم كصيغة طلب/استجابة فعلية لواجهة برمجة تطبيقات؛ موطنها الحقيقي هو ملفات الإعداد (Docker Compose، بيانات Kubernetes، خطوط أنابيب CI، إعداد بناء موقع من هذا النوع نفسه في بعض المكدّسات).
+
+```yaml
+id: 42
+name: Grace Hopper
+active: true
+roles:
+  - admin
+  - editor
+manager: null
+```
+
+نفس البيانات في JSON، للمقارنة:
+
+```json
+{ "id": 42, "name": "Grace Hopper", "active": true, "roles": ["admin", "editor"], "manager": null }
+```
+
+## ما يضيفه YAML على JSON
+
+<ItemExplorer
+  layout="pills"
+  items={[
+    { id: "comments", label: "التعليقات", color: "blue", detail: "# تعليق — مفيد فعلياً في ملفات الإعداد، وشيء لا يستطيع JSON فعله إطلاقاً." },
+    { id: "anchors", label: "الإرساءات والأسماء المستعارة", color: "green", detail: "&name / *name — عرِّف قيمة مرة واحدة، وأشِر إليها في مكان آخر من نفس المستند، متجنباً التكرار." },
+    { id: "multidoc", label: "مستندات متعددة", color: "purple", detail: "--- تفصل عدة مستندات YAML في ملف/تدفق واحد — تستخدم بيانات Kubernetes هذا باستمرار." },
+    { id: "unquoted", label: "سلاسل نصية بلا علامات اقتباس", color: "orange", detail: "لا تحتاج السلاسل النصية إلى علامات اقتباس على الإطلاق في معظم الحالات — وهذا أيضاً أشهر مطبّ في YAML (انظر أدناه)." },
+  ]}
+/>
+
+## المسافة البادئة ذات معنى، وغير متسامحة
+
+خلافاً لأقواس JSON، تأتي بنية YAML بالكامل من المسافة البادئة — خلط علامات التبويب بالمسافات، أو الانحراف بمسافة واحدة، يُعد خطأ تحليل (أو أسوأ، يُغيِّر البنية بصمت) دون قوس إغلاق يلتقط الخطأ بصرياً.
+
+```yaml
+parent:
+  child: value   # 2 spaces of indentation — a child of parent
+sibling: value    # 0 spaces — a top-level key, not nested
+```
+
+## المطبّات الشهيرة
+
+بما أن YAML يحاول استنتاج الأنواع من القيم غير المحاطة بعلامات اقتباس، فإن حفنة من السلاسل النصية المحددة لا تعني ما تبدو عليه:
+
+```yaml
+country: NO        # parsed as the boolean false in YAML 1.1 (Norway's country code!)
+version: 1.10       # parsed as the number 1.1, not the string "1.10" — the trailing zero is lost
+enabled: yes         # parsed as boolean true
+```
+
+هذا حقيقي، وليس افتراضياً — يُعرف عادة بـ"مشكلة النرويج (the Norway problem)"، وهذا سبب أن وضع القيمة بين علامتَي اقتباس صراحة (`country: "NO"`) هو الخيار الآمن الافتراضي كلما أمكن الخلط بين سلسلة نصية ونوع آخر.
+
+## طالع أيضاً
+
+- **[JSON](/ar/data-serialization/json)** — نفس نموذج البيانات، ببنية أكثر صرامة، صيغة السلك الفعلية لمعظم واجهات برمجة التطبيقات.
+- **[XML](/ar/data-serialization/xml)** — الخيار الثالث للبيانات المُهيكلة، أكثر إسهاباً لكن بنظام تحقق من المخطط ناضج لا يضاهيه YAML.

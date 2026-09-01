@@ -25,7 +25,7 @@ Une **route** fait correspondre un motif d'URL sur un domaine déjà sur Cloudfl
 <ItemExplorer
   title="Routes vs Custom Domains"
   layout="table"
-  tableColumns={[{ key: "when", label: "Use when" }, { key: "flexibility", label: "Flexibility" }]}
+  tableColumns={[{ key: "when", label: "À utiliser quand" }, { key: "flexibility", label: "Flexibilité" }]}
   items={[
     { id: "routes", label: "Routes", color: "blue", columns: { when: "Un Worker ne doit traiter que certains chemins d'un domaine qui sert aussi d'autre contenu", flexibility: "Correspondance de motifs fine, plusieurs Workers peuvent partager une zone par chemin" } },
     { id: "custom-domains", label: "Custom Domains", color: "green", columns: { when: "Un Worker doit posséder purement et simplement un domaine ou sous-domaine entier", flexibility: "Plus simple à mettre en place — aucun motif à mal configurer — mais tout ou rien pour ce nom d'hôte" } },

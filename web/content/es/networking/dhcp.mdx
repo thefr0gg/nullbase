@@ -1,0 +1,38 @@
+---
+title: DHCP
+description: Cómo un dispositivo obtiene una dirección IP, una máscara de subred y una puerta de enlace automáticamente en el instante en que se une a una red — sin ninguna configuración manual.
+category: Networking
+weight: 5
+interactive: true
+interactiveType: ["StepFlow"]
+---
+
+**DHCP (Dynamic Host Configuration Protocol)** es la razón por la que un portátil o un teléfono obtiene una dirección IP funcional en el instante en que se conecta a una red Wi-Fi, sin que nadie escriba una dirección a mano. Un servidor DHCP en la red reparte direcciones de un fondo configurado, junto con la máscara de subred, la puerta de enlace por defecto y el servidor DNS que el dispositivo necesita para comunicarse de verdad.
+
+## El proceso DORA
+
+Un dispositivo que todavía no tiene dirección no puede ser alcanzado directamente, así que DHCP empieza con una difusión (broadcast) — este intercambio se recuerda tradicionalmente con el acrónimo **DORA**:
+
+<StepFlow
+  title="DHCP: DORA"
+  steps={[
+    { actor: "Cliente", title: "Discover", description: "El nuevo dispositivo difunde un DHCPDISCOVER a toda la red local — todavía no tiene IP, así que no puede dirigirse a nada directamente.", detail: "Client (0.0.0.0) -> broadcast (255.255.255.255)" },
+    { actor: "Servidor", title: "Offer", description: "Cualquier servidor DHCP que escuche la difusión responde con un DHCPOFFER, proponiendo una dirección IP disponible y las condiciones de la concesión.", detail: "Server -> broadcast: offered IP, lease time, subnet mask" },
+    { actor: "Cliente", title: "Request", description: "El cliente difunde un DHCPREQUEST aceptando explícitamente una de las ofertas — de nuevo por difusión, para que cualquier otro servidor que hubiera hecho una oferta sepa que fue rechazada.", detail: "Client -> broadcast: \"I accept this offer\"" },
+    { actor: "Servidor", title: "Acknowledge", description: "El servidor elegido confirma con un DHCPACK, cerrando la concesión. El cliente ya puede usar la dirección — la configuración está completa.", detail: "Server -> Client: DHCPACK, lease confirmed" },
+  ]}
+/>
+
+## Las concesiones no son permanentes
+
+Una dirección asignada es una **concesión (lease)**, no un otorgamiento permanente — expira tras una duración configurada, y el cliente tiene que renovarla antes de ese momento (típicamente al 50% del tiempo de la concesión) o arriesgarse a perder la dirección a manos de otro dispositivo. Esto es lo que permite que un fondo DHCP sirva, a lo largo del tiempo, a muchos más dispositivos de los que tiene direcciones, a medida que portátiles y teléfonos van y vienen.
+
+## Qué más reparte DHCP
+
+Además de la propia dirección IP, una respuesta DHCP suele incluir la máscara de subred (para que el dispositivo sepa qué direcciones son locales y cuáles necesitan enrutamiento), la puerta de enlace por defecto (adónde enviar el tráfico que sale de la red local), y una o más direcciones de servidor DNS — sin las cuales un dispositivo podría alcanzar IPs pero no podría resolver ningún nombre de dominio en absoluto.
+
+## Ver también
+
+- **[Direccionamiento de red](/es/networking/network-addressing)** — la máscara de subred que incluye una concesión DHCP, explicada.
+- **[NAT](/es/networking/nat)** — la dirección privada que reparte DHCP normalmente solo es utilizable después de que NAT la traduzca.
+- **[UDP](/es/networking/udp)** — DHCP funciona sobre UDP, ya que un dispositivo no puede abrir una conexión TCP antes de tener una dirección.

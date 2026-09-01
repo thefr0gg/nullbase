@@ -1,0 +1,64 @@
+---
+title: PostgreSQL
+description: La base de données relationnelle open-source vers laquelle se tournent la plupart des nouveaux projets sérieux — stricte conformité aux standards, un large écosystème d'extensions, et une véritable concurrence.
+category: Databases
+weight: 2
+interactive: true
+interactiveType: ["SqlPlayground", "ItemExplorer"]
+---
+
+PostgreSQL (« Postgres ») est une base de données relationnelle client-serveur — contrairement à [SQLite](/fr/databases/sqlite), elle s'exécute comme son propre processus longue durée, acceptant des connexions réseau depuis potentiellement de nombreuses applications et utilisateurs à la fois. Elle est connue pour son adhérence étroite au standard SQL, un modèle de concurrence réellement robuste (MVCC — voir [Transactions](/fr/databases/transactions)), et un écosystème d'extensions qui lui permet d'assumer des tâches qu'une base relationnelle plus simple ne peut pas (recherche plein texte, requêtes géospatiales via PostGIS, et même recherche par similarité vectorielle pour les embeddings).
+
+## Essayez-le (SQL standard, exécuté sur le moteur intégré au navigateur)
+
+Le playground ci-dessous s'exécute sur le même moteur SQLite embarqué que le reste de cette section — c'est le même SQL standard que Postgres comprend aussi, mais ce n'est pas littéralement Postgres. La syntaxe propre à Postgres (plus bas sur cette page) est présentée dans des blocs de code statiques, puisqu'elle ne s'exécuterait pas réellement ici.
+
+<SqlPlayground
+  title="RETURNING — insérer et récupérer la nouvelle ligne en un seul aller-retour"
+  schema={`CREATE TABLE orders (id INTEGER PRIMARY KEY, item TEXT NOT NULL, quantity INTEGER NOT NULL);`}
+  defaultQuery={`INSERT INTO orders (item, quantity) VALUES ('Widget', 3) RETURNING *;`}
+/>
+
+Sans `RETURNING`, récupérer la nouvelle ligne prendrait un second aller-retour (un `INSERT` suivi d'un `SELECT` séparé) — Postgres a popularisé cette clause, et elle est suffisamment utile pour que SQLite en ait aussi ajouté le support.
+
+## Ce qui est réellement spécifique à Postgres
+
+```sql
+-- SERIAL: an auto-incrementing integer, Postgres's shorthand for a common pattern
+CREATE TABLE users (id SERIAL PRIMARY KEY, email TEXT UNIQUE NOT NULL);
+
+-- JSONB: binary-encoded, indexable JSON stored directly in a column
+CREATE TABLE events (id SERIAL PRIMARY KEY, payload JSONB);
+SELECT * FROM events WHERE payload->>'type' = 'signup';
+
+-- Native array columns — no separate join table needed for a simple list
+CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[]);
+SELECT * FROM posts WHERE 'featured' = ANY(tags);
+
+-- Schemas: namespaces within one database
+CREATE SCHEMA billing;
+SELECT * FROM billing.invoices;
+```
+
+Aucun de ces quatre éléments n'existe dans le SQLite standard — `JSONB` en particulier explique en grande partie pourquoi Postgres est souvent choisi même pour des charges de travail qui semblent plus orientées documents que relationnelles, puisqu'il permet à une équipe d'obtenir la puissance des requêtes structurées sur des données semi-structurées sans se tourner du tout vers un store [NoSQL](/fr/databases/nosql) séparé.
+
+## MVCC : comment Postgres gère l'accès concurrent
+
+Postgres utilise le MVCC (Multi-Version Concurrency Control) : au lieu que les lecteurs bloquent les écrivains (ou l'inverse), chaque transaction voit un instantané cohérent des données tel qu'il existait au moment où cette transaction a démarré — une requête de rapport longue durée ne bloque jamais les écritures en cours, ni n'est bloquée par elles. Le coût est que les anciennes versions de lignes (« tuples morts ») s'accumulent jusqu'à ce qu'un processus en arrière-plan (`VACUUM`) les récupère — une préoccupation opérationnelle réelle, quoique généralement invisible, dans une base Postgres très sollicitée.
+
+## Extensions
+
+<ItemExplorer
+  layout="pills"
+  items={[
+    { id: "postgis", label: "PostGIS", color: "green", detail: "Types de données et requêtes géospatiales — « trouver chaque magasin à moins de 5 km » comme une requête SQL native." },
+    { id: "pgvector", label: "pgvector", color: "purple", detail: "Recherche par similarité vectorielle — stocke des embeddings et trouve les plus proches voisins, la colonne vertébrale de nombreuses fonctionnalités de recherche par IA, directement dans Postgres." },
+    { id: "timescaledb", label: "TimescaleDB", color: "blue", detail: "Stockage et requêtes optimisés pour les séries temporelles, sous forme d'extension Postgres plutôt qu'une base de données séparée." },
+    { id: "pgcrypto", label: "pgcrypto", color: "orange", detail: "Fonctions cryptographiques (hachage, chiffrement) appelables directement depuis SQL." },
+  ]}
+/>
+
+## Voir aussi
+
+- **[SQLite](/fr/databases/sqlite)** — ce qui exécute réellement les exemples exécutables de cette page.
+- **[MySQL](/fr/databases/mysql)** — l'autre base de données relationnelle open-source dominante, avec un ensemble de compromis différent.

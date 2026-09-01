@@ -1,0 +1,80 @@
+---
+title: Authentification API
+description: Prouver qui appelle — clés API, authentification Basic, tokens Bearer, et le flux OAuth 2.0 qui les délivre.
+category: Web APIs
+weight: 6
+interactive: true
+interactiveType: ["RequestPlayground", "ItemExplorer", "StepFlow"]
+---
+
+import { oauthAuthCodeSteps } from "./api-authentication-steps";
+
+L'authentification répond à une seule question : **qui fait cette requête ?** (Pas ce qu'il a le droit de faire une fois identifié — c'est [l'Autorisation API](/fr/web-apis/api-authorization).) Presque tous les schémas ci-dessous se résument à « attacher un identifiant à la requête, à chaque requête, puisque les API sont sans état » — voir la contrainte d'absence d'état de [REST](/fr/web-apis/rest) pour comprendre pourquoi rien n'est mémorisé entre les appels.
+
+## Schémas courants
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "howSent", label: "Comment il est envoyé" },
+    { key: "typicalUse", label: "Usage typique" },
+  ]}
+  items={[
+    {
+      id: "apikey",
+      label: "Clé API",
+      color: "blue",
+      columns: { howSent: "Un header ou un paramètre de requête, ex. X-API-Key: sk_live_...", typicalUse: "Serveur à serveur, suivi d'usage simple" },
+    },
+    {
+      id: "basic",
+      label: "Authentification Basic",
+      color: "default",
+      columns: { howSent: "Authorization: Basic <base64(user:pass)>", typicalUse: "Outils internes, scripts rapides — rarement des API de production" },
+    },
+    {
+      id: "bearer",
+      label: "Token Bearer / JWT",
+      color: "green",
+      columns: { howSent: "Authorization: Bearer <token>", typicalUse: "La plupart des API modernes — le token est généralement de courte durée et délivré par OAuth" },
+    },
+    {
+      id: "oauth2",
+      label: "OAuth 2.0",
+      color: "purple",
+      columns: { howSent: "Un token Bearer, obtenu via un flux de connexion/consentement", typicalUse: "\"Se connecter avec Google\", accès tiers au nom d'un utilisateur" },
+    },
+    {
+      id: "mtls",
+      label: "mTLS",
+      color: "orange",
+      columns: { howSent: "Un certificat TLS client, vérifié pendant la poignée de main TLS elle-même", typicalUse: "Trafic service-à-service à haute confiance (banque, infra interne)" },
+    },
+  ]}
+/>
+
+## Essayez
+
+`/api/profile` dans l'API simulée de ce site exige un header `Authorization` — envoyez la requête sans, puis ajoutez `Authorization: Bearer demo-token` et renvoyez.
+
+<RequestPlayground protocol="http" defaultTarget="/api/profile" defaultHeaders="Accept: application/json" />
+
+## Tokens Bearer et JWT
+
+Un **JWT** (JSON Web Token) est la forme la plus courante que prend un token Bearer : trois segments en base64url — un header, un payload (des claims comme l'ID de l'utilisateur et une date d'expiration), et une signature — joints par des points. Le serveur vérifie la signature pour faire confiance aux claims sans avoir besoin d'un lookup en base de données à chaque requête, ce qui explique pourquoi les JWT sont populaires spécifiquement pour les API sans état.
+
+```
+eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI0MiIsImV4cCI6MTcwMDAwMDAwMH0.4f8s...
+       header                    payload                  signature
+```
+
+## Flux d'autorisation par code OAuth 2.0
+
+Le schéma derrière chaque bouton « Se connecter avec X » — il permet à votre app d'obtenir un token limité à agir au nom d'un utilisateur, sans jamais voir son mot de passe.
+
+<StepFlow title="Flux d'autorisation par code OAuth 2.0" steps={oauthAuthCodeSteps} />
+
+## Voir aussi
+
+- **[Autorisation API](/fr/web-apis/api-authorization)** — ce qu'un appelant authentifié a réellement le droit de faire.
+- **[Limitation de débit](/fr/web-apis/rate-limiting)** — souvent appliquée par clé API/token, pas seulement par IP.

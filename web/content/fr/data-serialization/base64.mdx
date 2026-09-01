@@ -1,0 +1,48 @@
+---
+title: Base64
+description: Représenter des données binaires arbitraires sous forme de caractères ASCII simples, sûrs pour les URL et le texte — ni chiffrement, ni compression, juste un alphabet différent.
+category: Data & Serialization
+weight: 5
+interactive: true
+interactiveType: ["Codec"]
+---
+
+Base64 convertit des données binaires arbitraires en texte composé de seulement 64 caractères sûrs (`A-Z`, `a-z`, `0-9`, `+`, `/`, plus `=` pour le padding) — utile partout où des données binaires doivent transiter par un canal qui ne gère de façon fiable que du texte : intégrer une image directement dans un payload JSON ou un fichier CSS, une pièce jointe d'email (l'email n'était à l'origine que du texte), les segments header/payload d'un JWT (voir [Authentification des API](/fr/web-apis/api-authentication)).
+
+```
+"Hi" -> "SGk="
+```
+
+## Essayez-le
+
+<Codec mode="base64" defaultInput="Hello, nullbase!" />
+
+## Pas du chiffrement
+
+C'est la chose la plus importante à savoir sur Base64 : ce n'**est pas** un mécanisme de sécurité. Le décoder ne nécessite ni clé ni secret — c'est purement un changement de représentation, réversible par quiconque possède la chaîne. Un mot de passe encodé en Base64 est exactement aussi exposé qu'un mot de passe en texte brut ; il est simplement plus difficile à lire d'un coup d'œil, ce qui n'est pas la même chose qu'être protégé.
+
+```js
+atob("cGFzc3dvcmQ=");  // "password" — no secret required
+```
+
+## Pourquoi c'est ~33% plus volumineux
+
+Base64 compacte 3 octets de données binaires en 4 caractères de sortie, chacun portant 6 bits au lieu des 8 bits d'un octet — c'est ce qui achète la sécurité pour le texte, à un coût de taille fixe : tout payload encodé en Base64 fait environ 4/3 de la taille du binaire d'origine, ce qui explique pourquoi intégrer de gros blobs binaires en Base64 (plutôt que de les servir comme leur propre requête) a un coût réel en bande passante.
+
+## Comment fonctionne le padding
+
+Les caractères `=` en fin de chaîne complètent la sortie jusqu'à un multiple de 4 caractères lorsque l'entrée n'est pas un multiple de 3 octets — un `=` s'il reste l'équivalent d'1 octet de bits, deux `=` s'il en reste 2 :
+
+```
+"Hi"  (2 bytes) -> "SGk="   (1 padding character)
+"Hii" (3 bytes) -> "SGlp"    (no padding — divides evenly)
+```
+
+## Base64 vs. Base64URL
+
+Les caractères `+` et `/` du Base64 standard ne sont pas sûrs à l'intérieur d'une URL ou d'un nom de fichier sans encodage supplémentaire (voir [URL Encoding](/fr/data-serialization/url-encoding)) — une variante sûre pour les URL, Base64URL, substitue `-` et `_` à ces deux caractères et supprime généralement entièrement le padding `=`. Les JWT utilisent spécifiquement Base64URL pour cette raison précise, puisqu'un JWT est couramment transmis dans une URL ou un en-tête HTTP.
+
+## Voir aussi
+
+- **[URL Encoding](/fr/data-serialization/url-encoding)** — l'encodage que Base64URL évite d'avoir à ajouter par-dessus lui-même.
+- **[MIME Types](/fr/data-serialization/mime-types)** — une data URL (`data:image/png;base64,...`) combine un type MIME avec du contenu encodé en Base64 en ligne.

@@ -1,0 +1,53 @@
+---
+title: Migraciones de bases de datos
+description: Cambiar un esquema que ya está corriendo en producción, de forma segura y repetible — un paso pequeño y versionado a la vez.
+category: Databases
+weight: 10
+interactive: true
+interactiveType: ["StepFlow", "SqlPlayground"]
+---
+
+import { migrationLifecycleSteps } from "./migration-lifecycle-steps";
+
+Una migración es un script pequeño y versionado que cambia el esquema de una base de datos — añadir una columna, crear una tabla, añadir un índice — aplicado de la misma forma, en el mismo orden, a cada entorno que lo necesite (el portátil de un desarrollador, staging, producción). La alternativa — ejecutar sentencias `ALTER TABLE` manualmente a mano contra producción — no deja registro de qué se ejecutó dónde, ni forma de garantizar que dos entornos realmente terminaron con el mismo esquema.
+
+## El ciclo de vida
+
+<StepFlow title="Una migración, desde el cambio local hasta producción" steps={migrationLifecycleSteps} />
+
+## Pruébalo — aplicando una migración real en vivo
+
+<SqlPlayground
+  title="0007_add_users_last_login — aplicada en vivo"
+  schema={`CREATE TABLE users (id INTEGER PRIMARY KEY, email TEXT NOT NULL);
+INSERT INTO users (id, email) VALUES (1, 'ada@example.com'), (2, 'alan@example.com');`}
+  defaultQuery={`ALTER TABLE users ADD COLUMN last_login_at TEXT;
+PRAGMA table_info(users);`}
+/>
+
+El resultado de `PRAGMA table_info(users)` ahora muestra una nueva columna real `last_login_at` — la migración realmente se ejecutó contra esta base de datos en el navegador. Prueba a continuación la migración "down": `ALTER TABLE users DROP COLUMN last_login_at;` seguido de `PRAGMA table_info(users);` de nuevo — la columna genuinamente ha desaparecido.
+
+## Por qué las migraciones son aditivas por convención
+
+Una migración bien escrita evita cambios destructivos en el mismo paso en que se introduce una columna nueva — eliminar una columna que la aplicación aún lee rompería cualquier cosa que aún no se haya vuelto a desplegar con el código nuevo. Una secuencia más segura para renombrar una columna, por ejemplo, suele ser: (1) añadir la columna nueva, (2) desplegar código que escriba tanto en la vieja como en la nueva, (3) rellenar retroactivamente las filas existentes, (4) desplegar código que solo use la columna nueva, (5) solo entonces eliminar la vieja — varias migraciones pequeñas en lugar de una arriesgada.
+
+## Desincronización de esquema (schema drift)
+
+La "desincronización de esquema" es lo que ocurre cuando el esquema real de una base de datos ya no coincide con lo que dice el historial de migraciones que debería ser — normalmente por que alguien ejecutó un `ALTER TABLE` ad-hoc a mano en lugar de a través de una migración. Es un riesgo operativo real precisamente porque es invisible hasta que una migración que asume el estado previo "correcto" falla, o peor, tiene éxito silenciosamente sobre la suposición equivocada.
+
+## Herramientas comunes
+
+<ItemExplorer
+  layout="pills"
+  items={[
+    { id: "flyway", label: "Flyway", color: "blue", detail: "Basado en Java, independiente de la base de datos, archivos de migración en SQL plano — una de las herramientas más antiguas y ampliamente adoptadas." },
+    { id: "prisma", label: "Prisma Migrate", color: "green", detail: "Genera migraciones SQL a partir de un archivo de esquema escrito en el propio lenguaje de esquema de Prisma, en vez de SQL escrito a mano." },
+    { id: "rails", label: "Rails Active Record Migrations", color: "purple", detail: "Migraciones escritas en Ruby, uno de los primeros frameworks en popularizar este flujo de trabajo." },
+    { id: "wrangler-d1", label: "wrangler d1 migrations", color: "orange", detail: "Archivos de migración .sql planos aplicados a una base de datos Cloudflare D1 (basada en SQLite) — el mismo archivo funciona localmente y contra producción." },
+  ]}
+/>
+
+## Ver también
+
+- **[SQLite](/es/databases/sqlite)** — las capacidades de `ALTER TABLE` (como el `DROP COLUMN` usado arriba) varían significativamente según el motor y la versión.
+- **[Claves foráneas](/es/databases/foreign-keys)** — añadir una nueva restricción de clave foránea a una tabla existente y poblada es una de las migraciones más delicadas de escribir con seguridad.

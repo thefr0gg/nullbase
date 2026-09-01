@@ -1,0 +1,43 @@
+---
+title: OAuth 2.0
+description: Comment un service peut accorder à un autre un accès limité aux données d'un utilisateur sans jamais transmettre de mot de passe — le flux authorization code, étape par étape.
+category: Security
+weight: 5
+interactive: true
+interactiveType: ["StepFlow"]
+---
+
+**OAuth 2.0** résout un problème précis : permettre à une application tierce d'accéder à une partie des données d'un utilisateur sur un autre service — lire son calendrier, publier sur son compte — sans que cette application ne voie jamais le vrai mot de passe de l'utilisateur. À la place, l'utilisateur accorde un **jeton d'accès** limité et révocable via le service qui possède les données.
+
+## Le flux Authorization Code
+
+C'est le flux le plus courant et le plus sûr, utilisé chaque fois qu'une application côté serveur est impliquée (par opposition à une application monopage pure) :
+
+<StepFlow
+  title="Flux OAuth 2.0 Authorization Code"
+  steps={[
+    { actor: "Application", title: "Redirection vers le serveur d'autorisation", description: "L'application envoie le navigateur de l'utilisateur vers le service qui possède ses données (par ex. Google), en précisant quel accès (scope) elle demande.", detail: "GET https://accounts.example.com/authorize?client_id=...&scope=calendar.read&redirect_uri=..." },
+    { actor: "Utilisateur", title: "L'utilisateur approuve", description: "L'utilisateur se connecte directement au serveur d'autorisation (jamais via l'application demandeuse) et approuve le scope précis demandé.", detail: "\"App X wants to: read your calendar. Allow?\"" },
+    { actor: "Serveur d'autorisation", title: "Redirection retour avec un code", description: "Le serveur d'autorisation redirige vers l'application avec un code d'autorisation de courte durée — pas encore le jeton d'accès lui-même.", detail: "GET https://app.example.com/callback?code=abc123" },
+    { actor: "Application", title: "Échange du code contre un jeton", description: "Le backend propre de l'application (pas le navigateur) échange le code contre un jeton d'accès, en s'authentifiant avec un secret client que le navigateur ne voit jamais.", detail: "POST /token\n{ code: 'abc123', client_id, client_secret }" },
+    { actor: "Serveur d'autorisation", title: "Émission du jeton d'accès", description: "L'application détient désormais un jeton d'accès limité qu'elle peut utiliser pour appeler l'API du service détenteur des données au nom de l'utilisateur — toujours sans jamais avoir vu son mot de passe.", detail: "{ access_token: '...', expires_in: 3600 }" },
+  ]}
+/>
+
+## Pourquoi le code est échangé en une seconde étape
+
+Le code d'autorisation arrive via une redirection de navigateur — un canal qui peut fuiter dans l'historique du navigateur ou les en-têtes referrer. Diviser le flux de sorte que le *code* transite par le navigateur mais que le *véritable échange de jeton* se fasse serveur à serveur (authentifié avec un secret client que seul le backend de l'application détient) fait qu'un code fuité seul ne suffit pas à obtenir un jeton ; le secret client est également requis.
+
+## Les scopes limitent le rayon des dégâts
+
+Un jeton d'accès est émis pour un **scope** précis et restreint (`calendar.read`, pas un accès global au compte) — de sorte qu'un jeton compromis n'expose que ce qui lui a été effectivement accordé, et un utilisateur peut voir exactement ce qu'il approuve avant de l'accorder.
+
+## OAuth, c'est de l'autorisation, pas de l'authentification
+
+OAuth en lui-même prouve seulement qu'une application a la permission d'accéder à certaines données — il ne prouve pas, en soi, *qui est l'utilisateur* pour l'application. **OpenID Connect** est une fine couche d'identité construite au-dessus d'OAuth 2.0 spécifiquement pour ajouter cette pièce, en émettant un jeton d'identité (typiquement un [JWT](/fr/security/jwt)) aux côtés du jeton d'accès.
+
+## Voir aussi
+
+- **[JWT](/fr/security/jwt)** — le format typique que prend un jeton d'accès ou d'identité OAuth.
+- **[Authentification](/fr/security/authentication)** — la question distincte à laquelle OAuth seul ne répond pas.
+- **[Autorisation](/fr/security/authorization)** — les scopes OAuth en sont exactement une forme.

@@ -1,0 +1,86 @@
+---
+title: Versionado de API
+description: Cómo cambiar la forma de una API sin romper a cada cliente que ya depende de la anterior.
+category: Web APIs
+weight: 8
+interactive: true
+interactiveType: ["RequestPlayground", "ItemExplorer"]
+---
+
+Una API que nunca cambia es poco común — se renombran campos, se reestructuran las formas de respuesta, se corrigen comportamientos de maneras que resultan ser disruptivas. El problema que resuelve el versionado: ¿cómo lanzas ese cambio sin romper a cada cliente que ya llama a la forma anterior, a menudo clientes que no controlas y no puedes forzar a actualizarse según tu calendario?
+
+## Pruébalo
+
+La API simulada de este sitio sirve dos versiones del mismo recurso lado a lado — `v1` devuelve un solo campo `name`, `v2` lo divide en `first_name`/`last_name`, un ejemplo realista de un cambio disruptivo.
+
+<RequestPlayground
+  protocol="http"
+  defaultTarget="/api/v1/users"
+  examplePaths={[
+    { method: "GET", path: "/api/v1/users", label: "v1" },
+    { method: "GET", path: "/api/v2/users", label: "v2" },
+  ]}
+/>
+
+## Estrategias de versionado
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "example", label: "Ejemplo" },
+    { key: "tradeoff", label: "Compromiso" },
+  ]}
+  items={[
+    {
+      id: "uri",
+      label: "Ruta URI",
+      color: "blue",
+      columns: {
+        example: "GET /api/v2/users",
+        tradeoff: "Lo más explícito y cacheable (cada versión es una URL distinta) — pero la versión se filtra en las URLs codificadas de cada cliente.",
+      },
+    },
+    {
+      id: "header",
+      label: "Header personalizado",
+      color: "purple",
+      columns: {
+        example: "GET /api/users\nX-API-Version: 2",
+        tradeoff: "Mantiene las URLs estables entre versiones — pero es menos visible (fácil de olvidar, invisible en la barra de direcciones del navegador o en un enlace compartido).",
+      },
+    },
+    {
+      id: "query",
+      label: "Parámetro de consulta",
+      color: "green",
+      columns: {
+        example: "GET /api/users?version=2",
+        tradeoff: "Fácil de añadir, pero fácil de omitir accidentalmente, y los parámetros de consulta no siempre forman parte de las claves de caché por defecto.",
+      },
+    },
+    {
+      id: "accept",
+      label: "Negociación de contenido",
+      color: "orange",
+      columns: {
+        example: "GET /api/users\nAccept: application/vnd.example.v2+json",
+        tradeoff: "El enfoque \"correcto\" y nativo de HTTP (versionar la representación, no el recurso) — pero el menos descubrible y el más inusual de consumir.",
+      },
+    },
+  ]}
+/>
+
+El versionado por ruta URI es, por mucho, el más común en la práctica, a pesar de ser posiblemente el enfoque HTTP menos "puro" — la explicitud y la posibilidad de cachear tienden a ganar sobre la corrección teórica.
+
+## Qué cuenta realmente como disruptivo
+
+No todo cambio necesita una nueva versión. Añadir un nuevo campo opcional a una respuesta, o un nuevo endpoint opcional, es aditivo — los clientes existentes que ignoran campos desconocidos siguen funcionando sin cambios. Renombrar o eliminar un campo, cambiar el tipo de un campo, o cambiar el comportamiento de los códigos de estado es disruptivo — cualquier cliente que dependa de la forma anterior deja de funcionar. La mayoría de las APIs GraphQL se apoyan en esta distinción en lugar de versionar del todo: añaden campos libremente, marcan los antiguos como `@deprecated`, y solo los eliminan una vez que su uso cae a cero — mira [GraphQL](/es/web-apis/graphql).
+
+## Deprecación, no solo versionado
+
+Lanzar v2 no significa que v1 desaparezca de inmediato — las APIs reales típicamente anuncian una ventana de deprecación (p. ej. "v1 se retira en 6 meses"), devuelven un header `Deprecation`/`Sunset` en las respuestas de v1 para que los clientes puedan detectarlo programáticamente, y solo eliminan la versión antigua una vez que el tráfico hacia ella es insignificante.
+
+## Ver también
+
+- **[REST](/es/web-apis/rest)** — el estilo orientado a recursos sobre el que se apoya la mayoría del versionado por ruta URI.
+- **[Idempotencia](/es/web-apis/idempotency)** — otra preocupación fácil de hacer mal en la primera versión e incómoda de añadir después.

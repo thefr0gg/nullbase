@@ -35,7 +35,7 @@ DATABASE_URL=postgres://localhost/myapp
 API_KEY=sk_test_abc123
 ```
 
-Un fichier `.env` est une commodité de développement local — il devrait figurer dans `.gitignore`, ne jamais être commité, car il contient couramment de vrais identifiants (voir [Secrets Management](/en/security/secrets-management)). Les environnements de production définissent typiquement les variables via la propre configuration de la plateforme d'hébergement (un tableau de bord, un stockage de secrets en CLI) plutôt que de livrer un fichier `.env` du tout.
+Un fichier `.env` est une commodité de développement local — il devrait figurer dans `.gitignore`, ne jamais être commité, car il contient couramment de vrais identifiants (voir [Secrets Management](/fr/security/secrets-management)). Les environnements de production définissent typiquement les variables via la propre configuration de la plateforme d'hébergement (un tableau de bord, un stockage de secrets en CLI) plutôt que de livrer un fichier `.env` du tout.
 
 ## Les variables d'environnement ne sont pas automatiquement secrètes
 
@@ -43,6 +43,6 @@ Le fait qu'une variable soit lue depuis l'environnement plutôt que codée en du
 
 ## Voir aussi
 
-- **[Secrets Management](/en/security/secrets-management)** — pourquoi certaines variables d'environnement ont besoin de plus de protection que d'autres.
+- **[Secrets Management](/fr/security/secrets-management)** — pourquoi certaines variables d'environnement ont besoin de plus de protection que d'autres.
 - **[Docker](/fr/devops/docker)** — les variables d'environnement sont le moyen standard de configurer un conteneur sans reconstruire son image.
 - **[Cloudflare Workers Bindings](/fr/cloudflare/workers-bindings)** — un mécanisme différent (et plus structuré) pour le même besoin sous-jacent, propre aux Workers.

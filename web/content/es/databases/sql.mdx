@@ -1,0 +1,73 @@
+---
+title: SQL
+description: El lenguaje de consulta que habla prácticamente toda base de datos relacional — declarativo, basado en conjuntos, y (casi) estandarizado entre motores.
+category: Databases
+weight: 0
+interactive: true
+interactiveType: ["SqlPlayground", "ItemExplorer"]
+---
+
+SQL (Structured Query Language) describe **qué** datos quieres, no **cómo** obtenerlos — escribes `SELECT name FROM users WHERE age > 18`, y el motor de base de datos decide por sí mismo la estrategia real de recuperación (un escaneo completo, una búsqueda por índice, un orden de join). Esta es la diferencia definitoria frente al código imperativo: no hay ningún bucle que escribir, ningún puntero que recorrer — declaras la forma del resultado que quieres.
+
+El playground de abajo es real: es SQLite compilado a WebAssembly, ejecutándose por completo en tu navegador. Cada consulta se ejecuta de verdad contra una base de datos en memoria real y pequeña.
+
+## Pruébalo
+
+<SqlPlayground
+  title="employees / departments"
+  schema={`
+CREATE TABLE departments (id INTEGER PRIMARY KEY, name TEXT NOT NULL);
+CREATE TABLE employees (
+  id INTEGER PRIMARY KEY,
+  name TEXT NOT NULL,
+  department_id INTEGER REFERENCES departments(id),
+  salary INTEGER NOT NULL
+);
+INSERT INTO departments (id, name) VALUES (1, 'Engineering'), (2, 'Sales'), (3, 'Design');
+INSERT INTO employees (id, name, department_id, salary) VALUES
+  (1, 'Ada Lovelace', 1, 145000),
+  (2, 'Grace Hopper', 1, 152000),
+  (3, 'Alan Turing', 1, 149000),
+  (4, 'Ida Tacke', 2, 98000),
+  (5, 'Rosalind Franklin', 3, 110000);
+`}
+  defaultQuery={`SELECT e.name, d.name AS department, e.salary
+FROM employees e
+JOIN departments d ON d.id = e.department_id
+WHERE e.salary > 100000
+ORDER BY e.salary DESC;`}
+/>
+
+Prueba a cambiar el umbral de `WHERE`, quitar el `JOIN`, o ejecutar `SELECT department_id, AVG(salary) FROM employees GROUP BY department_id;` para ver una agregación.
+
+## Orden de escritura vs. orden de ejecución
+
+Las cláusulas de SQL se *escriben* en un orden pero se *ejecutan* en otro distinto — este desajuste es una fuente común de confusión, especialmente en torno a por qué no puedes referenciar una columna con alias de `SELECT` en su propia cláusula `WHERE`.
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[{ key: "written", label: "Posición escrita" }, { key: "executed", label: "Orden real de ejecución" }]}
+  items={[
+    { id: "from", label: "FROM / JOIN", color: "blue", columns: { written: "1º", executed: "1º — construye el conjunto de filas de trabajo" } },
+    { id: "where", label: "WHERE", color: "green", columns: { written: "2º", executed: "2º — filtra filas antes de agrupar" } },
+    { id: "groupby", label: "GROUP BY", color: "orange", columns: { written: "4º", executed: "3º — colapsa filas en grupos" } },
+    { id: "having", label: "HAVING", color: "purple", columns: { written: "5º", executed: "4º — filtra grupos, después de la agregación" } },
+    { id: "select", label: "SELECT", color: "red", columns: { written: "1º en la página", executed: "5º — calcula las columnas de salida reales" } },
+    { id: "orderby", label: "ORDER BY", color: "blue", columns: { written: "6º", executed: "6º — ordena el resultado final" } },
+  ]}
+/>
+
+Esto es exactamente por qué `WHERE` no puede filtrar sobre un agregado (`WHERE COUNT(*) > 5` no es válido — usa `HAVING`) — `WHERE` se ejecuta antes de que ocurra siquiera el agrupamiento, así que todavía no existe ningún valor agregado sobre el que filtrar.
+
+## Joins, brevemente
+
+Un `JOIN` combina filas de dos tablas basándose en una condición de coincidencia. `INNER JOIN` (el `JOIN` por defecto) conserva solo las filas que tienen coincidencia en ambos lados; `LEFT JOIN` conserva cada fila de la tabla izquierda sin importar si existe una coincidencia, rellenando las columnas sin coincidencia con `NULL` — prueba a cambiar `JOIN` por `LEFT JOIN` en el playground de arriba y añadir un empleado sin `department_id` para ver la diferencia.
+
+## SQL no está totalmente estandarizado
+
+ANSI SQL define un núcleo común, pero cada motor real añade sus propias extensiones y diverge en casos límite — ver [PostgreSQL](/es/databases/postgresql) y [MySQL](/es/databases/mysql) para sintaxis específica de cada motor que no necesariamente funciona en los demás.
+
+## Ver también
+
+- **[SQLite](/es/databases/sqlite)** — el motor real que impulsa el playground de esta página.
+- **[Índices de bases de datos](/es/databases/database-indexes)** — cómo decide el motor *cómo* ejecutar la consulta que declaraste.

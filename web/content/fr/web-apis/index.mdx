@@ -1,0 +1,32 @@
+---
+title: API Web
+description: Comment les services se parlent entre eux et avec les clients — formes de requête, patterns de message, authentification, et les préoccupations opérationnelles que toute API réelle doit gérer.
+category: Web APIs
+weight: 1
+---
+
+HTTP fait passer une requête de A à B. Ce que A et B se disent réellement — comment une requête est structurée, comment un client prouve qui il est, comment un serveur se protège d'être submergé — est une couche de conception distincte au-dessus de ça. Cette section couvre les patterns dont sont faites les API réelles, indépendamment de tout framework ou langage.
+
+## Patterns de requête
+
+- **[REST](/fr/web-apis/rest)** — ressources, verbes HTTP, et absence d'état.
+- **[GraphQL](/fr/web-apis/graphql)** — un seul endpoint, un langage de requête, demander exactement les champs dont on a besoin.
+- **[RPC](/fr/web-apis/rpc)** — appeler directement une méthode nommée plutôt que modéliser une ressource.
+
+## Push et temps réel
+
+- **[Webhooks](/fr/web-apis/webhooks)** — le serveur vous rappelle quand quelque chose se produit.
+- **[WebSockets](/fr/web-apis/websockets)** — une connexion persistante et bidirectionnelle.
+- **[Server-Sent Events](/fr/web-apis/server-sent-events)** — un flux persistant et unidirectionnel du serveur vers le client.
+
+## Contrôle d'accès
+
+- **[Authentification API](/fr/web-apis/api-authentication)** — prouver qui appelle.
+- **[Autorisation API](/fr/web-apis/api-authorization)** — décider ce qu'il a le droit de faire.
+
+## Exploiter une API
+
+- **[Versionnage d'API](/fr/web-apis/api-versioning)** — faire évoluer une API sans casser tous ceux qui l'utilisent.
+- **[Limitation de débit](/fr/web-apis/rate-limiting)** — protéger un service d'être submergé.
+- **[Pagination](/fr/web-apis/pagination)** — retourner beaucoup de données une page à la fois.
+- **[Idempotence](/fr/web-apis/idempotency)** — rendre les réessais sûrs.

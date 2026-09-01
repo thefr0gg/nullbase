@@ -1,0 +1,39 @@
+---
+title: IPv6
+description: L'espace d'adressage 128 bits conçu pour remplacer IPv4 — assez d'adresses pour chaque appareil sur Terre plusieurs fois, avec quelques choix de conception réellement différents.
+category: Networking
+weight: 4
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+Les adresses **IPv6** font 128 bits — écrites sous forme de huit groupes de quatre chiffres hexadécimaux séparés par des deux-points (`2001:0db8:85a3:0000:0000:8a2e:0370:7334`), généralement raccourcies en supprimant les zéros de tête de chaque groupe et en réduisant une série de groupes entièrement à zéro en `::`. 128 bits, ce n'est pas juste « plus grand que 32 » — c'est environ 340 undécillions d'adresses, suffisamment pour que la pénurie d'adresses, et le [NAT](/fr/networking/nat) qu'elle a imposé à [IPv4](/fr/networking/ipv4), cesse totalement d'être une contrainte de conception.
+
+## Types d'adresses
+
+Contrairement à IPv4, IPv6 a été conçu avec des catégories d'adresses distinctes dès le départ plutôt que de les ajouter après coup :
+
+<ItemExplorer
+  title="Types d'adresses IPv6"
+  layout="pills"
+  items={[
+    { id: "unicast", label: "Unicast", color: "blue", detail: "Livrée à exactement une interface — le cas normal, équivalent à une adresse IPv4 ordinaire." },
+    { id: "multicast", label: "Multicast", color: "green", detail: "Livrée à chaque interface ayant rejoint un groupe multicast — remplace entièrement la diffusion (broadcast) d'IPv4, puisqu'IPv6 n'a pas d'adresse de diffusion." },
+    { id: "anycast", label: "Anycast", color: "purple", detail: "Assignée à plusieurs interfaces ; un paquet va vers celle qui est topologiquement la plus proche. Fortement utilisée par les serveurs racine DNS et les CDN." },
+    { id: "link-local", label: "Link-local", color: "orange", detail: "Valide uniquement sur le segment réseau local (fe80::/10) — attribuée automatiquement à chaque interface, utilisée pour la découverte de voisins avant qu'une adresse routable n'existe." },
+  ]}
+/>
+
+## Ce qui a changé délibérément
+
+IPv6 a abandonné le checksum d'en-tête d'IPv4 (redondant avec les checksums des couches liaison et transport), et la traduction d'adresse pilotée par NAT n'est plus structurellement nécessaire, puisque chaque appareil peut avoir une adresse réelle, routable globalement. La configuration d'adresse peut aussi se faire entièrement sans [DHCP](/fr/networking/dhcp) : **SLAAC** (Stateless Address Autoconfiguration) permet à un appareil de dériver sa propre adresse à partir d'une annonce de routeur et de l'identifiant de son interface réseau.
+
+## L'adoption reste partielle
+
+IPv6 et IPv4 ne sont pas compatibles au niveau du câble — un appareil a besoin d'une pile pour chacun, et la majeure partie d'Internet fonctionne en **dual-stack**, capable des deux, se rabattant sur IPv4 partout où IPv6 n'est pas encore pris en charge de bout en bout. C'est pourquoi les adresses IPv4 sont encore bien vivantes des décennies après le déploiement d'IPv6 : la transition est additive, pas un basculement brutal.
+
+## Voir aussi
+
+- **[IPv4](/fr/networking/ipv4)** — l'espace d'adressage qu'IPv6 a été conçu pour finir par remplacer.
+- **[DHCP](/fr/networking/dhcp)** — l'alternative avec état à SLAAC pour attribuer des adresses.
+- **[Adressage réseau](/fr/networking/network-addressing)** — les concepts de sous-réseau qui se transposent depuis IPv4, adaptés aux blocs d'adresses bien plus grands d'IPv6.

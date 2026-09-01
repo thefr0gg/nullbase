@@ -1,0 +1,53 @@
+---
+title: Migrations de base de données
+description: Modifier en toute sécurité et de manière reproductible un schéma déjà en production — une petite étape versionnée à la fois.
+category: Databases
+weight: 10
+interactive: true
+interactiveType: ["StepFlow", "SqlPlayground"]
+---
+
+import { migrationLifecycleSteps } from "./migration-lifecycle-steps";
+
+Une migration est un petit script versionné qui modifie le schéma d'une base de données — ajouter une colonne, créer une table, ajouter un index — appliqué de la même manière, dans le même ordre, à chaque environnement qui en a besoin (l'ordinateur portable d'un développeur, le staging, la production). L'alternative — exécuter manuellement des instructions `ALTER TABLE` à la main contre la production — ne laisse aucune trace de ce qui a été exécuté où, et aucun moyen de garantir que deux environnements se sont réellement retrouvés avec le même schéma.
+
+## Le cycle de vie
+
+<StepFlow title="A migration, from local change to production" steps={migrationLifecycleSteps} />
+
+## Essayez-le — appliquer une vraie migration en direct
+
+<SqlPlayground
+  title="0007_add_users_last_login — applied live"
+  schema={`CREATE TABLE users (id INTEGER PRIMARY KEY, email TEXT NOT NULL);
+INSERT INTO users (id, email) VALUES (1, 'ada@example.com'), (2, 'alan@example.com');`}
+  defaultQuery={`ALTER TABLE users ADD COLUMN last_login_at TEXT;
+PRAGMA table_info(users);`}
+/>
+
+Le résultat de `PRAGMA table_info(users)` montre maintenant une vraie nouvelle colonne `last_login_at` — la migration s'est réellement exécutée contre cette base de données dans le navigateur. Essayez ensuite la migration « descendante » : `ALTER TABLE users DROP COLUMN last_login_at;` suivi de `PRAGMA table_info(users);` à nouveau — la colonne a réellement disparu.
+
+## Pourquoi les migrations sont additives par convention
+
+Une migration bien écrite évite les changements destructeurs dans la même étape où une nouvelle colonne est introduite — supprimer une colonne que l'application lit encore casserait tout ce qui n'a pas encore été redéployé avec le nouveau code. Une séquence plus sûre pour renommer une colonne, par exemple, est généralement : (1) ajouter la nouvelle colonne, (2) déployer du code qui écrit à la fois dans l'ancienne et la nouvelle, (3) remplir rétroactivement les lignes existantes, (4) déployer du code qui n'utilise que la nouvelle colonne, (5) alors seulement supprimer l'ancienne — plusieurs petites migrations au lieu d'une seule risquée.
+
+## Dérive de schéma
+
+La « dérive de schéma » est ce qui se produit quand le schéma réel d'une base de données ne correspond plus à ce que l'historique des migrations dit qu'il devrait être — généralement parce que quelqu'un a exécuté un `ALTER TABLE` ad hoc à la main au lieu de passer par une migration. C'est un véritable risque opérationnel précisément parce que c'est invisible jusqu'à ce qu'une migration qui suppose l'état antérieur « correct » échoue, ou pire, réussisse silencieusement contre la mauvaise hypothèse.
+
+## Outils courants
+
+<ItemExplorer
+  layout="pills"
+  items={[
+    { id: "flyway", label: "Flyway", color: "blue", detail: "Basé sur Java, agnostique de la base de données, fichiers de migration en SQL brut — l'un des plus anciens et des plus largement adoptés." },
+    { id: "prisma", label: "Prisma Migrate", color: "green", detail: "Génère des migrations SQL à partir d'un fichier de schéma écrit dans le propre langage de schéma de Prisma, plutôt qu'en SQL écrit à la main." },
+    { id: "rails", label: "Rails Active Record Migrations", color: "purple", detail: "Migrations écrites en Ruby, l'un des premiers frameworks à avoir rendu ce workflow courant." },
+    { id: "wrangler-d1", label: "wrangler d1 migrations", color: "orange", detail: "Fichiers de migration .sql bruts appliqués à une base de données Cloudflare D1 (basée sur SQLite) — le même fichier fonctionne localement et contre la production." },
+  ]}
+/>
+
+## Voir aussi
+
+- **[SQLite](/fr/databases/sqlite)** — les capacités d'`ALTER TABLE` (comme le `DROP COLUMN` utilisé ci-dessus) varient sensiblement selon le moteur et la version.
+- **[Clés étrangères](/fr/databases/foreign-keys)** — ajouter une nouvelle contrainte de clé étrangère à une table existante et déjà peuplée est l'une des migrations les plus délicates à écrire en toute sécurité.

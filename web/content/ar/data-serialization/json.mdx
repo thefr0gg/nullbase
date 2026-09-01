@@ -1,0 +1,54 @@
+---
+title: JSON
+description: JavaScript Object Notation — الصيغة الافتراضية لبيانات تقريباً كل واجهة برمجة تطبيقات حديثة، والجسم الذي يرسله كل عرض RequestPlayground في هذا الموقع.
+category: Data & Serialization
+weight: 0
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+JSON (JavaScript Object Notation) هو صيغة بيانات خفيفة ونصية — وعلى الرغم من اسمها، فهي اليوم مستقلة عن اللغة، بمحلِّل متوفر في كل لغة برمجة تقريباً. إنها صيغة جسم الطلب/الاستجابة الافتراضية عبر [REST](/ar/web-apis/rest)، ومعظم [RPC](/ar/web-apis/rpc)، و[GraphQL](/ar/web-apis/graphql)، وكل استجابة وهمية في هذا الموقع هي JSON لهذا السبب بالضبط.
+
+```json
+{
+  "id": 42,
+  "name": "Grace Hopper",
+  "active": true,
+  "roles": ["admin", "editor"],
+  "manager": null
+}
+```
+
+## نظام الأنواع الكامل
+
+نظام أنواع JSON بأكمله هو ستة أنواع فقط — لا شيء آخر صالح، وهذا جزء من سبب سهولة تحليله باتساق عبر اللغات.
+
+<ItemExplorer
+  layout="pills"
+  items={[
+    { id: "string", label: "String", color: "green", detail: "نص محاط بعلامتَي اقتباس مزدوجتَين فقط — علامات الاقتباس المفردة غير صالحة في JSON، خلافاً لحرفيات كائنات JavaScript." },
+    { id: "number", label: "Number", color: "orange", detail: "لا تمييز بين الأعداد الصحيحة والعشرية — مجرد \"رقم\". لا NaN، لا Infinity — كلاهما غير صالحين في JSON." },
+    { id: "boolean", label: "Boolean", color: "purple", detail: "true أو false، دون علامات اقتباس." },
+    { id: "null", label: "null", color: "default", detail: "قيمة مميزة تعني \"عمداً لا قيمة\" — مختلفة تماماً عن مفتاح مفقود بالكامل." },
+    { id: "object", label: "Object", color: "blue", detail: "مجموعة غير مرتَّبة من الخصائص المفتاحية النصية — يجب أن تكون المفاتيح نصوصاً محاطة بعلامتَي اقتباس مزدوجتَين، دائماً." },
+    { id: "array", label: "Array", color: "blue", detail: "قائمة مرتَّبة من القيم، من أي من هذه الأنواع الستة، ممزوجة بحرية." },
+  ]}
+/>
+
+## ما لا يستطيع JSON تمثيله
+
+لا يملك JSON نوع `Date` — تُسلسَل الطوابع الزمنية تقليدياً كسلاسل نصية بمعيار ISO 8601 (`"2024-01-15T09:00:00Z"`) وتُحلَّل مرة أخرى إلى كائنات تاريخ حقيقية من قبل المستهلك، وليس تلقائياً. كما لا يستطيع تمثيل `undefined`، أو الدوال، أو المراجع الدائرية — تُسقِط `JSON.stringify` قيم `undefined` والدوال بصمت، وترمي خطأ عند وجود مرجع دائري.
+
+```js
+JSON.stringify({ a: undefined, b: () => {}, c: 1 });
+// '{"c":1}' — a and b are just gone, not null
+```
+
+## بنية صارمة، عن قصد
+
+خلافاً لحرفيات كائنات JavaScript، لا يملك JSON فواصل زائدة في النهاية، ولا تعليقات، ولا مفاتيح دون علامات اقتباس، ولا سلاسل نصية بعلامات اقتباس مفردة — هذه الصرامة مقصودة: لا يحتاج المحلّل إلى تخمين النية، وهذا ما يجعل JSON قابلاً للتشغيل البيني بموثوقية عبر تنفيذ كل لغة.
+
+## طالع أيضاً
+
+- **[XML](/ar/data-serialization/xml)** و**[YAML](/ar/data-serialization/yaml)** — نفس البيانات المُهيكلة، بطريقتين أخريَين.
+- **[أنواع MIME](/ar/data-serialization/mime-types)** — يُصنَّف JSON بـ `application/json` على السلك.

@@ -1,0 +1,53 @@
+---
+title: SQLite
+description: Una base de datos relacional completa en un solo archivo, sin proceso de servidor separado — y, compilada a WebAssembly, exactamente lo que ejecuta los playgrounds de esta página.
+category: Databases
+weight: 1
+interactive: true
+interactiveType: ["SqlPlayground"]
+---
+
+La mayoría de las bases de datos relacionales se ejecutan como un proceso de servidor separado — tanto [PostgreSQL](/es/databases/postgresql) como [MySQL](/es/databases/mysql) escuchan en un puerto de red, y tu aplicación se conecta a ellas a través de esa conexión. SQLite no: es una biblioteca en C, enlazada directamente en tu aplicación, que lee y escribe un único archivo ordinario en disco. No hay servidor que arrancar, ni cadena de conexión, ni ida y vuelta por red — una consulta es una llamada a función local.
+
+Esto no es un motor de juguete — es la base de datos más ampliamente desplegada del mundo por número de instalaciones, porque viene integrada en cada teléfono, cada navegador, y la mayoría de aplicaciones de escritorio para exactamente el almacenamiento "embebido" en el que una base de datos cliente-servidor sería excesiva. También es literalmente lo que está ejecutando el playground de SQL que estás a punto de usar: sql.js compila el propio SQLite a WebAssembly, así que el motor de consultas de abajo es el auténtico, ejecutándose por completo dentro de la pestaña de tu navegador.
+
+## Pruébalo — introspeccionando una base de datos SQLite real
+
+SQLite almacena su propio esquema como filas ordinarias en una tabla llamada `sqlite_master` — puedes consultar la estructura de tu propia base de datos igual que consultarías cualquier otra tabla.
+
+<SqlPlayground
+  title="Una base de datos SQLite sin archivo, en tu navegador"
+  schema={`
+CREATE TABLE notes (id INTEGER PRIMARY KEY, title TEXT NOT NULL, body TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP);
+CREATE INDEX idx_notes_title ON notes(title);
+INSERT INTO notes (title, body) VALUES ('First note', 'SQLite runs right here.'), ('Second note', 'No server, no network call.');
+`}
+  defaultQuery={`SELECT type, name, sql FROM sqlite_master;`}
+/>
+
+Prueba `SELECT * FROM notes;` a continuación, y luego `PRAGMA table_info(notes);` para ver el tipo declarado y las restricciones de cada columna — otra característica de introspección específica de SQLite.
+
+## Tipado dinámico
+
+A diferencia de la mayoría de los motores SQL, SQLite no impone estrictamente el tipo declarado de una columna — una columna declarada `INTEGER` seguirá aceptando y almacenando un valor de texto si insertas uno (esto se llama "afinidad de tipo", no tipado estricto). El SQLite moderno añadió las tablas `STRICT` como opción explícita para cuando no se quiere esta flexibilidad, pero el comportamiento laxo por defecto se mantiene por compatibilidad hacia atrás con décadas de bases de datos existentes.
+
+## Dónde encaja SQLite
+
+<ItemExplorer
+  layout="pills"
+  items={[
+    { id: "mobile", label: "Aplicaciones móviles", color: "blue", detail: "El motor de almacenamiento local por defecto tanto en iOS como en Android — casi toda app con datos locales estructurados lo usa, incluso indirectamente a través de un ORM de más alto nivel." },
+    { id: "browser", label: "Navegadores", color: "green", detail: "IndexedDB de Chrome y el almacenamiento local de Safari están respaldados internamente por SQLite — y ahora, vía WebAssembly, también puede ejecutarse directamente dentro de una página web, como en esta." },
+    { id: "desktop", label: "Aplicaciones de escritorio", color: "purple", detail: "VS Code, el almacenamiento de configuración/historial de la mayoría de navegadores, e incontables otras apps de escritorio lo usan como su formato de archivo de datos embebido." },
+    { id: "cli-testing", label: "Entornos de dev/pruebas", color: "orange", detail: "Un sustituto común de una base de datos cliente-servidor completa durante el desarrollo local o en una suite de pruebas, precisamente porque no hay servidor que ejecutar." },
+  ]}
+/>
+
+## Lo que renuncia deliberadamente
+
+Como SQLite no tiene un proceso de servidor gestionando el acceso concurrente, su historia para muchos *escritores* simultáneos es más débil que la de una base de datos cliente-servidor — por defecto, una escritura bloquea todo el archivo de base de datos durante su duración (el modo WAL de versiones más recientes mejora significativamente las lecturas concurrentes durante escrituras, pero SQLite sigue sin ser la elección correcta para una carga de trabajo con muchos procesos independientes escribiendo a la vez). Este compromiso — simplicidad y cero operaciones a cambio de un modelo de concurrencia más ligero — es exactamente por qué es la elección por defecto para uso embebido/local y rara vez la elección para la base de datos principal de una gran aplicación web multiusuario.
+
+## Ver también
+
+- **[PostgreSQL](/es/databases/postgresql)** — la base de datos cliente-servidor de elección cuando el modelo de concurrencia de SQLite no es suficiente.
+- **[Migraciones de bases de datos](/es/databases/database-migrations)** — el soporte de `ALTER TABLE` de SQLite es más limitado que el de Postgres/MySQL, lo cual condiciona cómo se escriben típicamente sus migraciones.

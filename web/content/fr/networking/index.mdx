@@ -1,0 +1,30 @@
+---
+title: Réseau
+description: Comment les machines se trouvent et se parlent réellement — l'adressage, les protocoles qui déplacent des octets de façon fiable ou rapide, et comment un paquet va d'ici à là.
+category: Networking
+weight: 5
+---
+
+[TCP/IP](/fr/web-fundamentals/tcp-ip) a déjà introduit le modèle en couches sur lequel Internet fonctionne. Cette section approfondit les protocoles qui vivent aux couches réseau et transport de ce modèle — comment les adresses sont attribuées et structurées, ce qui se passe quand quelque chose tourne mal, et comment un paquet trouve réellement son chemin à travers des réseaux dont il n'a jamais entendu parler spécifiquement.
+
+## Transport : fiable ou rapide
+
+- **[TCP](/fr/networking/tcp)** — le protocole orienté connexion derrière le handshake, avec une livraison garantie et ordonnée.
+- **[UDP](/fr/networking/udp)** — pas de handshake, pas de garanties, on envoie juste le paquet.
+
+## Adressage
+
+- **[IP](/fr/networking/ip)** — l'adresse dont chaque appareil d'un réseau a besoin, et le format de paquet qui la transporte.
+- **[IPv4](/fr/networking/ipv4)** — l'espace d'adressage 32 bits qui fait encore tourner la majeure partie d'Internet, et pourquoi il s'est épuisé.
+- **[IPv6](/fr/networking/ipv6)** — le successeur 128 bits conçu pour ne plus jamais s'épuiser.
+- **[Adressage réseau](/fr/networking/network-addressing)** — masques de sous-réseau, notation CIDR, et découper un réseau en plusieurs.
+
+## Obtenir une adresse, et rester joignable
+
+- **[DHCP](/fr/networking/dhcp)** — comment un appareil obtient une adresse IP automatiquement plutôt que quelqu'un n'en saisisse une.
+- **[NAT](/fr/networking/nat)** — comment tout un réseau domestique partage une seule adresse IP publique.
+- **[ICMP](/fr/networking/icmp)** — le protocole derrière `ping` et « pourquoi ce paquet n'est-il pas arrivé ».
+
+## Aller jusqu'à destination
+
+- **[Routage](/fr/networking/routing)** — comment un paquet traverse des réseaux dont son expéditeur n'a jamais entendu parler.

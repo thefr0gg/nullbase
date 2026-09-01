@@ -1,0 +1,64 @@
+---
+title: Web Components
+description: Elementos HTML personalizados y reutilizables con su propio marcado y estilos encapsulados — integrados en el navegador, sin necesidad de framework.
+category: Web Platform
+weight: 9
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+Web Components es un conjunto de APIs nativas del navegador para construir elementos personalizados y reutilizables — `<user-card>`, `<rating-stars>` — que se comportan como cualquier otro elemento [HTML](/es/web-platform/html) (se pueden usar en cualquier marcado, con cualquier framework, o sin ninguno) mientras encapsulan su propia estructura interna y su [CSS](/es/web-platform/css) para que los estilos de la página no puedan filtrarse accidentalmente hacia dentro o hacia fuera.
+
+```html
+<my-counter start="5"></my-counter>
+```
+
+```js
+class MyCounter extends HTMLElement {
+  connectedCallback() {
+    this.attachShadow({ mode: "open" }).innerHTML = `<button>Count: ${this.getAttribute("start")}</button>`;
+  }
+}
+customElements.define("my-counter", MyCounter);
+```
+
+## Las tres tecnologías
+
+Web Components no es una sola API — son tres funciones separadas del navegador que casi siempre se usan juntas.
+
+<ItemExplorer
+  layout="grid"
+  items={[
+    {
+      id: "custom-elements",
+      label: "Custom Elements",
+      color: "blue",
+      detail: "Permite que JavaScript defina un nuevo nombre de etiqueta HTML, respaldado por una clase que extiende HTMLElement — customElements.define(\"my-counter\", MyCounter).",
+    },
+    {
+      id: "shadow-dom",
+      label: "Shadow DOM",
+      color: "green",
+      detail: "Adjunta un subárbol del DOM oculto y separado a un elemento — el CSS y querySelector de la página externa no pueden verlo ni afectarlo, y viceversa.",
+    },
+    {
+      id: "templates",
+      label: "HTML Templates",
+      color: "purple",
+      detail: "Un elemento <template> contiene marcado inerte — no se renderiza, no se ejecuta — hasta que JavaScript lo clona explícitamente en el DOM activo.",
+    },
+  ]}
+/>
+
+## Por qué importa aquí la encapsulación
+
+Un `<div class="counter">` normal está completamente expuesto a cada regla CSS a nivel de página y a cada `document.querySelector` — una regla `button { color: red; }` que afecte a toda la página lo afecta a él también, lo quiera o no el autor del componente. El límite del Shadow DOM significa que los estilos internos de un Web Component nunca se filtran hacia fuera, y los estilos de la página nunca se filtran hacia dentro (a menos que se expongan deliberadamente mediante propiedades personalizadas de CSS), lo cual es lo que hace que un componente sea genuinamente seguro de insertar sin importar qué CSS tenga ya la página anfitriona.
+
+## Agnóstico de framework por diseño
+
+Como los Custom Elements son simplemente etiquetas HTML por debajo, un Web Component construido una vez puede usarse dentro de una app de React, una app de Vue, HTML plano, o cualquier framework futuro, sin un envoltorio específico de framework — esta es la principal ventaja frente a un componente construido en el propio modelo de componentes de un framework específico, que solo pueden consumir las apps de ese framework.
+
+## Ver también
+
+- **[El DOM](/es/web-platform/dom)** — el Shadow DOM es una variante de la misma estructura de árbol, solo que con un límite de visibilidad añadido.
+- **[CSS](/es/web-platform/css)** — la cascada normalmente se aplica globalmente; el Shadow DOM es una de las pocas formas de excluir a todo un subárbol de ella.

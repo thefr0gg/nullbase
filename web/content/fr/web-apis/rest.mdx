@@ -1,0 +1,45 @@
+---
+title: REST
+description: Des ressources, adressées par URL, manipulées avec un petit ensemble fixe de verbes HTTP — et pourquoi cette contrainte est tout l'intérêt.
+category: Web APIs
+weight: 0
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+REST (Representational State Transfer) n'est ni un protocole ni un format — c'est un ensemble de contraintes pour concevoir des API autour de **ressources**. Une ressource est une « chose » — un utilisateur, une commande, un document — adressée par une URL. On interagit avec elle en utilisant [les méthodes HTTP](/fr/web-fundamentals/http/methods), pas en nommant une action.
+
+```
+GET    /api/users         list users
+POST   /api/users         create a user
+GET    /api/users/42      read one user
+PUT    /api/users/42      replace a user
+PATCH  /api/users/42      update part of a user
+DELETE /api/users/42      delete a user
+```
+
+Comparez cela à une API de style RPC, qui nomme directement l'action : `POST /createUser`, `POST /getUser?id=42`. REST réutilise les six mêmes verbes pour chaque ressource de l'API plutôt que d'inventer un nouveau nom d'endpoint par action — voir [RPC](/fr/web-apis/rpc) pour la comparaison directe.
+
+## Essayez
+
+Le terrain de jeu ci-dessous est câblé à une petite simulation de `/api/users` dans le navigateur — la même utilisée dans toute cette section. Essayez les puces d'exemple, ou modifiez la méthode/le corps vous-même : un `POST` avec un corps sans `name` retourne `400`, `GET /api/users/999` retourne `404`, `GET /api/profile` retourne `401` sans header `Authorization`.
+
+<RequestPlayground protocol="http" defaultTarget="/api/users" />
+
+## Absence d'état
+
+Chaque requête doit porter tout ce dont le serveur a besoin pour la traiter — aucune session stockée côté serveur entre les requêtes. Le serveur peut redémarrer, ou router votre prochaine requête vers une machine complètement différente, et rien ne casse, parce que rien à votre sujet n'a été mémorisé du dernier appel. Tout ce qui ressemble à une session (qui vous êtes) voyage avec chaque requête à la place, typiquement sous forme de token — voir [Authentification API](/fr/web-apis/api-authentication).
+
+## Les codes de statut portent du sens
+
+Une API REST bien conçue utilise les codes de statut HTTP comme faisant partie de son interface, pas juste comme un header qu'un client peut ignorer : `201 Created` (pas `200`) pour un `POST` réussi, `204 No Content` pour un `DELETE` réussi, `404` pour une ressource qui n'existe pas, `409 Conflict` pour une écriture qui entre en collision avec l'état actuel de la ressource. Voir la [référence complète des codes de statut](/fr/web-fundamentals/http/status-codes).
+
+## Ce que REST ne spécifie pas
+
+REST n'impose pas JSON — c'est juste le choix massivement dominant aujourd'hui. Il n'impose pas de forme d'URL particulière au-delà de « les ressources ont des adresses ». Et la définition originale inclut HATEOAS (les réponses lient vers des actions/ressources connexes, pour qu'un client puisse naviguer dans l'API sans coder des URL en dur) — une contrainte que presque aucune API en production n'implémente réellement. « REST » dans l'usage courant aujourd'hui signifie généralement « HTTP orienté ressource + JSON », pas la définition originale complète.
+
+## Voir aussi
+
+- **[Pagination](/fr/web-apis/pagination)** — un `GET` qui liste une ressource en a presque toujours besoin.
+- **[Idempotence](/fr/web-apis/idempotency)** — `PUT`/`DELETE` sont censés être idempotents ; `POST` ne l'est généralement pas, sauf si on le choisit explicitement.
+- **[Versionnage d'API](/fr/web-apis/api-versioning)** — comment la forme d'URL d'une API REST évolue sans casser les clients.

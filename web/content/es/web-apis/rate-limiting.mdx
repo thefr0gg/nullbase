@@ -1,0 +1,45 @@
+---
+title: Limitación de tasa
+description: Proteger un servicio de verse desbordado — por un cliente descontrolado, un bug, o un ataque — limitando cuántas solicitudes aceptará.
+category: Web APIs
+weight: 9
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+Un límite de tasa restringe cuántas solicitudes puede hacer un cliente en una ventana de tiempo determinada. Sin uno, un solo cliente que se comporte mal — un bucle de reintentos sin backoff, un scraper, un ataque real — puede consumir suficiente capacidad como para degradar el servicio para todos los demás. Es el equivalente a nivel de API de un disyuntor: un pequeño número de clientes recibe un `429` para que el resto siga funcionando.
+
+## Pruébalo
+
+El endpoint simulado `/api/rate-limited` de abajo permite 5 solicitudes por ventana de 30 segundos (rastreado para toda tu sesión, no por solicitud) — haz clic en Enviar repetidamente y observa cómo el header `X-RateLimit-Remaining` cuenta hacia atrás, hasta llegar a un `429` real.
+
+<RequestPlayground protocol="http" defaultTarget="/api/rate-limited" defaultHeaders="Accept: application/json" />
+
+Una respuesta real con límite de tasa se ve así:
+
+```http
+HTTP/1.1 429 Too Many Requests
+X-RateLimit-Limit: 5
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1700000030
+Retry-After: 18
+
+{ "error": "Too Many Requests", "message": "Rate limit exceeded. Retry in 18s." }
+```
+
+`Retry-After` le indica a un cliente bien portado exactamente cuánto tiempo esperar antes de volver a intentarlo — ignorarlo y reintentar de inmediato solo extiende la propia penalización del cliente.
+
+## En qué basar el límite
+
+Un límite se puede acotar de varias maneras diferentes, a menudo combinadas: por dirección IP (detecta abuso anónimo, pero penaliza a todos los que están detrás de un NAT/proxy compartido por igual), por clave de API o access token (la opción más común para APIs autenticadas — mira [Autenticación de API](/es/web-apis/api-authentication)), por endpoint (un endpoint de búsqueda costoso podría tener un límite más estricto que una comprobación de salud barata), o globalmente (protegiendo todo el servicio sin importar quién pregunta).
+
+## Algoritmos comunes
+
+- **Ventana fija** — cuenta las solicitudes en la ventana de calendario actual (p. ej. este minuto); simple, pero permite una ráfaga justo en el límite de la ventana (2x el límite en el instante del límite).
+- **Ventana deslizante** — cuenta sobre una ventana continua que termina "ahora" en lugar de un límite fijo de reloj; suaviza el problema de ráfaga en el límite a costa de un poco más de estado que rastrear.
+- **Token bucket** — un cubo contiene tokens que se rellenan a un ritmo constante; cada solicitud cuesta un token, y el cubo puede contener una pequeña ráfaga de tokens acumulados. Esto es lo que la mayoría de los limitadores de tasa de producción realmente usan — tolera ráfagas cortas con elegancia mientras sigue aplicando un promedio a largo plazo.
+
+## Ver también
+
+- **[Autenticación de API](/es/web-apis/api-authentication)** — usualmente aquello sobre lo que realmente se basa un límite por cliente.
+- **[Idempotencia](/es/web-apis/idempotency)** — un cliente que reintenta después de un `429` necesita que su reintento sea seguro, que es exactamente lo que garantiza la idempotencia.

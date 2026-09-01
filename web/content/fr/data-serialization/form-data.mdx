@@ -1,0 +1,80 @@
+---
+title: Form Data
+description: Comment les champs d'un formulaire HTML sont réellement encodés pour la soumission — et pourquoi les téléversements de fichiers ont besoin d'un encodage différent du reste.
+category: Data & Serialization
+weight: 3
+interactive: true
+interactiveType: ["RequestPlayground", "ItemExplorer"]
+---
+
+Un `<form>` HTML ne soumet pas ses champs en [JSON](/fr/data-serialization/json) par défaut — il utilise l'un de deux encodages plus anciens, choisis via l'attribut `enctype` du formulaire, qui précèdent entièrement JSON en tant que format web.
+
+## Essayez-le
+
+`/api/form-submit` dans l'API simulée de ce site analyse l'encodage que vous envoyez réellement — essayez l'exemple urlencoded, puis changez l'en-tête `Content-Type` et le corps en JSON et renvoyez.
+
+<RequestPlayground
+  protocol="http"
+  defaultMethod="POST"
+  defaultTarget="/api/form-submit"
+  defaultHeaders="Content-Type: application/x-www-form-urlencoded"
+  defaultBody={"name=Grace+Hopper&role=admin"}
+/>
+
+## Les deux encodages de formulaire
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "shape", label: "Forme du corps" },
+    { key: "handlesFiles", label: "Gère les téléversements de fichiers ?" },
+  ]}
+  items={[
+    {
+      id: "urlencoded",
+      label: "application/x-www-form-urlencoded",
+      color: "blue",
+      columns: { shape: "Paires clé=valeur jointes par des &, valeurs encodées en pourcentage", handlesFiles: "Non" },
+    },
+    {
+      id: "multipart",
+      label: "multipart/form-data",
+      color: "green",
+      columns: { shape: "Chaque champ est sa propre « partie », séparée par une chaîne de délimitation, avec ses propres en-têtes", handlesFiles: "Oui — la partie d'un fichier porte son propre Content-Type et nom de fichier" },
+    },
+  ]}
+/>
+
+`application/x-www-form-urlencoded` est l'encodage par défaut et c'est ce que l'exemple ci-dessus envoie — il est compact mais ne peut absolument pas transporter de données binaires, puisque tout doit être du texte encodé en pourcentage (voir [URL Encoding](/fr/data-serialization/url-encoding)). Un formulaire avec `<input type="file">` doit utiliser `multipart/form-data` à la place, ce qui explique pourquoi les formulaires de téléversement de fichiers ont toujours besoin de `enctype="multipart/form-data"` défini explicitement.
+
+```http
+POST /upload HTTP/1.1
+Content-Type: multipart/form-data; boundary=----abc123
+
+------abc123
+Content-Disposition: form-data; name="username"
+
+grace
+------abc123
+Content-Disposition: form-data; name="avatar"; filename="photo.png"
+Content-Type: image/png
+
+<binary bytes>
+------abc123--
+```
+
+## FormData en JavaScript
+
+L'objet `FormData` du navigateur construit l'un ou l'autre encodage pour vous lors de la soumission via `fetch` — vous ne construisez jamais vous-même la chaîne de délimitation ou l'encodage en pourcentage dans du code moderne :
+
+```js
+const form = new FormData();
+form.append("username", "grace");
+form.append("avatar", fileInput.files[0]);
+fetch("/upload", { method: "POST", body: form }); // browser sets Content-Type + boundary automatically
+```
+
+## Voir aussi
+
+- **[URL Encoding](/fr/data-serialization/url-encoding)** — le schéma d'encodage en pourcentage utilisé par les valeurs de `application/x-www-form-urlencoded`.
+- **[JSON](/fr/data-serialization/json)** — le format que la plupart des API modernes préfèrent à ces deux encodages de formulaire, pour les soumissions sans fichier.

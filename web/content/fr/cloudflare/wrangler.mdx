@@ -43,10 +43,10 @@ Plutôt que de versionner le runtime Workers lui-même d'une façon qui pourrait
 
 ## Secrets contre variables simples
 
-Wrangler distingue les valeurs de configuration simples (visibles dans `wrangler.jsonc`, qu'il est acceptable de committer) des **secrets** (`wrangler secret put`), qui sont chiffrés et n'apparaissent jamais dans le fichier de configuration ni nulle part de lisible après avoir été définis — l'endroit correct pour une clé d'API ou un secret de signature, suivant le même principe traité en général dans [Secrets Management](/en/security/secrets-management).
+Wrangler distingue les valeurs de configuration simples (visibles dans `wrangler.jsonc`, qu'il est acceptable de committer) des **secrets** (`wrangler secret put`), qui sont chiffrés et n'apparaissent jamais dans le fichier de configuration ni nulle part de lisible après avoir été définis — l'endroit correct pour une clé d'API ou un secret de signature, suivant le même principe traité en général dans [Secrets Management](/fr/security/secrets-management).
 
 ## Voir aussi
 
 - **[Workers Bindings](/fr/cloudflare/workers-bindings)** — les blocs de configuration spécifiques que Wrangler gère.
 - **[CI/CD](/fr/devops/ci-cd)** — `wrangler deploy` est la commande qu'un pipeline CI exécute typiquement pour expédier un Worker automatiquement.
-- **[Secrets Management](/en/security/secrets-management)** — la pratique générale que `wrangler secret` implémente spécifiquement pour Workers.
+- **[Secrets Management](/fr/security/secrets-management)** — la pratique générale que `wrangler secret` implémente spécifiquement pour Workers.

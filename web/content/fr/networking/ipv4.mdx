@@ -1,0 +1,41 @@
+---
+title: IPv4
+description: L'espace d'adressage 32 bits qui route encore la majeure partie d'Internet — notation décimale pointée, plages privées, et pourquoi il s'est épuisé.
+category: Networking
+weight: 3
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+Les adresses **IPv4** font 32 bits, presque toujours écrites sous forme de quatre nombres décimaux séparés par des points, de 0 à 255 (`192.168.1.1`). Trente-deux bits semble beaucoup jusqu'à ce qu'on fasse le calcul : environ 4,3 milliards d'adresses possibles, pour une planète qui compte désormais bien plus de 4,3 milliards d'appareils connectés à Internet — la raison principale pour laquelle [IPv6](/fr/networking/ipv6) existe.
+
+## Plages d'adresses privées
+
+Trois blocs sont réservés aux réseaux privés et jamais routés sur l'Internet public — c'est ce qui rend possibles les routeurs domestiques et [NAT](/fr/networking/nat) :
+
+<ItemExplorer
+  title="Plages IPv4 privées (RFC 1918)"
+  layout="table"
+  tableColumns={[{ key: "size", label: "Taille" }, { key: "typical", label: "Typiquement vu comme" }]}
+  items={[
+    { id: "10", label: "10.0.0.0/8", color: "blue", columns: { size: "~16,7 millions d'adresses", typical: "Grands réseaux privés/d'entreprise" } },
+    { id: "172", label: "172.16.0.0/12", color: "green", columns: { size: "~1 million d'adresses", typical: "Réseau bridge par défaut de Docker, certains réseaux d'entreprise" } },
+    { id: "192", label: "192.168.0.0/16", color: "purple", columns: { size: "~65 000 adresses", typical: "Routeurs domestiques — 192.168.1.x, 192.168.0.x" } },
+  ]}
+/>
+
+Un paquet adressé à l'une d'elles ne peut être livré que sur le réseau local auquel il appartient ; un routeur sur l'Internet public ne le transmettra pas, ce qui est exactement le but recherché — cela permet à chaque réseau domestique de réutiliser les mêmes plages privées sans collision.
+
+## Pourquoi il s'est épuisé
+
+Les adresses IPv4 étaient à l'origine distribuées en blocs de taille fixe gaspilleurs (classes A/B/C), et l'explosion des appareils connectés — serveurs, téléphones, IoT — a dépassé les 4,3 milliards depuis longtemps. [NAT](/fr/networking/nat) a retardé la crise pendant des décennies en permettant à de nombreux appareils privés de partager une seule adresse publique, et le schéma CIDR de l'[adressage réseau](/fr/networking/network-addressing) a remplacé les classes fixes gaspilleuses par des blocs de taille flexible — mais ni l'un ni l'autre ne crée de nouvelles adresses, cela ne fait qu'étirer davantage celles qui existent.
+
+## Adresses spéciales à connaître
+
+`127.0.0.1` (localhost) reboucle toujours vers la machine depuis laquelle elle est demandée, sans jamais toucher un réseau réel. `0.0.0.0` signifie « n'importe quelle adresse » quand un serveur s'y lie, et `255.255.255.255` est l'adresse de diffusion, livrée à tous les hôtes du segment réseau local.
+
+## Voir aussi
+
+- **[Adressage réseau](/fr/networking/network-addressing)** — la notation CIDR et en quoi un /24 diffère d'un /16.
+- **[NAT](/fr/networking/nat)** — comment une adresse IPv4 privée atteint malgré tout l'Internet public.
+- **[IPv6](/fr/networking/ipv6)** — l'espace d'adressage conçu pour ne jamais s'épuiser.

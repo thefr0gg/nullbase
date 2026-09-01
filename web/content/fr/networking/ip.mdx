@@ -1,0 +1,43 @@
+---
+title: IP
+description: Le protocole de couche réseau responsable de l'adressage et du routage de chaque paquet — livraison au mieux (best-effort), la fiabilité étant laissée aux couches au-dessus.
+category: Networking
+weight: 2
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+**IP (Internet Protocol)** donne à chaque appareil une adresse unique et achemine les paquets vers elle, saut par saut, à travers des réseaux qui n'ont jamais été informés les uns des autres à l'avance. Il est délibérément minimal : IP ne garantit ni qu'un paquet arrive, ni qu'il arrive une seule fois, ni qu'il arrive dans l'ordre — cela est laissé entièrement à [TCP](/fr/networking/tcp) quand une application en a besoin.
+
+## Livraison au mieux (best-effort)
+
+« Au mieux » signifie que chaque routeur sur le chemin fait honnêtement de son mieux pour rapprocher un paquet de sa destination, mais rien ne relance un paquet qui est perdu — les routeurs abandonnent des paquets en cas de congestion, et un paquet corrompu ou mal aiguillé disparaît simplement à moins qu'une couche au-dessus d'IP ne le remarque et ne redemande.
+
+## Ce que contient un paquet IP
+
+<ItemExplorer
+  title="Champs de l'en-tête IP"
+  layout="table"
+  tableColumns={[{ key: "purpose", label: "Rôle" }]}
+  items={[
+    { id: "src-dst", label: "Source / Destination", color: "blue", columns: { purpose: "Les adresses d'envoi et de réception — la raison même de l'existence d'IP." } },
+    { id: "ttl", label: "TTL (Time to Live)", color: "orange", columns: { purpose: "Un compteur de sauts, décrémenté par chaque routeur — atteint zéro et le paquet est abandonné, empêchant les boucles de routage infinies." } },
+    { id: "protocol", label: "Protocol", color: "green", columns: { purpose: "À quel protocole de transport appartient la charge utile — 6 pour TCP, 17 pour UDP, 1 pour ICMP." } },
+    { id: "fragment", label: "Champs de fragmentation", color: "purple", columns: { purpose: "Identification, indicateurs et décalage — permettent de découper et de réassembler un paquet trop grand pour un lien." } },
+    { id: "checksum", label: "Header Checksum", color: "red", columns: { purpose: "Détecte la corruption dans l'en-tête lui-même (IPv4 uniquement — IPv6 l'a abandonné, s'appuyant à la place sur les couches inférieures/supérieures)." } },
+  ]}
+/>
+
+## Fragmentation
+
+Chaque lien réseau a une unité de transmission maximale (MTU) — le plus grand paquet qu'il peut transporter d'un seul morceau. Si un paquet est plus grand que le MTU du lien suivant, les routeurs IPv4 peuvent le découper en fragments qui sont réassemblés à destination. Cela coûte en performance et complique suffisamment les choses pour que les piles modernes l'évitent généralement, en découvrant plutôt le plus petit MTU du chemin en amont (Path MTU Discovery) et en dimensionnant les paquets en conséquence.
+
+## Pourquoi le TTL compte plus qu'il n'y paraît
+
+Sans limite de sauts, une mauvaise configuration de routage créant une boucle ferait circuler le même paquet indéfiniment, consommant la bande passante sans fin. Le TTL garantit que chaque paquet finit par mourir — et le message « TTL exceeded » qu'il déclenche est lui-même le mécanisme qu'utilise `traceroute` pour cartographier un chemin, saut par saut (voir [ICMP](/fr/networking/icmp)).
+
+## Voir aussi
+
+- **[IPv4](/fr/networking/ipv4)** et **[IPv6](/fr/networking/ipv6)** — les deux formats d'adresse qu'IP utilise réellement aujourd'hui.
+- **[Routage](/fr/networking/routing)** — comment chaque saut décide où transmettre un paquet ensuite.
+- **[ICMP](/fr/networking/icmp)** — comment routeurs et hôtes signalent des problèmes qu'IP lui-même n'a aucun moyen de signaler.

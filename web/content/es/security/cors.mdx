@@ -1,0 +1,37 @@
+---
+title: CORS
+description: La regla impuesta por el navegador que impide que el script de un sitio lea libremente las respuestas de otro sitio — política de mismo origen, solicitudes preflight, y las cabeceras que la relajan.
+category: Security
+weight: 9
+interactive: true
+interactiveType: ["StepFlow"]
+---
+
+Los navegadores imponen una **política de mismo origen**: un script que corre en `a.example` no puede leer la respuesta de una solicitud a `b.example` a menos que `b.example` lo permita explícitamente. **CORS (Cross-Origin Resource Sharing)** es el mecanismo para ese permiso explícito — un conjunto de cabeceras de respuesta que un servidor envía para decirle al navegador qué otros orígenes tienen permitido leer sus respuestas.
+
+## La solicitud igual ocurre — lo que se bloquea es leer la respuesta
+
+Un malentendido común: CORS no impide que se envíe la solicitud entre orígenes. La solicitud sale; el servidor puede procesarla. Lo que CORS bloquea es que *el navegador entregue la respuesta al script solicitante* si el servidor no permitió explícitamente ese origen. Este es un mecanismo distinto de [CSRF](/es/security/csrf), que trata de provocar una solicitud no deseada en primer lugar, no de leer su respuesta.
+
+## Solicitudes simples vs. preflight
+
+<StepFlow
+  title="Una Solicitud Cross-Origin con Preflight"
+  steps={[
+    { actor: "Navegador", title: "Detecta una solicitud no simple", description: "Una solicitud que usa un método distinto de GET/POST/HEAD, o cabeceras personalizadas (como Authorization), no califica como \"simple\" — el navegador envía primero una comprobación preflight, antes de la solicitud real.", detail: "OPTIONS /api/data\nOrigin: https://app.example.com\nAccess-Control-Request-Method: PUT" },
+    { actor: "Servidor", title: "El servidor responde con lo que permite", description: "El servidor contesta al preflight declarando qué orígenes, métodos y cabeceras permite — sin llegar a ejecutar nunca el manejador real de la solicitud.", detail: "Access-Control-Allow-Origin: https://app.example.com\nAccess-Control-Allow-Methods: GET, PUT, POST" },
+    { actor: "Navegador", title: "El navegador decide si continuar", description: "Si la respuesta al preflight permite este origen y método, el navegador envía la solicitud real. Si no, nunca llega a enviarla — el PUT real jamás alcanza al servidor.", detail: "" },
+    { actor: "Servidor", title: "Solicitud real, respuesta real", description: "Asumiendo que el preflight pasó, la solicitud real se envía y se responde normalmente, repitiendo la misma cabecera Access-Control-Allow-Origin para que el navegador sepa que sigue siendo seguro exponer la respuesta.", detail: "PUT /api/data -> 200 OK\nAccess-Control-Allow-Origin: https://app.example.com" },
+  ]}
+/>
+
+Un `GET` simple sin cabeceras personalizadas suele calificar como "simple" y se salta el preflight — el navegador sigue imponiendo `Access-Control-Allow-Origin` sobre la respuesta, solo que no necesita pedir permiso primero.
+
+## `Access-Control-Allow-Origin: *` es un compromiso real
+
+Un comodín permite que cualquier origen lea la respuesta — está bien para una API pública sin autenticación, pero es peligroso junto a `Access-Control-Allow-Credentials: true`, combinación que los navegadores se niegan a aceptar con un comodín precisamente por esto: permitiría que cualquier sitio en internet leyera una respuesta hecha con las cookies de la víctima adjuntas.
+
+## Ver también
+
+- **[CSRF](/es/security/csrf)** — un problema entre orígenes relacionado pero distinto: enviar una solicitud no deseada, en vez de leer su respuesta.
+- **[Content Security Policy](/es/security/content-security-policy)** — otra restricción impuesta por el navegador basada en cabeceras, que rige qué puede cargar una página en vez de qué puede leer entre orígenes.

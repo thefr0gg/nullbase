@@ -1,0 +1,56 @@
+---
+title: المعاملات
+description: تجميع عدة عمليات كتابة بحيث تنجح أو تفشل معاً — والتراجع عن كل واحدة منها، فعلياً، بعملية تراجع.
+category: Databases
+weight: 6
+interactive: true
+interactiveType: ["SqlPlayground"]
+---
+
+تجمع المعاملة عدة عبارات في وحدة واحدة: إما أن يسري مفعول كل عبارة فيها، أو لا يسري مفعول أي منها. المثال الكلاسيكي هو تحويل أموال — يجب أن يحدث خصم من حساب وإيداع في آخر معاً، لأن عطلاً بين الخطوتين سيدمّر المال أو يخلقه من العدم.
+
+## جرّبه — تراجع حقيقي
+
+هذا ليس مُعَدّاً سلفاً — إنه `BEGIN` / `ROLLBACK` حقيقي يُنفَّذ ضد محرك SQLite الحقيقي، وأرصدة الحسابات تعود فعلياً إلى ما كانت عليه.
+
+<SqlPlayground
+  title="تحويل أموال، تم التراجع عنه"
+  schema={`CREATE TABLE accounts (id INTEGER PRIMARY KEY, owner TEXT NOT NULL, balance INTEGER NOT NULL);
+INSERT INTO accounts (id, owner, balance) VALUES (1, 'Alice', 1000), (2, 'Bob', 500);`}
+  defaultQuery={`BEGIN;
+UPDATE accounts SET balance = balance - 100 WHERE id = 1;
+UPDATE accounts SET balance = balance + 100 WHERE id = 2;
+SELECT * FROM accounts;
+ROLLBACK;`}
+/>
+
+نفّذها كما هي: تُظهر `SELECT` في المنتصف أن التحويل قد حدث — انخفض رصيد Alice إلى 900، وارتفع رصيد Bob إلى 600 — لكن هذا *داخل* المعاملة التي لا تزال مفتوحة. الآن اضغط **Run query** مرة أخرى مع `SELECT * FROM accounts;` وحدها — عادت الأرصدة إلى 1000/500، تماماً كما لو أن التحويل لم يحدث أبداً، لأن `ROLLBACK` تجاهل كل تغيير أجرته المعاملة.
+
+الآن عدّل الاستعلام، واستبدل `ROLLBACK` بـ `COMMIT`، ونفّذه. اتبعه بـ `SELECT * FROM accounts;` عادية مرة أخرى — هذه المرة يستقر التحويل بشكل دائم، لأن الالتزام يجعل كل تغيير في المعاملة دائماً.
+
+## لماذا تهم `SELECT` في المنتصف
+
+عبارة تُنفَّذ *داخل* معاملة مفتوحة ترى تغييرات تلك المعاملة نفسها غير المُلتزَمة — هذا ما يجعل "تحقق من شيء، ثم تصرّف بناءً عليه، كل ذلك ضمن معاملة واحدة" نمطاً متماسكاً (تحقق من كفاية رصيد، ثم اخصم منه، دون أن تتسلل معاملة أخرى بين التحقق والخصم — انظر خاصية العزل في [ACID](/ar/databases/acid)).
+
+## المعاملات الصريحة مقابل الضمنية
+
+تنفّذ معظم عملاء قواعد البيانات كل عبارة فردية في معاملتها الضمنية الخاصة بها ما لم تُصرّح ببدء واحدة صراحة بـ `BEGIN` — عبارة `UPDATE` منفردة بلا `BEGIN`/`COMMIT` محيطة لا تزال معاملاتية، إنها فقط معاملة من عبارة واحدة، تُلتزَم تلقائياً فوراً. تغليف عدة عبارات في `BEGIN` ... `COMMIT` صريحة هو ما يلزم لجعل *عدة* عبارات ذرية معاً.
+
+## نقاط الحفظ — تراجع لا يلغي كل شيء
+
+تُميِّز `SAVEPOINT` نقطة داخل معاملة يمكن التراجع إليها بشكل فردي، دون تجاهل كل ما قبلها — مفيدة لعملية متعددة الخطوات حيث لا ينبغي بالضرورة أن يؤدي فشل خطوة فرعية واحدة إلى إلغاء المعاملة بأكملها:
+
+```sql
+BEGIN;
+UPDATE accounts SET balance = balance - 100 WHERE id = 1;
+SAVEPOINT before_bonus;
+UPDATE accounts SET balance = balance + 9999 WHERE id = 2; -- oops, wrong amount
+ROLLBACK TO before_bonus; -- undoes only the bonus, keeps the first update
+UPDATE accounts SET balance = balance + 100 WHERE id = 2;  -- correct amount
+COMMIT;
+```
+
+## طالع أيضاً
+
+- **[ACID](/ar/databases/acid)** — الخصائص الأربع التي توجد المعاملات لتوفيرها.
+- **[المفاتيح الأجنبية](/ar/databases/foreign-keys)** — انتهاك قيد في منتصف معاملة سبب إضافي لاحتمال حاجة معاملة إلى التراجع.

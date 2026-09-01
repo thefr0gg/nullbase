@@ -14,7 +14,7 @@ Un application server doit décider comment traiter de nombreuses requêtes à l
 <ItemExplorer
   title="Modèles de concurrence"
   layout="table"
-  tableColumns={[{ key: "how", label: "How it handles concurrency" }, { key: "tradeoff", label: "Trade-off" }]}
+  tableColumns={[{ key: "how", label: "Comment il gère la concurrence" }, { key: "tradeoff", label: "Compromis" }]}
   items={[
     { id: "multi-process", label: "Multiple worker processes", color: "blue", columns: { how: "L'OS exécute plusieurs copies indépendantes de l'application, chacune traitant une requête à la fois (ou un petit pool)", tradeoff: "Simple et isolé face aux crashs — un worker qui plante n'entraîne pas la chute des autres — mais chaque processus duplique la mémoire (code chargé, données mises en cache)." } },
     { id: "threaded", label: "Thread pool per process", color: "green", columns: { how: "Un processus, de nombreux threads OS, chacun bloquant indépendamment en attendant des E/S", tradeoff: "Partage la mémoire entre les threads, mais nécessite que le langage/runtime gère les accès concurrents en toute sécurité." } },

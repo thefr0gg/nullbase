@@ -1,0 +1,65 @@
+---
+title: YAML
+description: Un formato de datos amigable para humanos, basado en indentación — rara vez el formato de red de una API, pero el estándar en casi cualquier archivo de configuración.
+category: Data & Serialization
+weight: 2
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+YAML ("YAML Ain't Markup Language") representa los mismos datos estructurados que [JSON](/es/data-serialization/json) — objetos, arrays, cadenas, números, booleanos, null — reemplazando la puntuación por indentación, optimizado para que un humano lo lea y lo escriba a mano en vez de para que una máquina lo analice rápido. Rara vez se usa como el formato real de solicitud/respuesta de una API; su verdadero hogar son los archivos de configuración (Docker Compose, manifiestos de Kubernetes, pipelines de CI, la propia configuración de build de este tipo de sitio en algunos stacks).
+
+```yaml
+id: 42
+name: Grace Hopper
+active: true
+roles:
+  - admin
+  - editor
+manager: null
+```
+
+Los mismos datos en JSON, para comparar:
+
+```json
+{ "id": 42, "name": "Grace Hopper", "active": true, "roles": ["admin", "editor"], "manager": null }
+```
+
+## Lo que YAML añade sobre JSON
+
+<ItemExplorer
+  layout="pills"
+  items={[
+    { id: "comments", label: "Comentarios", color: "blue", detail: "# un comentario — realmente útil en archivos de configuración, y algo que JSON no puede hacer en absoluto." },
+    { id: "anchors", label: "Anclas y alias", color: "green", detail: "&nombre / *nombre — define un valor una vez, referencíalo en otra parte del mismo documento, evitando la duplicación." },
+    { id: "multidoc", label: "Múltiples documentos", color: "purple", detail: "--- separa varios documentos YAML en un solo archivo/flujo — los manifiestos de Kubernetes usan esto constantemente." },
+    { id: "unquoted", label: "Cadenas sin comillas", color: "orange", detail: "Los strings no necesitan comillas en absoluto en la mayoría de los casos — esta es también la trampa más infame de YAML (ver más abajo)." },
+  ]}
+/>
+
+## La indentación es significativa, e inflexible
+
+A diferencia de las llaves de JSON, la estructura de YAML proviene enteramente de la indentación — mezclar tabulaciones y espacios, o desviarse un espacio, es un error de análisis (o peor, cambia la estructura silenciosamente) sin ninguna llave de cierre que capture el error visualmente.
+
+```yaml
+parent:
+  child: value   # 2 spaces of indentation — a child of parent
+sibling: value    # 0 spaces — a top-level key, not nested
+```
+
+## Los famosos gotchas
+
+Como YAML intenta inferir tipos a partir de valores sin comillas, un puñado de cadenas específicas no significan lo que parecen:
+
+```yaml
+country: NO        # parsed as the boolean false in YAML 1.1 (Norway's country code!)
+version: 1.10       # parsed as the number 1.1, not the string "1.10" — the trailing zero is lost
+enabled: yes         # parsed as boolean true
+```
+
+Esto es real, no hipotético — se le conoce comúnmente como "el problema de Noruega", y es la razón por la que poner comillas explícitamente a un valor (`country: "NO"`) es la opción segura por defecto siempre que una cadena pudiera confundirse con otro tipo.
+
+## Ver también
+
+- **[JSON](/es/data-serialization/json)** — el mismo modelo de datos, sintaxis más estricta, el formato de red real para la mayoría de las APIs.
+- **[XML](/es/data-serialization/xml)** — la tercera opción de datos estructurados, más verbosa pero con un ecosistema de validación de esquemas maduro que YAML no iguala.

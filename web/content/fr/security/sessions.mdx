@@ -1,0 +1,37 @@
+---
+title: Sessions
+description: Comment un serveur continue de reconnaître un utilisateur à travers de nombreuses requêtes après une seule connexion — identifiants de session, cookies, et où vit réellement l'état de session.
+category: Security
+weight: 3
+interactive: true
+interactiveType: ["StepFlow"]
+---
+
+[HTTP](/fr/web-fundamentals/http) est sans état — le serveur n'a aucun souvenir d'une requête précédente à moins que quelque chose ne le lui rappelle explicitement. Une **session** est ce rappel : une fois l'[authentification](/fr/security/authentication) réussie, le serveur émet un identifiant que le navigateur renvoie à chaque requête suivante, de sorte que « qui est-ce » n'ait pas à être reprouvé à chaque chargement de page.
+
+## Le cycle de vie typique
+
+<StepFlow
+  title="Cycle de vie d'une session par cookie"
+  steps={[
+    { actor: "Client", title: "Connexion", description: "L'utilisateur soumet ses identifiants une fois, via une requête qui ne prouve elle-même encore rien de mémorisé.", detail: "POST /login\n{ username, password }" },
+    { actor: "Serveur", title: "Création de la session, envoi du cookie", description: "En cas de succès, le serveur génère un identifiant de session aléatoire et impossible à deviner, le stocke (en mémoire, dans une base de données, ou Redis) aux côtés de l'identité de l'utilisateur, et le renvoie sous forme de cookie.", detail: "Set-Cookie: sid=8f3e...; HttpOnly; Secure; SameSite=Lax" },
+    { actor: "Client", title: "Le cookie est envoyé automatiquement", description: "Le navigateur attache ce cookie à chaque requête suivante vers la même origine, sans qu'aucun JavaScript n'ait à le gérer.", detail: "Cookie: sid=8f3e..." },
+    { actor: "Serveur", title: "Recherche de la session à chaque requête", description: "Le serveur recherche l'identifiant de session dans son magasin pour savoir de quel utilisateur il s'agit — la requête elle-même ne porte aucune autre preuve d'identité.", detail: "session_store.get('8f3e...') -> { userId: 42 }" },
+    { actor: "Serveur", title: "Déconnexion / expiration", description: "Se déconnecter supprime l'enregistrement de session côté serveur, et une session ancienne ou inutilisée expire généralement d'elle-même après un délai — dans les deux cas, le cookie cesse de fonctionner.", detail: "session_store.delete('8f3e...')" },
+  ]}
+/>
+
+## Les indicateurs de cookie qui comptent réellement
+
+`HttpOnly` empêche complètement JavaScript de lire le cookie, fermant le principal moyen par lequel le [XSS](/fr/security/xss) pourrait voler un jeton de session. `Secure` garantit que le cookie n'est jamais envoyé qu'en HTTPS, jamais en HTTP en clair. `SameSite` restreint si le cookie est envoyé sur des requêtes provenant d'un autre site, ce qui constitue la principale défense contre le [CSRF](/fr/security/csrf). Omettre l'un de ces trois éléments sur un cookie de session est une vulnérabilité réelle et courante, pas théorique.
+
+## Authentification par session contre par jeton
+
+Un identifiant de session n'a aucun sens sans le magasin côté serveur qui le soutient — c'est un pointeur, pas la donnée elle-même. C'est le compromis inverse d'un [JWT](/fr/security/jwt), qui est autoporteur et ne nécessite aucune recherche côté serveur, au prix d'être plus difficile à révoquer prématurément.
+
+## Voir aussi
+
+- **[JWT](/fr/security/jwt)** — l'alternative sans état à une session stockée côté serveur.
+- **[CSRF](/fr/security/csrf)** — l'attaque contre laquelle l'attribut `SameSite` d'un cookie défend spécifiquement.
+- **[Authentification](/fr/security/authentication)** — l'étape qui crée une session en premier lieu.

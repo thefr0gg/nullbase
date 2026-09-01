@@ -1,0 +1,73 @@
+---
+title: SQL
+description: لغة الاستعلام التي تتحدثها تقريباً كل قاعدة بيانات علائقية — تصريحية، قائمة على المجموعات، و(في معظم الأحيان) موحَّدة عبر المحركات.
+category: Databases
+weight: 0
+interactive: true
+interactiveType: ["SqlPlayground", "ItemExplorer"]
+---
+
+يصف SQL (Structured Query Language) **ما** البيانات التي تريدها، لا **كيفية** جلبها — تكتب `SELECT name FROM users WHERE age > 18`، ويقرر محرك قاعدة البيانات استراتيجية الاسترجاع الفعلية بنفسه (فحص كامل، بحث فهرس، ترتيب ربط). هذا هو الفرق الجوهري عن الكود الإجرائي: لا حلقة تكتبها، ولا مؤشر تتنقل به — أنت تصرّح بشكل النتيجة التي تريدها.
+
+الملعب أدناه حقيقي: إنه SQLite مُجمَّع إلى WebAssembly، يعمل بالكامل داخل متصفحك. كل استعلام يُنفَّذ فعلياً ضد قاعدة بيانات حقيقية صغيرة في الذاكرة.
+
+## جرّبه
+
+<SqlPlayground
+  title="employees / departments"
+  schema={`
+CREATE TABLE departments (id INTEGER PRIMARY KEY, name TEXT NOT NULL);
+CREATE TABLE employees (
+  id INTEGER PRIMARY KEY,
+  name TEXT NOT NULL,
+  department_id INTEGER REFERENCES departments(id),
+  salary INTEGER NOT NULL
+);
+INSERT INTO departments (id, name) VALUES (1, 'Engineering'), (2, 'Sales'), (3, 'Design');
+INSERT INTO employees (id, name, department_id, salary) VALUES
+  (1, 'Ada Lovelace', 1, 145000),
+  (2, 'Grace Hopper', 1, 152000),
+  (3, 'Alan Turing', 1, 149000),
+  (4, 'Ida Tacke', 2, 98000),
+  (5, 'Rosalind Franklin', 3, 110000);
+`}
+  defaultQuery={`SELECT e.name, d.name AS department, e.salary
+FROM employees e
+JOIN departments d ON d.id = e.department_id
+WHERE e.salary > 100000
+ORDER BY e.salary DESC;`}
+/>
+
+جرّب تغيير حد `WHERE`، أو إزالة `JOIN`، أو تنفيذ `SELECT department_id, AVG(salary) FROM employees GROUP BY department_id;` لرؤية التجميع.
+
+## ترتيب الكتابة مقابل ترتيب التنفيذ
+
+تُكتَب عبارات SQL بترتيب معين لكنها *تُنفَّذ* بترتيب مختلف — هذا التباين مصدر شائع للالتباس، خاصة حول سبب عدم إمكانية الإشارة إلى عمود مُسمَّى بواسطة `SELECT` ضمن `WHERE` الخاصة به.
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[{ key: "written", label: "موضع الكتابة" }, { key: "executed", label: "ترتيب التنفيذ الفعلي" }]}
+  items={[
+    { id: "from", label: "FROM / JOIN", color: "blue", columns: { written: "الأول", executed: "الأول — بناء مجموعة الصفوف العاملة" } },
+    { id: "where", label: "WHERE", color: "green", columns: { written: "الثاني", executed: "الثاني — تصفية الصفوف قبل التجميع" } },
+    { id: "groupby", label: "GROUP BY", color: "orange", columns: { written: "الرابع", executed: "الثالث — دمج الصفوف في مجموعات" } },
+    { id: "having", label: "HAVING", color: "purple", columns: { written: "الخامس", executed: "الرابع — تصفية المجموعات، بعد التجميع" } },
+    { id: "select", label: "SELECT", color: "red", columns: { written: "الأول على الصفحة", executed: "الخامس — حساب أعمدة الإخراج الفعلية" } },
+    { id: "orderby", label: "ORDER BY", color: "blue", columns: { written: "السادس", executed: "السادس — ترتيب النتيجة النهائية" } },
+  ]}
+/>
+
+هذا بالضبط سبب عدم قدرة `WHERE` على التصفية بناءً على تجميع (`WHERE COUNT(*) > 5` غير صالحة — استخدم `HAVING`) — تُنفَّذ `WHERE` قبل حدوث التجميع أصلاً، لذا لا توجد قيمة تجميعية بعد للتصفية عليها.
+
+## الربط (Joins)، باختصار
+
+يجمع `JOIN` صفوفاً من جدولين بناءً على شرط تطابق. يحتفظ `INNER JOIN` (الافتراضي لـ `JOIN`) فقط بالصفوف التي لها تطابق على الجانبين؛ يحتفظ `LEFT JOIN` بكل صف من الجدول الأيسر بغض النظر عن وجود تطابق، ويملأ الأعمدة غير المتطابقة بـ `NULL` — جرّب تغيير `JOIN` إلى `LEFT JOIN` في الملعب أعلاه وإضافة موظف بدون `department_id` لرؤية الفرق.
+
+## SQL ليست موحَّدة بالكامل
+
+يحدد ANSI SQL نواة مشتركة، لكن كل محرك حقيقي يضيف امتداداته الخاصة ويختلف في الحالات الحدية — انظر [PostgreSQL](/ar/databases/postgresql) و[MySQL](/ar/databases/mysql) للصياغة الخاصة بمحرك معين لا تعمل بالضرورة على الآخرين.
+
+## طالع أيضاً
+
+- **[SQLite](/ar/databases/sqlite)** — المحرك الفعلي الذي يشغّل ملعب هذه الصفحة.
+- **[فهارس قواعد البيانات](/ar/databases/database-indexes)** — كيف يقرر المحرك *كيفية* تنفيذ الاستعلام الذي صرّحت به.

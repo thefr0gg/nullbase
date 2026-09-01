@@ -1,0 +1,49 @@
+---
+title: WebSockets
+description: اتصال واحد طويل الأمد وثنائي الاتجاه — يستطيع العميل والخادم إرسال رسالة في أي وقت، دون الحاجة لاقتران طلب/استجابة.
+category: Web APIs
+weight: 4
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+import { chatSocketMessages } from "./websocket-messages";
+
+كل نمط غُطّي حتى الآن في هذا القسم — REST، وGraphQL، وRPC، والـ webhooks — لا يزال على شكل طلب/استجابة: طرف يسأل، والآخر يجيب. اتصال WebSocket مختلف: بعد أن تُرقّي مصافحة HTTP واحدة الاتصال، يبقى مفتوحاً، و**يستطيع أي طرف إرسال رسالة في أي وقت**، دون الحاجة لاقتران طلب/استجابة. إنه أقرب شيء على الويب إلى مقبس خام ومستمر.
+
+## المصافحة
+
+يبدأ اتصال WebSocket كطلب HTTP عادي بترويسة `Upgrade`، يطلب من الخادم تبديل البروتوكولات:
+
+```http
+GET /chat HTTP/1.1
+Host: example.com
+Upgrade: websocket
+Connection: Upgrade
+Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==
+Sec-WebSocket-Version: 13
+
+HTTP/1.1 101 Switching Protocols
+Upgrade: websocket
+Connection: Upgrade
+Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
+```
+
+`101 Switching Protocols` هو الدليل — بعد هذه الاستجابة، لم يعد اتصال TCP يتحدث HTTP على الإطلاق. إنه قناة ثنائية الاتجاه خام يؤطّر فوقها الطرفان رسائل WebSocket، حتى يغلقها أحدهما.
+
+## جرّبها
+
+<RequestPlayground protocol="websocket" defaultTarget="wss://chat.example.com/rooms/general" simulatedMessages={chatSocketMessages} />
+
+## متى تلجأ إليها
+
+تناسب WebSockets أي شيء ثنائي الاتجاه فعلياً ومنخفض الكمون: الدردشة، حالة اللعب الجماعي، المؤشرات الحية/التحرير التعاوني، مؤشرات التداول الحية. إنها الأداة الخاطئة عندما لا يحتاج العميل لإرسال أي شيء بعد الاشتراك الأولي — تدفق أحادي الاتجاه من تحديثات الخادم هو بالضبط ما بُنيت من أجله [Server-Sent Events](/ar/web-apis/server-sent-events)، بتعقيد تشغيلي أقل بكثير (HTTP عادي، إعادة اتصال تلقائية مدمجة في المتصفح، تعمل عبر بنية تحتية لا تعرف شيئاً عن ترويسة `Upgrade`).
+
+## الواقع التشغيلي
+
+اتصال WebSocket ذو حالة وطويل الأمد، وهو شكل مختلف تماماً عن الطلبات عديمة الحالة والقصيرة الأمد التي يفترضها كل شيء آخر في هذا القسم. لذلك عواقب: يجب على موازن الأحمال الاستمرار في توجيه اتصال معين إلى نفس نسخة الخادم الخلفي (أو أن تشارك تلك النسخة الحالة بطريقة أخرى)، وإعادة تشغيل الخادم تُسقط كل اتصال مفتوح دفعة واحدة، ويجب على العميل التعامل مع إعادة الاتصال وإعادة الاشتراك بنفسه بعد أي انقطاع — لا شيء من هذا يجب أن تفكر فيه واجهة برمجة تطبيقات HTTP العادية.
+
+## طالع أيضاً
+
+- **[Server-Sent Events](/ar/web-apis/server-sent-events)** — البديل الأبسط، أحادي الاتجاه.
+- **[Webhooks](/ar/web-apis/webhooks)** — لـ"أخبرني عندما يحدث X" دون إبقاء أي اتصال مفتوحاً على الإطلاق.

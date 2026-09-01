@@ -1,0 +1,80 @@
+---
+title: Form Data
+description: Cómo se codifican realmente los campos de un formulario HTML para su envío — y por qué las subidas de archivos necesitan una codificación distinta del resto.
+category: Data & Serialization
+weight: 3
+interactive: true
+interactiveType: ["RequestPlayground", "ItemExplorer"]
+---
+
+Un `<form>` HTML no envía sus campos como [JSON](/es/data-serialization/json) por defecto — usa una de dos codificaciones más antiguas, elegida mediante el atributo `enctype` del formulario, que son anteriores a JSON como formato web.
+
+## Pruébalo
+
+`/api/form-submit` en la API simulada de este sitio analiza cualquier codificación que realmente envíes — prueba el ejemplo urlencoded, y luego cambia la cabecera `Content-Type` y el cuerpo a JSON y envíalo de nuevo.
+
+<RequestPlayground
+  protocol="http"
+  defaultMethod="POST"
+  defaultTarget="/api/form-submit"
+  defaultHeaders="Content-Type: application/x-www-form-urlencoded"
+  defaultBody={"name=Grace+Hopper&role=admin"}
+/>
+
+## Las dos codificaciones de formulario
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "shape", label: "Forma del cuerpo" },
+    { key: "handlesFiles", label: "¿Maneja subidas de archivos?" },
+  ]}
+  items={[
+    {
+      id: "urlencoded",
+      label: "application/x-www-form-urlencoded",
+      color: "blue",
+      columns: { shape: "Pares clave=valor unidos por &, valores codificados con porcentajes", handlesFiles: "No" },
+    },
+    {
+      id: "multipart",
+      label: "multipart/form-data",
+      color: "green",
+      columns: { shape: "Cada campo es su propia \"parte\", separada por una cadena delimitadora (boundary), con sus propias cabeceras", handlesFiles: "Sí — la parte de un archivo lleva su propio Content-Type y nombre de archivo" },
+    },
+  ]}
+/>
+
+`application/x-www-form-urlencoded` es la opción por defecto y es lo que envía el ejemplo anterior — es compacto pero no puede transportar datos binarios en absoluto, ya que todo tiene que ser texto codificado con porcentajes (ver [Codificación de URL](/es/data-serialization/url-encoding)). Un formulario con `<input type="file">` tiene que usar en su lugar `multipart/form-data`, razón por la cual los formularios de subida de archivos siempre necesitan tener `enctype="multipart/form-data"` fijado explícitamente.
+
+```http
+POST /upload HTTP/1.1
+Content-Type: multipart/form-data; boundary=----abc123
+
+------abc123
+Content-Disposition: form-data; name="username"
+
+grace
+------abc123
+Content-Disposition: form-data; name="avatar"; filename="photo.png"
+Content-Type: image/png
+
+<binary bytes>
+------abc123--
+```
+
+## FormData en JavaScript
+
+El objeto `FormData` del navegador construye cualquiera de las dos codificaciones por ti al enviarlo mediante `fetch` — en código moderno nunca construyes a mano la cadena de límite (boundary) ni la codificación de porcentajes:
+
+```js
+const form = new FormData();
+form.append("username", "grace");
+form.append("avatar", fileInput.files[0]);
+fetch("/upload", { method: "POST", body: form }); // browser sets Content-Type + boundary automatically
+```
+
+## Ver también
+
+- **[Codificación de URL](/es/data-serialization/url-encoding)** — el esquema de codificación de porcentajes que usan los valores de `application/x-www-form-urlencoded`.
+- **[JSON](/es/data-serialization/json)** — el formato que la mayoría de las APIs modernas prefieren sobre cualquiera de las dos codificaciones de formulario, para envíos sin archivos.

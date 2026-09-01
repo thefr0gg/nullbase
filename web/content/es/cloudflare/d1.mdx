@@ -5,7 +5,7 @@ category: Cloudflare
 weight: 1
 ---
 
-**D1** es el producto de base de datos gestionada de Cloudflare — [SQLite](/en/databases/sqlite) por debajo, al que se accede desde un [Worker](/es/cloudflare/workers) mediante un [binding](/es/cloudflare/workers-bindings) en lugar de una cadena de conexión persistente tradicional. Elegir SQLite específicamente (en vez de construir desde cero algo parecido a un Postgres distribuido) significa que D1 hereda el SQL que probablemente ya conoces, sin ninguna de las preocupaciones habituales de gestión de conexiones separadas de una base de datos cliente/servidor típica.
+**D1** es el producto de base de datos gestionada de Cloudflare — [SQLite](/es/databases/sqlite) por debajo, al que se accede desde un [Worker](/es/cloudflare/workers) mediante un [binding](/es/cloudflare/workers-bindings) en lugar de una cadena de conexión persistente tradicional. Elegir SQLite específicamente (en vez de construir desde cero algo parecido a un Postgres distribuido) significa que D1 hereda el SQL que probablemente ya conoces, sin ninguna de las preocupaciones habituales de gestión de conexiones separadas de una base de datos cliente/servidor típica.
 
 ## Consultas desde un Worker
 
@@ -21,7 +21,7 @@ export default {
 };
 ```
 
-`env.DB` es el binding configurado en `wrangler.jsonc`; `.prepare().bind().all()` es una consulta parametrizada — vincular el valor por separado del texto de la consulta, el mismo patrón seguro frente a [inyección SQL](/en/security/sql-injection) que sigue cualquier consulta parametrizada, sin importar la base de datos.
+`env.DB` es el binding configurado en `wrangler.jsonc`; `.prepare().bind().all()` es una consulta parametrizada — vincular el valor por separado del texto de la consulta, el mismo patrón seguro frente a [inyección SQL](/es/security/sql-injection) que sigue cualquier consulta parametrizada, sin importar la base de datos.
 
 ## Sin conexiones persistentes
 
@@ -51,6 +51,6 @@ D1 encaja bien con datos de aplicación relacionales, típicos y con predominio 
 
 ## Ver también
 
-- **[SQL](/en/databases/sql)** y **[SQLite](/en/databases/sqlite)** — el lenguaje y el motor sobre los que corre D1.
+- **[SQL](/es/databases/sql)** y **[SQLite](/es/databases/sqlite)** — el lenguaje y el motor sobre los que corre D1.
 - **[Workers Bindings](/es/cloudflare/workers-bindings)** — cómo llega realmente `env.DB` de arriba.
 - **[KV](/es/cloudflare/kv)** — una buena opción cuando los datos no necesitan estructura relacional ni consistencia fuerte en absoluto.

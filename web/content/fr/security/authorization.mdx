@@ -1,0 +1,36 @@
+---
+title: Autorisation
+description: Décider ce qu'un utilisateur déjà identifié a le droit de faire — les modèles à base de rôles, d'attributs et de listes d'accès pour cette décision.
+category: Security
+weight: 1
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+L'**autorisation** intervient après l'[authentification](/fr/security/authentication) et répond à une question entièrement différente : étant donné que c'est réellement celui qu'il prétend être, qu'a-t-il le droit de faire ? Un système peut authentifier un utilisateur avec une confiance totale et devoir néanmoins refuser à ce même utilisateur l'accès aux données d'un autre — ce refus, c'est le travail de l'autorisation.
+
+## Trois modèles courants
+
+<ItemExplorer
+  title="Modèles d'autorisation"
+  layout="pills"
+  items={[
+    { id: "rbac", label: "RBAC", color: "blue", detail: "Role-Based Access Control — les permissions sont attachées à des rôles (admin, éditeur, lecteur), et des rôles sont attribués aux utilisateurs. Simple à raisonner, mais grossier — difficile d'exprimer « éditeur, mais seulement pour ses propres articles »." },
+    { id: "abac", label: "ABAC", color: "green", detail: "Attribute-Based Access Control — une décision prend en compte ensemble les attributs de l'utilisateur, de la ressource et du contexte (« service financier, heures ouvrées, sa propre région »). Plus expressif, plus difficile à auditer." },
+    { id: "acl", label: "ACL", color: "purple", detail: "Access Control List — les permissions sont attachées directement à une ressource précise, énumérant exactement quelles identités peuvent y faire quoi. Courant pour les systèmes de fichiers et le partage par document." },
+  ]}
+/>
+
+## Le mode de défaillance le plus important : l'autorisation défaillante au niveau de l'objet
+
+Le bug d'autorisation le plus courant en pratique n'est pas une vérification de rôle manquante — c'est d'oublier de vérifier que l'*objet spécifique* demandé appartient réellement au demandeur. Un endpoint comme `GET /orders/{id}` qui vérifie « cet utilisateur est-il connecté » mais pas « cette commande appartient-elle à cet utilisateur » permet à n'importe qui de consulter la commande de n'importe qui d'autre en changeant simplement l'ID dans l'URL. Cette classe de bug (souvent appelée IDOR — Insecure Direct Object Reference) figure de façon constante parmi les premiers rapports de vulnérabilités réels, précisément parce qu'il est facile de bien authentifier tout en se trompant sur ce point.
+
+## Le principe du moindre privilège
+
+Un principe récurrent à travers les trois modèles : accorder l'accès minimum réellement nécessaire, pas le maximum qui serait pratique. Un compte de service qui ne fait que lire une seule table ne devrait pas avoir un accès en écriture à toute la base de données — non pas parce qu'on s'attend à ce qu'il abuse de cet accès, mais parce qu'un futur bug ou des identifiants compromis ne peuvent causer que les dégâts permis par les permissions qui leur ont été accordées.
+
+## Voir aussi
+
+- **[Authentification](/fr/security/authentication)** — établir une identité, l'étape que l'autorisation suppose toujours déjà accomplie.
+- **[JWT](/fr/security/jwt)** — un endroit courant pour encoder directement des rôles ou permissions dans le jeton lui-même.
+- **[Sessions](/fr/security/sessions)** — là où une vérification d'autorisation côté serveur va typiquement chercher les permissions de l'utilisateur courant.

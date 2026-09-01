@@ -1,0 +1,50 @@
+---
+title: CSS
+description: Comment le navigateur décide de l'apparence d'une page — sélecteurs, la cascade, et la boîte dans laquelle chaque élément est disposé.
+category: Web Platform
+weight: 1
+interactive: true
+interactiveType: ["StepFlow", "ItemExplorer"]
+---
+
+import { cascadeResolutionSteps } from "./css-cascade-steps";
+
+CSS (Cascading Style Sheets) décrit comment la structure de [HTML](/fr/web-platform/html) reçoit une présentation visuelle — couleurs, mise en page, espacement, typographie. Le même élément peut être ciblé par des règles provenant de plusieurs endroits à la fois (une feuille de style, une balise `<style>`, un attribut `style` en ligne, les styles par défaut du navigateur), donc CSS a besoin d'une façon déterministe de décider laquelle l'emporte réellement. C'est la « cascade » du nom.
+
+## La cascade, étape par étape
+
+<StepFlow title="Résoudre un conflit CSS" steps={cascadeResolutionSteps} />
+
+## Le modèle de boîte
+
+Chaque élément que le navigateur dispose est une boîte rectangulaire composée de quatre couches imbriquées — c'est le modèle mental le plus fondamental de la mise en page CSS.
+
+<ItemExplorer
+  layout="pills"
+  items={[
+    { id: "content", label: "Content", color: "blue", detail: "Le texte/image/enfants réels — dimensionnés par width/height." },
+    { id: "padding", label: "Padding", color: "green", detail: "Espace à l'intérieur de la bordure, autour du contenu. Partage l'arrière-plan de l'élément." },
+    { id: "border", label: "Border", color: "orange", detail: "Une ligne visible (ou invisible) autour du padding." },
+    { id: "margin", label: "Margin", color: "purple", detail: "Espace à l'extérieur de la bordure, entre cet élément et ses voisins. N'a jamais d'arrière-plan — c'est juste de l'espace vide." },
+  ]}
+/>
+
+Par défaut, `width`/`height` ne dimensionnent que la boîte de contenu — le padding et la bordure s'ajoutent par-dessus, ce qui explique pourquoi `box-sizing: border-box` (dimensionner `width` pour inclure le padding et la bordure) est quasi universel dans les feuilles de style réelles ; sans cela, ajouter du padding à un élément l'agrandit silencieusement au-delà de la largeur définie.
+
+## Sélecteurs et spécificité
+
+La spécificité d'un sélecteur est ce que la cascade compare lorsque plusieurs règles correspondent avec la même importance/origine — un ID (`#header`) bat toujours n'importe quel nombre de classes, et n'importe quel nombre de classes bat toujours n'importe quel nombre de sélecteurs d'élément, quel que soit le nombre de sélecteurs plus faibles empilés ensemble.
+
+```css
+#header .nav a { }      /* 1 id, 1 class, 1 element  -> wins over the line below */
+.nav .nav-link a.active { }  /* 0 ids, 3 classes, 1 element */
+```
+
+## Mise en page : flow, flex et grid
+
+Le flux normal du document (les éléments de bloc s'empilent verticalement, les éléments en ligne s'écoulent horizontalement) est le comportement par défaut de CSS — `display: flex` et `display: grid` font sortir les enfants d'un élément de ce comportement par défaut vers un algorithme de mise en page à une dimension (flex) ou à deux dimensions (grid), ce qui explique pourquoi presque aucune mise en page moderne n'est plus construite avec des floats.
+
+## Voir aussi
+
+- **[HTML](/fr/web-platform/html)** — la structure que CSS met en forme.
+- **[Le DOM](/fr/web-platform/dom)** — les styles calculés de CSS s'appliquent aux nœuds du DOM, pas au texte HTML d'origine.

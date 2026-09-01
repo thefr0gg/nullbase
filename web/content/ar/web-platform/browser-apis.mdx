@@ -1,0 +1,93 @@
+---
+title: واجهات المتصفح البرمجية
+description: كل ما يمنحه المتصفح لصفحة إلى جانب اللغات الأساسية — قدرات الشبكة، والجهاز، والمنصة معروضة ككائنات JavaScript.
+category: Web Platform
+weight: 4
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+إلى جانب [HTML](/ar/web-platform/html)، و[CSS](/ar/web-platform/css)، و[DOM](/ar/web-platform/dom)، يعرض المتصفح مجموعة كبيرة من واجهات JavaScript البرمجية المدمجة — قدرات ليست جزءاً من لغة JavaScript نفسها، بل يوفرها بيئة المتصفح التي تعمل JavaScript داخلها. يشغّل Node.js اللغة نفسها بمجموعة مختلفة تماماً من الواجهات البرمجية المدمجة، وهذه هي أوضح طريقة لرؤية أن هذه ميزات منصة، لا ميزات لغة.
+
+## مسرد عملي
+
+<ItemExplorer
+  layout="grid"
+  items={[
+    {
+      id: "fetch",
+      label: "Fetch",
+      color: "blue",
+      detail: "تُجري طلبات HTTP من JavaScript، وتعيد Promise — البديل الحديث لـXMLHttpRequest.",
+    },
+    {
+      id: "geolocation",
+      label: "Geolocation",
+      color: "green",
+      detail: "تطلب إذن المستخدم، ثم تبلّغ عن الموقع التقريبي لجهازه.",
+    },
+    {
+      id: "notifications",
+      label: "Notifications",
+      color: "purple",
+      detail: "تعرض إشعارات على مستوى نظام التشغيل، بإذن المستخدم — غالباً ما تُقرَن بعامل خدمة (Service Worker) للتسليم في الخلفية.",
+    },
+    {
+      id: "clipboard",
+      label: "Clipboard",
+      color: "orange",
+      detail: "تقرأ من الحافظة (clipboard) الخاصة بالنظام وتكتب إليها — الكتابة عادة تحتاج إلى إيماءة من المستخدم (نقرة) لتُسمَح.",
+    },
+    {
+      id: "intersection",
+      label: "IntersectionObserver",
+      color: "blue",
+      detail: "تكتشف بكفاءة متى يدخل عنصر منطقة العرض أو يغادرها — تشغّل التحميل الكسول والتمرير اللانهائي دون مستمع لحدث التمرير.",
+    },
+    {
+      id: "history",
+      label: "History",
+      color: "green",
+      detail: "تقرأ سجل جلسة المتصفح وتتلاعب به — history.pushState() هي ما يتيح لتطبيقات الصفحة الواحدة تغيير الرابط دون تحميل كامل للصفحة.",
+    },
+    {
+      id: "webrtc",
+      label: "WebRTC",
+      color: "purple",
+      detail: "صوت، وفيديو، وبيانات من نظير إلى نظير — تشغّل مكالمات الفيديو المبنية على المتصفح دون توجيه الوسائط عبر خادم.",
+    },
+    {
+      id: "canvas",
+      label: "Canvas / WebGL",
+      color: "orange",
+      detail: "أسطح رسم ثنائية وثلاثية الأبعاد بنمط فوري — تُستخدم في الألعاب، وتصور البيانات، وتحرير الصور في المتصفح.",
+    },
+    {
+      id: "observer",
+      label: "MutationObserver",
+      color: "default",
+      detail: "تراقب جزءاً من شجرة DOM وتطلق دالة رد نداء كلما تغيّر — تستخدمها الأدوات التي تحتاج للتفاعل مع ترميز لا تتحكم فيه.",
+    },
+  ]}
+/>
+
+## كشف الميزات بدلاً من استنشاق المتصفح
+
+لأن ليس كل متصفح (أو إصدار) يدعم كل واجهة برمجية، ينبغي للكود المعتمد على واحدة منها أن يتحقق من وجودها مباشرة بدلاً من محاولة تحديد هوية المتصفح:
+
+```js
+if ("clipboard" in navigator) {
+  await navigator.clipboard.writeText("copied!");
+} else {
+  // fall back to a manual copy affordance
+}
+```
+
+## الأذونات
+
+العديد من هذه الواجهات البرمجية (تحديد الموقع، والإشعارات، والحافظة، والكاميرا/الميكروفون) محمية خلف طلب إذن صريح من المستخدم في المرة الأولى التي تطلبها فيها الصفحة — ولا تعمل معظمها إلا في سياق آمن (`https://` أو `localhost`)، وهو قيد متعمد بما أنها تعرض قدرة حقيقية للجهاز/المستخدم.
+
+## طالع أيضاً
+
+- **[ملفات تعريف الارتباط (Cookies)](/ar/web-platform/cookies)** و**[تخزين الويب](/ar/web-platform/web-storage)** — اثنتان من أكثر واجهات المتصفح البرمجية استخداماً، تُغطَّيان بشكل منفصل لأن لكل منهما ما يكفي من التفاصيل بمفردها.
+- **[عمّال الخدمة (Service Workers)](/ar/web-platform/service-workers)** — الواجهة البرمجية خلف الدعم دون اتصال والإشعارات في الخلفية.

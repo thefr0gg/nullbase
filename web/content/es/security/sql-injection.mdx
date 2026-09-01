@@ -1,0 +1,53 @@
+---
+title: Inyección SQL
+description: Cómo la entrada no saneada se convierte en parte de una consulta ejecutada — y por qué las consultas parametrizadas cierran la puerta por completo, en vez de solo reducir el riesgo.
+category: Security
+weight: 8
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+La **inyección SQL** ocurre cuando la entrada del usuario se concatena directamente en una cadena de consulta [SQL](/es/databases/sql), permitiendo que un atacante suministre texto que cambia la estructura real de la consulta en vez de solo sus datos. El patrón vulnerable siempre es alguna versión de construir una consulta por concatenación de cadenas en lugar de mantener separados el dato y el código.
+
+## Un ejemplo de manual
+
+```js
+const query = `SELECT * FROM users WHERE username = '${username}' AND password = '${password}'`;
+```
+
+Un inicio de sesión normal suministra un nombre de usuario y una contraseña como datos. Pero si `username` llega como `' OR '1'='1`, la consulta ensamblada se convierte en:
+
+```sql
+SELECT * FROM users WHERE username = '' OR '1'='1' AND password = '...'
+```
+
+`'1'='1'` siempre es verdadero, así que la cláusula `WHERE` coincide con cada fila — el atacante queda autenticado como el primer usuario de la tabla sin haber conocido nunca una contraseña real. Este es el ejemplo clásico, pero la misma falla permite que un atacante lea tablas arbitrarias, modifique datos, o en algunas configuraciones de base de datos ejecute comandos en el servidor subyacente.
+
+## Por qué sanear la entrada no es la solución real
+
+Usar una lista negra de caracteres peligrosos (comillas, punto y coma) es frágil — normalmente hay otro truco de codificación o sintaxis que un atacante puede usar y que la lista negra no anticipó. La solución real es estructural, no defensiva:
+
+<ItemExplorer
+  title="Defensas"
+  layout="table"
+  tableColumns={[{ key: "why", label: "Por qué funciona" }]}
+  items={[
+    { id: "parameterized", label: "Consultas parametrizadas", color: "green", columns: { why: "La estructura de la consulta y los datos se envían a la base de datos por separado — la entrada del usuario nunca se interpreta como sintaxis SQL, sin importar lo que contenga." } },
+    { id: "orm", label: "ORMs / query builders", color: "blue", columns: { why: "Generan consultas parametrizadas por debajo por defecto, de modo que la inyección requiere eludirlos deliberadamente (p. ej. un escape hatch de consulta cruda)." } },
+    { id: "least-privilege", label: "Cuentas de BD con privilegio mínimo", color: "purple", columns: { why: "Limita el daño incluso si la inyección tiene éxito — una cuenta de la app con solo SELECT sobre las tablas que necesita no puede eliminar tablas ni leer otras." } },
+  ]}
+/>
+
+Una versión parametrizada de la consulta anterior se ve así — los marcadores `?` los completa el driver de la base de datos, nunca la interpolación de cadenas:
+
+```js
+db.prepare("SELECT * FROM users WHERE username = ? AND password = ?").get(username, password);
+```
+
+Sin importar lo que contenga `username`, se trata puramente como un valor de cadena que se compara, nunca como parte de la gramática de la consulta — el truco `' OR '1'='1` de arriba simplemente se convierte en un nombre de usuario que no coincide con nada.
+
+## Ver también
+
+- **[SQL](/es/databases/sql)** — el lenguaje de consultas que la inyección SQL abusa.
+- **[Autenticación](/es/security/authentication)** — los formularios de inicio de sesión son el objetivo más común de este ataque.
+- **[Hashing de contraseñas](/es/security/password-hashing)** — por qué una inyección exitosa aún así no debería revelar contraseñas en texto plano utilizables.

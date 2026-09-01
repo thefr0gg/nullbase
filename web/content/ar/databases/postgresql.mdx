@@ -1,0 +1,64 @@
+---
+title: PostgreSQL
+description: قاعدة البيانات العلائقية مفتوحة المصدر التي تلجأ إليها معظم المشاريع الجادة الجديدة — التزام صارم بالمعايير، ونظام امتدادات كبير، وتزامن حقيقي.
+category: Databases
+weight: 2
+interactive: true
+interactiveType: ["SqlPlayground", "ItemExplorer"]
+---
+
+PostgreSQL ("Postgres") هي قاعدة بيانات علائقية بنمط عميل-خادم — خلافاً لـ [SQLite](/ar/databases/sqlite)، تعمل كعملية طويلة الأمد خاصة بها، تقبل اتصالات عبر الشبكة من العديد من التطبيقات والمستخدمين المحتملين في آن واحد. تُعرف بالتزامها الوثيق بمعيار SQL، ونموذج تزامن قوي حقاً (MVCC — انظر [المعاملات](/ar/databases/transactions))، ونظام امتدادات يتيح لها القيام بمهام لا تستطيعها قاعدة بيانات علائقية أبسط (البحث النصي الكامل، والاستعلامات الجغرافية المكانية عبر PostGIS، وحتى بحث التشابه الاتجاهي للتضمينات).
+
+## جرّبه (SQL قياسي، يعمل على المحرك داخل المتصفح)
+
+يعمل الملعب أدناه على نفس محرك SQLite المضمَّن كباقي هذا القسم — إنها نفس SQL القياسية التي يفهمها Postgres أيضاً، لكنها ليست Postgres حرفياً. صياغة Postgres الخاصة (أسفل هذه الصفحة) مُعروضة في كتل كود ثابتة بدلاً من ذلك، لأنها لن تعمل فعلياً هنا.
+
+<SqlPlayground
+  title="RETURNING — إدراج واسترجاع الصف الجديد في رحلة ذهاب وإياب واحدة"
+  schema={`CREATE TABLE orders (id INTEGER PRIMARY KEY, item TEXT NOT NULL, quantity INTEGER NOT NULL);`}
+  defaultQuery={`INSERT INTO orders (item, quantity) VALUES ('Widget', 3) RETURNING *;`}
+/>
+
+بدون `RETURNING`، سيستغرق استرجاع الصف الجديد رحلة ذهاب وإياب ثانية (`INSERT` متبوعاً بـ `SELECT` منفصلة) — أشاع Postgres هذه العبارة، وهي مفيدة حقاً لدرجة أن SQLite أضافت دعماً لها أيضاً.
+
+## ما هو خاص فعلياً بـ Postgres
+
+```sql
+-- SERIAL: عدد صحيح تلقائي الزيادة، اختصار Postgres لنمط شائع
+CREATE TABLE users (id SERIAL PRIMARY KEY, email TEXT UNIQUE NOT NULL);
+
+-- JSONB: JSON مُرمَّز ثنائياً وقابل للفهرسة، مخزَّن مباشرة في عمود
+CREATE TABLE events (id SERIAL PRIMARY KEY, payload JSONB);
+SELECT * FROM events WHERE payload->>'type' = 'signup';
+
+-- أعمدة مصفوفة أصيلة — لا حاجة لجدول ربط منفصل لقائمة بسيطة
+CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[]);
+SELECT * FROM posts WHERE 'featured' = ANY(tags);
+
+-- المخططات: أسماء نطاقات ضمن قاعدة بيانات واحدة
+CREATE SCHEMA billing;
+SELECT * FROM billing.invoices;
+```
+
+لا يوجد أي من هذه الأربعة في SQLite القياسية — `JSONB` بالتحديد جزء كبير من سبب اختيار Postgres حتى لأعباء العمل التي تشعر بأنها أقرب إلى المستندية من العلائقية، لأنها تتيح لفريق الحصول على قوة الاستعلام المُهيكل على بيانات شبه مُهيكلة دون اللجوء إلى مخزن [NoSQL](/ar/databases/nosql) منفصل أصلاً.
+
+## MVCC: كيف يتعامل Postgres مع الوصول المتزامن
+
+يستخدم Postgres MVCC (التحكم في التزامن متعدد الإصدارات): بدلاً من أن يحجب القرّاء الكاتبين (أو العكس)، ترى كل معاملة لقطة متسقة من البيانات كما كانت عند بدء تلك المعاملة — استعلام تقرير طويل الأمد لا يحجب الكتابات الجارية أو يُحجَب بها أبداً. التكلفة أن إصدارات الصفوف القديمة ("الصفوف الميتة") تتراكم حتى تستردها عملية خلفية (`VACUUM`) — اهتمام تشغيلي حقيقي، وإن كان غير مرئي عادة، في قاعدة بيانات Postgres المزدحمة.
+
+## الامتدادات
+
+<ItemExplorer
+  layout="pills"
+  items={[
+    { id: "postgis", label: "PostGIS", color: "green", detail: "أنواع بيانات واستعلامات جغرافية مكانية — \"جد كل متجر ضمن 5 كم\" كاستعلام SQL أصيل." },
+    { id: "pgvector", label: "pgvector", color: "purple", detail: "بحث التشابه الاتجاهي — يخزّن التضمينات ويجد أقرب الجيران، العمود الفقري للعديد من ميزات البحث بالذكاء الاصطناعي، مباشرة في Postgres." },
+    { id: "timescaledb", label: "TimescaleDB", color: "blue", detail: "تخزين واستعلامات مُحسَّنة للسلاسل الزمنية، كامتداد لـ Postgres بدلاً من قاعدة بيانات منفصلة." },
+    { id: "pgcrypto", label: "pgcrypto", color: "orange", detail: "دوال تشفيرية (تجزئة، تشفير) قابلة للاستدعاء مباشرة من SQL." },
+  ]}
+/>
+
+## طالع أيضاً
+
+- **[SQLite](/ar/databases/sqlite)** — ما ينفّذ فعلياً الأمثلة القابلة للتشغيل في هذه الصفحة.
+- **[MySQL](/ar/databases/mysql)** — قاعدة البيانات العلائقية المهيمنة الأخرى مفتوحة المصدر، بمجموعة مختلفة من المقايضات.

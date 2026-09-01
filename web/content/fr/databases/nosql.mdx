@@ -1,0 +1,71 @@
+---
+title: NoSQL
+description: Quand les données ne rentrent pas proprement dans des lignes et des colonnes, ou que l'échelle ne tient pas sur une seule machine — stores documents, clé-valeur, colonnes et graphes.
+category: Databases
+weight: 4
+interactive: true
+interactiveType: ["RequestPlayground", "ItemExplorer"]
+---
+
+« NoSQL » n'est pas une seule technologie — c'est un terme générique pour les bases de données qui n'utilisent délibérément pas le modèle relationnel autour duquel [SQL](/fr/databases/sql) est construit. Ce qu'elles partagent, c'est généralement un schéma plus souple (voire absent) et une conception biaisée vers la mise à l'échelle horizontale sur de nombreuses machines, au prix de certaines des garanties qu'une base de données relationnelle vous offre par défaut (voir [ACID](/fr/databases/acid)).
+
+## Essayez-le
+
+Le point de terminaison simulé `/api/documents` ci-dessous n'a pas de schéma fixe — envoyez un document avec les champs que vous voulez et il est stocké tel quel, contrairement à un `INSERT` SQL qui échouerait contre une table à laquelle il manque ces colonnes.
+
+<RequestPlayground
+  protocol="http"
+  defaultMethod="POST"
+  defaultTarget="/api/documents"
+  defaultHeaders="Content-Type: application/json"
+  defaultBody={`{\n  "name": "Katherine Johnson",\n  "field": "Orbital mechanics",\n  "awards": ["Presidential Medal of Freedom"]\n}`}
+  examplePaths={[{ method: "GET", path: "/api/documents", label: "list all" }]}
+/>
+
+Remarquez que les deux documents pré-remplis dans un `GET` ne partagent pas les mêmes champs — l'un a `tags`, l'autre a `notes` — et aucun des deux n'est une erreur. Cette flexibilité est tout l'argument de vente d'un store de documents, et aussi son plus gros compromis : rien n'empêche deux documents *censés* avoir la même forme de diverger silencieusement.
+
+## Les quatre catégories courantes
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[{ key: "shape", label: "Forme des données" }, { key: "example", label: "Exemple" }]}
+  items={[
+    {
+      id: "document",
+      label: "Document",
+      color: "blue",
+      columns: { shape: "Documents autonomes de type JSON, regroupés en collections", example: "MongoDB, Couchbase" },
+    },
+    {
+      id: "keyvalue",
+      label: "Clé-valeur",
+      color: "green",
+      columns: { shape: "Une valeur opaque recherchée par une seule clé — aucun langage de requête sur la valeur elle-même", example: "Redis, DynamoDB" },
+    },
+    {
+      id: "columnfamily",
+      label: "Famille de colonnes",
+      color: "purple",
+      columns: { shape: "Lignes avec un ensemble de colonnes flexible et clairsemé, optimisé pour un volume d'écriture énorme sur de nombreuses machines", example: "Cassandra, HBase" },
+    },
+    {
+      id: "graph",
+      label: "Graphe",
+      color: "orange",
+      columns: { shape: "Nœuds et relations typées entre eux, optimisé pour les requêtes de parcours", example: "Neo4j" },
+    },
+  ]}
+/>
+
+## Pourquoi renoncer aux garanties relationnelles
+
+Les forces du modèle relationnel — normalisation, jointures, forte cohérence (voir [Normalisation des bases de données](/fr/databases/database-normalization) et [ACID](/fr/databases/acid)) — ont un coût : une seule machine puissante (ou un partitionnement soigné et complexe) pour les faire respecter. Certaines bases NoSQL échangent une cohérence stricte contre une échelle horizontale facile à raisonner — de nombreuses machines indépendantes, chacune possédant une tranche des données, sans transaction inter-machines à coordonner. On résume souvent cela par le théorème CAP : sous une partition réseau, un système distribué doit choisir entre rester pleinement **C**ohérent ou rester pleinement **D**isponible (**A**vailable) — il ne peut garantir les deux.
+
+## Pas un remplacement, généralement un complément
+
+Très peu de systèmes réels sont « exclusivement NoSQL » — une forme de production courante utilise une base de données relationnelle comme source de vérité pour les données qui bénéficient réellement d'une forte cohérence et de relations (utilisateurs, commandes, facturation), aux côtés d'un store clé-valeur pour la mise en cache (Redis devant des requêtes coûteuses) et peut-être un store de documents pour une fonctionnalité spécifique naturellement flexible en schéma (journaux d'activité, contenu généré par les utilisateurs avec des champs variables).
+
+## Voir aussi
+
+- **[Normalisation des bases de données](/fr/databases/database-normalization)** — la discipline relationnelle à laquelle les schémas flexibles de NoSQL renoncent délibérément.
+- **[Pagination](/fr/web-apis/pagination)** — la pagination par curseur en particulier est le choix naturel pour les jeux de données partitionnés et à ID non séquentiels que les stores NoSQL produisent souvent.

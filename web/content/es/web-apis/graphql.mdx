@@ -1,0 +1,83 @@
+---
+title: GraphQL
+description: Un endpoint, un lenguaje de consulta, y un cliente que pide exactamente los campos que necesita — ni más, ni menos.
+category: Web APIs
+weight: 1
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+GraphQL es un lenguaje de consulta para APIs, generalmente servido a través de un único endpoint HTTP (comúnmente `POST /graphql`). En lugar de que el servidor decida qué forma devuelve cada endpoint, el **cliente** describe la forma que quiere en el cuerpo de la consulta, y el servidor devuelve exactamente eso — ni más, ni menos.
+
+```graphql
+query {
+  user(id: 42) {
+    name
+    email
+  }
+}
+```
+
+La respuesta refleja la forma de la consulta:
+
+```json
+{
+  "data": {
+    "user": { "name": "Grace Hopper", "email": "grace@example.com" }
+  }
+}
+```
+
+## Pruébalo
+
+<RequestPlayground
+  protocol="graphql"
+  defaultBody={`query {\n  user(id: 42) {\n    name\n    email\n  }\n}`}
+/>
+
+Esta demo no ejecuta un esquema real — devuelve la consulta y las variables que enviaste para que la forma de solicitud/respuesta se mantenga honesta sobre ser simulada, no un servidor GraphQL real.
+
+## Por qué los equipos recurren a esto
+
+- **Sin sobre-obtención.** Un `GET /api/users/42` de REST devuelve los campos que ese endpoint siempre devuelve. Una consulta GraphQL devuelve solo los campos solicitados.
+- **Sin sub-obtención.** ¿Necesitas un usuario y sus últimos 5 pedidos en una pantalla? Un cliente REST a menudo tiene que hacer dos viajes de ida y vuelta (`GET /api/users/42`, luego `GET /api/users/42/orders`). Una sola consulta GraphQL puede pedir ambos anidados en una sola solicitud.
+- **Un endpoint, versionado por evolución, no por URL.** Se pueden añadir campos sin romper las consultas existentes, y los campos en desuso pueden marcarse como `@deprecated` y eliminarse después — mira [Versionado de API](/es/web-apis/api-versioning) para ver cómo REST maneja el mismo problema de forma diferente.
+
+## Consultas, mutaciones, suscripciones
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "purpose", label: "Propósito" },
+    { key: "restEquivalent", label: "Equivalente en REST" },
+  ]}
+  items={[
+    {
+      id: "query",
+      label: "Query",
+      color: "blue",
+      columns: { purpose: "Leer datos", restEquivalent: "GET" },
+    },
+    {
+      id: "mutation",
+      label: "Mutation",
+      color: "orange",
+      columns: { purpose: "Crear, actualizar, o eliminar datos", restEquivalent: "POST / PUT / PATCH / DELETE" },
+    },
+    {
+      id: "subscription",
+      label: "Subscription",
+      color: "purple",
+      columns: { purpose: "Un flujo de actualizaciones de larga duración", restEquivalent: "WebSockets / Server-Sent Events" },
+    },
+  ]}
+/>
+
+## Los compromisos
+
+GraphQL intercambia el modelo simple, cacheable, de recurso-por-URL de REST por flexibilidad en las consultas. Una respuesta de `GET /api/users/42` es trivialmente cacheable solo por su URL (los navegadores y CDNs ya saben cómo hacerlo); una respuesta de GraphQL depende del cuerpo completo de la consulta, así que el caché necesita trabajo deliberado (consultas persistidas, normalización de respuestas en el cliente). Y una consulta anidada arbitrariamente puede ser costosa de resolver en el servidor — las APIs GraphQL reales típicamente limitan la profundidad/complejidad de las consultas para protegerse de esto, lo cual es su propia versión de [limitación de tasa](/es/web-apis/rate-limiting).
+
+## Ver también
+
+- **[REST](/es/web-apis/rest)** — la alternativa orientada a recursos con la que más se compara GraphQL.
+- **[RPC](/es/web-apis/rpc)** — las mutaciones de GraphQL están más cerca en espíritu de las llamadas RPC con nombre que del modelo de verbo-sobre-recurso de REST.

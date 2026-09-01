@@ -1,0 +1,75 @@
+---
+title: Autorisation API
+description: Vous savez qui appelle — maintenant, qu'est-ce qu'il a le droit de faire ? RBAC, ABAC, scopes et ACL comparés.
+category: Web APIs
+weight: 7
+interactive: true
+interactiveType: ["RequestPlayground", "ItemExplorer"]
+---
+
+[L'Authentification API](/fr/web-apis/api-authentication) répond à « qui est-ce ? ». L'autorisation répond à la question suivante : **qu'est-ce que cette identité a le droit de faire ?** Une requête peut être parfaitement authentifiée — un token valide et non expiré — et être quand même rejetée, parce que l'identité derrière ce token n'est pas autorisée à faire ce qu'elle demande. C'est la différence entre un `401 Unauthorized` (qui êtes-vous ? — signifie en réalité « non authentifié », un nom historiquement source de confusion) et un `403 Forbidden` (je sais qui vous êtes, et non).
+
+## Essayez
+
+`/api/admin` dans l'API simulée de ce site exige un header `X-Role: admin` — envoyez la requête sans (`403`), puis ajoutez le header et renvoyez (`200`).
+
+<RequestPlayground protocol="http" defaultTarget="/api/admin" defaultHeaders="Accept: application/json" />
+
+## Modèles d'autorisation
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "decisionBasedOn", label: "Décision basée sur" },
+    { key: "example", label: "Exemple" },
+  ]}
+  items={[
+    {
+      id: "rbac",
+      label: "RBAC",
+      color: "blue",
+      columns: {
+        decisionBasedOn: "Un rôle assigné à l'utilisateur (admin, éditeur, lecteur)",
+        example: "\"Seuls les admins peuvent supprimer un workspace.\"",
+      },
+    },
+    {
+      id: "abac",
+      label: "ABAC",
+      color: "purple",
+      columns: {
+        decisionBasedOn: "Les attributs de l'utilisateur, de la ressource et du contexte, ensemble",
+        example: "\"Un manager ne peut approuver une note de frais que s'il est le manager du soumissionnaire et que le montant est inférieur à 500 $.\"",
+      },
+    },
+    {
+      id: "scopes",
+      label: "Scopes / claims",
+      color: "green",
+      columns: {
+        decisionBasedOn: "Des permissions intégrées directement dans le token d'accès",
+        example: "Un token délivré avec scope=read:orders ne peut pas appeler l'endpoint d'écriture, sans qu'aucun lookup en base de données ne soit nécessaire.",
+      },
+    },
+    {
+      id: "acl",
+      label: "ACL",
+      color: "orange",
+      columns: {
+        decisionBasedOn: "Une liste par ressource de qui peut faire quoi",
+        example: "\"Ce document précis est partagé avec ces 3 utilisateurs, en lecture seule.\"",
+      },
+    },
+  ]}
+/>
+
+Le RBAC est le point de départ le plus simple et le plus courant — la plupart des API ayant besoin d'une quelconque autorisation commencent là et ne se tournent vers l'ABAC que lorsque des règles basées sur les rôles ne peuvent vraiment plus exprimer une politique nécessaire (le RBAC répond à « quel rôle avez-vous », l'ABAC peut en plus demander « est-ce spécifiquement votre donnée »).
+
+## Où la vérification a lieu
+
+L'autorisation peut être appliquée à plus d'une couche, et les systèmes en production en utilisent souvent plusieurs à la fois : à la périphérie/passerelle (une vérification de scope avant même que la requête n'atteigne le code applicatif), dans l'application (une vérification RBAC/ABAC contre la logique métier), et à la couche de données (une politique au niveau des lignes en base de données comme dernière ligne de défense si la vérification applicative a un bug). La vérification à la passerelle est peu coûteuse et échoue rapidement ; la vérification à la couche de données est celle qui ne peut vraiment pas être contournée par un bug applicatif.
+
+## Voir aussi
+
+- **[Authentification API](/fr/web-apis/api-authentication)** — établir l'identité, l'étape précédant celle-ci.
+- **[REST](/fr/web-apis/rest)** — des codes de statut comme `401`/`403` font partie de l'interface d'une API REST, pas d'un détail d'implémentation.

@@ -1,0 +1,84 @@
+---
+title: ACID
+description: Atomicité, Cohérence, Isolation, Durabilité — les quatre garanties qu'une transaction est censée vous offrir, et ce qui casse sans chacune d'elles.
+category: Databases
+weight: 7
+interactive: true
+interactiveType: ["ItemExplorer", "StepFlow"]
+---
+
+import { crashRecoverySteps } from "./acid-recovery-steps";
+
+ACID est l'ensemble des quatre garanties qu'une [transaction](/fr/databases/transactions) correctement implémentée est censée fournir. C'est une liste de contrôle pour ce que « sûr » signifie réellement pour une écriture en base de données — chaque lettre couvre une manière spécifique par laquelle une implémentation naïve pourrait sinon corrompre ou perdre des données.
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[{ key: "guarantees", label: "Garanties" }, { key: "withoutIt", label: "Sans cette garantie" }]}
+  items={[
+    {
+      id: "atomicity",
+      label: "Atomicité",
+      color: "blue",
+      columns: {
+        guarantees: "Chaque instruction d'une transaction réussit, ou aucune ne prend effet",
+        withoutIt: "Un plantage en plein transfert pourrait débiter un compte sans créditer l'autre — l'argent disparaît",
+      },
+    },
+    {
+      id: "consistency",
+      label: "Cohérence",
+      color: "green",
+      columns: {
+        guarantees: "Une transaction ne peut faire passer la base de données que d'un état valide à un autre — chaque contrainte (clés étrangères, unicité, non-null) tient toujours après sa validation",
+        withoutIt: "Une transaction validée pourrait laisser une commande référençant un client qui n'existe pas",
+      },
+    },
+    {
+      id: "isolation",
+      label: "Isolation",
+      color: "purple",
+      columns: {
+        guarantees: "Les transactions concurrentes ne voient pas les changements non validés et en cours des unes des autres",
+        withoutIt: "Une transaction pourrait lire l'écriture à moitié terminée d'une autre et agir sur des données sur le point d'être annulées",
+      },
+    },
+    {
+      id: "durability",
+      label: "Durabilité",
+      color: "orange",
+      columns: {
+        guarantees: "Une fois qu'une transaction est confirmée comme validée, elle survit à un plantage survenant immédiatement après",
+        withoutIt: "Un utilisateur pourrait se voir dire « paiement réussi » juste avant qu'un plantage ne l'annule, sans aucune trace que cela ait jamais eu lieu",
+      },
+    },
+  ]}
+/>
+
+## La durabilité, étape par étape
+
+« Survit à un plantage » sonne abstrait jusqu'à ce qu'on voie le mécanisme réel — un journal des écritures anticipées est ce qui le rend concret.
+
+<StepFlow title="How a commit survives a crash" steps={crashRecoverySteps} />
+
+## Niveaux d'isolation : une garantie délibérément ajustable
+
+L'isolation complète (chaque transaction se comportant comme si elle s'exécutait complètement seule) est coûteuse à implémenter — les moteurs offrent des niveaux d'isolation plus faibles et plus rapides comme compromis explicite, et en choisir un est une véritable décision d'ingénierie, pas juste une distinction académique.
+
+<ItemExplorer
+  layout="pills"
+  items={[
+    { id: "read-uncommitted", label: "Read Uncommitted", color: "red", detail: "Peut voir les changements non validés d'autres transactions (« lectures sales ») — rarement utilisé, et même pas supporté par certains moteurs." },
+    { id: "read-committed", label: "Read Committed", color: "orange", detail: "Ne voit jamais de données non validées, mais une lecture répétée dans la même transaction peut voir des résultats différents si une autre transaction valide entre-temps. Le comportement par défaut de PostgreSQL." },
+    { id: "repeatable-read", label: "Repeatable Read", color: "blue", detail: "La même requête exécutée deux fois dans une transaction renvoie toujours les mêmes lignes — le comportement par défaut de MySQL/InnoDB." },
+    { id: "serializable", label: "Serializable", color: "green", detail: "Le niveau le plus fort — se comporte comme si chaque transaction s'exécutait une à la fois, dans un certain ordre. Le plus sûr, et le plus susceptible de forcer une transaction à réessayer à cause d'un conflit." },
+  ]}
+/>
+
+## Toutes les bases de données ne choisissent pas ACID complet
+
+Certaines bases de données (notamment de nombreux stores [NoSQL](/fr/databases/nosql)) relâchent délibérément une ou plusieurs de ces garanties — généralement la cohérence ou l'isolation — en échange de disponibilité ou de débit sur de nombreuses machines. Ce n'est pas un défaut ; c'est un compromis légitime pour des charges de travail où une cohérence à terme est acceptable et où le coût de coordination d'un ACID complet à travers un système distribué ne vaut pas la peine d'être payé.
+
+## Voir aussi
+
+- **[Transactions](/fr/databases/transactions)** — essayez l'atomicité et la durabilité directement, avec un vrai rollback.
+- **[Index de base de données](/fr/databases/database-indexes)** — une écriture concurrente sur une ligne indexée est exactement le genre d'opération que régissent les niveaux d'isolation.

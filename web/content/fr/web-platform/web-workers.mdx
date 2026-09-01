@@ -1,0 +1,46 @@
+---
+title: Web Workers
+description: Du JavaScript en arrière-plan sur un thread véritablement séparé — pour quand un calcul est trop lourd pour le thread qui affiche l'interface.
+category: Web Platform
+weight: 8
+interactive: true
+interactiveType: ["StepFlow"]
+---
+
+import { webWorkerLifecycleSteps } from "./web-worker-lifecycle-steps";
+
+[JavaScript](/fr/web-platform/javascript) dans une page s'exécute normalement sur un unique thread qui gère aussi le rendu et les entrées utilisateur — un calcul de longue durée sur ce thread fige la page, puisque rien d'autre ne peut s'exécuter tant qu'il n'est pas terminé. Un Web Worker exécute un script séparé sur son propre thread système, en véritable parallèle, spécifiquement pour éviter cela.
+
+## Le cycle de vie
+
+Il n'y a par défaut aucune mémoire partagée entre le thread principal et un worker — chaque message traverse la frontière comme une copie, pas comme une référence, ce qui façonne le fonctionnement de tout l'échange.
+
+<StepFlow title="Créer et échanger avec un worker" steps={webWorkerLifecycleSteps} />
+
+## Ce qu'un worker ne peut pas faire
+
+Un worker n'a accès ni au [DOM](/fr/web-platform/dom), ni à `window`, ni aux variables de la page parente — il s'exécute dans une portée globale complètement séparée. Il peut utiliser `fetch`, des timers, et la plupart des autres Browser APIs non liées au DOM, mais il ne peut jamais toucher directement la page qui l'a créé ; chaque interaction passe par `postMessage`.
+
+## Thread principal vs. worker
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "domAccess", label: "Accès au DOM" },
+    { key: "blocksUi", label: "Bloque l'UI si occupé ?" },
+  ]}
+  items={[
+    { id: "main", label: "Main thread", color: "blue", columns: { domAccess: "Oui", blocksUi: "Oui — c'est le thread qui effectue le rendu" } },
+    { id: "worker", label: "Web Worker", color: "green", columns: { domAccess: "Non", blocksUi: "Non — s'exécute en parallèle" } },
+    { id: "sw", label: "Service Worker", color: "purple", columns: { domAccess: "Non", blocksUi: "Non — s'exécute aussi sur son propre thread" } },
+  ]}
+/>
+
+## Quand cela en vaut réellement la peine
+
+Créer un worker a un vrai coût (démarrer un nouveau thread, et chaque message est copié, pas gratuit) — cela devient rentable pour un travail réellement lourd en CPU (analyser un grand jeu de données, traitement d'image/vidéo, calculs complexes), pas pour le travail asynchrone quotidien que `async`/`await` et les Promises gèrent déjà sans avoir besoin d'un second thread. La plupart de l'interactivité d'une page n'a jamais besoin d'un worker ; n'y recourez que lorsque le profilage montre que le thread principal est réellement le goulot d'étranglement.
+
+## Voir aussi
+
+- **[JavaScript](/fr/web-platform/javascript)** — la boucle d'événements monothread aux côtés de laquelle cela existe, pas à sa place.
+- **[Service Workers](/fr/web-platform/service-workers)** — un worker spécialisé pour l'interception réseau, pas pour du calcul général.

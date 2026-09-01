@@ -1,0 +1,38 @@
+---
+title: CSRF
+description: Comment un site malveillant piège le navigateur déjà connecté d'une victime pour lui faire envoyer une requête qu'elle n'a jamais voulue — et le jeton qui l'empêche.
+category: Security
+weight: 7
+interactive: true
+interactiveType: ["StepFlow"]
+---
+
+Le **CSRF (Cross-Site Request Forgery)** n'a besoin de rien voler ni d'injecter aucun script, contrairement au [XSS](/fr/security/xss) — il lui suffit que le navigateur de la victime envoie une requête que la victime n'a jamais voulue, en s'appuyant sur des identifiants (un cookie de [session](/fr/security/sessions)) que le navigateur attache automatiquement.
+
+## Comment l'attaque se déroule réellement
+
+<StepFlow
+  title="Une attaque CSRF contre un virement bancaire"
+  steps={[
+    { actor: "Victime", title: "Se connecte au vrai site bancaire", description: "La victime se connecte normalement à bank.example.com — le navigateur détient désormais un cookie de session valide pour cette origine.", detail: "Cookie: sid=8f3e... (set for bank.example.com)" },
+    { actor: "Attaquant", title: "La victime visite une page malveillante", description: "Sans se déconnecter, la victime visite evil.example, qui contient un formulaire caché à soumission automatique ciblant le point de virement de la banque.", detail: "<form action=\"https://bank.example.com/transfer\" method=\"POST\">\n  <input name=\"to\" value=\"attacker-account\">\n  <input name=\"amount\" value=\"5000\">\n</form>\n<script>document.forms[0].submit()</script>" },
+    { actor: "Navigateur", title: "Le navigateur attache le cookie automatiquement", description: "Le navigateur n'a aucune idée que la requête provient d'une page non fiable — il voit simplement une requête vers bank.example.com et y attache le cookie de cette origine, exactement comme il le ferait pour un virement légitime.", detail: "POST /transfer\nCookie: sid=8f3e...\nto=attacker-account&amount=5000" },
+    { actor: "Serveur bancaire", title: "Le serveur la traite comme une requête valide", description: "Rien dans la requête ne paraît suspect à un serveur qui vérifie seulement « y a-t-il un cookie de session valide » — le virement s'exécute, entièrement à l'insu de la victime.", detail: "Transfer processed: $5000 to attacker-account" },
+  ]}
+/>
+
+## Pourquoi les cookies seuls ne prouvent pas l'intention
+
+Le problème fondamental : un cookie prouve *quelle session de navigateur* fait une requête, mais ne dit rien sur *si l'utilisateur avait l'intention de la faire*. N'importe quelle page visitée par le navigateur de la victime peut déclencher une requête vers n'importe quelle autre origine — le navigateur attache les cookies en fonction de la destination, pas de l'origine de la requête.
+
+## Ce qui l'empêche réellement
+
+- **Les jetons CSRF** — une valeur aléatoire et imprévisible que la page légitime intègre dans ses propres formulaires et que le serveur vérifie à la soumission. `evil.example` n'a aucun moyen de lire ou de deviner ce jeton, donc sa requête forgée échoue à la validation.
+- **Les cookies `SameSite`** — définir l'attribut `SameSite` d'un cookie de session sur `Lax` ou `Strict` indique au navigateur de ne pas l'envoyer du tout sur des requêtes provenant d'un autre site, fermant l'attaque au niveau du navigateur (voir [Sessions](/fr/security/sessions)).
+- **Vérifier `Origin`/`Referer`** — une vérification plus faible et complémentaire, confirmant qu'une requête modifiant un état provient bien du site attendu.
+
+## Voir aussi
+
+- **[Sessions](/fr/security/sessions)** — le mécanisme de cookie que le CSRF exploite spécifiquement.
+- **[XSS](/fr/security/xss)** — une classe de vulnérabilité différente ; le XSS peut souvent aussi contourner les jetons CSRF, puisqu'il peut lire directement le DOM de la page.
+- **[CORS](/fr/security/cors)** — une frontière du navigateur connexe mais distincte, portant sur la lecture des réponses plutôt que l'envoi des requêtes.

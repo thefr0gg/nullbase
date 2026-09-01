@@ -1,0 +1,71 @@
+---
+title: Server-Sent Events
+description: تدفق مستمر وأحادي الاتجاه من الخادم إلى العميل عبر HTTP عادي — لا ترقية، لا بروتوكول جديد، والمتصفح يعيد الاتصال نيابة عنك.
+category: Web APIs
+weight: 5
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+import { tickerEvents } from "./server-sent-events-messages";
+
+Server-Sent Events (SSE) هي تدفق أحادي الاتجاه: يُبقي الخادم استجابة HTTP عادية مفتوحة ويكتب أحداثاً إليها بمرور الوقت، والعميل يستمع فقط. لا توجد ترقية مصافحة كما في [WebSockets](/ar/web-apis/websockets) — `Content-Type` الخاص بالاستجابة هو `text/event-stream`، والاتصال ببساطة... لا ينتهي.
+
+```http
+GET /events HTTP/1.1
+Accept: text/event-stream
+
+HTTP/1.1 200 OK
+Content-Type: text/event-stream
+Cache-Control: no-cache
+Connection: keep-alive
+
+event: price
+data: {"symbol":"NB","price":128.42}
+
+event: price
+data: {"symbol":"NB","price":128.55}
+
+```
+
+كل حدث كتلة نص عادي: اسم `event:` اختياري، وسطر `data:` (أو عدة أسطر، مجمَّعة)، وسطر فارغ لإنهائه. لا تأطير ثنائي، لا حاجة لمكتبة عميل خاصة — إنها فقط استجابة HTTP يقرأها العميل تدريجياً.
+
+## جرّبها
+
+<RequestPlayground protocol="sse" defaultTarget="/events/prices" simulatedEvents={tickerEvents} />
+
+## لماذا لا تُستخدَم دائماً بدلاً من WebSockets
+
+SSE أبسط من WebSocket في كل ما يهم تشغيلياً تقريباً: إنها HTTP عادي، لذا تمر عبر الوسطاء/موازنات الأحمال/شبكات CDN التي لا تعرف شيئاً عن معنى ترويسة `Upgrade` الخاصة بـ WebSocket، وتعيد واجهة `EventSource` في المتصفح الاتصال تلقائياً بعد الانقطاع — لا حاجة لكتابة منطق إعادة اتصال. الشيء الوحيد الذي لا تستطيع فعله فعلياً هو إرسال أي شيء من العميل عائداً عبر نفس الاتصال؛ العميل الذي يحتاج أيضاً لإرسال بيانات يستخدم طلب HTTP عادياً بجانب التدفق، أو يلجأ إلى WebSocket بدلاً من ذلك إذا احتاج الاتجاهان للبقاء مقترنين بإحكام.
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "direction", label: "الاتجاه" },
+    { key: "transport", label: "النقل" },
+    { key: "reconnect", label: "إعادة الاتصال" },
+  ]}
+  items={[
+    {
+      id: "sse",
+      label: "Server-Sent Events",
+      color: "blue",
+      columns: { direction: "من الخادم إلى العميل فقط", transport: "HTTP عادي", reconnect: "تلقائية، مدمجة في المتصفح" },
+    },
+    {
+      id: "ws",
+      label: "WebSockets",
+      color: "purple",
+      columns: { direction: "كلا الاتجاهين", transport: "اتصال مُرقّى", reconnect: "يدوية — يجب على التطبيق تنفيذها" },
+    },
+  ]}
+/>
+
+## حدود الاتصال
+
+تحدّ المتصفحات عدد اتصالات `EventSource` المتزامنة إلى نفس المصدر عبر HTTP/1.1 (تاريخياً 6، مشتركة مع الطلبات العادية) — فتح عدة تدفقات SSE إلى نفس المضيف من عدة تبويبات قد يستنفد ذلك الحد. يزيل HTTP/2 هذا السقف عبر تعدد إرسال العديد من التدفقات فوق اتصال واحد، وهذا سبب إضافي لكون نقاط نهاية SSE في الإنتاج تُقدَّم عادةً عبر HTTP/2.
+
+## طالع أيضاً
+
+- **[WebSockets](/ar/web-apis/websockets)** — الجأ إلى هذا بدلاً منها عندما يحتاج العميل لإرسال بيانات أيضاً.
+- **[Webhooks](/ar/web-apis/webhooks)** — لـ"أخبرني" دون أن يُبقي العميل أي اتصال مفتوحاً على الإطلاق.

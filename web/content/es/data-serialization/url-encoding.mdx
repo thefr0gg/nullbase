@@ -1,0 +1,51 @@
+---
+title: Codificación de URL
+description: Codificación por porcentajes — escapar caracteres que una URL no puede contener de forma segura, para que sobrevivan al viaje sin que se confundan con la propia estructura de la URL.
+category: Data & Serialization
+weight: 4
+interactive: true
+interactiveType: ["Codec"]
+---
+
+Una URL solo puede contener de forma segura un conjunto limitado de caracteres — letras, dígitos y un puñado de signos de puntuación (`- _ . ~` y los caracteres estructurales `: / ? # [ ] @ ! $ & ' ( ) * + , ; =`, reservados para la propia sintaxis de la URL). Cualquier otra cosa — un espacio, un `&` dentro de un valor, texto no ASCII — debe ser **codificada por porcentajes**: reemplazada por `%` seguido del valor en hexadecimal del byte del carácter.
+
+```
+hello world     ->  hello%20world
+100% done       ->  100%25%20done
+café             ->  caf%C3%A9        (UTF-8 bytes, each percent-encoded)
+```
+
+## Pruébalo
+
+<Codec mode="url" defaultInput="hello world & more=100%" />
+
+## Por qué importan específicamente `&` y `=`
+
+Las cadenas de consulta usan `&` para separar pares clave-valor y `=` para separar una clave de su valor — un `&` o `=` literal *dentro* de un valor debe codificarse por porcentajes, o se interpretará como estructura en vez de como dato:
+
+```
+?comment=nice & tidy    -->  parsed as comment="nice ", " tidy"="" (broken)
+?comment=nice%20%26%20tidy  -->  parsed as comment="nice & tidy"  (correct)
+```
+
+Esta es exactamente la clase de error que la codificación `application/x-www-form-urlencoded` de [Form Data](/es/data-serialization/form-data) existe para prevenir de forma sistemática, en lugar de dejar que cada valor de formulario se escape a mano.
+
+## `+` significa espacio, a veces
+
+Dentro de una cadena de consulta o específicamente de un cuerpo `application/x-www-form-urlencoded`, un `+` es un atajo para un espacio — pero un `+` literal en cualquier otro lugar de una URL significa un signo de más literal. Este doble significado es una fuente frecuente de errores cuando la misma cadena se decodifica con la suposición equivocada sobre de qué contexto proviene.
+
+## `encodeURIComponent` vs. `encodeURI`
+
+JavaScript tiene dos codificadores integrados con alcances distintos, y confundirlos es un error común:
+
+```js
+encodeURIComponent("a/b?c=d");  // "a%2Fb%3Fc%3Dd" — escapes EVERYTHING, safe for a single value
+encodeURI("https://x.com/a/b?c=d"); // "https://x.com/a/b?c=d" — leaves URL structure characters alone
+```
+
+`encodeURIComponent` es casi siempre la opción correcta al codificar un único valor (un parámetro de consulta, un segmento de ruta) que se insertará en una URL más grande — `encodeURI` es solo para codificar una cadena que ya es una URL completa y válida.
+
+## Ver también
+
+- **[Base64](/es/data-serialization/base64)** — otro tipo de codificación segura para texto, pero para datos binarios en vez de estructura de URL.
+- **[Form Data](/es/data-serialization/form-data)** — el formato que depende de esta codificación para cada valor de campo.

@@ -1,0 +1,37 @@
+---
+title: Sesiones
+description: Cómo un servidor sigue reconociendo a un usuario a través de muchas solicitudes tras iniciar sesión una sola vez — identificadores de sesión, cookies, y dónde vive realmente el estado de sesión.
+category: Security
+weight: 3
+interactive: true
+interactiveType: ["StepFlow"]
+---
+
+[HTTP](/es/web-fundamentals/http) no mantiene estado — el servidor no tiene memoria de una solicitud anterior a menos que algo se lo recuerde explícitamente. Una **sesión** es ese recordatorio: una vez que la [autenticación](/es/security/authentication) tiene éxito, el servidor emite un identificador que el navegador reenvía en cada solicitud posterior, de modo que "quién es este" no tenga que reprobarse en cada carga de página.
+
+## El ciclo de vida típico
+
+<StepFlow
+  title="Ciclo de Vida de una Sesión Basada en Cookies"
+  steps={[
+    { actor: "Cliente", title: "Inicio de sesión", description: "El usuario envía sus credenciales una vez, en una solicitud que en sí misma no prueba que todavía se recuerde nada.", detail: "POST /login\n{ username, password }" },
+    { actor: "Servidor", title: "Crea la sesión, establece la cookie", description: "Si tiene éxito, el servidor genera un ID de sesión aleatorio e imposible de adivinar, lo almacena (en memoria, una base de datos, o Redis) junto a la identidad del usuario, y lo envía de vuelta como una cookie.", detail: "Set-Cookie: sid=8f3e...; HttpOnly; Secure; SameSite=Lax" },
+    { actor: "Cliente", title: "La cookie se envía automáticamente", description: "El navegador adjunta esa cookie a cada solicitud posterior hacia el mismo origen, sin que ningún JavaScript necesite gestionarla.", detail: "Cookie: sid=8f3e..." },
+    { actor: "Servidor", title: "Busca la sesión en cada solicitud", description: "El servidor busca el ID de sesión en su almacén para averiguar quién es este usuario — la solicitud en sí misma no lleva ninguna otra prueba de identidad.", detail: "session_store.get('8f3e...') -> { userId: 42 }" },
+    { actor: "Servidor", title: "Cierre de sesión / expiración", description: "Cerrar sesión elimina el registro de sesión del lado del servidor, y una sesión antigua o sin uso típicamente expira por sí sola tras un tiempo límite — de cualquier forma, la cookie deja de funcionar.", detail: "session_store.delete('8f3e...')" },
+  ]}
+/>
+
+## Las flags de cookie que realmente importan
+
+`HttpOnly` impide que JavaScript lea la cookie en absoluto, cerrando la principal vía por la que [XSS](/es/security/xss) podría robar un token de sesión. `Secure` asegura que la cookie solo se envíe por HTTPS, nunca por HTTP en texto plano. `SameSite` restringe si la cookie se envía en solicitudes originadas desde otro sitio, que es la defensa principal contra [CSRF](/es/security/csrf). Omitir cualquiera de estas tres en una cookie de sesión es una vulnerabilidad genuina y común, no teórica.
+
+## Autenticación basada en sesión vs. basada en token
+
+Un ID de sesión no significa nada sin el almacén del lado del servidor detrás de él — es un puntero, no el dato en sí. Ese es el compromiso opuesto al de un [JWT](/es/security/jwt), que es autocontenido y no necesita ninguna búsqueda en el servidor, a costa de ser más difícil de revocar anticipadamente.
+
+## Ver también
+
+- **[JWT](/es/security/jwt)** — la alternativa sin estado a una sesión almacenada en el servidor.
+- **[CSRF](/es/security/csrf)** — el ataque contra el que la flag `SameSite` de una cookie defiende específicamente.
+- **[Autenticación](/es/security/authentication)** — el paso que crea una sesión en primer lugar.

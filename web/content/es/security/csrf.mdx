@@ -1,0 +1,38 @@
+---
+title: CSRF
+description: Cómo un sitio malicioso engaña al navegador ya autenticado de una víctima para que haga una solicitud que nunca pretendía — y el token que lo detiene.
+category: Security
+weight: 7
+interactive: true
+interactiveType: ["StepFlow"]
+---
+
+**CSRF (Cross-Site Request Forgery)** no necesita robar nada ni inyectar ningún script, a diferencia de [XSS](/es/security/xss) — solo necesita que el navegador de la víctima envíe una solicitud que la víctima nunca pretendió, aprovechando credenciales (una cookie de [sesión](/es/security/sessions)) que el navegador adjunta automáticamente.
+
+## Cómo se desarrolla realmente el ataque
+
+<StepFlow
+  title="Un Ataque CSRF Contra una Transferencia Bancaria"
+  steps={[
+    { actor: "Víctima", title: "Inicia sesión en el sitio real del banco", description: "La víctima inicia sesión normalmente en bank.example.com — el navegador ahora tiene una cookie de sesión válida para ese origen.", detail: "Cookie: sid=8f3e... (set for bank.example.com)" },
+    { actor: "Atacante", title: "La víctima visita una página maliciosa", description: "Sin cerrar sesión, la víctima visita evil.example, que contiene un formulario oculto de autoenvío dirigido al endpoint de transferencias del banco.", detail: "<form action=\"https://bank.example.com/transfer\" method=\"POST\">\n  <input name=\"to\" value=\"attacker-account\">\n  <input name=\"amount\" value=\"5000\">\n</form>\n<script>document.forms[0].submit()</script>" },
+    { actor: "Navegador", title: "El navegador adjunta la cookie automáticamente", description: "El navegador no tiene idea de que la solicitud se originó en una página no confiable — simplemente ve una solicitud hacia bank.example.com y adjunta la cookie de ese origen, exactamente como lo haría para una transferencia legítima.", detail: "POST /transfer\nCookie: sid=8f3e...\nto=attacker-account&amount=5000" },
+    { actor: "Servidor del banco", title: "El servidor la procesa como una solicitud válida", description: "Nada en la solicitud parece incorrecto para un servidor que solo comprueba \"¿hay una cookie de sesión válida?\" — la transferencia se completa, sin que la víctima se entere en absoluto.", detail: "Transfer processed: $5000 to attacker-account" },
+  ]}
+/>
+
+## Por qué las cookies solas no son prueba de intención
+
+El problema central: una cookie prueba *qué sesión de navegador* está haciendo una solicitud, pero no dice nada sobre *si el usuario pretendía hacerla*. Cualquier página que visite el navegador de la víctima puede provocar una solicitud a cualquier otro origen — el navegador adjunta las cookies según el destino, no según de dónde se originó la solicitud.
+
+## Qué la detiene realmente
+
+- **Tokens CSRF** — un valor aleatorio e impredecible que la página legítima incrusta en sus propios formularios y que el servidor comprueba al enviarse. `evil.example` no tiene forma de leer o adivinar ese token, así que su solicitud forjada falla la validación.
+- **Cookies `SameSite`** — establecer el atributo `SameSite` de una cookie de sesión en `Lax` o `Strict` le dice al navegador que no la envíe en absoluto en solicitudes originadas desde otro sitio, cerrando el ataque a nivel de navegador (ver [Sesiones](/es/security/sessions)).
+- **Comprobar `Origin`/`Referer`** — una comprobación más débil y complementaria de que una solicitud que cambia estado realmente se originó en el sitio esperado.
+
+## Ver también
+
+- **[Sesiones](/es/security/sessions)** — el mecanismo de cookies que CSRF explota específicamente.
+- **[XSS](/es/security/xss)** — una clase de vulnerabilidad distinta; XSS a menudo también puede eludir los tokens CSRF, ya que puede leer directamente el DOM de la página.
+- **[CORS](/es/security/cors)** — una frontera de navegador relacionada pero distinta, sobre leer respuestas en vez de enviar solicitudes.

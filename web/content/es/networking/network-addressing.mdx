@@ -1,0 +1,40 @@
+---
+title: Direccionamiento de Red
+description: Máscaras de subred y notación CIDR — cómo un bloque de direcciones se divide en redes más pequeñas, y cómo decide un router qué es local.
+category: Networking
+weight: 9
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+Toda dirección [IPv4](/es/networking/ipv4) es en realidad dos partes pegadas entre sí: una porción de **red** y una porción de **host**. Una **máscara de subred** marca dónde ocurre esa división — es lo que permite a un dispositivo responder «¿este destino está en mi red local, o necesita pasar por un router?» sin preguntarle a nadie.
+
+## Notación CIDR
+
+**CIDR (Classless Inter-Domain Routing)** escribe la división como un sufijo — `192.168.1.0/24` significa que los primeros 24 bits son la porción de red, dejando 8 bits (256 direcciones, 254 utilizables) para los hosts. Reemplazó los bloques originales de tamaño fijo de Clase A/B/C de IPv4, que desperdiciaban enormes cantidades de direcciones cada vez que una organización necesitaba un tamaño que no encajaba exactamente en una clase.
+
+<ItemExplorer
+  title="Bloques CIDR Habituales"
+  layout="table"
+  tableColumns={[{ key: "mask", label: "Máscara de Subred" }, { key: "hosts", label: "Hosts Utilizables" }]}
+  items={[
+    { id: "8", label: "/8", color: "blue", columns: { mask: "255.0.0.0", hosts: "~16,7 millones" } },
+    { id: "16", label: "/16", color: "green", columns: { mask: "255.255.0.0", hosts: "~65.000" } },
+    { id: "24", label: "/24", color: "purple", columns: { mask: "255.255.255.0", hosts: "254" } },
+    { id: "30", label: "/30", color: "orange", columns: { mask: "255.255.255.252", hosts: "2 — un tamaño habitual para un enlace punto a punto entre routers" } },
+  ]}
+/>
+
+## Subnetting: dividir un bloque en muchos
+
+Tomar bits prestados de la porción de host para la porción de red divide un bloque en otros más pequeños — un único `/24` (254 hosts utilizables) puede convertirse en cuatro subredes `/26` (62 hosts utilizables cada una), permitiendo que una organización separe, por ejemplo, ingeniería y finanzas en segmentos aislados sin solicitar más espacio de direcciones. Cada bit extra tomado prestado reduce a la mitad el número de hosts utilizables por subred mientras duplica cuántas subredes existen.
+
+## Dirección de red y de difusión
+
+Dentro de cualquier subred, la primera dirección identifica a la **red misma** y la última es la **dirección de difusión** de esa subred — ninguna de las dos es asignable a un host. Por eso un `/30` (4 direcciones en total) produce solo 2 utilizables: un extremo es la dirección de red, el otro es la de difusión, dejando exactamente lo suficiente para dos routers en cada punta de un enlace.
+
+## Ver también
+
+- **[IPv4](/es/networking/ipv4)** — el espacio de direcciones al que se aplica esta aritmética de subnetting.
+- **[Enrutamiento](/es/networking/routing)** — las tablas de enrutamiento se construyen enteramente a partir de bloques CIDR como estos.
+- **[DHCP](/es/networking/dhcp)** — reparte la máscara de subred junto con cada dirección concedida.

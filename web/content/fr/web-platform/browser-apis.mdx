@@ -1,0 +1,93 @@
+---
+title: Browser APIs
+description: Tout ce que le navigateur offre à une page au-delà des langages de base — capacités réseau, matérielles et plateforme exposées comme objets JavaScript.
+category: Web Platform
+weight: 4
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+Au-delà de [HTML](/fr/web-platform/html), [CSS](/fr/web-platform/css) et du [DOM](/fr/web-platform/dom), le navigateur expose un grand ensemble d'API JavaScript intégrées — des capacités qui ne font pas partie du langage JavaScript lui-même, mais que fournit l'environnement navigateur dans lequel JavaScript s'exécute. Node.js exécute le même langage avec un ensemble d'API intégrées complètement différent, ce qui est la façon la plus claire de voir qu'il s'agit de fonctionnalités de plateforme, pas de langage.
+
+## Un glossaire de travail
+
+<ItemExplorer
+  layout="grid"
+  items={[
+    {
+      id: "fetch",
+      label: "Fetch",
+      color: "blue",
+      detail: "Effectue des requêtes HTTP depuis JavaScript, en retournant une Promise — le remplacement moderne de XMLHttpRequest.",
+    },
+    {
+      id: "geolocation",
+      label: "Geolocation",
+      color: "green",
+      detail: "Demande la permission de l'utilisateur, puis rapporte la localisation approximative de son appareil.",
+    },
+    {
+      id: "notifications",
+      label: "Notifications",
+      color: "purple",
+      detail: "Affiche des notifications au niveau du système d'exploitation, avec la permission de l'utilisateur — souvent associée à un Service Worker pour la livraison en arrière-plan.",
+    },
+    {
+      id: "clipboard",
+      label: "Clipboard",
+      color: "orange",
+      detail: "Lit et écrit dans le presse-papiers système — l'écriture nécessite généralement un geste utilisateur (un clic) pour être autorisée.",
+    },
+    {
+      id: "intersection",
+      label: "IntersectionObserver",
+      color: "blue",
+      detail: "Détecte efficacement quand un élément entre ou sort du viewport — alimente le chargement paresseux et le défilement infini sans écouteur d'événement scroll.",
+    },
+    {
+      id: "history",
+      label: "History",
+      color: "green",
+      detail: "Lit et manipule l'historique de session du navigateur — history.pushState() est ce qui permet aux applications monopage de changer l'URL sans chargement complet de la page.",
+    },
+    {
+      id: "webrtc",
+      label: "WebRTC",
+      color: "purple",
+      detail: "Audio, vidéo et données pair-à-pair — alimente les appels vidéo dans le navigateur sans faire transiter le média par un serveur.",
+    },
+    {
+      id: "canvas",
+      label: "Canvas / WebGL",
+      color: "orange",
+      detail: "Surfaces de dessin 2D et 3D en mode immédiat — utilisées pour les jeux, la visualisation de données et l'édition d'images dans le navigateur.",
+    },
+    {
+      id: "observer",
+      label: "MutationObserver",
+      color: "default",
+      detail: "Surveille une partie de l'arbre DOM et déclenche un callback à chaque changement — utilisé par les outils qui doivent réagir à un balisage qu'ils ne contrôlent pas.",
+    },
+  ]}
+/>
+
+## Détection de fonctionnalités plutôt que reniflage de navigateur
+
+Comme tous les navigateurs (ou toutes les versions) ne supportent pas chaque API, le code qui dépend de l'une d'elles devrait vérifier directement son existence plutôt que d'essayer d'identifier le navigateur :
+
+```js
+if ("clipboard" in navigator) {
+  await navigator.clipboard.writeText("copied!");
+} else {
+  // fall back to a manual copy affordance
+}
+```
+
+## Permissions
+
+Plusieurs de ces API (géolocalisation, notifications, presse-papiers, caméra/microphone) sont conditionnées à une invite de permission explicite de l'utilisateur la première fois qu'une page les demande — et la plupart ne fonctionnent même que dans un contexte sécurisé (`https://` ou `localhost`), une contrainte délibérée puisqu'elles exposent une véritable capacité de l'appareil ou de l'utilisateur.
+
+## Voir aussi
+
+- **[Cookies](/fr/web-platform/cookies)** et **[Web Storage](/fr/web-platform/web-storage)** — deux des API navigateur les plus couramment utilisées, traitées séparément car il y a assez à dire sur chacune.
+- **[Service Workers](/fr/web-platform/service-workers)** — l'API derrière le support hors ligne et les notifications en arrière-plan.

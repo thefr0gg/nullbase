@@ -1,0 +1,84 @@
+---
+title: ACID
+description: Atomicidad, Consistencia, Aislamiento, Durabilidad — las cuatro garantías que se supone que una transacción debe darte, y qué se rompe sin cada una.
+category: Databases
+weight: 7
+interactive: true
+interactiveType: ["ItemExplorer", "StepFlow"]
+---
+
+import { crashRecoverySteps } from "./acid-recovery-steps";
+
+ACID es el conjunto de cuatro garantías que se supone que debe proveer una [transacción](/es/databases/transactions) correctamente implementada. Es una lista de comprobación de lo que "seguro" realmente significa para una escritura en una base de datos — cada letra cubre una forma específica en que una implementación ingenua podría, de otro modo, corromper o perder datos.
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[{ key: "guarantees", label: "Garantiza" }, { key: "withoutIt", label: "Sin ella" }]}
+  items={[
+    {
+      id: "atomicity",
+      label: "Atomicidad",
+      color: "blue",
+      columns: {
+        guarantees: "Cada sentencia de una transacción tiene éxito, o ninguna surte efecto en absoluto",
+        withoutIt: "Un fallo a mitad de una transferencia podría debitar una cuenta sin acreditar la otra — el dinero desaparece",
+      },
+    },
+    {
+      id: "consistency",
+      label: "Consistencia",
+      color: "green",
+      columns: {
+        guarantees: "Una transacción solo puede mover la base de datos de un estado válido a otro — toda restricción (claves foráneas, unique, not-null) sigue cumpliéndose tras confirmarse",
+        withoutIt: "Una transacción confirmada podría dejar un pedido referenciando a un cliente que no existe",
+      },
+    },
+    {
+      id: "isolation",
+      label: "Aislamiento",
+      color: "purple",
+      columns: {
+        guarantees: "Las transacciones concurrentes no ven los cambios sin confirmar y en curso de las demás",
+        withoutIt: "Una transacción podría leer la escritura a medio terminar de otra y actuar sobre datos a punto de revertirse",
+      },
+    },
+    {
+      id: "durability",
+      label: "Durabilidad",
+      color: "orange",
+      columns: {
+        guarantees: "Una vez que una transacción se confirma como completada, sobrevive a un fallo inmediatamente posterior",
+        withoutIt: "A un usuario se le podría decir \"pago exitoso\" momentos antes de que un fallo lo descarte, sin ningún registro de que ocurrió",
+      },
+    },
+  ]}
+/>
+
+## La durabilidad, paso a paso
+
+"Sobrevive a un fallo" suena abstracto hasta que ves el mecanismo real — un write-ahead log es lo que lo hace concreto.
+
+<StepFlow title="Cómo un commit sobrevive a un fallo" steps={crashRecoverySteps} />
+
+## Niveles de aislamiento: una garantía deliberadamente ajustable
+
+El aislamiento total (cada transacción comportándose como si se ejecutara completamente sola) es costoso de implementar — los motores ofrecen niveles de aislamiento más débiles y rápidos como un compromiso explícito, y elegir uno es una decisión de ingeniería real, no solo una distinción académica.
+
+<ItemExplorer
+  layout="pills"
+  items={[
+    { id: "read-uncommitted", label: "Read Uncommitted", color: "red", detail: "Puede ver cambios sin confirmar de otras transacciones (\"lecturas sucias\") — raramente usado, y ni siquiera soportado por algunos motores." },
+    { id: "read-committed", label: "Read Committed", color: "orange", detail: "Nunca ve datos sin confirmar, pero una lectura repetida dentro de la misma transacción puede ver resultados distintos si otra transacción confirma en medio. Predeterminado en PostgreSQL." },
+    { id: "repeatable-read", label: "Repeatable Read", color: "blue", detail: "La misma consulta ejecutada dos veces en una transacción siempre devuelve las mismas filas — predeterminado en MySQL/InnoDB." },
+    { id: "serializable", label: "Serializable", color: "green", detail: "El nivel más fuerte — se comporta como si cada transacción se ejecutara de una en una, en algún orden. El más seguro, y el más propenso a forzar el reintento de una transacción debido a un conflicto." },
+  ]}
+/>
+
+## No toda base de datos elige ACID completo
+
+Algunas bases de datos (particularmente muchos almacenes [NoSQL](/es/databases/nosql)) relajan deliberadamente una o más de estas garantías — normalmente consistencia o aislamiento — a cambio de disponibilidad o rendimiento a través de muchas máquinas. Esto no es un defecto; es un compromiso legítimo para cargas de trabajo donde la consistencia eventual es aceptable y el costo de coordinación de ACID completo a través de un sistema distribuido no vale la pena pagar.
+
+## Ver también
+
+- **[Transacciones](/es/databases/transactions)** — prueba la atomicidad y la durabilidad directamente, con un rollback real.
+- **[Índices de bases de datos](/es/databases/database-indexes)** — una escritura concurrente en una fila indexada es exactamente el tipo de operación que gobiernan los niveles de aislamiento.

@@ -1,0 +1,39 @@
+---
+title: Authentification
+description: Vérifier que quelqu'un est bien celui qu'il prétend être — les facteurs qui peuvent le prouver, et pourquoi l'authentification est une question différente de l'autorisation.
+category: Security
+weight: 0
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+L'**authentification** répond à une seule question : *est-ce vraiment celui qu'il prétend être ?* On la confond facilement avec l'[autorisation](/fr/security/authorization) (« qu'est-ce que cette identité a le droit de faire »), car les deux se succèdent généralement, mais elles sont indépendantes — un système peut authentifier quelqu'un parfaitement et pourtant lui refuser l'accès à quelque chose, et inversement une vérification d'autorisation défaillante peut exposer des données à un utilisateur pourtant authentifié de façon parfaitement légitime.
+
+## Les trois facteurs
+
+L'authentification prouve une identité à l'aide d'un ou plusieurs de trois types de preuves fondamentalement différents :
+
+<ItemExplorer
+  title="Facteurs d'authentification"
+  layout="table"
+  tableColumns={[{ key: "example", label: "Exemple" }, { key: "weakness", label: "Faiblesse" }]}
+  items={[
+    { id: "know", label: "Quelque chose que vous savez", color: "blue", columns: { example: "Mot de passe, code PIN, question de sécurité", weakness: "Peut être hameçonné, deviné, ou fuité ailleurs lors d'une brèche puis réutilisé (credential stuffing)." } },
+    { id: "have", label: "Quelque chose que vous possédez", color: "green", columns: { example: "Téléphone (SMS/application d'authentification), clé de sécurité matérielle, carte à puce", weakness: "Peut être perdu, volé, ou (pour le SMS) intercepté via un SIM-swap." } },
+    { id: "are", label: "Quelque chose que vous êtes", color: "purple", columns: { example: "Empreinte digitale, reconnaissance faciale", weakness: "Ne peut pas être renouvelé en cas de compromission — on n'a qu'un seul visage." } },
+  ]}
+/>
+
+## Authentification multifacteur
+
+La **MFA** exige des preuves issues d'au moins deux catégories de facteurs *différentes* — un mot de passe plus un code d'application d'authentification, et non un mot de passe plus une question de sécurité, puisque les deux relèvent de « quelque chose que vous savez » et qu'un hameçonneur qui en obtient un obtient probablement l'autre aussi. C'est pourquoi la MFA relève véritablement la barre : compromettre deux catégories de preuves indépendantes est bien plus difficile que d'en compromettre une seule, même solide.
+
+## Ce que « connecté » signifie réellement ensuite
+
+L'authentification en elle-même est un instant unique — la réussite de la requête de connexion. Rester reconnu à travers chaque requête suivante est un mécanisme distinct, typiquement les [sessions](/fr/security/sessions) ou un [JWT](/fr/security/jwt) ; l'authentification prouve l'identité une fois, et l'un de ces mécanismes transporte ensuite cette preuve d'identité.
+
+## Voir aussi
+
+- **[Autorisation](/fr/security/authorization)** — la question distincte de ce qu'une identité authentifiée peut faire.
+- **[Hachage de mots de passe](/fr/security/password-hashing)** — comment le facteur « quelque chose que vous savez » est stocké en toute sécurité.
+- **[OAuth 2.0](/fr/security/oauth-2-0)** — authentification et accès délégués sans partager directement un mot de passe.

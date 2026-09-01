@@ -1,0 +1,36 @@
+---
+title: Autorización
+description: Decidir qué puede hacer un usuario ya identificado — modelos basados en roles, en atributos y en listas de acceso para esa decisión.
+category: Security
+weight: 1
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+La **autorización** ocurre después de la [autenticación](/es/security/authentication) y responde a una pregunta completamente distinta: dado que realmente es quien dice ser, ¿qué se le permite hacer? Un sistema puede autenticar a un usuario con total confianza y aun así necesitar negarle a ese mismo usuario el acceso a los datos de otro usuario — esa negación es trabajo de la autorización.
+
+## Tres modelos comunes
+
+<ItemExplorer
+  title="Modelos de Autorización"
+  layout="pills"
+  items={[
+    { id: "rbac", label: "RBAC", color: "blue", detail: "Control de Acceso Basado en Roles — los permisos se asignan a roles (administrador, editor, lector), y a los usuarios se les asignan roles. Fácil de razonar, pero poco granular — es difícil expresar \"editor, pero solo para sus propias publicaciones\"." },
+    { id: "abac", label: "ABAC", color: "green", detail: "Control de Acceso Basado en Atributos — una decisión considera atributos del usuario, del recurso y del contexto en conjunto (\"departamento de finanzas, horario laboral, propia región\"). Más expresivo, más difícil de auditar." },
+    { id: "acl", label: "ACL", color: "purple", detail: "Lista de Control de Acceso — los permisos se asignan directamente a un recurso específico, listando exactamente qué identidades pueden hacer qué con él. Común en sistemas de archivos y en el compartir por documento." },
+  ]}
+/>
+
+## El modo de fallo más importante: autorización rota a nivel de objeto
+
+El bug de autorización más común en la práctica no es una comprobación de rol faltante — es olvidar verificar que el *objeto específico* solicitado realmente pertenece a quien lo pide. Un endpoint como `GET /orders/{id}` que comprueba "¿este usuario ha iniciado sesión?" pero no "¿este pedido pertenece a este usuario?" permite que cualquiera vea el pedido de cualquier otro con solo cambiar el ID en la URL. Esta clase de bug (a menudo llamada IDOR — Insecure Direct Object Reference) aparece de forma constante cerca de la cima de los informes de vulnerabilidades reales precisamente porque es fácil autenticar correctamente y aun así fallar en esta parte.
+
+## Privilegio mínimo
+
+Un principio recurrente en los tres modelos: otorgar el mínimo acceso realmente necesario, no el máximo que resulte conveniente. Una cuenta de servicio que solo lee una tabla no debería tener acceso de escritura a toda la base de datos — no porque se espere que abuse de ese acceso, sino porque un bug futuro o una credencial comprometida solo pueden hacer tanto daño como los permisos que se les concedieron.
+
+## Ver también
+
+- **[Autenticación](/es/security/authentication)** — establecer identidad, el paso que la autorización siempre asume que ya ocurrió.
+- **[JWT](/es/security/jwt)** — un lugar común para codificar roles o permisos directamente en el propio token.
+- **[Sesiones](/es/security/sessions)** — donde una comprobación de autorización del lado del servidor típicamente busca los permisos del usuario actual.

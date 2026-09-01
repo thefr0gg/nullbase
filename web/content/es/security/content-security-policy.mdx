@@ -1,0 +1,46 @@
+---
+title: Content Security Policy
+description: Una cabecera de respuesta que le dice al navegador exactamente qué puede cargar y ejecutar una página — una segunda línea de defensa cuando el escapado de salida por sí solo no basta.
+category: Security
+weight: 10
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+**Content Security Policy (CSP)** es una cabecera de respuesta que declara, de forma explícita, qué puede cargar una página — qué orígenes de scripts, qué orígenes de estilos, qué dominios para imágenes y fuentes. El navegador la aplica directamente: cualquier cosa que la política no permita simplemente no se ejecuta ni se carga, aunque de algún modo haya llegado al HTML de la página.
+
+## Por qué importa incluso con un escapado correcto
+
+Escapar la salida (ver [XSS](/es/security/xss)) ya debería impedir que un marcado inyectado se convierta en una etiqueta `<script>` real — pero CSP es defensa en profundidad para los casos que el escapado se pasa por alto: un escape olvidado en algún lugar, una librería con su propia vulnerabilidad, una dependencia comprometida en origen. Una CSP estricta hace que incluso una inyección exitosa a menudo siga sin ejecutarse, porque el navegador se niega a correr un script en línea o a cargar un script desde un dominio no listado.
+
+## Directivas comunes
+
+<ItemExplorer
+  title="Directivas CSP"
+  layout="table"
+  tableColumns={[{ key: "controls", label: "Controla" }]}
+  items={[
+    { id: "default-src", label: "default-src", color: "blue", columns: { controls: "El valor por defecto para cualquier directiva no especificada explícitamente." } },
+    { id: "script-src", label: "script-src", color: "green", columns: { controls: "Desde qué orígenes pueden cargarse scripts — omitir 'unsafe-inline' aquí bloquea por completo las etiquetas <script> en línea, que es la mayor parte de lo que hace efectiva a CSP contra XSS." } },
+    { id: "style-src", label: "style-src", color: "purple", columns: { controls: "Desde qué orígenes pueden cargarse hojas de estilo." } },
+    { id: "connect-src", label: "connect-src", color: "orange", columns: { controls: "A qué orígenes pueden apuntar las llamadas fetch/XHR/WebSocket — relevante para impedir que un script inyectado exfiltre datos incluso si llega a ejecutarse." } },
+    { id: "frame-ancestors", label: "frame-ancestors", color: "red", columns: { controls: "Qué sitios pueden incrustar esta página en un iframe — el reemplazo moderno de la antigua cabecera X-Frame-Options, protegiendo contra el clickjacking." } },
+  ]}
+/>
+
+## Una cabecera real
+
+```http
+Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.example.com; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'
+```
+
+Esto permite scripts solo desde el propio origen de la página y una CDN de confianza, bloquea que la página sea enmarcada por cualquiera, y recae en "solo mismo origen" para todo lo demás que no esté explícitamente listado.
+
+## Modo solo de reporte
+
+`Content-Security-Policy-Report-Only` no impone nada — solo registra lo que *habría sido* bloqueado hacia un endpoint de reporte. Esta es la forma estándar de desplegar una política nueva de forma segura: observar qué rompería una política estricta en tráfico de producción antes de activar realmente la aplicación y romperlo de verdad.
+
+## Ver también
+
+- **[XSS](/es/security/xss)** — la clase de vulnerabilidad contra la que CSP es principalmente una segunda línea de defensa.
+- **[CORS](/es/security/cors)** — otra restricción del navegador basada en cabeceras, pero que rige lecturas entre orígenes en vez de lo que una página puede cargar.

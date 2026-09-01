@@ -1,0 +1,73 @@
+---
+title: MySQL
+description: قاعدة البيانات العلائقية مفتوحة المصدر الأخرى طويلة الأمد — تاريخياً العمود الفقري لحزمة LAMP، ولا تزال من أكثر قواعد البيانات انتشاراً في العالم.
+category: Databases
+weight: 3
+interactive: true
+interactiveType: ["SqlPlayground", "ItemExplorer"]
+---
+
+MySQL قاعدة بيانات علائقية بنمط عميل-خادم، مثل [PostgreSQL](/ar/databases/postgresql) — الاثنان هما الخياران المفتوحا المصدر المهيمنان ويُقارَنان باستمرار، لكنهما تباعدا من أولويات تصميم مختلفة: أعطت MySQL الأولوية لسرعة القراءة الخام والبساطة لحالة تطبيق الويب الشائعة (شغّلت حرف "M" في حزمة LAMP الكلاسيكية — Linux، Apache، MySQL، PHP)، بينما أعطى Postgres الأولوية للامتثال للمعايير والصحة أولاً.
+
+## جرّبه (SQL قياسي، يعمل على المحرك داخل المتصفح)
+
+<SqlPlayground
+  title="ON DUPLICATE KEY UPDATE — اختصار MySQL لعملية الإدراج-أو-التحديث (المكافئ القياسي أدناه)"
+  schema={`CREATE TABLE page_views (path TEXT PRIMARY KEY, views INTEGER NOT NULL DEFAULT 0);
+INSERT INTO page_views (path, views) VALUES ('/home', 10);`}
+  defaultQuery={`INSERT INTO page_views (path, views) VALUES ('/home', 1)
+ON CONFLICT(path) DO UPDATE SET views = views + 1;
+SELECT * FROM page_views;`}
+/>
+
+يستخدم ذلك الاستعلام `ON CONFLICT ... DO UPDATE` (صياغة "الإدراج-أو-التحديث" القياسية في SQLite وPostgres) لأن هذا ما يدعمه المحرك داخل المتصفح فعلياً — مكافئ MySQL، الموضَّح أدناه، غير قابل للتشغيل هنا لكنه يفعل نفس الشيء.
+
+## ما هو خاص فعلياً بـ MySQL
+
+```sql
+-- AUTO_INCREMENT: صياغة MySQL لمفتاح أساسي تلقائي الزيادة
+CREATE TABLE users (id INT AUTO_INCREMENT PRIMARY KEY, email VARCHAR(255) UNIQUE);
+
+-- صياغة الإدراج-أو-التحديث الخاصة بـ MySQL
+INSERT INTO page_views (path, views) VALUES ('/home', 1)
+ON DUPLICATE KEY UPDATE views = views + 1;
+
+-- اختيار محرك التخزين، لكل جدول
+CREATE TABLE logs (id INT PRIMARY KEY, message TEXT) ENGINE=InnoDB;
+
+-- LIMIT مع إزاحة، الصيغة بفاصلة (صالحة أيضاً في Postgres، ليست SQL قياسية)
+SELECT * FROM users LIMIT 10, 20; -- skip 10, take 20
+```
+
+## محركات التخزين
+
+على نحو غير معتاد بين قواعد البيانات الكبرى، تتيح MySQL اختيار **محرك تخزين** مختلف لكل جدول — المحرك هو ما ينفّذ فعلياً كيفية تخزين الصفوف وفهرستها وقفلها على القرص، تحت نفس واجهة SQL.
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[{ key: "transactions", label: "المعاملات" }, { key: "notes", label: "ملاحظات" }]}
+  items={[
+    { id: "innodb", label: "InnoDB", color: "blue", columns: { transactions: "نعم، ACID كامل", notes: "الافتراضي منذ MySQL 5.5، وما يجب أن يستخدمه تقريباً كل جدول اليوم." } },
+    { id: "myisam", label: "MyISAM", color: "default", columns: { transactions: "لا", notes: "أقدم، بلا دعم معاملات/مفاتيح أجنبية — بقايا موروثة إلى حد كبير الآن." } },
+    { id: "memory", label: "MEMORY", color: "orange", columns: { transactions: "لا", notes: "يخزّن الجدول بأكمله في RAM — سريع، لكن البيانات تختفي عند إعادة التشغيل." } },
+  ]}
+/>
+
+## أين يختلف الاثنان عملياً
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[{ key: "mysql", label: "MySQL" }, { key: "postgres", label: "PostgreSQL" }]}
+  items={[
+    { id: "strictness", label: "صرامة النوع", color: "blue", columns: { mysql: "متساهلة تاريخياً افتراضياً (تقتطع/تحوّل القيم غير الصالحة بصمت، حتى وضع STRICT)", postgres: "صارمة افتراضياً — القيمة غير الصالحة خطأ صريح" } },
+    { id: "json", label: "دعم JSON", color: "green", columns: { mysql: "نوع عمود JSON، سليم وظيفياً لكن أقل تكاملاً عمقاً", postgres: "JSONB — مُرمَّز ثنائياً وقابل للفهرسة، منسوج بعمق أكبر في مخطِّط الاستعلام" } },
+    { id: "replication", label: "التكرار", color: "purple", columns: { mysql: "ناضج، منتشر على نطاق واسع، أبسط في التفكير به لإعدادات أساسي/نسخة متماثلة بسيطة", postgres: "ناضج أيضاً، بمرونة إعداد أكبر (تكرار منطقي مقابل تدفقي)" } },
+  ]}
+/>
+
+كلاهما خياران ممتازان ومُثبَتان في الإنتاج للغالبية العظمى من أعباء العمل العلائقية — القرار الفعلي عادة يعود إلى إلمام الفريق، ودعم مزوّد الاستضافة، وما إذا كانت ميزة محددة (امتدادات Postgres، قصة التكرار الأبسط لـ MySQL) عاملاً حاسماً للمشروع المطروح، أكثر من كون إحداهما "أفضل" على نحو قطعي.
+
+## طالع أيضاً
+
+- **[PostgreSQL](/ar/databases/postgresql)** — نقطة المقارنة المباشرة طوال هذه الصفحة.
+- **[SQLite](/ar/databases/sqlite)** — ما يشغّل فعلياً المثال القابل للتنفيذ أعلاه.

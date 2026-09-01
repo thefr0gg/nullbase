@@ -1,0 +1,70 @@
+---
+title: تخزين الويب
+description: localStorage وsessionStorage — تخزين مفتاح-قيمة أكبر وأبسط، مقتصر على جهة العميل، لا يراه الخادم أبداً.
+category: Web Platform
+weight: 6
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+بخلاف [ملفات تعريف الارتباط](/ar/web-platform/cookies)، لا يُرسَل تخزين الويب إلى الخادم أبداً — إنه مخزن مفتاح-قيمة متزامن وبسيط، على جهة العميل بالكامل، يُصَل إليه عبر كائنين شبه متطابقين: `localStorage` و`sessionStorage`.
+
+```js
+localStorage.setItem("theme", "dark");
+localStorage.getItem("theme");   // "dark"
+localStorage.removeItem("theme");
+```
+
+تُخزَّن كل قيمة كسلسلة نصية — تخزين كائن يتطلب `JSON.stringify` عند الإدخال و`JSON.parse` عند الإخراج؛ يخزّن هذا الموقع نفسه تفضيل السمة الخاص به بهذه الطريقة بالضبط، انظر [JSON](/ar/data-serialization/json).
+
+## مقارنة خيارات التخزين
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "sentToServer", label: "يُرسَل إلى الخادم؟" },
+    { key: "persists", label: "يستمر" },
+    { key: "capacity", label: "السعة النموذجية" },
+  ]}
+  items={[
+    {
+      id: "cookies",
+      label: "Cookies",
+      color: "blue",
+      columns: { sentToServer: "نعم، مع كل طلب مطابق", persists: "حتى Max-Age/Expires (أو نهاية الجلسة)", capacity: "~4KB لكل ملف تعريف ارتباط" },
+    },
+    {
+      id: "localstorage",
+      label: "localStorage",
+      color: "green",
+      columns: { sentToServer: "أبداً", persists: "حتى تُمسَح صراحة", capacity: "~5-10MB" },
+    },
+    {
+      id: "sessionstorage",
+      label: "sessionStorage",
+      color: "orange",
+      columns: { sentToServer: "أبداً", persists: "حتى إغلاق التبويب", capacity: "~5-10MB" },
+    },
+    {
+      id: "indexeddb",
+      label: "IndexedDB",
+      color: "purple",
+      columns: { sentToServer: "أبداً", persists: "حتى تُمسَح صراحة", capacity: "أكبر بكثير (مئات الميغابايت+)، يعتمد على المتصفح" },
+    },
+  ]}
+/>
+
+`sessionStorage` مقتصر على تبويب واحد — فتح نفس الموقع في تبويب ثانٍ يحصل على `sessionStorage` فارغ تماماً، رغم أن كلا التبويبين يشتركان في نفس `localStorage`. إغلاق التبويب يمسحه؛ إعادة تحميل الصفحة في نفس التبويب لا تفعل ذلك.
+
+## لماذا يوجد IndexedDB
+
+واجهة تخزين الويب البرمجية متزامنة ومقتصرة على السلاسل النصية، وهذا مناسب للإعدادات الصغيرة لكنه غير ملائم للبيانات الأكبر أو المهيكلة — قراءة/كتابة متزامنة لقيمة كبيرة تحجب الخيط الرئيسي. IndexedDB قاعدة بيانات كاملة غير متزامنة، ومعاملاتية، ومفهرسة، مدمجة في المتصفح، للتخزين الكثيف بالبيانات فعلياً على جهة العميل (مجموعة بيانات محلية لتطبيق يعمل دون اتصال، استجابات واجهة برمجية مخزَّنة مؤقتاً ليقدّمها [عامل خدمة](/ar/web-platform/service-workers)).
+
+## ما لا ينبغي تخزينه هنا
+
+لا شيء هنا مشفَّر، وهو قابل للقراءة من قِبل أي JavaScript يعمل على الصفحة — بما في ذلك حمولة XSS ناجحة. تخزين رمز مصادقة طويل الأمد في `localStorage` خطأ شائع في العالم الحقيقي لهذا السبب بالذات؛ ملف تعريف ارتباط `HttpOnly` (غير قابل للقراءة من JavaScript أبداً) هو المكان الأكثر أماناً لأي شيء حساس — انظر سمة `HttpOnly` في [ملفات تعريف الارتباط](/ar/web-platform/cookies).
+
+## طالع أيضاً
+
+- **[ملفات تعريف الارتباط](/ar/web-platform/cookies)** — البديل الذي *يُرسَل* إلى الخادم تلقائياً.
+- **[JSON](/ar/data-serialization/json)** — كيف تُسلسَل البيانات المهيكلة لتناسب قيم تخزين الويب المقتصرة على السلاسل النصية.

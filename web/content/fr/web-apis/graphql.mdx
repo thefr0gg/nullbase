@@ -1,0 +1,83 @@
+---
+title: GraphQL
+description: Un seul endpoint, un langage de requête, et un client qui demande exactement les champs dont il a besoin — ni plus, ni moins.
+category: Web APIs
+weight: 1
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+GraphQL est un langage de requête pour les API, généralement servi via un seul endpoint HTTP (couramment `POST /graphql`). Au lieu que le serveur décide la forme que retourne chaque endpoint, c'est le **client** qui décrit la forme qu'il veut dans le corps de la requête, et le serveur retourne exactement ça — ni plus, ni moins.
+
+```graphql
+query {
+  user(id: 42) {
+    name
+    email
+  }
+}
+```
+
+La réponse reflète la forme de la requête :
+
+```json
+{
+  "data": {
+    "user": { "name": "Grace Hopper", "email": "grace@example.com" }
+  }
+}
+```
+
+## Essayez
+
+<RequestPlayground
+  protocol="graphql"
+  defaultBody={`query {\n  user(id: 42) {\n    name\n    email\n  }\n}`}
+/>
+
+Cette démo ne fait pas tourner un vrai schéma — elle renvoie en écho la requête et les variables que vous avez envoyées, pour que la forme de la requête/réponse reste honnête sur le fait d'être simulée, pas un vrai serveur GraphQL.
+
+## Pourquoi les équipes s'en servent
+
+- **Pas de sur-récupération.** Un `GET /api/users/42` REST retourne quels que soient les champs que cet endpoint retourne toujours. Une requête GraphQL ne retourne que les champs demandés.
+- **Pas de sous-récupération.** Besoin d'un utilisateur et de ses 5 dernières commandes sur un seul écran ? Un client REST doit souvent faire deux allers-retours (`GET /api/users/42`, puis `GET /api/users/42/orders`). Une seule requête GraphQL peut demander les deux imbriqués dans une seule requête.
+- **Un seul endpoint, versionné par évolution, pas par URL.** Des champs peuvent être ajoutés sans casser les requêtes existantes, et les champs dépréciés peuvent être marqués `@deprecated` et retirés plus tard — voir [Versionnage d'API](/fr/web-apis/api-versioning) pour la manière dont REST gère différemment le même problème.
+
+## Queries, mutations, subscriptions
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "purpose", label: "Objectif" },
+    { key: "restEquivalent", label: "Équivalent REST" },
+  ]}
+  items={[
+    {
+      id: "query",
+      label: "Query",
+      color: "blue",
+      columns: { purpose: "Lire des données", restEquivalent: "GET" },
+    },
+    {
+      id: "mutation",
+      label: "Mutation",
+      color: "orange",
+      columns: { purpose: "Créer, modifier ou supprimer des données", restEquivalent: "POST / PUT / PATCH / DELETE" },
+    },
+    {
+      id: "subscription",
+      label: "Subscription",
+      color: "purple",
+      columns: { purpose: "Un flux de mises à jour de longue durée", restEquivalent: "WebSockets / Server-Sent Events" },
+    },
+  ]}
+/>
+
+## Les compromis
+
+GraphQL échange le modèle simple, cacheable, ressource-par-URL de REST contre de la flexibilité de requête. Une réponse `GET /api/users/42` est trivialement cacheable par sa seule URL (les navigateurs et CDN savent déjà faire) ; une réponse GraphQL dépend du corps complet de la requête, donc la mise en cache demande un travail délibéré (requêtes persistées, normalisation de la réponse côté client). Et une requête imbriquée arbitrairement peut être coûteuse à résoudre côté serveur — les vraies API GraphQL plafonnent généralement la profondeur/complexité des requêtes pour s'en protéger, ce qui est sa propre version de la [limitation de débit](/fr/web-apis/rate-limiting).
+
+## Voir aussi
+
+- **[REST](/fr/web-apis/rest)** — l'alternative orientée ressource à laquelle GraphQL est le plus souvent comparé.
+- **[RPC](/fr/web-apis/rpc)** — les mutations GraphQL sont plus proches en esprit d'appels RPC nommés que du modèle verbe-sur-une-ressource de REST.

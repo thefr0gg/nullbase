@@ -1,0 +1,43 @@
+---
+title: UDP
+description: Le protocole de transport sans connexion qui saute le handshake de TCP et toutes ses garanties — échangeant la fiabilité contre la vitesse et la simplicité.
+category: Networking
+weight: 1
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+**UDP (User Datagram Protocol)** envoie un datagramme et passe à autre chose — pas de handshake, pas d'acquittement, pas de retransmission, pas d'ordre garanti. Cela semble strictement pire que [TCP](/fr/networking/tcp) jusqu'à ce qu'on remarque ce que cela rapporte en échange : rien de la latence d'établissement de TCP ni de sa comptabilité par segment, ce qui compte énormément pour un trafic où un paquet en retard est pire qu'un paquet manquant.
+
+## Un en-tête beaucoup plus petit
+
+```text
+Source Port | Destination Port
+Length
+Checksum
+```
+
+C'est tout l'en-tête — huit octets, contre une vingtaine et plus pour TCP. Il n'y a pas de numéro de séquence parce qu'UDP ne réordonne jamais rien, et pas de taille de fenêtre parce qu'UDP ne se régule jamais lui-même ; une application qui a besoin de l'un ou de l'autre doit l'implémenter elle-même par-dessus.
+
+## Où UDP l'emporte réellement
+
+<ItemExplorer
+  title="Cas d'usage courants d'UDP"
+  layout="pills"
+  items={[
+    { id: "dns", label: "DNS", color: "blue", detail: "Une résolution est une petite requête et une petite réponse — retransmettre en cas de délai dépassé coûte moins cher qu'un handshake TCP complet pour chaque requête." },
+    { id: "video", label: "Appels vidéo/voix", color: "green", detail: "Une image perdue il y a une seconde est inutile une fois arrivée en retard — mieux vaut la sauter que bloquer tout le flux en attendant une retransmission." },
+    { id: "gaming", label: "Jeux en ligne", color: "purple", detail: "Les mises à jour de position arrivent des dizaines de fois par seconde ; la suivante remplace de toute façon une arrivée en retard." },
+    { id: "dhcp", label: "DHCP", color: "orange", detail: "L'attribution d'adresse se produit avant même qu'un appareil n'ait une IP utilisable, donc il n'y a pas encore de connexion TCP à ouvrir." },
+  ]}
+/>
+
+## La fiabilité devient l'affaire de l'application
+
+Rien n'empêche une application de construire des acquittements, une retransmission ou un ordonnancement par-dessus UDP — QUIC (sur lequel HTTP/3 tourne) fait exactement cela, réimplémentant les éléments de fiabilité qu'il souhaite tout en conservant le faible coût d'établissement d'UDP et en évitant le head-of-line blocking de TCP, où un seul segment perdu bloque tout ce qui le suit.
+
+## Voir aussi
+
+- **[TCP](/fr/networking/tcp)** — l'alternative fiable et ordonnée à laquelle UDP renonce délibérément.
+- **[ICMP](/fr/networking/icmp)** — un autre protocole qui, comme UDP, n'établit pas de connexion.
+- **[Ports & Sockets](/fr/web-fundamentals/ports-sockets)** — UDP utilise le même schéma de numérotation de port que TCP, indépendamment.

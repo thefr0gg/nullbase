@@ -1,0 +1,86 @@
+---
+title: Versionnage d'API
+description: Comment changer la forme d'une API sans casser tous les clients qui dépendent déjà de l'ancienne.
+category: Web APIs
+weight: 8
+interactive: true
+interactiveType: ["RequestPlayground", "ItemExplorer"]
+---
+
+Une API qui ne change jamais est rare — des champs sont renommés, des formes de réponse sont restructurées, des comportements sont corrigés d'une manière qui se trouve être cassante. Le problème que résout le versionnage : comment livrer ce changement sans casser tous les clients qui appellent déjà l'ancienne forme, souvent des clients que vous ne contrôlez pas et ne pouvez pas forcer à se mettre à jour selon votre calendrier ?
+
+## Essayez
+
+L'API simulée de ce site sert deux versions de la même ressource côte à côte — `v1` retourne un seul champ `name`, `v2` le sépare en `first_name`/`last_name`, un exemple réaliste de changement cassant.
+
+<RequestPlayground
+  protocol="http"
+  defaultTarget="/api/v1/users"
+  examplePaths={[
+    { method: "GET", path: "/api/v1/users", label: "v1" },
+    { method: "GET", path: "/api/v2/users", label: "v2" },
+  ]}
+/>
+
+## Stratégies de versionnage
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "example", label: "Exemple" },
+    { key: "tradeoff", label: "Compromis" },
+  ]}
+  items={[
+    {
+      id: "uri",
+      label: "Chemin d'URI",
+      color: "blue",
+      columns: {
+        example: "GET /api/v2/users",
+        tradeoff: "Le plus explicite et le plus cacheable (chaque version est une URL distincte) — mais la version fuite dans les URL codées en dur de chaque client.",
+      },
+    },
+    {
+      id: "header",
+      label: "Header personnalisé",
+      color: "purple",
+      columns: {
+        example: "GET /api/users\nX-API-Version: 2",
+        tradeoff: "Garde les URL stables entre les versions — mais moins visible (facile à oublier, invisible dans la barre d'adresse d'un navigateur ou un lien partagé).",
+      },
+    },
+    {
+      id: "query",
+      label: "Paramètre de requête",
+      color: "green",
+      columns: {
+        example: "GET /api/users?version=2",
+        tradeoff: "Facile à ajouter, mais facile à omettre par erreur, et les paramètres de requête ne font pas toujours partie des clés de cache par défaut.",
+      },
+    },
+    {
+      id: "accept",
+      label: "Négociation de contenu",
+      color: "orange",
+      columns: {
+        example: "GET /api/users\nAccept: application/vnd.example.v2+json",
+        tradeoff: "L'approche « correcte » nativement HTTP (versionner la représentation, pas la ressource) — mais la moins découvrable et la plus inhabituelle à consommer.",
+      },
+    },
+  ]}
+/>
+
+Le versionnage par chemin d'URI est de loin le plus courant en pratique, même s'il est sans doute l'approche HTTP la moins « pure » — l'explicité et la cacheabilité l'emportent généralement sur la correction théorique.
+
+## Ce qui compte réellement comme cassant
+
+Tout changement n'exige pas une nouvelle version. Ajouter un nouveau champ optionnel à une réponse, ou un nouvel endpoint optionnel, est additif — les clients existants qui ignorent les champs inconnus continuent de fonctionner sans changement. Renommer ou retirer un champ, changer le type d'un champ, ou changer le comportement d'un code de statut est cassant — tout client qui dépend de l'ancienne forme cesse de fonctionner. La plupart des API GraphQL s'appuient sur cette distinction au lieu de versionner du tout : ajouter des champs librement, marquer les anciens `@deprecated`, et ne les retirer qu'une fois leur usage tombé à zéro — voir [GraphQL](/fr/web-apis/graphql).
+
+## Dépréciation, pas seulement versionnage
+
+Livrer v2 ne signifie pas que v1 disparaît immédiatement — les API réelles annoncent généralement une fenêtre de dépréciation (par ex. « v1 sera retirée dans 6 mois »), retournent un header `Deprecation`/`Sunset` sur les réponses v1 pour que les clients puissent le détecter par programmation, et ne retirent l'ancienne version qu'une fois le trafic vers celle-ci devenu négligeable.
+
+## Voir aussi
+
+- **[REST](/fr/web-apis/rest)** — le style orienté ressource sur lequel la plupart du versionnage par chemin d'URI est bâti.
+- **[Idempotence](/fr/web-apis/idempotency)** — une autre préoccupation facile à mal gérer dès la première version et difficile à ajouter après coup.

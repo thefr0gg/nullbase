@@ -1,0 +1,80 @@
+---
+title: مصادقة واجهة برمجة التطبيقات
+description: إثبات هوية المتصل — مفاتيح واجهة برمجة التطبيقات، والمصادقة الأساسية (Basic auth)، ورموز Bearer، وتدفق OAuth 2.0 الذي يصدرها.
+category: Web APIs
+weight: 6
+interactive: true
+interactiveType: ["RequestPlayground", "ItemExplorer", "StepFlow"]
+---
+
+import { oauthAuthCodeSteps } from "./api-authentication-steps";
+
+تجيب المصادقة على سؤال واحد: **من الذي يقوم بهذا الطلب؟** (لا ما المسموح له فعله بمجرد التعرف عليه — هذا [تفويض واجهة برمجة التطبيقات](/ar/web-apis/api-authorization).) يختصر كل مخطط تقريباً مما يلي إلى "أرفِق بيانات اعتماد بالطلب، في كل طلب، لأن واجهات برمجة التطبيقات عديمة الحالة" — انظر قيد انعدام الحالة في [REST](/ar/web-apis/rest) لمعرفة سبب عدم تذكُّر شيء بين الاستدعاءات.
+
+## المخططات الشائعة
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "howSent", label: "كيف تُرسَل" },
+    { key: "typicalUse", label: "الاستخدام النموذجي" },
+  ]}
+  items={[
+    {
+      id: "apikey",
+      label: "مفتاح واجهة برمجة التطبيقات",
+      color: "blue",
+      columns: { howSent: "A header or query param, e.g. X-API-Key: sk_live_...", typicalUse: "خادم إلى خادم، تتبع استخدام بسيط" },
+    },
+    {
+      id: "basic",
+      label: "Basic Auth",
+      color: "default",
+      columns: { howSent: "Authorization: Basic <base64(user:pass)>", typicalUse: "أدوات داخلية، سكربتات سريعة — نادراً في واجهات برمجة تطبيقات الإنتاج" },
+    },
+    {
+      id: "bearer",
+      label: "رمز Bearer / JWT",
+      color: "green",
+      columns: { howSent: "Authorization: Bearer <token>", typicalUse: "معظم واجهات برمجة التطبيقات الحديثة — الرمز عادة قصير الأمد ويصدره OAuth" },
+    },
+    {
+      id: "oauth2",
+      label: "OAuth 2.0",
+      color: "purple",
+      columns: { howSent: "رمز Bearer، يُحصَّل عبر تدفق تسجيل دخول/موافقة", typicalUse: "\"سجّل الدخول عبر Google\"، وصول طرف ثالث نيابة عن مستخدم" },
+    },
+    {
+      id: "mtls",
+      label: "mTLS",
+      color: "orange",
+      columns: { howSent: "شهادة TLS للعميل، تُتحقَّق منها أثناء مصافحة TLS نفسها", typicalUse: "حركة مرور عالية الثقة بين الخدمات (البنوك، البنية التحتية الداخلية)" },
+    },
+  ]}
+/>
+
+## جرّبها
+
+يتطلب `/api/profile` في واجهة برمجة التطبيقات الوهمية لهذا الموقع ترويسة `Authorization` — أرسل الطلب بدونها، ثم أضف `Authorization: Bearer demo-token` وأرسل مجدداً.
+
+<RequestPlayground protocol="http" defaultTarget="/api/profile" defaultHeaders="Accept: application/json" />
+
+## رموز Bearer وJWT
+
+**JWT** (JSON Web Token) هو الشكل الأكثر شيوعاً الذي يتخذه رمز Bearer: ثلاثة أجزاء base64url — ترويسة، وحمولة (ادعاءات مثل معرّف المستخدم ووقت انتهاء الصلاحية)، وتوقيع — مفصولة بنقاط. يتحقق الخادم من التوقيع ليثق بالادعاءات دون الحاجة لعملية بحث في قاعدة البيانات مع كل طلب، وهذا سبب شيوع JWT تحديداً لواجهات برمجة التطبيقات عديمة الحالة.
+
+```
+eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI0MiIsImV4cCI6MTcwMDAwMDAwMH0.4f8s...
+       header                    payload                  signature
+```
+
+## تدفق رمز التفويض في OAuth 2.0
+
+المخطط وراء كل زر "سجّل الدخول عبر X" — يتيح لتطبيقك الحصول على رمز مُقيَّد النطاق للتصرف نيابة عن مستخدم، دون رؤية كلمة مروره على الإطلاق.
+
+<StepFlow title="تدفق رمز التفويض في OAuth 2.0" steps={oauthAuthCodeSteps} />
+
+## طالع أيضاً
+
+- **[تفويض واجهة برمجة التطبيقات](/ar/web-apis/api-authorization)** — ما المسموح لمتصل مُصادَق عليه فعلياً فعله.
+- **[تحديد المعدل](/ar/web-apis/rate-limiting)** — يُطبَّق عادة لكل مفتاح واجهة برمجة تطبيقات/رمز، لا لكل عنوان IP فقط.

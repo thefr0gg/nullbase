@@ -1,0 +1,54 @@
+---
+title: Index de base de données
+description: Comment une recherche passe d'un balayage de chaque ligne à un saut direct vers la réponse — et comment prouver, pas seulement supposer, qu'un index est réellement utilisé.
+category: Databases
+weight: 5
+interactive: true
+interactiveType: ["SqlPlayground"]
+---
+
+Sans index, trouver les lignes correspondant à une condition `WHERE` signifie vérifier chaque ligne de la table — un **balayage complet de table**. Un index est une structure de données séparée et triée (presque toujours un B-tree) qui associe les valeurs d'une colonne aux lignes qui les contiennent, permettant au moteur de sauter directement vers une correspondance au lieu de tout balayer. C'est exactement le même compromis que l'index d'un livre : parcourir chaque page à la recherche d'un sujet plutôt que d'aller directement au numéro de page que l'index vous a déjà donné.
+
+## Essayez-le — le prouver avec un vrai plan de requête
+
+Ce n'est pas une affirmation à prendre pour argent comptant — `EXPLAIN QUERY PLAN` demande à SQLite de vous montrer exactement comment il compte exécuter une requête, et le playground ci-dessous fait tourner du vrai SQLite. Les données pré-remplies ci-dessous construisent 1 000 lignes et placent un véritable index sur une colonne mais pas sur une autre, afin que vous puissiez comparer le plan d'une recherche indexée à celui d'une recherche non indexée sur la même table.
+
+<SqlPlayground
+  title="1,000-row table — indexed email, unindexed age"
+  schema={`
+CREATE TABLE users (id INTEGER PRIMARY KEY, email TEXT NOT NULL, age INTEGER NOT NULL);
+INSERT INTO users (id, email, age)
+WITH RECURSIVE seq(x) AS (SELECT 1 UNION ALL SELECT x + 1 FROM seq WHERE x < 1000)
+SELECT x, 'user' || x || '@example.com', 18 + (x % 50) FROM seq;
+CREATE INDEX idx_users_email ON users(email);
+`}
+  defaultQuery={`EXPLAIN QUERY PLAN SELECT * FROM users WHERE email = 'user500@example.com';`}
+/>
+
+Ce plan devrait indiquer quelque chose comme `SEARCH users USING INDEX idx_users_email (email=?)` — une recherche directe. Essayez maintenant la même chose sur la colonne sans index :
+
+```sql
+EXPLAIN QUERY PLAN SELECT * FROM users WHERE age = 30;
+```
+
+Celui-ci revient avec `SCAN users` — chacune des 1 000 lignes est vérifiée, parce que rien n'indique au moteur où se trouvent réellement les lignes où `age = 30`. Sur une table aussi petite, la différence est invisible pour un humain ; sur une table de 100 millions de lignes, c'est la différence entre une milliseconde et une requête qui expire.
+
+## Ce que coûte réellement un index
+
+Un index n'est pas gratuit — chaque `INSERT`, `UPDATE` ou `DELETE` sur une colonne indexée doit aussi mettre à jour la structure de données propre de l'index, et l'index lui-même occupe de l'espace disque supplémentaire. C'est pourquoi les index ne sont pas ajoutés à chaque colonne par défaut : un index qui accélère une requête de rapport rare mais ralentit un chemin d'écriture très sollicité peut être une perte nette. La règle générale est d'indexer les colonnes fréquemment recherchées, filtrées ou utilisées dans des jointures — pas chaque colonne qui *pourrait* simplement être recherchée.
+
+## Index composites et ordre des colonnes
+
+Un index peut couvrir plusieurs colonnes, et l'ordre compte — un index sur `(last_name, first_name)` peut servir efficacement une requête filtrant sur `last_name` seul, ou sur les deux colonnes ensemble, mais ne peut généralement pas servir efficacement une requête filtrant sur `first_name` seul, pour la même raison qu'un annuaire trié par nom de famille ne vous aide pas à trouver tout le monde ayant un prénom donné.
+
+```sql
+CREATE INDEX idx_name ON people(last_name, first_name);
+-- Fast: WHERE last_name = 'Hopper'
+-- Fast: WHERE last_name = 'Hopper' AND first_name = 'Grace'
+-- Slow (falls back to a scan): WHERE first_name = 'Grace'
+```
+
+## Voir aussi
+
+- **[SQL](/fr/databases/sql)** — les requêtes qu'un index accélère.
+- **[Normalisation des bases de données](/fr/databases/database-normalization)** — un schéma normalisé a souvent besoin d'index spécifiquement sur les colonnes de clé étrangère pour garder les jointures rapides, voir [Clés étrangères](/fr/databases/foreign-keys).

@@ -1,0 +1,62 @@
+---
+title: XML
+description: صيغة بيانات قائمة على العلامات، مطوّلة وصارمة وذاتية الوصف — المعيار قبل JSON، ولا تزال شائعة في أنظمة المؤسسات وصيغ المستندات.
+category: Data & Serialization
+weight: 1
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+يمثِّل XML (eXtensible Markup Language) البيانات المُهيكلة كعلامات مُسمَّاة ومتداخلة — أقرب في شكله إلى [HTML](/ar/web-platform/html) منه إلى [JSON](/ar/data-serialization/json)، بما أنه يستخدم نفس بنية الترميز. قبل أن يصبح JSON الافتراضي، كان XML صيغة تبادل البيانات المعيارية لواجهات برمجة تطبيقات الويب (SOAP، RSS، واجهات REST المبكرة تقريباً)؛ اليوم يبقى حياً بشكل رئيسي في أنظمة المؤسسات، وصيغ المستندات، والإعدادات.
+
+```xml
+<user id="42">
+  <name>Grace Hopper</name>
+  <active>true</active>
+  <roles>
+    <role>admin</role>
+    <role>editor</role>
+  </roles>
+</user>
+```
+
+## XML مقابل JSON
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "xml", label: "XML" },
+    { key: "json", label: "JSON" },
+  ]}
+  items={[
+    { id: "verbosity", label: "الإسهاب", color: "blue", columns: { xml: "كل قيمة تحتاج علامة فتح وإغلاق", json: "بنية قائمة على علامات الترقيم فقط — أقصر بكثير" } },
+    { id: "attrs", label: "السمات مقابل العناصر", color: "green", columns: { xml: "يمكن أن تعيش البيانات في سمات علامة أو في محتواها — طريقتان للتعبير عن الشيء نفسه", json: "طريقة واحدة: زوج مفتاح-قيمة، دائماً" } },
+    { id: "schema", label: "التحقق من المخطط", color: "purple", columns: { xml: "ناضج ومعياري (XSD) — مستخدم على نطاق واسع للتحقق من المستندات قبل معالجتها", json: "ممكن (JSON Schema) لكنه أقل اعتماداً عالمياً بكثير" } },
+    { id: "namespaces", label: "مساحات الأسماء", color: "orange", columns: { xml: "مدمجة — تسمح للمستندات بمزج مفردات من مصادر مختلفة دون تصادم", json: "لا يوجد مفهوم مماثل" } },
+    { id: "comments", label: "التعليقات", color: "default", columns: { xml: "مدعومة — <!-- ... -->", json: "غير صالحة إطلاقاً في JSON" } },
+  ]}
+/>
+
+## السمات مقابل العناصر
+
+يمكن التعبير عن نفس البيانات بطريقتَين مختلفتَين في XML، وهو مصدر غموض حقيقي لا يملكه JSON:
+
+```xml
+<user id="42" name="Grace Hopper" />
+<!-- vs. -->
+<user>
+  <id>42</id>
+  <name>Grace Hopper</name>
+</user>
+```
+
+لا إحداهما "أصح" من الأخرى — تختلف الأعراف حسب المشروع، وهذا بحد ذاته انتقاد شائع لـ XML مقارنة بطريقة JSON الوحيدة والواضحة لكتابة زوج مفتاح-قيمة.
+
+## أين لا يزال المعيار
+
+يبقى XML المعيار الفعلي، لا مجرد إرث قديم، في عدة أماكن: خدمات الويب SOAP (شائعة في تكاملات المؤسسات/المالية/الرعاية الصحية)، صيغ ملفات Microsoft Office وOpenDocument (ملف `.docx` هو أرشيف zip لملفات XML)، تغذيات RSS/Atom، وSVG (وهو XML، وليس صيغة صورة منفصلة).
+
+## طالع أيضاً
+
+- **[JSON](/ar/data-serialization/json)** — الصيغة التي حلّت محل XML لمعظم واجهات برمجة التطبيقات الجديدة.
+- **[YAML](/ar/data-serialization/yaml)** — خيار ثالث للبيانات المُهيكلة، محسَّن للتحرير البشري بدلاً من الصرامة الآلية.

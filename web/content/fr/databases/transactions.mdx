@@ -1,0 +1,56 @@
+---
+title: Transactions
+description: Regrouper plusieurs écritures pour qu'elles réussissent ou échouent ensemble — et les annuler toutes, pour de vrai, avec un rollback.
+category: Databases
+weight: 6
+interactive: true
+interactiveType: ["SqlPlayground"]
+---
+
+Une transaction regroupe plusieurs instructions en une seule unité : soit chaque instruction qu'elle contient prend effet, soit aucune ne le fait. L'exemple canonique est un transfert de fonds — soustraire d'un compte et ajouter à un autre doit se produire ensemble, car un plantage entre les deux étapes détruirait sinon de l'argent ou en créerait à partir de rien.
+
+## Essayez-le — un vrai rollback
+
+Ce n'est pas scripté — c'est un véritable `BEGIN` / `ROLLBACK` s'exécutant contre le vrai moteur SQLite, et les soldes des comptes reviennent réellement en arrière.
+
+<SqlPlayground
+  title="Funds transfer, rolled back"
+  schema={`CREATE TABLE accounts (id INTEGER PRIMARY KEY, owner TEXT NOT NULL, balance INTEGER NOT NULL);
+INSERT INTO accounts (id, owner, balance) VALUES (1, 'Alice', 1000), (2, 'Bob', 500);`}
+  defaultQuery={`BEGIN;
+UPDATE accounts SET balance = balance - 100 WHERE id = 1;
+UPDATE accounts SET balance = balance + 100 WHERE id = 2;
+SELECT * FROM accounts;
+ROLLBACK;`}
+/>
+
+Exécutez-la telle quelle : le `SELECT` du milieu montre le transfert ayant eu lieu — Alice descendue à 900, Bob monté à 600 — mais c'est *à l'intérieur* de la transaction encore ouverte. Cliquez maintenant à nouveau sur **Run query** avec juste `SELECT * FROM accounts;` — les soldes sont revenus à 1000/500, exactement comme si le transfert n'avait jamais eu lieu, parce que `ROLLBACK` a annulé chaque changement effectué par la transaction.
+
+Modifiez maintenant la requête en remplaçant `ROLLBACK` par `COMMIT`, et exécutez-la. Faites-la suivre d'un simple `SELECT * FROM accounts;` à nouveau — cette fois le transfert reste définitivement, parce qu'un commit rend chaque changement de la transaction durable.
+
+## Pourquoi le `SELECT` du milieu compte
+
+Une instruction exécutée *à l'intérieur* d'une transaction ouverte voit les changements non validés de cette transaction elle-même — c'est ce qui fait de « vérifier quelque chose, puis agir en conséquence, le tout dans une seule transaction » un pattern cohérent (vérifier qu'un solde est suffisant, puis le débiter, sans qu'une autre transaction ne s'immisce entre la vérification et le débit — voir la propriété d'isolation d'[ACID](/fr/databases/acid)).
+
+## Transactions explicites vs. implicites
+
+La plupart des clients de bases de données exécutent chaque instruction individuelle dans sa propre transaction implicite, sauf si vous en démarrez une explicitement avec `BEGIN` — un simple `UPDATE` sans `BEGIN`/`COMMIT` environnant est quand même transactionnel, c'est juste une transaction d'une seule instruction, validée automatiquement immédiatement. Entourer plusieurs instructions d'un `BEGIN` ... `COMMIT` explicite est ce qui est nécessaire pour rendre *plusieurs* instructions atomiques ensemble.
+
+## Savepoints — un rollback qui n'annule pas tout
+
+Un `SAVEPOINT` marque un point à l'intérieur d'une transaction vers lequel on peut revenir individuellement, sans annuler tout ce qui précède — utile pour une opération à plusieurs étapes où l'échec d'une sous-étape ne devrait pas nécessairement annuler toute la transaction :
+
+```sql
+BEGIN;
+UPDATE accounts SET balance = balance - 100 WHERE id = 1;
+SAVEPOINT before_bonus;
+UPDATE accounts SET balance = balance + 9999 WHERE id = 2; -- oops, wrong amount
+ROLLBACK TO before_bonus; -- undoes only the bonus, keeps the first update
+UPDATE accounts SET balance = balance + 100 WHERE id = 2;  -- correct amount
+COMMIT;
+```
+
+## Voir aussi
+
+- **[ACID](/fr/databases/acid)** — les quatre propriétés que les transactions existent pour fournir.
+- **[Clés étrangères](/fr/databases/foreign-keys)** — une violation de contrainte en cours de transaction est une raison de plus pour laquelle une transaction pourrait devoir faire un rollback.

@@ -1,0 +1,65 @@
+---
+title: RPC
+description: استدعِ طريقة مسمّاة بوسائط واحصل على نتيجة — أقدم وأكثر أشكال واجهة برمجة التطبيقات مباشرة.
+category: Web APIs
+weight: 2
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+RPC (Remote Procedure Call) هي أكثر الطرق مباشرةً لتشكيل واجهة برمجة تطبيقات: بدلاً من نمذجة الموارد وإعادة استخدام أفعال HTTP كما في [REST](/ar/web-apis/rest)، يستدعي العميل **طريقة مسمّاة** بوسائط معينة ويحصل على نتيجة — تماماً كما لو كان يستدعي دالة محلية، فقط عبر الشبكة.
+
+```
+call:   getUser({ id: 42 })
+result: { id: 42, name: "Grace Hopper", email: "grace@example.com" }
+```
+
+لا يوجد نقل ثابت تتطلبه RPC — توجد تطبيقات عبر HTTP+JSON العادي (JSON-RPC)، وبروتوكولات ثنائية (gRPC، المبنية على HTTP/2 وProtocol Buffers)، وصيغ أقدم (SOAP، XML-RPC). ما تشترك فيه هو الشكل: سمِّ طريقة، مرّر وسائط، احصل على نتيجة أو خطأ.
+
+## جرّبها
+
+<RequestPlayground protocol="rpc" defaultTarget="getUser" defaultBody={`{\n  "id": 42\n}`} />
+
+يُصدي هذا العرض التوضيحي اسم الطريقة والوسائط داخل مغلّف على شكل JSON-RPC-2.0 — خادم RPC حقيقي كان سيحل `getUser` مقابل طريقة مسجَّلة ويشغّلها فعلياً.
+
+## RPC مقابل REST مقابل GraphQL
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "shape", label: "شكل الطلب" },
+    { key: "endpoints", label: "نقاط النهاية" },
+  ]}
+  items={[
+    {
+      id: "rest",
+      label: "REST",
+      color: "blue",
+      columns: { shape: "فعل + رابط مورد", endpoints: "واحدة لكل مورد، أفعال معاد استخدامها" },
+    },
+    {
+      id: "graphql",
+      label: "GraphQL",
+      color: "purple",
+      columns: { shape: "استعلام يصف بالضبط الحقول المطلوبة", endpoints: "واحدة، لكل شيء" },
+    },
+    {
+      id: "rpc",
+      label: "RPC",
+      color: "orange",
+      columns: { shape: "اسم طريقة + وسائط", endpoints: "واحدة لكل طريقة (أو نقطة نهاية واحدة تُوجَّه باسم الطريقة)" },
+    },
+  ]}
+/>
+
+نمذجة "تحويل 50 دولاراً من الحساب A إلى الحساب B" مثال جيد على أين يناسب شكل RPC طبيعياً بينما لا يناسب REST: فهي ليست حقاً `PUT` أو `PATCH` على أي مورد واحد، إنها **إجراء (action)** — تقول `transferFunds({ from, to, amount })` بالضبط ما يحدث، بينما يضطر تصميم REST لابتكار مورد مصطنع (مثل "تحويل") فقط لإيجاد شيء يُرسَل إليه `POST`.
+
+## gRPC، بإيجاز
+
+gRPC هو نمط RPC الذي تستخدمه فعلياً معظم حركة مرور الخادم-إلى-الخادم في الإنتاج اليوم. يُعرِّف الطرق وأشكال الرسائل في ملف `.proto`، ويولّد كود عميل/خادم مُنمَّط في معظم اللغات الرئيسية من هذا الملف، وينقل الاستدعاءات كـ Protocol Buffers ثنائية عبر HTTP/2 — أصغر وأسرع في التحليل من JSON، على حساب عدم كونها قابلة للقراءة البشرية على السلك بالطريقة التي يكون بها طلب REST/JSON أو GraphQL كذلك.
+
+## طالع أيضاً
+
+- **[REST](/ar/web-apis/rest)** — البديل الموجَّه للموارد.
+- **[GraphQL](/ar/web-apis/graphql)** — أقرب إلى RPC منها إلى REST بالنسبة للطفرات، لكنها على شكل استعلام للقراءات.
+- **[إصدار واجهة برمجة التطبيقات](/ar/web-apis/api-versioning)** — تغيير شكل وسائط طريقة RPC تغيير جذري تماماً كتغيير شكل استجابة نقطة نهاية REST.

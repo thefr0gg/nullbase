@@ -1,0 +1,51 @@
+---
+title: URL Encoding
+description: L'encodage en pourcentage — échapper les caractères qu'une URL ne peut pas contenir en toute sécurité, pour qu'ils survivent au trajet sans être mal interprétés comme faisant partie de la structure de l'URL elle-même.
+category: Data & Serialization
+weight: 4
+interactive: true
+interactiveType: ["Codec"]
+---
+
+Une URL ne peut contenir en toute sécurité qu'un ensemble limité de caractères — lettres, chiffres, et une poignée de signes de ponctuation (`- _ . ~` et les caractères structurels `: / ? # [ ] @ ! $ & ' ( ) * + , ; =`, réservés à la syntaxe propre de l'URL). Tout le reste — un espace, un `&` à l'intérieur d'une valeur, du texte non-ASCII — doit être **encodé en pourcentage** : remplacé par `%` suivi de la valeur en hexadécimal de l'octet du caractère.
+
+```
+hello world     ->  hello%20world
+100% done       ->  100%25%20done
+café             ->  caf%C3%A9        (UTF-8 bytes, each percent-encoded)
+```
+
+## Essayez-le
+
+<Codec mode="url" defaultInput="hello world & more=100%" />
+
+## Pourquoi `&` et `=` comptent particulièrement
+
+Les chaînes de requête utilisent `&` pour séparer les paires clé-valeur et `=` pour séparer une clé de sa valeur — un `&` ou un `=` littéral *à l'intérieur* d'une valeur doit être encodé en pourcentage, sinon il est mal interprété comme de la structure plutôt que comme des données :
+
+```
+?comment=nice & tidy    -->  parsed as comment="nice ", " tidy"="" (broken)
+?comment=nice%20%26%20tidy  -->  parsed as comment="nice & tidy"  (correct)
+```
+
+C'est exactement la classe de bug que l'encodage `application/x-www-form-urlencoded` de [Form Data](/fr/data-serialization/form-data) existe pour prévenir systématiquement, plutôt que de laisser chaque valeur de formulaire être échappée à la main.
+
+## `+` signifie espace, parfois
+
+À l'intérieur d'une chaîne de requête ou d'un corps `application/x-www-form-urlencoded` spécifiquement, un `+` est un raccourci pour un espace — mais un `+` littéral ailleurs dans une URL signifie un signe plus littéral. Cette double signification est une source fréquente de bugs lorsque la même chaîne est décodée avec une hypothèse erronée sur le contexte dont elle provient.
+
+## `encodeURIComponent` vs. `encodeURI`
+
+JavaScript dispose de deux encodeurs intégrés aux portées différentes, et les confondre est une erreur courante :
+
+```js
+encodeURIComponent("a/b?c=d");  // "a%2Fb%3Fc%3Dd" — escapes EVERYTHING, safe for a single value
+encodeURI("https://x.com/a/b?c=d"); // "https://x.com/a/b?c=d" — leaves URL structure characters alone
+```
+
+`encodeURIComponent` est presque toujours le bon choix pour encoder une valeur unique (un paramètre de requête, un segment de chemin) qui sera insérée dans une URL plus large — `encodeURI` sert uniquement à encoder une chaîne qui est déjà une URL complète et valide.
+
+## Voir aussi
+
+- **[Base64](/fr/data-serialization/base64)** — un autre type d'encodage sûr pour le texte, pour des données binaires plutôt que pour la structure d'URL.
+- **[Form Data](/fr/data-serialization/form-data)** — le format qui s'appuie sur cet encodage pour chaque valeur de champ.

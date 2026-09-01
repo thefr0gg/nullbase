@@ -1,0 +1,65 @@
+---
+title: RPC
+description: Appeler une méthode nommée avec des arguments et récupérer un résultat — la forme la plus ancienne et la plus directe que puisse prendre une API.
+category: Web APIs
+weight: 2
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+RPC (Remote Procedure Call) est la manière la plus directe de structurer une API : au lieu de modéliser des ressources et de réutiliser des verbes HTTP comme [REST](/fr/web-apis/rest), un client appelle une **méthode nommée** avec des arguments et récupère un résultat — comme s'il appelait une fonction locale, simplement via le réseau.
+
+```
+call:   getUser({ id: 42 })
+result: { id: 42, name: "Grace Hopper", email: "grace@example.com" }
+```
+
+RPC n'impose aucun transport fixe — des implémentations existent sur du HTTP+JSON pur (JSON-RPC), des protocoles binaires (gRPC, bâti sur HTTP/2 et Protocol Buffers), et des formats plus anciens (SOAP, XML-RPC). Ce qu'ils partagent, c'est la forme : nommer une méthode, passer des arguments, récupérer un résultat ou une erreur.
+
+## Essayez
+
+<RequestPlayground protocol="rpc" defaultTarget="getUser" defaultBody={`{\n  "id": 42\n}`} />
+
+Cette démo renvoie en écho le nom de la méthode et les paramètres à l'intérieur d'une enveloppe au format JSON-RPC-2.0 — un vrai serveur RPC résoudrait `getUser` contre une méthode enregistrée et l'exécuterait réellement.
+
+## RPC vs REST vs GraphQL
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "shape", label: "Forme de la requête" },
+    { key: "endpoints", label: "Endpoints" },
+  ]}
+  items={[
+    {
+      id: "rest",
+      label: "REST",
+      color: "blue",
+      columns: { shape: "Verbe + URL de ressource", endpoints: "Un par ressource, verbes réutilisés" },
+    },
+    {
+      id: "graphql",
+      label: "GraphQL",
+      color: "purple",
+      columns: { shape: "Une requête décrivant les champs exacts voulus", endpoints: "Un seul, pour tout" },
+    },
+    {
+      id: "rpc",
+      label: "RPC",
+      color: "orange",
+      columns: { shape: "Nom de méthode + arguments", endpoints: "Un par méthode (ou un endpoint qui route par nom de méthode)" },
+    },
+  ]}
+/>
+
+Modéliser « transférer 50 $ du compte A vers le compte B » est un bon exemple d'un cas où la forme de RPC s'intègre naturellement là où celle de REST ne le fait pas : ce n'est pas vraiment un `PUT` ou un `PATCH` sur une seule ressource, c'est une **action** — `transferFunds({ from, to, amount })` dit exactement ce qui se passe, là où une conception REST doit inventer une ressource artificielle (comme un « transfert ») juste pour avoir quelque chose sur lequel faire un `POST`.
+
+## gRPC, en bref
+
+gRPC est le style RPC que la majorité du trafic backend-à-backend en production utilise réellement aujourd'hui. Il définit les méthodes et formes de message dans un fichier `.proto`, génère du code client/serveur typé dans la plupart des langages majeurs à partir de ce fichier, et transporte les appels en Protocol Buffers binaires sur HTTP/2 — plus petit et plus rapide à parser que JSON, au prix de ne pas être lisible sur le fil comme le sont une requête REST/JSON ou GraphQL.
+
+## Voir aussi
+
+- **[REST](/fr/web-apis/rest)** — l'alternative orientée ressource.
+- **[GraphQL](/fr/web-apis/graphql)** — plus proche de RPC que de REST pour les mutations, mais structuré en requête pour les lectures.
+- **[Versionnage d'API](/fr/web-apis/api-versioning)** — le changement de forme des arguments d'une méthode RPC est un changement cassant exactement comme le changement de forme de la réponse d'un endpoint REST.

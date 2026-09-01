@@ -1,0 +1,40 @@
+---
+title: Webhooks
+description: En lugar de que tú le preguntes al servidor "¿ya sucedió?", el servidor te llama de vuelta cuando sucede.
+category: Web APIs
+weight: 3
+interactive: true
+interactiveType: ["RequestPlayground", "StepFlow"]
+---
+
+import { webhookDeliverySteps } from "./webhooks-steps";
+
+La mayor parte de lo que cubre esta sección hasta ahora es un cliente llamando a un servidor. Un webhook invierte eso: el servidor te llama a **ti** — un `POST` HTTP a una URL que registraste de antemano, enviado cada vez que sucede algún evento del otro lado. En lugar de preguntar "¿este pago ya se completó?" cada pocos segundos, registras una URL una vez y te avisan en el momento en que se completa.
+
+## Entrega, paso a paso
+
+<StepFlow title="Entrega de webhook" steps={webhookDeliverySteps} />
+
+## Pruébalo recibiendo uno
+
+El playground de abajo tiene la forma de tu endpoint recibiendo un webhook: cualquier header y payload que envíes obtiene de vuelta un eco `received: true`, igual que un receptor real devolvería un `2xx` para confirmar la entrega.
+
+<RequestPlayground
+  protocol="webhook"
+  defaultTarget="/hooks/payments"
+  defaultHeaders={"X-Signature: sha256=4a1f9c...\nContent-Type: application/json"}
+  defaultBody={`{\n  "event": "payment.succeeded",\n  "id": "pay_123",\n  "amount": 4200\n}`}
+/>
+
+## Verificación de firma
+
+Cualquiera puede enviar un `POST` a una URL pública. Los remitentes de webhooks demuestran que la solicitud realmente vino de ellos firmando el payload en crudo con un secreto compartido (usualmente HMAC-SHA256) y enviando la firma en un header. Tu receptor recalcula la misma firma sobre los mismos bytes y rechaza la solicitud si no coinciden — este es el equivalente en webhooks de la [Autenticación de API](/es/web-apis/api-authentication).
+
+## Los reintentos significan duplicados
+
+Si tu endpoint es lento, está caído, o da errores, el remitente reintenta — lo que significa que el mismo evento puede llegar dos veces. Trata a cada manejador de webhooks como **idempotente**: almacena el ID del evento que ya has procesado y omite cualquiera que ya hayas visto. Mira [Idempotencia](/es/web-apis/idempotency) para el mismo patrón aplicado a solicitudes salientes en lugar de entrantes.
+
+## Ver también
+
+- **[WebSockets](/es/web-apis/websockets)** — para cuando necesites comunicación bidireccional y continua en lugar de notificaciones de eventos puntuales.
+- **[Server-Sent Events](/es/web-apis/server-sent-events)** — una conexión persistente que el *cliente* abre, si hacer polling a un receptor de webhooks no es una opción (p. ej. desde un navegador).

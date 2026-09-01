@@ -1,0 +1,28 @@
+---
+title: Bases de données
+description: Comment les données sont réellement stockées, interrogées et maintenues cohérentes — SQL, moteurs de bases de données réels, index, transactions et conception de schéma.
+category: Databases
+weight: 4
+---
+
+Chaque API dans [Web APIs](/fr/web-apis) doit persister des données quelque part, et chaque payload sérialisé dans [Data & Serialization](/fr/data-serialization) commence généralement sa vie comme une ligne de base de données. Cette section couvre comment ce stockage fonctionne réellement — et contrairement à la plupart des playgrounds de ce site, plusieurs pages ici font tourner une **véritable base de données SQLite embarquée, compilée en WebAssembly, directement dans votre navigateur** — exécution SQL authentique, vrais messages d'erreur, vrais plans de requête, rien de scripté.
+
+## SQL et moteurs de bases de données
+
+- **[SQL](/fr/databases/sql)** — le langage de requête que parle presque toute base de données relationnelle.
+- **[SQLite](/fr/databases/sqlite)** — une base de données entière dans un seul fichier, et ce qui fait tourner les playgrounds de cette page.
+- **[PostgreSQL](/fr/databases/postgresql)** — la référence open-source pour les charges de travail relationnelles sérieuses.
+- **[MySQL](/fr/databases/mysql)** — l'autre base de données relationnelle open-source de longue date.
+- **[NoSQL](/fr/databases/nosql)** — stores documents, clé-valeur, colonnes et graphes — quand la modélisation relationnelle ne convient pas.
+
+## Rendre les requêtes rapides et sûres
+
+- **[Index de base de données](/fr/databases/database-indexes)** — comment une recherche passe d'un balayage complet à un saut direct vers la réponse.
+- **[Transactions](/fr/databases/transactions)** — regrouper plusieurs écritures pour qu'elles réussissent ou échouent ensemble.
+- **[ACID](/fr/databases/acid)** — les quatre garanties qu'une transaction est censée vous offrir.
+
+## Concevoir un schéma
+
+- **[Normalisation des bases de données](/fr/databases/database-normalization)** — structurer les tables pour éviter les données dupliquées et incohérentes.
+- **[Clés étrangères](/fr/databases/foreign-keys)** — la contrainte qui maintient l'honnêteté entre tables liées.
+- **[Migrations de base de données](/fr/databases/database-migrations)** — modifier en toute sécurité un schéma déjà en production.

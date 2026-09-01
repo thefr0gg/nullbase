@@ -1,0 +1,24 @@
+---
+title: Données & Sérialisation
+description: Les formats dans lesquels les données voyagent réellement — transformer des données structurées en octets sur le fil, et inversement.
+category: Data & Serialization
+weight: 3
+---
+
+Chaque requête et réponse dans les [API Web](/fr/web-apis) transporte des données sous forme d'octets — un objet JavaScript, un formulaire, un fichier, tout doit être transformé en flux d'octets pour voyager sur le réseau, puis retransformé en données structurées à l'autre bout. Cette section couvre les formats et encodages qui rendent cette traduction possible.
+
+## Formats de données structurées
+
+- **[JSON](/fr/data-serialization/json)** — le format par défaut pour presque toutes les API modernes.
+- **[XML](/fr/data-serialization/xml)** — verbeux, strict, et toujours omniprésent dans les systèmes plus anciens et d'entreprise.
+- **[YAML](/fr/data-serialization/yaml)** — convivial pour l'humain, basé sur l'indentation — surtout un format de fichier de configuration aujourd'hui.
+
+## Soumettre et encoder des données
+
+- **[Form Data](/fr/data-serialization/form-data)** — comment les champs d'un formulaire HTML sont réellement encodés pour la soumission.
+- **[URL Encoding](/fr/data-serialization/url-encoding)** — l'échappement des caractères qu'une URL ne peut pas contenir en toute sécurité.
+- **[Base64](/fr/data-serialization/base64)** — représenter des données binaires sous forme de texte brut.
+
+## Étiqueter les données
+
+- **[MIME Types](/fr/data-serialization/mime-types)** — indiquer à l'autre partie quel type de données il s'agit réellement.

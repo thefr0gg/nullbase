@@ -1,0 +1,39 @@
+---
+title: Autenticación
+description: Verificar que alguien es quien dice ser — los factores que pueden probarlo, y por qué la autenticación es una pregunta distinta de la autorización.
+category: Security
+weight: 0
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+La **autenticación** responde exactamente a una pregunta: *¿es realmente quien dice ser?* Es fácil confundirla con la [autorización](/es/security/authorization) ("qué puede hacer esta identidad") porque suelen ocurrir una tras otra, pero son independientes — un sistema puede autenticar a alguien perfectamente y aun así negarle el acceso a algo, y viceversa, una comprobación de autorización rota puede filtrar datos a un usuario perfectamente autenticado de forma legítima.
+
+## Los tres factores
+
+La autenticación prueba identidad con uno o más de tres tipos fundamentalmente distintos de evidencia:
+
+<ItemExplorer
+  title="Factores de Autenticación"
+  layout="table"
+  tableColumns={[{ key: "example", label: "Ejemplo" }, { key: "weakness", label: "Debilidad" }]}
+  items={[
+    { id: "know", label: "Algo que sabes", color: "blue", columns: { example: "Contraseña, PIN, pregunta de seguridad", weakness: "Puede ser víctima de phishing, adivinada, o filtrada en una brecha en otro sitio y reutilizada (relleno de credenciales)." } },
+    { id: "have", label: "Algo que tienes", color: "green", columns: { example: "Teléfono (SMS/app autenticadora), llave de seguridad física, tarjeta inteligente", weakness: "Puede perderse, ser robada, o (en el caso de SMS) interceptada mediante un SIM-swap." } },
+    { id: "are", label: "Algo que eres", color: "purple", columns: { example: "Huella dactilar, reconocimiento facial", weakness: "No se puede rotar si se ve comprometido — solo tienes un rostro." } },
+  ]}
+/>
+
+## Autenticación multifactor
+
+**MFA** requiere evidencia de al menos dos categorías de factores *diferentes* — una contraseña más un código de una app autenticadora, no una contraseña más una pregunta de seguridad, ya que ambas son "algo que sabes" y un atacante de phishing que obtiene una probablemente obtenga también la otra. Por eso MFA eleva de verdad la exigencia: comprometer dos categorías independientes de evidencia es mucho más difícil que comprometer una, aunque sea fuerte.
+
+## Qué significa realmente "sesión iniciada" después
+
+La autenticación en sí misma es un único momento — el éxito de la solicitud de inicio de sesión. Seguir siendo reconocido en cada solicitud posterior es un mecanismo separado, típicamente [sesiones](/es/security/sessions) o un [JWT](/es/security/jwt); la autenticación prueba identidad una vez, y uno de esos mecanismos lleva esa prueba hacia adelante.
+
+## Ver también
+
+- **[Autorización](/es/security/authorization)** — la pregunta separada sobre qué puede hacer una identidad autenticada.
+- **[Hashing de contraseñas](/es/security/password-hashing)** — cómo se almacena de forma segura el factor "algo que sabes".
+- **[OAuth 2.0](/es/security/oauth-2-0)** — autenticación y acceso delegados sin compartir directamente una contraseña.

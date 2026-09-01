@@ -1,0 +1,37 @@
+---
+title: CORS
+description: La règle imposée par le navigateur qui empêche le script d'un site de lire librement les réponses d'un autre site — politique de même origine, requêtes preflight, et les en-têtes qui l'assouplissent.
+category: Security
+weight: 9
+interactive: true
+interactiveType: ["StepFlow"]
+---
+
+Les navigateurs appliquent une **politique de même origine (same-origin policy)** : un script s'exécutant sur `a.example` ne peut pas lire la réponse d'une requête vers `b.example` à moins que `b.example` ne l'autorise explicitement. **CORS (Cross-Origin Resource Sharing)** est le mécanisme de cette permission explicite — un ensemble d'en-têtes de réponse qu'un serveur envoie pour indiquer au navigateur quelles autres origines sont autorisées à lire ses réponses.
+
+## La requête part quand même — c'est la lecture de la réponse qui est bloquée
+
+Une idée reçue courante : CORS n'empêche pas l'envoi de la requête cross-origin. La requête part ; le serveur peut la traiter. Ce que CORS bloque, c'est le fait que *le navigateur restitue la réponse au script demandeur* si le serveur n'a pas explicitement autorisé cette origine. C'est un mécanisme différent du [CSRF](/fr/security/csrf), qui concerne le déclenchement d'une requête non désirée en premier lieu, et non la lecture de sa réponse.
+
+## Requêtes simples contre preflight
+
+<StepFlow
+  title="Une requête cross-origin avec preflight"
+  steps={[
+    { actor: "Navigateur", title: "Détecte une requête non « simple »", description: "Une requête utilisant une méthode autre que GET/POST/HEAD, ou des en-têtes personnalisés (comme Authorization), ne qualifie pas comme « simple » — le navigateur envoie d'abord une vérification preflight, avant la vraie requête.", detail: "OPTIONS /api/data\nOrigin: https://app.example.com\nAccess-Control-Request-Method: PUT" },
+    { actor: "Serveur", title: "Le serveur répond avec ce qu'il autorise", description: "Le serveur répond au preflight en déclarant quelles origines, méthodes et en-têtes il permet — sans jamais exécuter le vrai gestionnaire de requête.", detail: "Access-Control-Allow-Origin: https://app.example.com\nAccess-Control-Allow-Methods: GET, PUT, POST" },
+    { actor: "Navigateur", title: "Le navigateur décide de continuer ou non", description: "Si la réponse au preflight autorise cette origine et cette méthode, le navigateur envoie la vraie requête. Sinon, il ne l'envoie jamais du tout — le vrai PUT n'atteint jamais le serveur.", detail: "" },
+    { actor: "Serveur", title: "Vraie requête, vraie réponse", description: "En supposant que le preflight soit passé, la vraie requête est envoyée et répondue normalement, avec le même en-tête Access-Control-Allow-Origin répété pour que le navigateur sache qu'il est toujours sûr d'exposer la réponse.", detail: "PUT /api/data -> 200 OK\nAccess-Control-Allow-Origin: https://app.example.com" },
+  ]}
+/>
+
+Un simple `GET` sans en-tête personnalisé qualifie généralement comme « simple » et évite le preflight — le navigateur applique quand même `Access-Control-Allow-Origin` sur la réponse, il n'a simplement pas besoin de demander la permission au préalable.
+
+## `Access-Control-Allow-Origin: *` est un vrai compromis
+
+Un joker autorise n'importe quelle origine à lire la réponse — acceptable pour une API publique et non authentifiée, mais dangereux combiné à `Access-Control-Allow-Credentials: true`, que les navigateurs refusent précisément pour cette raison de combiner avec un joker : cela permettrait à n'importe quel site sur Internet de lire une réponse faite avec les cookies de la victime attachés.
+
+## Voir aussi
+
+- **[CSRF](/fr/security/csrf)** — un problème cross-origin connexe mais distinct : envoyer une requête non désirée, plutôt que lire sa réponse.
+- **[Content Security Policy](/fr/security/content-security-policy)** — une autre restriction basée sur des en-têtes imposée par le navigateur, régissant ce qu'une page peut charger plutôt que ce qu'elle peut lire à travers les origines.

@@ -1,0 +1,38 @@
+---
+title: DHCP
+description: Comment un appareil obtient une adresse IP, un masque de sous-réseau et une passerelle automatiquement dès qu'il rejoint un réseau — sans configuration manuelle.
+category: Networking
+weight: 5
+interactive: true
+interactiveType: ["StepFlow"]
+---
+
+**DHCP (Dynamic Host Configuration Protocol)** est la raison pour laquelle un ordinateur portable ou un téléphone obtient une adresse IP fonctionnelle dès qu'il rejoint un réseau Wi-Fi, sans que personne n'ait à saisir une adresse à la main. Un serveur DHCP sur le réseau distribue des adresses depuis un pool configuré, ainsi que le masque de sous-réseau, la passerelle par défaut et le serveur DNS dont l'appareil a besoin pour communiquer réellement.
+
+## Le processus DORA
+
+Un appareil sans adresse ne peut pas être joint directement, donc DHCP démarre par une diffusion (broadcast) — cet échange est traditionnellement retenu par l'acronyme **DORA** :
+
+<StepFlow
+  title="DHCP : DORA"
+  steps={[
+    { actor: "Client", title: "Discover", description: "Le nouvel appareil diffuse un DHCPDISCOVER à tout le réseau local — il n'a pas encore d'IP, donc il ne peut adresser personne directement.", detail: "Client (0.0.0.0) -> broadcast (255.255.255.255)" },
+    { actor: "Serveur", title: "Offer", description: "Tout serveur DHCP qui entend la diffusion répond par un DHCPOFFER, proposant une adresse IP disponible et les conditions du bail.", detail: "Server -> broadcast: offered IP, lease time, subnet mask" },
+    { actor: "Client", title: "Request", description: "Le client diffuse un DHCPREQUEST acceptant explicitement une offre — en diffusion à nouveau, pour que tout autre serveur ayant fait une offre sache qu'elle a été déclinée.", detail: "Client -> broadcast: \"I accept this offer\"" },
+    { actor: "Serveur", title: "Acknowledge", description: "Le serveur choisi confirme par un DHCPACK, finalisant le bail. Le client peut maintenant utiliser l'adresse — la configuration est terminée.", detail: "Server -> Client: DHCPACK, lease confirmed" },
+  ]}
+/>
+
+## Les baux ne sont pas permanents
+
+Une adresse attribuée est un **bail (lease)**, pas une concession permanente — elle expire après une durée configurée, et le client doit la renouveler avant cette échéance (typiquement à 50 % du temps du bail) ou risquer de perdre l'adresse au profit d'un autre appareil. C'est ce qui permet à un pool DHCP de servir bien plus d'appareils dans le temps qu'il n'a d'adresses, à mesure que les ordinateurs portables et les téléphones vont et viennent.
+
+## Ce que DHCP distribue d'autre
+
+Au-delà de l'adresse IP elle-même, une réponse DHCP inclut généralement le masque de sous-réseau (pour que l'appareil sache quelles adresses sont locales ou nécessitent un routage), la passerelle par défaut (où envoyer le trafic quittant le réseau local), et une ou plusieurs adresses de serveur DNS — sans lesquelles un appareil pourrait joindre des IP mais ne pourrait résoudre aucun nom de domaine.
+
+## Voir aussi
+
+- **[Adressage réseau](/fr/networking/network-addressing)** — le masque de sous-réseau qu'inclut un bail DHCP, expliqué.
+- **[NAT](/fr/networking/nat)** — l'adresse privée que DHCP distribue n'est généralement utilisable qu'après que NAT l'a traduite.
+- **[UDP](/fr/networking/udp)** — DHCP fonctionne au-dessus d'UDP, puisqu'un appareil ne peut pas ouvrir de connexion TCP avant d'avoir une adresse.

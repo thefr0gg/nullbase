@@ -1,0 +1,52 @@
+---
+title: Cookies
+description: Un pequeño fragmento de estado que el servidor le pide al navegador que guarde y reenvíe automáticamente — el mecanismo detrás de las sesiones con inicio de sesión.
+category: Web Platform
+weight: 5
+interactive: true
+interactiveType: ["RequestPlayground", "ItemExplorer"]
+---
+
+HTTP en sí mismo no tiene estado — consulta la restricción de ausencia de estado de [REST](/es/web-apis/rest) — pero una sesión de navegador normalmente necesita sentirse con estado ("sigues con la sesión iniciada"). Las cookies son el mecanismo: una respuesta del servidor puede incluir un encabezado `Set-Cookie` pidiéndole al navegador que almacene un pequeño dato, y el navegador lo reenvía automáticamente en cada solicitud futura a ese mismo origen, sin código adicional en ninguno de los dos lados.
+
+## Pruébalo
+
+`/api/login` en la API simulada de este sitio devuelve un encabezado `Set-Cookie` — envía la solicitud y mira la pestaña Headers de la respuesta.
+
+<RequestPlayground protocol="http" defaultMethod="POST" defaultTarget="/api/login" defaultHeaders="Content-Type: application/json" defaultBody={`{\n  "email": "demo@nullbase.wiki",\n  "password": "..."\n}`} />
+
+```http
+Set-Cookie: session=abc123; HttpOnly; Secure; SameSite=Lax; Max-Age=3600; Path=/
+```
+
+## Atributos
+
+Cada atributo de un encabezado `Set-Cookie` limita exactamente cuándo y cómo se le permite al navegador reenviar la cookie — equivocarse con ellos es uno de los errores de seguridad web más comunes en la práctica.
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "controls", label: "Controla" },
+  ]}
+  items={[
+    { id: "httponly", label: "HttpOnly", color: "blue", columns: { controls: "Bloquea que JavaScript (document.cookie) lea esta cookie — la defensa principal contra el robo de una cookie de sesión vía XSS." } },
+    { id: "secure", label: "Secure", color: "green", columns: { controls: "Solo se envía por HTTPS, nunca por HTTP plano — evita que se filtre a alguien escuchando en la red." } },
+    { id: "samesite", label: "SameSite", color: "purple", columns: { controls: "Si la cookie se envía en solicitudes entre sitios. Strict = nunca; Lax = solo en navegación de nivel superior (por defecto en navegadores modernos); None = siempre, pero requiere Secure." } },
+    { id: "maxage", label: "Max-Age / Expires", color: "orange", columns: { controls: "Cuánto tiempo persiste la cookie. Si se omite por completo -> una «cookie de sesión», que se borra cuando se cierra el navegador." } },
+    { id: "domain", label: "Domain", color: "default", columns: { controls: "A qué hosts se envía la cookie — si se omite, por defecto es exactamente el host que la estableció (sin subdominios)." } },
+    { id: "path", label: "Path", color: "default", columns: { controls: "Para qué rutas de URL en ese host se envía la cookie — la mayoría de las cookies simplemente usan Path=/, es decir, en todas partes." } },
+  ]}
+/>
+
+## SameSite y CSRF
+
+`SameSite=Lax` (el valor por defecto en los navegadores modernos cuando no se especifica) es específicamente una defensa contra CSRF (Cross-Site Request Forgery): sin él, un sitio malicioso podría hacer que tu navegador enviara una solicitud a un sitio en el que tienes la sesión iniciada, y tu cookie de sesión viajaría automáticamente, autenticando una acción que nunca pretendiste. `SameSite=Strict` cierra esto aún más pero rompe un caso legítimo común (hacer clic en un enlace de un correo electrónico directamente a una página con sesión iniciada).
+
+## Cookies de origen propio frente a de terceros
+
+Una cookie es "de origen propio" (first-party) si la establece el sitio que aparece en la barra de direcciones del navegador, y "de terceros" (third-party) si la establece un dominio diferente incrustado en esa página (una red publicitaria, un script de analítica presente en muchos sitios a la vez) — las cookies de terceros son lo que permite a una red rastrear a un usuario a través de sitios no relacionados entre sí, razón por la cual los navegadores han ido restringiéndolas o bloqueándolas progresivamente por defecto.
+
+## Ver también
+
+- **[Web Storage](/es/web-platform/web-storage)** — almacenamiento solo del lado del cliente que, a diferencia de las cookies, nunca se envía al servidor automáticamente.
+- **[Autenticación de API](/es/web-apis/api-authentication)** — las cookies son una de varias formas de transportar una credencial de identidad; los tokens Bearer son la otra forma común.

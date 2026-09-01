@@ -1,0 +1,28 @@
+---
+title: Bases de datos
+description: Cómo se almacenan, consultan y mantienen consistentes los datos en realidad — SQL, motores de bases de datos reales, índices, transacciones, y diseño de esquemas.
+category: Databases
+weight: 4
+---
+
+Toda API en [Web APIs](/es/web-apis) tiene que persistir datos en algún lugar, y todo payload serializado en [Datos y serialización](/es/data-serialization) normalmente empieza su vida como una fila de una base de datos. Esta sección cubre cómo funciona realmente ese almacenamiento — y a diferencia de la mayoría de los playgrounds de este sitio, varias páginas aquí ejecutan una **base de datos SQLite real y embebida, compilada a WebAssembly, directamente en tu navegador** — ejecución SQL genuina, mensajes de error genuinos, planes de consulta genuinos, nada guionizado.
+
+## SQL y motores de bases de datos
+
+- **[SQL](/es/databases/sql)** — el lenguaje de consulta que habla prácticamente toda base de datos relacional.
+- **[SQLite](/es/databases/sqlite)** — una base de datos completa en un solo archivo, y lo que impulsa los playgrounds de esta página.
+- **[PostgreSQL](/es/databases/postgresql)** — el estándar de código abierto para cargas de trabajo relacionales serias.
+- **[MySQL](/es/databases/mysql)** — la otra base de datos relacional de código abierto de larga trayectoria.
+- **[NoSQL](/es/databases/nosql)** — almacenes de documentos, clave-valor, columnas y grafos — cuando el modelado relacional no encaja.
+
+## Hacer las consultas rápidas y seguras
+
+- **[Índices de bases de datos](/es/databases/database-indexes)** — cómo una búsqueda pasa de escanear todo a saltar directamente a la respuesta.
+- **[Transacciones](/es/databases/transactions)** — agrupar varias escrituras para que tengan éxito o fallen juntas.
+- **[ACID](/es/databases/acid)** — las cuatro garantías que se supone que una transacción debe darte.
+
+## Diseñar un esquema
+
+- **[Normalización de bases de datos](/es/databases/database-normalization)** — estructurar tablas para evitar datos duplicados e inconsistentes.
+- **[Claves foráneas](/es/databases/foreign-keys)** — la restricción que mantiene honestas a las tablas relacionadas.
+- **[Migraciones de bases de datos](/es/databases/database-migrations)** — cambiar un esquema que ya está en producción, de forma segura.

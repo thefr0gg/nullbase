@@ -1,0 +1,36 @@
+---
+title: Sécurité
+description: Prouver qui est quelqu'un, décider ce qu'il a le droit de faire, et fermer les failles les plus courantes par lesquelles les applications web se font exploiter.
+category: Security
+weight: 6
+---
+
+Chaque requête qui porte une [session](/fr/security/sessions), un [JWT](/fr/security/jwt), ou un en-tête `Authorization` venant de [HTTP](/fr/web-fundamentals/http) répond en fin de compte à l'une de deux questions : *qui est-ce*, et *qu'a-t-il le droit de faire*. Cette section couvre la manière dont ces questions trouvent une réponse sûre, et les façons précises dont les applications s'y prennent mal.
+
+## Prouver son identité
+
+- **[Authentification](/fr/security/authentication)** — vérifier que quelqu'un est bien celui qu'il prétend être.
+- **[Hachage de mots de passe](/fr/security/password-hashing)** — stocker un mot de passe de sorte que même une base de données volée ne le révèle pas.
+- **[Sessions](/fr/security/sessions)** — rester reconnu à travers les requêtes après une seule connexion.
+- **[JWT](/fr/security/jwt)** — un jeton signé et autoporteur qui transporte une identité sans magasin de sessions côté serveur.
+- **[OAuth 2.0](/fr/security/oauth-2-0)** — permettre à un service d'accorder à un autre un accès limité, sans jamais transmettre de mot de passe.
+
+## Décider de ce qui est autorisé
+
+- **[Autorisation](/fr/security/authorization)** — décider ce qu'une identité authentifiée peut réellement faire.
+
+## Vulnérabilités courantes
+
+- **[XSS](/fr/security/xss)** — injecter un script dans une page consultée par un autre utilisateur.
+- **[CSRF](/fr/security/csrf)** — piéger un navigateur déjà connecté pour qu'il envoie une requête qu'il n'avait pas l'intention d'envoyer.
+- **[Injection SQL](/fr/security/sql-injection)** — glisser du SQL dans une requête via une entrée non assainie.
+
+## Frontières imposées par le navigateur
+
+- **[CORS](/fr/security/cors)** — la règle qui empêche le script d'un site de lire librement les réponses d'un autre site.
+- **[Content Security Policy](/fr/security/content-security-policy)** — un en-tête qui indique au navigateur ce qu'une page a même le droit de charger ou d'exécuter.
+
+## Sécuriser les tuyaux eux-mêmes
+
+- **[Certificats TLS](/fr/security/tls-certificates)** — comment un navigateur sait qu'il parle réellement au serveur qu'il croit joindre.
+- **[Gestion des secrets](/fr/security/secrets-management)** — garder les clés d'API et les identifiants hors du code source et du contrôle de version.

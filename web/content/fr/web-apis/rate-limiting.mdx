@@ -1,0 +1,45 @@
+---
+title: Limitation de débit
+description: Protéger un service d'être submergé — par un client incontrôlé, un bug, ou une attaque — en plafonnant le nombre de requêtes qu'il acceptera.
+category: Web APIs
+weight: 9
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+Une limite de débit plafonne le nombre de requêtes qu'un client peut faire dans une fenêtre de temps donnée. Sans elle, un seul client mal comporté — une boucle de réessai sans backoff, un scraper, une véritable attaque — peut consommer assez de capacité pour dégrader le service pour tout le monde. C'est l'équivalent au niveau API d'un disjoncteur : un petit nombre de clients reçoit un `429` pour que le reste continue de fonctionner.
+
+## Essayez
+
+L'endpoint simulé `/api/rate-limited` ci-dessous autorise 5 requêtes par fenêtre de 30 secondes (suivies pour toute votre session, pas par requête) — cliquez sur Envoyer plusieurs fois et observez le header `X-RateLimit-Remaining` décompter, puis basculer vers un vrai `429`.
+
+<RequestPlayground protocol="http" defaultTarget="/api/rate-limited" defaultHeaders="Accept: application/json" />
+
+Une vraie réponse limitée en débit ressemble à ceci :
+
+```http
+HTTP/1.1 429 Too Many Requests
+X-RateLimit-Limit: 5
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1700000030
+Retry-After: 18
+
+{ "error": "Too Many Requests", "message": "Rate limit exceeded. Retry in 18s." }
+```
+
+`Retry-After` indique à un client bien élevé exactement combien de temps attendre avant de réessayer — l'ignorer et réessayer immédiatement ne fait qu'étendre sa propre pénalité.
+
+## Sur quoi indexer la limite
+
+Une limite peut être délimitée de plusieurs façons différentes, souvent combinées : par adresse IP (capte l'abus anonyme, mais pénalise ensemble tout le monde derrière un NAT/proxy partagé), par clé API ou token d'accès (le choix le plus courant pour les API authentifiées — voir [Authentification API](/fr/web-apis/api-authentication)), par endpoint (un endpoint de recherche coûteux pourrait avoir une limite plus stricte qu'un simple health check), ou globalement (protéger l'ensemble du service quel que soit le demandeur).
+
+## Algorithmes courants
+
+- **Fenêtre fixe** — compte les requêtes dans la fenêtre calendaire actuelle (par ex. cette minute) ; simple, mais autorise une rafale juste à la frontière de la fenêtre (2x la limite autour de l'instant de frontière).
+- **Fenêtre glissante** — compte sur une fenêtre roulante se terminant « maintenant » plutôt qu'une frontière d'horloge fixe ; lisse le problème de rafale de frontière au prix d'un peu plus d'état à suivre.
+- **Token bucket (seau à jetons)** — un seau contient des jetons qui se rechargent à un rythme constant ; chaque requête coûte un jeton, et le seau peut contenir une petite rafale de jetons accumulés. C'est ce qu'utilisent réellement la plupart des limiteurs de débit en production — cela tolère gracieusement les courtes rafales tout en imposant une moyenne à long terme.
+
+## Voir aussi
+
+- **[Authentification API](/fr/web-apis/api-authentication)** — généralement ce sur quoi une limite par client est réellement indexée.
+- **[Idempotence](/fr/web-apis/idempotency)** — un client qui réessaie après un `429` a besoin que son réessai soit sûr, exactement ce que garantit l'idempotence.

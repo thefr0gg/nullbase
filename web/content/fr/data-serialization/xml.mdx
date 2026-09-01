@@ -1,0 +1,62 @@
+---
+title: XML
+description: Un format de données basé sur du balisage, verbeux, strict et auto-descriptif — le standard avant JSON, et toujours courant dans les formats d'entreprise et de document.
+category: Data & Serialization
+weight: 1
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+XML (eXtensible Markup Language) représente des données structurées sous forme de balises nommées et imbriquées — plus proche dans sa forme du [HTML](/fr/web-platform/html) que du [JSON](/fr/data-serialization/json), puisqu'il utilise la même syntaxe de balisage. Avant que JSON ne devienne le standard par défaut, XML était le format d'échange de données standard pour les API web (SOAP, RSS, premières API de style REST) ; aujourd'hui il survit principalement dans les systèmes d'entreprise, les formats de document, et la configuration.
+
+```xml
+<user id="42">
+  <name>Grace Hopper</name>
+  <active>true</active>
+  <roles>
+    <role>admin</role>
+    <role>editor</role>
+  </roles>
+</user>
+```
+
+## XML vs. JSON
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "xml", label: "XML" },
+    { key: "json", label: "JSON" },
+  ]}
+  items={[
+    { id: "verbosity", label: "Verbosité", color: "blue", columns: { xml: "Chaque valeur a besoin d'une balise ouvrante et fermante", json: "Structure basée uniquement sur la ponctuation — beaucoup plus courte" } },
+    { id: "attrs", label: "Attributs vs. éléments", color: "green", columns: { xml: "Les données peuvent vivre dans les attributs d'une balise ou dans son contenu — deux façons d'exprimer la même chose", json: "Une seule façon : une paire clé-valeur, toujours" } },
+    { id: "schema", label: "Validation de schéma", color: "purple", columns: { xml: "Mature, standardisée (XSD) — largement utilisée pour valider des documents avant traitement", json: "Possible (JSON Schema) mais bien moins universellement adoptée" } },
+    { id: "namespaces", label: "Espaces de noms", color: "orange", columns: { xml: "Intégrés — permettent aux documents de mélanger des vocabulaires de sources différentes sans collision", json: "Aucun concept équivalent" } },
+    { id: "comments", label: "Commentaires", color: "default", columns: { xml: "Pris en charge — <!-- ... -->", json: "Pas du tout valide en JSON" } },
+  ]}
+/>
+
+## Attributs vs. éléments
+
+La même donnée peut être exprimée de deux façons différentes en XML, ce qui constitue une véritable source d'ambiguïté que JSON n'a pas :
+
+```xml
+<user id="42" name="Grace Hopper" />
+<!-- vs. -->
+<user>
+  <id>42</id>
+  <name>Grace Hopper</name>
+</user>
+```
+
+Aucune n'est « plus correcte » — les conventions varient selon les projets, ce qui est en soi une critique courante adressée à XML par rapport à la façon unique et évidente de JSON d'écrire une paire clé-valeur.
+
+## Là où c'est toujours le standard
+
+XML reste le standard réel, pas un simple vestige hérité, dans plusieurs domaines : les services web SOAP (courants dans les intégrations entreprise/finance/santé), les formats de fichier Microsoft Office et OpenDocument (un `.docx` est une archive zip de fichiers XML), les flux RSS/Atom, et le SVG (qui est du XML, pas un format d'image séparé).
+
+## Voir aussi
+
+- **[JSON](/fr/data-serialization/json)** — le format qui a supplanté XML pour la plupart des nouvelles API web.
+- **[YAML](/fr/data-serialization/yaml)** — une troisième option de données structurées, optimisée pour l'édition humaine plutôt que pour la rigueur machine.

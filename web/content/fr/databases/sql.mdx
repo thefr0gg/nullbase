@@ -1,0 +1,73 @@
+---
+title: SQL
+description: Le langage de requête que parle presque toute base de données relationnelle — déclaratif, orienté ensembles, et (presque) standardisé entre moteurs.
+category: Databases
+weight: 0
+interactive: true
+interactiveType: ["SqlPlayground", "ItemExplorer"]
+---
+
+SQL (Structured Query Language) décrit **quelles** données vous voulez, pas **comment** les récupérer — vous écrivez `SELECT name FROM users WHERE age > 18`, et le moteur de base de données décide lui-même de la stratégie de récupération réelle (un balayage complet, une recherche par index, un ordre de jointure). C'est la différence fondamentale avec le code impératif : il n'y a aucune boucle à écrire, aucun pointeur à parcourir — vous déclarez la forme du résultat que vous voulez.
+
+Le playground ci-dessous est réel : c'est SQLite compilé en WebAssembly, s'exécutant entièrement dans votre navigateur. Chaque requête s'exécute réellement contre une vraie petite base de données en mémoire.
+
+## Essayez-le
+
+<SqlPlayground
+  title="employees / departments"
+  schema={`
+CREATE TABLE departments (id INTEGER PRIMARY KEY, name TEXT NOT NULL);
+CREATE TABLE employees (
+  id INTEGER PRIMARY KEY,
+  name TEXT NOT NULL,
+  department_id INTEGER REFERENCES departments(id),
+  salary INTEGER NOT NULL
+);
+INSERT INTO departments (id, name) VALUES (1, 'Engineering'), (2, 'Sales'), (3, 'Design');
+INSERT INTO employees (id, name, department_id, salary) VALUES
+  (1, 'Ada Lovelace', 1, 145000),
+  (2, 'Grace Hopper', 1, 152000),
+  (3, 'Alan Turing', 1, 149000),
+  (4, 'Ida Tacke', 2, 98000),
+  (5, 'Rosalind Franklin', 3, 110000);
+`}
+  defaultQuery={`SELECT e.name, d.name AS department, e.salary
+FROM employees e
+JOIN departments d ON d.id = e.department_id
+WHERE e.salary > 100000
+ORDER BY e.salary DESC;`}
+/>
+
+Essayez de changer le seuil du `WHERE`, de retirer le `JOIN`, ou d'exécuter `SELECT department_id, AVG(salary) FROM employees GROUP BY department_id;` pour voir l'agrégation.
+
+## Ordre d'écriture vs. ordre d'exécution
+
+Les clauses SQL sont *écrites* dans un ordre mais *exécutées* dans un ordre différent — cette discordance est une source fréquente de confusion, notamment sur la raison pour laquelle on ne peut pas référencer une colonne aliasée dans un `SELECT` depuis sa propre clause `WHERE`.
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[{ key: "written", label: "Written position" }, { key: "executed", label: "Actual execution order" }]}
+  items={[
+    { id: "from", label: "FROM / JOIN", color: "blue", columns: { written: "1er", executed: "1er — construit l'ensemble de lignes de travail" } },
+    { id: "where", label: "WHERE", color: "green", columns: { written: "2e", executed: "2e — filtre les lignes avant le regroupement" } },
+    { id: "groupby", label: "GROUP BY", color: "orange", columns: { written: "4e", executed: "3e — regroupe les lignes en groupes" } },
+    { id: "having", label: "HAVING", color: "purple", columns: { written: "5e", executed: "4e — filtre les groupes, après agrégation" } },
+    { id: "select", label: "SELECT", color: "red", columns: { written: "1er sur la page", executed: "5e — calcule les colonnes de sortie réelles" } },
+    { id: "orderby", label: "ORDER BY", color: "blue", columns: { written: "6e", executed: "6e — trie le résultat final" } },
+  ]}
+/>
+
+C'est exactement pourquoi `WHERE` ne peut pas filtrer sur un agrégat (`WHERE COUNT(*) > 5` est invalide — utilisez `HAVING`) — `WHERE` s'exécute avant même que le regroupement n'ait lieu, donc aucune valeur agrégée n'existe encore pour filtrer dessus.
+
+## Les jointures, brièvement
+
+Un `JOIN` combine des lignes de deux tables selon une condition de correspondance. `INNER JOIN` (le `JOIN` par défaut) ne conserve que les lignes ayant une correspondance des deux côtés ; `LEFT JOIN` conserve chaque ligne de la table de gauche, qu'une correspondance existe ou non, en remplissant les colonnes non appariées avec `NULL` — essayez de changer `JOIN` en `LEFT JOIN` dans le playground ci-dessus et d'ajouter un employé sans `department_id` pour voir la différence.
+
+## SQL n'est pas totalement standardisé
+
+ANSI SQL définit un socle commun, mais chaque moteur réel ajoute ses propres extensions et diverge sur les cas limites — voir [PostgreSQL](/fr/databases/postgresql) et [MySQL](/fr/databases/mysql) pour une syntaxe spécifique à un moteur qui ne s'exécute pas forcément sur les autres.
+
+## Voir aussi
+
+- **[SQLite](/fr/databases/sqlite)** — le moteur réel qui fait tourner le playground de cette page.
+- **[Index de base de données](/fr/databases/database-indexes)** — comment le moteur décide *comment* exécuter la requête que vous avez déclarée.

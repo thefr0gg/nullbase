@@ -1,0 +1,47 @@
+---
+title: El DOM
+description: El árbol vivo, en memoria, que el navegador construye a partir del HTML analizado — lo que JavaScript realmente lee y modifica, y cómo viajan los eventos a través de él.
+category: Web Platform
+weight: 3
+interactive: true
+interactiveType: ["StepFlow", "ItemExplorer"]
+---
+
+import { eventPropagationSteps } from "./dom-event-propagation-steps";
+
+El DOM (Document Object Model) es en lo que un navegador convierte el [HTML](/es/web-platform/html) después de analizarlo: un árbol de objetos en memoria, cada uno representando un elemento, un fragmento de texto, o un comentario. [JavaScript](/es/web-platform/javascript) nunca toca el código HTML fuente original — lee y modifica este árbol, y el navegador vuelve a renderizar lo que haya cambiado.
+
+```js
+const el = document.querySelector("#greeting");
+el.textContent = "Hello";     // mutates the tree — the page updates
+el.classList.add("visible");  // same
+```
+
+## Tipos de nodo
+
+<ItemExplorer
+  layout="pills"
+  items={[
+    { id: "element", label: "Element node", color: "blue", detail: "Una etiqueta — <div>, <p>, <button>. Tiene atributos, puede tener hijos." },
+    { id: "text", label: "Text node", color: "green", detail: "El contenido de texto real entre etiquetas — un nodo separado del elemento que lo contiene." },
+    { id: "comment", label: "Comment node", color: "default", detail: "Un comentario HTML — <!-- ... --> — presente en el árbol pero nunca renderizado." },
+    { id: "document", label: "Document node", color: "purple", detail: "La única raíz de todo el árbol — el propio document." },
+  ]}
+/>
+
+Todo nodo de elemento es también un contenedor que contiene texto: `<p>Hello</p>` es un nodo de elemento con un hijo, un nodo de texto que contiene `"Hello"` — `el.textContent` lee/escribe ese hijo directamente, por lo que al asignarlo se reemplazan todos los hijos a la vez en lugar de fusionarse con el contenido existente.
+
+## Cómo viaja un evento por el árbol
+
+Un clic no se dispara solo una vez en el elemento en el que hiciste clic — viaja por toda la cadena de ancestros, en dos direcciones, lo que constituye la base de un patrón llamado delegación de eventos (un único listener en un padre, que maneja eventos de cualquier hijo actual o futuro).
+
+<StepFlow title="Propagación de eventos" steps={eventPropagationSteps} />
+
+## Leer frente a escribir tiene costes distintos
+
+Leer información de disposición (`el.offsetHeight`, `getBoundingClientRect()`) puede forzar al navegador a recalcular la disposición antes de tiempo si una escritura anterior sigue pendiente — hacer muchas operaciones de leer-luego-escribir-luego-leer en un bucle (un "layout thrash") es un error clásico de rendimiento del DOM; agrupar todas las lecturas y luego todas las escrituras lo evita.
+
+## Ver también
+
+- **[JavaScript](/es/web-platform/javascript)** — el lenguaje que lee y modifica este árbol.
+- **[HTML](/es/web-platform/html)** — la fuente a partir de la cual se analiza originalmente el DOM.

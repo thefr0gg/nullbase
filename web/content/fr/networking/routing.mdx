@@ -1,0 +1,46 @@
+---
+title: Routage
+description: Comment un paquet traverse des réseaux dont son expéditeur n'a jamais entendu parler — tables de routage, routes statiques et dynamiques, et les protocoles que les routeurs utilisent pour les construire.
+category: Networking
+weight: 8
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+Chaque routeur prend la même décision pour chaque paquet : étant donné cette adresse de destination, lequel de mes liens directement connectés le rapproche d'un saut ? Cette décision vient d'une **table de routage** — une liste de réseaux de destination et du « prochain saut » pour atteindre chacun. Aucun routeur n'a besoin de connaître le chemin entier ; il lui suffit de connaître l'étape suivante, et de faire confiance au routeur d'après pour connaître l'étape d'après.
+
+## Une table de routage, en gros
+
+```text
+Destination        Next Hop         Interface
+192.168.1.0/24      directly connected  eth0
+10.0.0.0/8          10.0.0.1            eth1
+0.0.0.0/0           203.0.113.1         eth2   (default route)
+```
+
+L'entrée `0.0.0.0/0` est la **route par défaut** — « tout ce qui n'est pas listé ailleurs va ici » — c'est pourquoi un routeur domestique n'a besoin que d'une seule entrée pour envoyer tout le trafic Internet sortant vers votre FAI, sans rien connaître de la structure réelle d'Internet.
+
+## Routage statique contre dynamique
+
+Une **route statique** est saisie à la main et ne change jamais d'elle-même — parfait pour un petit réseau stable, mais elle ne s'adapte pas si un lien tombe en panne. Les protocoles de **routage dynamique** permettent aux routeurs d'échanger des informations et de recalculer les routes automatiquement quand la topologie change :
+
+<ItemExplorer
+  title="Protocoles de routage dynamique"
+  layout="table"
+  tableColumns={[{ key: "scope", label: "Portée" }, { key: "how", label: "Comment il choisit une route" }]}
+  items={[
+    { id: "rip", label: "RIP", color: "blue", columns: { scope: "Petits réseaux", how: "Nombre de sauts — le moins de sauts gagne, plafonné à 15 (16 signifie inaccessible)." } },
+    { id: "ospf", label: "OSPF", color: "green", columns: { scope: "Au sein d'une seule organisation (un système autonome)", how: "Coût du lien, calculé à partir de la bande passante — chaque routeur construit une carte complète du réseau." } },
+    { id: "bgp", label: "BGP", color: "purple", columns: { scope: "Entre organisations — le protocole qui fait tourner l'Internet réel", how: "Politique et attributs de chemin, pas un pur plus court chemin — un FAI peut préférer des routes pour des raisons commerciales, pas seulement de distance." } },
+  ]}
+/>
+
+## Pourquoi Internet n'a pas une seule table de routage géante
+
+Aucun routeur ne détient une carte complète de chaque appareil sur Terre — cela représenterait une quantité d'état ingérable. Au lieu de cela, la structure hiérarchique de l'[adressage réseau](/fr/networking/network-addressing) permet aux routeurs d'agréger : une seule entrée BGP peut représenter des millions d'adresses derrière un FAI, et un routeur n'a besoin de détails que sur les réseaux dont il est réellement proche. C'est le même principe qu'utilise un système postal — un bureau de poste local n'a pas besoin de savoir sur quelle rue se trouve une maison dans un autre pays, seulement vers quel centre de tri de quel pays acheminer le courrier.
+
+## Voir aussi
+
+- **[Adressage réseau](/fr/networking/network-addressing)** — les blocs CIDR auxquels les tables de routage se comparent réellement.
+- **[IP](/fr/networking/ip)** — le champ TTL qui empêche une boucle de routage de transmettre un paquet indéfiniment.
+- **[ICMP](/fr/networking/icmp)** — comment un routeur signale qu'aucune route n'existe pour la destination d'un paquet.

@@ -1,0 +1,43 @@
+---
+title: OAuth 2.0
+description: Cómo un servicio puede otorgar a otro acceso limitado a los datos de un usuario sin entregar nunca una contraseña — el flujo de código de autorización, paso a paso.
+category: Security
+weight: 5
+interactive: true
+interactiveType: ["StepFlow"]
+---
+
+**OAuth 2.0** resuelve un problema específico: permitir que una app de terceros acceda a parte de los datos de un usuario en otro servicio — leer su calendario, publicar en su cuenta — sin que esa app llegue nunca a ver la contraseña real del usuario. En su lugar, el usuario otorga un **token de acceso** delimitado y revocable a través del servicio dueño de los datos.
+
+## El flujo de Código de Autorización
+
+Este es el flujo más común y más seguro, usado siempre que hay una app del lado del servidor involucrada (a diferencia de una app de una sola página pura):
+
+<StepFlow
+  title="Flujo de Código de Autorización de OAuth 2.0"
+  steps={[
+    { actor: "App", title: "Redirige al servidor de autorización", description: "La app envía el navegador del usuario al servicio dueño de sus datos (p. ej. Google), especificando qué acceso (scope) está solicitando.", detail: "GET https://accounts.example.com/authorize?client_id=...&scope=calendar.read&redirect_uri=..." },
+    { actor: "Usuario", title: "El usuario aprueba", description: "El usuario inicia sesión directamente en el servidor de autorización (nunca a través de la app solicitante) y aprueba el alcance específico solicitado.", detail: "\"App X wants to: read your calendar. Allow?\"" },
+    { actor: "Servidor de autorización", title: "Redirige de vuelta con un código", description: "El servidor de autorización redirige de vuelta a la app con un código de autorización de corta duración — todavía no el token de acceso en sí.", detail: "GET https://app.example.com/callback?code=abc123" },
+    { actor: "App", title: "Intercambia el código por un token", description: "El propio backend de la app (no el navegador) intercambia el código por un token de acceso, autenticándose con un client secret que el navegador nunca ve.", detail: "POST /token\n{ code: 'abc123', client_id, client_secret }" },
+    { actor: "Servidor de autorización", title: "Emite el token de acceso", description: "La app ahora tiene un token de acceso delimitado que puede usar para llamar a la API del servicio dueño de los datos en nombre del usuario — todavía sin haber visto nunca la contraseña del usuario.", detail: "{ access_token: '...', expires_in: 3600 }" },
+  ]}
+/>
+
+## Por qué el código se intercambia en un segundo paso
+
+El código de autorización llega mediante una redirección de navegador — un canal que puede filtrarse al historial del navegador o a cabeceras de referer. Dividir el flujo de modo que el *código* viaja por el navegador pero el *intercambio real del token* ocurre servidor a servidor (autenticado con un client secret que solo tiene el backend de la app) significa que un código filtrado por sí solo no basta para obtener un token; también se requiere el client secret.
+
+## Los scopes limitan el radio de impacto
+
+Un token de acceso se emite para un **scope** específico y acotado (`calendar.read`, no acceso total a la cuenta) — así que un token comprometido solo expone lo que realmente se otorgó, y un usuario puede ver exactamente qué está aprobando antes de concederlo.
+
+## OAuth es autorización, no autenticación
+
+OAuth por sí solo solo prueba que una app tiene permiso para acceder a ciertos datos — no prueba, por sí mismo, *quién es el usuario* ante la app. **OpenID Connect** es una capa de identidad delgada construida sobre OAuth 2.0 específicamente para añadir esa pieza, emitiendo un token de identidad (típicamente un [JWT](/es/security/jwt)) junto con el token de acceso.
+
+## Ver también
+
+- **[JWT](/es/security/jwt)** — el formato típico que adopta un token de acceso o de ID de OAuth.
+- **[Autenticación](/es/security/authentication)** — la pregunta separada que OAuth por sí solo no responde.
+- **[Autorización](/es/security/authorization)** — los scopes de OAuth son exactamente una forma de esto.

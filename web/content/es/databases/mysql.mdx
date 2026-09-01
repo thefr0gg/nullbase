@@ -1,0 +1,73 @@
+---
+title: MySQL
+description: La otra base de datos relacional de código abierto de larga trayectoria — históricamente la columna vertebral del stack LAMP, y aún una de las bases de datos más ampliamente desplegadas del mundo.
+category: Databases
+weight: 3
+interactive: true
+interactiveType: ["SqlPlayground", "ItemExplorer"]
+---
+
+MySQL es una base de datos relacional cliente-servidor, como [PostgreSQL](/es/databases/postgresql) — ambas son las dos opciones de código abierto dominantes y se comparan constantemente, pero divergieron a partir de prioridades de diseño distintas: MySQL priorizó la velocidad de lectura pura y la simplicidad para el caso común de una app web (impulsó la "M" del clásico stack LAMP — Linux, Apache, MySQL, PHP), mientras que Postgres priorizó primero el cumplimiento de estándares y la corrección.
+
+## Pruébalo (SQL estándar, ejecutándose en el motor del navegador)
+
+<SqlPlayground
+  title="ON DUPLICATE KEY UPDATE — el atajo de upsert de MySQL (equivalente estándar abajo)"
+  schema={`CREATE TABLE page_views (path TEXT PRIMARY KEY, views INTEGER NOT NULL DEFAULT 0);
+INSERT INTO page_views (path, views) VALUES ('/home', 10);`}
+  defaultQuery={`INSERT INTO page_views (path, views) VALUES ('/home', 1)
+ON CONFLICT(path) DO UPDATE SET views = views + 1;
+SELECT * FROM page_views;`}
+/>
+
+Esa consulta usa `ON CONFLICT ... DO UPDATE` (la sintaxis estándar de "upsert" de SQLite y Postgres) ya que eso es lo que realmente soporta el motor del navegador — el equivalente de MySQL, mostrado abajo, no es ejecutable aquí pero hace lo mismo.
+
+## Qué es realmente específico de MySQL
+
+```sql
+-- AUTO_INCREMENT: MySQL's spelling of an auto-incrementing primary key
+CREATE TABLE users (id INT AUTO_INCREMENT PRIMARY KEY, email VARCHAR(255) UNIQUE);
+
+-- MySQL's own upsert syntax
+INSERT INTO page_views (path, views) VALUES ('/home', 1)
+ON DUPLICATE KEY UPDATE views = views + 1;
+
+-- Storage engine selection, per table
+CREATE TABLE logs (id INT PRIMARY KEY, message TEXT) ENGINE=InnoDB;
+
+-- LIMIT with an offset, comma form (also valid in Postgres, not standard SQL)
+SELECT * FROM users LIMIT 10, 20; -- skip 10, take 20
+```
+
+## Motores de almacenamiento
+
+De forma inusual entre las bases de datos principales, MySQL te permite elegir un **motor de almacenamiento** distinto por tabla — el motor es lo que realmente implementa cómo se almacenan, indexan y bloquean las filas en disco, por debajo de la misma interfaz SQL.
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[{ key: "transactions", label: "Transacciones" }, { key: "notes", label: "Notas" }]}
+  items={[
+    { id: "innodb", label: "InnoDB", color: "blue", columns: { transactions: "Sí, ACID completo", notes: "El predeterminado desde MySQL 5.5, y lo que casi toda tabla debería usar hoy." } },
+    { id: "myisam", label: "MyISAM", color: "default", columns: { transactions: "No", notes: "Más antiguo, sin soporte de transacciones/claves foráneas — en este punto es sobre todo un remanente heredado." } },
+    { id: "memory", label: "MEMORY", color: "orange", columns: { transactions: "No", notes: "Almacena toda la tabla en RAM — rápido, pero los datos desaparecen al reiniciar." } },
+  ]}
+/>
+
+## Dónde divergen las dos en la práctica
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[{ key: "mysql", label: "MySQL" }, { key: "postgres", label: "PostgreSQL" }]}
+  items={[
+    { id: "strictness", label: "Estrictez de tipos", color: "blue", columns: { mysql: "Históricamente permisivo por defecto (truncando/coaccionando silenciosamente valores inválidos, hasta el modo STRICT)", postgres: "Estricto por defecto — un valor inválido es un error irrecuperable" } },
+    { id: "json", label: "Soporte JSON", color: "green", columns: { mysql: "Un tipo de columna JSON, funcionalmente sólido pero menos profundamente integrado", postgres: "JSONB — codificado en binario e indexable, tejido más profundamente en el planificador de consultas" } },
+    { id: "replication", label: "Replicación", color: "purple", columns: { mysql: "Madura, ampliamente desplegada, más simple de razonar para configuraciones básicas primario/réplica", postgres: "También madura, con más flexibilidad de configuración (replicación lógica vs. streaming)" } },
+  ]}
+/>
+
+Ambas son opciones excelentes y probadas en producción para la abrumadora mayoría de las cargas de trabajo relacionales — la decisión real suele reducirse a la familiaridad del equipo, el soporte del proveedor de hosting, y si una función específica (las extensiones de Postgres, la historia de replicación más simple de MySQL) es un factor decisivo para el proyecto en cuestión, más que cualquiera de las dos bases de datos siendo categóricamente "mejor".
+
+## Ver también
+
+- **[PostgreSQL](/es/databases/postgresql)** — el punto de comparación directo a lo largo de esta página.
+- **[SQLite](/es/databases/sqlite)** — lo que realmente ejecuta el ejemplo funcional de arriba.

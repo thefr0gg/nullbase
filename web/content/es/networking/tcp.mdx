@@ -1,0 +1,55 @@
+---
+title: TCP
+description: El protocolo de transporte orientado a conexión que sustenta la mayor parte de Internet — cómo numera, confirma y retransmite cada byte que envía.
+category: Networking
+weight: 0
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+**TCP (Transmission Control Protocol)** convierte la entrega de mejor esfuerzo de [IP](/es/networking/ip) en un flujo fiable, ordenado y orientado a conexión. Antes de que se mueva ningún dato de aplicación, ambos extremos completan un handshake de tres vías (`SYN`, `SYN-ACK`, `ACK`) — cubierto en [TCP/IP](/es/web-fundamentals/tcp-ip) — y desde ese momento cada byte se numera y se confirma.
+
+## Qué hay dentro de un segmento TCP
+
+Una cabecera TCP transporta mucho más de lo que necesita un paquete normal, porque la fiabilidad tiene que rastrearse en algún sitio:
+
+```text
+Source Port | Destination Port
+Sequence Number
+Acknowledgment Number
+Flags (SYN, ACK, FIN, RST, PSH, URG)
+Window Size
+Checksum
+```
+
+El **número de secuencia** permite al receptor reensamblar los bytes en el orden correcto aunque los segmentos lleguen desordenados; el **número de confirmación** le dice al emisor exactamente cuánto ha llegado a salvo, de modo que solo haya que retransmitir la parte que falta.
+
+## Flags: qué significa cada uno
+
+<ItemExplorer
+  title="Flags de TCP"
+  layout="table"
+  tableColumns={[{ key: "meaning", label: "Significado" }]}
+  items={[
+    { id: "syn", label: "SYN", color: "blue", columns: { meaning: "Synchronize — abre una conexión, transporta el número de secuencia inicial." } },
+    { id: "ack", label: "ACK", color: "green", columns: { meaning: "Acknowledge — confirma que se recibieron datos (o un SYN). Activado en casi todos los segmentos después del handshake." } },
+    { id: "fin", label: "FIN", color: "purple", columns: { meaning: "Finish — el emisor no tiene más datos; inicia el cierre ordenado." } },
+    { id: "rst", label: "RST", color: "red", columns: { meaning: "Reset — derriba una conexión de forma abrupta, normalmente tras un error o una conexión a un puerto cerrado." } },
+    { id: "psh", label: "PSH", color: "orange", columns: { meaning: "Push — entrega los datos en búfer a la aplicación de inmediato en vez de esperar a llenar un búfer." } },
+    { id: "urg", label: "URG", color: "orange", columns: { meaning: "Urgent — marca datos fuera de banda que deberían saltarse la cola. Poco usado hoy en día." } },
+  ]}
+/>
+
+## Control de flujo y control de congestión
+
+TCP se autolimita de dos formas independientes. El **control de flujo** usa el **tamaño de ventana** anunciado por el receptor para que un emisor rápido no pueda desbordar el búfer de un receptor lento. El **control de congestión** trata sobre la *red* más que sobre el receptor: TCP empieza enviando despacio (slow start), acelera mientras las confirmaciones siguen llegando a tiempo, y frena bruscamente en cuanto detecta pérdida — un ACK perdido o retrasado se trata como una señal de que algo en la ruta está congestionado, no simplemente de que a un paquete le fue mal por casualidad.
+
+## Cerrar una conexión
+
+A diferencia de la apertura, el cierre es asimétrico — cada dirección se cierra de forma independiente con su propio par `FIN`/`ACK`, ya que un lado podría todavía tener datos por enviar después de que el otro haya terminado. Una conexión que se salta esto y se derriba con `RST` está siendo abandonada, no terminada.
+
+## Ver también
+
+- **[UDP](/es/networking/udp)** — la alternativa sin conexión, sin nada de esta sobrecarga.
+- **[Puertos y sockets](/es/web-fundamentals/ports-sockets)** — cómo se identifica de forma única una conexión TCP junto a miles de otras.
+- **[IP](/es/networking/ip)** — la capa dentro de la cual viajan los segmentos TCP.

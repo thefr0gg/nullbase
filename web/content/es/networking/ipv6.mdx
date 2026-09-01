@@ -1,0 +1,39 @@
+---
+title: IPv6
+description: El espacio de direcciones de 128 bits construido para reemplazar a IPv4 — suficientes direcciones para cada dispositivo de la Tierra muchas veces, con algunas decisiones de diseño genuinamente distintas.
+category: Networking
+weight: 4
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+Las direcciones **IPv6** tienen 128 bits — escritas como ocho grupos de cuatro dígitos hexadecimales separados por dos puntos (`2001:0db8:85a3:0000:0000:8a2e:0370:7334`), normalmente acortadas eliminando los ceros iniciales de cada grupo y colapsando una serie de grupos todo-ceros en `::`. 128 bits no es solo «más grande que 32» — son aproximadamente 340 sextillones de direcciones, suficientes para que la escasez de direcciones, y el [NAT](/es/networking/nat) que esta obligó en [IPv4](/es/networking/ipv4), deje por completo de ser una restricción de diseño.
+
+## Tipos de dirección
+
+A diferencia de IPv4, IPv6 se diseñó desde el principio con categorías de dirección diferenciadas, en lugar de añadirlas después:
+
+<ItemExplorer
+  title="Tipos de Dirección IPv6"
+  layout="pills"
+  items={[
+    { id: "unicast", label: "Unicast", color: "blue", detail: "Entregado a exactamente una interfaz — el caso normal, equivalente a una dirección IPv4 corriente." },
+    { id: "multicast", label: "Multicast", color: "green", detail: "Entregado a cada interfaz que se unió a un grupo multicast — sustituye por completo al broadcast de IPv4, ya que IPv6 no tiene dirección de difusión." },
+    { id: "anycast", label: "Anycast", color: "purple", detail: "Asignado a varias interfaces; un paquete va a la que esté topológicamente más cerca. Muy usado por los servidores raíz de DNS y las CDN." },
+    { id: "link-local", label: "Link-local", color: "orange", detail: "Válido solo en el segmento de red local (fe80::/10) — asignado automáticamente a cada interfaz, usado para el descubrimiento de vecinos antes de que exista cualquier dirección enrutable." },
+  ]}
+/>
+
+## Qué cambió a propósito
+
+IPv6 eliminó el checksum de cabecera de IPv4 (redundante con los checksums de las capas de enlace y transporte), y la traducción de direcciones impulsada por NAT ya no es estructuralmente necesaria, ya que cada dispositivo puede tener una dirección real, enrutable globalmente. La configuración de direcciones también puede ocurrir sin [DHCP](/es/networking/dhcp) en absoluto: **SLAAC** (Stateless Address Autoconfiguration) permite que un dispositivo derive su propia dirección a partir de un anuncio de router y el identificador de su interfaz de red.
+
+## La adopción todavía es parcial
+
+IPv6 e IPv4 no son compatibles a nivel de cable — un dispositivo necesita una pila para cada uno, y la mayor parte de Internet funciona en **dual-stack**, capaz de ambos, recurriendo a IPv4 allí donde IPv6 todavía no está soportado de extremo a extremo. Por eso las direcciones IPv4 siguen muy vivas décadas después de que se lanzara IPv6: la transición es aditiva, no un corte abrupto.
+
+## Ver también
+
+- **[IPv4](/es/networking/ipv4)** — el espacio de direcciones que IPv6 se construyó para eventualmente reemplazar.
+- **[DHCP](/es/networking/dhcp)** — la alternativa con estado a SLAAC para asignar direcciones.
+- **[Direccionamiento de red](/es/networking/network-addressing)** — conceptos de subnetting que se trasladan de IPv4, adaptados a los bloques de direcciones mucho más grandes de IPv6.

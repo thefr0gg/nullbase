@@ -1,0 +1,49 @@
+---
+title: WebSockets
+description: Une connexion unique, longue durée, bidirectionnelle — le client et le serveur peuvent chacun envoyer un message à tout moment, sans appariement requête/réponse requis.
+category: Web APIs
+weight: 4
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+import { chatSocketMessages } from "./websocket-messages";
+
+Chaque pattern couvert jusqu'ici dans cette section — REST, GraphQL, RPC, webhooks — reste structuré en requête/réponse : un côté demande, l'autre répond. Une connexion WebSocket est différente : après qu'un seul handshake HTTP met à niveau la connexion, elle reste ouverte, et **chaque côté peut envoyer un message à tout moment**, sans appariement requête/réponse requis. C'est ce qui se rapproche le plus sur le web d'un socket brut et persistant.
+
+## Le handshake
+
+Une connexion WebSocket commence comme une requête HTTP normale avec un header `Upgrade`, demandant au serveur de changer de protocole :
+
+```http
+GET /chat HTTP/1.1
+Host: example.com
+Upgrade: websocket
+Connection: Upgrade
+Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==
+Sec-WebSocket-Version: 13
+
+HTTP/1.1 101 Switching Protocols
+Upgrade: websocket
+Connection: Upgrade
+Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
+```
+
+`101 Switching Protocols` est le signe distinctif — après cette réponse, la connexion TCP ne parle plus du tout HTTP. C'est un canal duplex brut sur lequel les deux côtés encadrent des messages WebSocket, jusqu'à ce que l'un des deux le ferme.
+
+## Essayez
+
+<RequestPlayground protocol="websocket" defaultTarget="wss://chat.example.com/rooms/general" simulatedMessages={chatSocketMessages} />
+
+## Quand s'en servir
+
+Les WebSockets conviennent à tout ce qui est véritablement bidirectionnel et à faible latence : chat, état multijoueur, curseurs en direct/édition collaborative, tickers de trading. Ils sont le mauvais outil quand le client n'a jamais besoin d'envoyer quoi que ce soit après l'abonnement initial — un flux unidirectionnel de mises à jour serveur est exactement ce pour quoi sont conçus les [Server-Sent Events](/fr/web-apis/server-sent-events), avec bien moins de complexité opérationnelle (HTTP simple, reconnexion automatique intégrée au navigateur, fonctionne à travers une infrastructure qui ne connaît pas le header `Upgrade`).
+
+## Réalité opérationnelle
+
+Une connexion WebSocket est avec état et de longue durée, ce qui est une forme très différente des requêtes sans état et de courte durée que le reste de cette section suppose. Cela a des conséquences : un répartiteur de charge doit continuer à router une connexion donnée vers la même instance backend (ou cette instance doit partager son état d'une autre manière), un redémarrage de serveur fait tomber toutes les connexions ouvertes d'un coup, et un client doit gérer lui-même la reconnexion et le réabonnement après toute coupure — rien de tout cela qu'une API HTTP simple n'a à considérer.
+
+## Voir aussi
+
+- **[Server-Sent Events](/fr/web-apis/server-sent-events)** — l'alternative plus simple, unidirectionnelle.
+- **[Webhooks](/fr/web-apis/webhooks)** — pour « prévenez-moi quand X se produit » sans garder aucune connexion ouverte.

@@ -1,0 +1,47 @@
+---
+title: Le DOM
+description: L'arbre vivant, en mémoire, que le navigateur construit à partir du HTML analysé — ce que JavaScript lit et modifie réellement, et comment les événements le traversent.
+category: Web Platform
+weight: 3
+interactive: true
+interactiveType: ["StepFlow", "ItemExplorer"]
+---
+
+import { eventPropagationSteps } from "./dom-event-propagation-steps";
+
+Le DOM (Document Object Model) est ce en quoi un navigateur transforme le [HTML](/fr/web-platform/html) après l'avoir analysé : un arbre d'objets en mémoire, chacun représentant un élément, un morceau de texte ou un commentaire. [JavaScript](/fr/web-platform/javascript) ne touche jamais au code HTML source d'origine — il lit et modifie cet arbre, et le navigateur réaffiche ce qui a changé.
+
+```js
+const el = document.querySelector("#greeting");
+el.textContent = "Hello";     // mutates the tree — the page updates
+el.classList.add("visible");  // same
+```
+
+## Types de nœuds
+
+<ItemExplorer
+  layout="pills"
+  items={[
+    { id: "element", label: "Element node", color: "blue", detail: "Une balise — <div>, <p>, <button>. Possède des attributs, peut avoir des enfants." },
+    { id: "text", label: "Text node", color: "green", detail: "Le contenu textuel réel entre les balises — un nœud distinct de l'élément qui le contient." },
+    { id: "comment", label: "Comment node", color: "default", detail: "Un commentaire HTML — <!-- ... --> — présent dans l'arbre mais jamais rendu." },
+    { id: "document", label: "Document node", color: "purple", detail: "La racine unique de tout l'arbre — document lui-même." },
+  ]}
+/>
+
+Chaque nœud d'élément est aussi un conteneur de texte : `<p>Hello</p>` est un nœud d'élément avec un enfant, un nœud de texte contenant `"Hello"` — `el.textContent` lit/écrit directement cet enfant, ce qui explique pourquoi le modifier remplace tous les enfants d'un coup plutôt que de fusionner avec le contenu existant.
+
+## Comment un événement parcourt l'arbre
+
+Un clic ne se déclenche pas juste une fois sur l'élément cliqué — il parcourt toute la chaîne d'ancêtres, dans deux directions, ce qui constitue la base d'un motif appelé délégation d'événements (un seul écouteur sur un parent, gérant les événements de n'importe quel enfant actuel ou futur).
+
+<StepFlow title="Propagation des événements" steps={eventPropagationSteps} />
+
+## Lire et écrire ont des coûts différents
+
+Lire des informations de mise en page (`el.offsetHeight`, `getBoundingClientRect()`) peut forcer le navigateur à recalculer la mise en page en avance si une écriture précédente est encore en attente — enchaîner de nombreuses opérations lecture-puis-écriture-puis-lecture dans une boucle (un « layout thrash ») est une erreur classique de performance du DOM ; regrouper toutes les lectures, puis toutes les écritures, permet de l'éviter.
+
+## Voir aussi
+
+- **[JavaScript](/fr/web-platform/javascript)** — le langage qui lit et modifie cet arbre.
+- **[HTML](/fr/web-platform/html)** — la source à partir de laquelle le DOM est initialement analysé.

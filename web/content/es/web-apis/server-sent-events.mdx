@@ -1,0 +1,71 @@
+---
+title: Server-Sent Events
+description: Un flujo persistente y unidireccional del servidor al cliente sobre HTTP plano — sin upgrade, sin protocolo nuevo, y el navegador se reconecta por ti.
+category: Web APIs
+weight: 5
+interactive: true
+interactiveType: ["RequestPlayground"]
+---
+
+import { tickerEvents } from "./server-sent-events-messages";
+
+Server-Sent Events (SSE) es un flujo unidireccional: el servidor mantiene abierta una respuesta HTTP plana y le escribe eventos a lo largo del tiempo, y el cliente solo escucha. No hay un upgrade de handshake como en [WebSockets](/es/web-apis/websockets) — el `Content-Type` de la respuesta es `text/event-stream`, y la conexión simplemente... no termina.
+
+```http
+GET /events HTTP/1.1
+Accept: text/event-stream
+
+HTTP/1.1 200 OK
+Content-Type: text/event-stream
+Cache-Control: no-cache
+Connection: keep-alive
+
+event: price
+data: {"symbol":"NB","price":128.42}
+
+event: price
+data: {"symbol":"NB","price":128.55}
+
+```
+
+Cada evento es un bloque de texto plano: un nombre `event:` opcional, una línea `data:` (o varias, unidas), y una línea en blanco para terminarlo. Sin framing binario, sin biblioteca de cliente especial requerida — es solo una respuesta HTTP que un cliente lee de forma incremental.
+
+## Pruébalo
+
+<RequestPlayground protocol="sse" defaultTarget="/events/prices" simulatedEvents={tickerEvents} />
+
+## Por qué no usar siempre esto en lugar de WebSockets
+
+SSE es más simple que un WebSocket en casi todos los aspectos que importan operacionalmente: es HTTP plano, así que pasa a través de proxies/balanceadores de carga/CDNs que no tienen idea de qué es siquiera un header `Upgrade` de WebSocket, y la API `EventSource` del navegador se reconecta automáticamente después de una caída — sin lógica de reconexión que escribir. La única cosa que genuinamente no puede hacer es enviar algo desde el cliente de vuelta sobre la misma conexión; un cliente que también necesita enviar datos usa una solicitud HTTP normal junto al flujo, o recurre a un WebSocket en su lugar si las dos direcciones necesitan mantenerse estrechamente acopladas.
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "direction", label: "Dirección" },
+    { key: "transport", label: "Transporte" },
+    { key: "reconnect", label: "Reconexión" },
+  ]}
+  items={[
+    {
+      id: "sse",
+      label: "Server-Sent Events",
+      color: "blue",
+      columns: { direction: "Solo servidor → cliente", transport: "HTTP plano", reconnect: "Automática, integrada en el navegador" },
+    },
+    {
+      id: "ws",
+      label: "WebSockets",
+      color: "purple",
+      columns: { direction: "Ambas direcciones", transport: "Conexión con upgrade", reconnect: "Manual — la aplicación tiene que implementarla" },
+    },
+  ]}
+/>
+
+## Límites de conexión
+
+Los navegadores limitan el número de conexiones `EventSource` simultáneas al mismo origen sobre HTTP/1.1 (históricamente 6, compartidas con las solicitudes normales) — abrir varios flujos SSE al mismo host desde varias pestañas puede agotar ese límite. HTTP/2 elimina este techo multiplexando muchos flujos sobre una sola conexión, lo cual es una razón más por la que los endpoints SSE de producción típicamente se sirven sobre HTTP/2.
+
+## Ver también
+
+- **[WebSockets](/es/web-apis/websockets)** — recurre a esto en su lugar cuando el cliente también necesite enviar datos.
+- **[Webhooks](/es/web-apis/webhooks)** — para "avísame" sin que el cliente mantenga ninguna conexión abierta en absoluto.

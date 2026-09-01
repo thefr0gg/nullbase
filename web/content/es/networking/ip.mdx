@@ -1,0 +1,43 @@
+---
+title: IP
+description: El protocolo de capa de red responsable de direccionar y enrutar cada paquete — entrega de mejor esfuerzo, dejando la fiabilidad a las capas superiores.
+category: Networking
+weight: 2
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+**IP (Internet Protocol)** le da a cada dispositivo una dirección única y enruta paquetes hacia ella, salto a salto, a través de redes a las que nunca se les informó unas de otras de antemano. Es deliberadamente mínimo: IP no garantiza que un paquete llegue, que llegue una sola vez, ni que llegue en orden — eso queda por completo en manos de [TCP](/es/networking/tcp) cuando una aplicación lo necesita.
+
+## Entrega de mejor esfuerzo
+
+«Mejor esfuerzo» significa que cada router a lo largo de la ruta hace honestamente lo posible por acercar un paquete a su destino, pero nada reintenta un paquete que se pierde — los routers descartan paquetes bajo congestión, y un paquete corrupto o mal dirigido simplemente desaparece a menos que algo por encima de IP lo note y vuelva a preguntar.
+
+## Qué contiene un paquete IP
+
+<ItemExplorer
+  title="Campos de la Cabecera IP"
+  layout="table"
+  tableColumns={[{ key: "purpose", label: "Propósito" }]}
+  items={[
+    { id: "src-dst", label: "Origen / Destino", color: "blue", columns: { purpose: "Las direcciones de emisor y receptor — la razón misma por la que existe IP." } },
+    { id: "ttl", label: "TTL (Time to Live)", color: "orange", columns: { purpose: "Un contador de saltos, decrementado por cada router — llega a cero y el paquete se descarta, evitando bucles de enrutamiento infinitos." } },
+    { id: "protocol", label: "Protocolo", color: "green", columns: { purpose: "A qué protocolo de transporte pertenece la carga útil — 6 para TCP, 17 para UDP, 1 para ICMP." } },
+    { id: "fragment", label: "Campos de fragmentación", color: "purple", columns: { purpose: "Identificación, indicadores y desplazamiento — permiten que un paquete demasiado grande para un enlace se divida y se reensamble." } },
+    { id: "checksum", label: "Checksum de Cabecera", color: "red", columns: { purpose: "Detecta corrupción en la propia cabecera (solo IPv4 — IPv6 lo eliminó, confiando en las capas inferior/superior en su lugar)." } },
+  ]}
+/>
+
+## Fragmentación
+
+Todo enlace de red tiene una unidad máxima de transmisión (MTU) — el paquete más grande que puede transportar de una pieza. Si un paquete es más grande que el MTU del siguiente enlace, los routers IPv4 pueden dividirlo en fragmentos que se reensamblan en el destino. Esto cuesta rendimiento y complica lo suficiente las cosas como para que las pilas modernas generalmente lo eviten, descubriendo de antemano el MTU más pequeño de la ruta (Path MTU Discovery) y dimensionando los paquetes para que encajen.
+
+## Por qué el TTL importa más de lo que parece
+
+Sin un límite de saltos, una mala configuración de enrutamiento que crease un bucle haría circular el mismo paquete para siempre, consumiendo ancho de banda indefinidamente. El TTL garantiza que todo paquete acabe muriendo — y el mensaje de «TTL agotado» que dispara es, a su vez, el mecanismo que usa `traceroute` para mapear una ruta, un salto a la vez (ver [ICMP](/es/networking/icmp)).
+
+## Ver también
+
+- **[IPv4](/es/networking/ipv4)** e **[IPv6](/es/networking/ipv6)** — los dos formatos de dirección que IP usa realmente hoy en día.
+- **[Enrutamiento](/es/networking/routing)** — cómo decide cada salto adónde reenviar un paquete a continuación.
+- **[ICMP](/es/networking/icmp)** — cómo reportan routers y hosts problemas que IP misma no tiene forma de señalar.

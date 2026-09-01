@@ -5,7 +5,7 @@ category: Cloudflare
 weight: 1
 ---
 
-**D1** est le produit de base de données managée de Cloudflare — [SQLite](/en/databases/sqlite) sous le capot, accessible depuis un [Worker](/fr/cloudflare/workers) via un [binding](/fr/cloudflare/workers-bindings) plutôt qu'une chaîne de connexion persistante traditionnelle. Choisir spécifiquement SQLite (plutôt que de construire depuis zéro un équivalent distribué de Postgres) signifie que D1 hérite d'un SQL déjà probablement connu, sans aucune des préoccupations habituelles de gestion de connexions d'une base de données client/serveur classique.
+**D1** est le produit de base de données managée de Cloudflare — [SQLite](/fr/databases/sqlite) sous le capot, accessible depuis un [Worker](/fr/cloudflare/workers) via un [binding](/fr/cloudflare/workers-bindings) plutôt qu'une chaîne de connexion persistante traditionnelle. Choisir spécifiquement SQLite (plutôt que de construire depuis zéro un équivalent distribué de Postgres) signifie que D1 hérite d'un SQL déjà probablement connu, sans aucune des préoccupations habituelles de gestion de connexions d'une base de données client/serveur classique.
 
 ## Interroger depuis un Worker
 
@@ -21,7 +21,7 @@ export default {
 };
 ```
 
-`env.DB` est le binding configuré dans `wrangler.jsonc` ; `.prepare().bind().all()` est une requête paramétrée — liant la valeur séparément du texte de la requête, le même motif à l'abri des [injections SQL](/en/security/sql-injection) que suit toute requête paramétrée, quelle que soit la base de données.
+`env.DB` est le binding configuré dans `wrangler.jsonc` ; `.prepare().bind().all()` est une requête paramétrée — liant la valeur séparément du texte de la requête, le même motif à l'abri des [injections SQL](/fr/security/sql-injection) que suit toute requête paramétrée, quelle que soit la base de données.
 
 ## Pas de connexions persistantes
 
@@ -51,6 +51,6 @@ D1 est bien adapté aux données applicatives relationnelles et à forte lecture
 
 ## Voir aussi
 
-- **[SQL](/en/databases/sql)** et **[SQLite](/en/databases/sqlite)** — le langage et le moteur que D1 exécute.
+- **[SQL](/fr/databases/sql)** et **[SQLite](/fr/databases/sqlite)** — le langage et le moteur que D1 exécute.
 - **[Workers Bindings](/fr/cloudflare/workers-bindings)** — comment `env.DB` ci-dessus arrive réellement là.
 - **[KV](/fr/cloudflare/kv)** — un bon choix quand les données n'ont besoin ni de structure relationnelle ni de forte cohérence.

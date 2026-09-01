@@ -1,0 +1,60 @@
+---
+title: Tipos MIME
+description: Cómo indica una solicitud o respuesta al otro lado qué tipo de datos está enviando en realidad — el valor de la cabecera Content-Type.
+category: Data & Serialization
+weight: 6
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+Un tipo MIME (Multipurpose Internet Mail Extensions type — el nombre es un remanente del correo electrónico, su uso original) es una cadena corta que identifica un formato de datos: `application/json`, `image/png`, `text/html`. Toda solicitud o respuesta [HTTP](/es/web-fundamentals/http) con un cuerpo debería etiquetarlo con una cabecera `Content-Type` que lleve uno, para que el receptor sepa cómo analizarlo o renderizarlo sin tener que adivinar.
+
+```http
+Content-Type: application/json; charset=utf-8
+```
+
+## Estructura: type/subtype
+
+Todo tipo MIME es un par `type/subtype`, y opcionalmente parámetros tras un punto y coma (como `charset` arriba, o `boundary` para `multipart/form-data` — ver [Form Data](/es/data-serialization/form-data)):
+
+```
+application / json
+    type    subtype
+```
+
+## Tipos comunes
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "used", label: "Usado para" },
+  ]}
+  items={[
+    { id: "json", label: "application/json", color: "blue", columns: { used: "JSON — lo habitual para la mayoría de los cuerpos de API" } },
+    { id: "form", label: "application/x-www-form-urlencoded", color: "blue", columns: { used: "Envíos de formularios HTML simples" } },
+    { id: "multipart", label: "multipart/form-data", color: "blue", columns: { used: "Envíos de formularios que incluyen subida de archivos" } },
+    { id: "html", label: "text/html", color: "green", columns: { used: "Un documento HTML" } },
+    { id: "plain", label: "text/plain", color: "green", columns: { used: "Texto sin formato — también el valor de respaldo cuando no aplica nada más específico" } },
+    { id: "png", label: "image/png", color: "purple", columns: { used: "Imágenes PNG" } },
+    { id: "octet", label: "application/octet-stream", color: "orange", columns: { used: "\"Algún dato binario\" — el respaldo genérico cuando se desconoce el formato específico" } },
+    { id: "pdf", label: "application/pdf", color: "orange", columns: { used: "Documentos PDF" } },
+  ]}
+/>
+
+## Por qué el navegador confía en esta cabecera
+
+Que un archivo se llame `report.json` no garantiza que su contenido sea JSON — el navegador y la mayoría de los clientes HTTP confían en la cabecera `Content-Type`, no en la extensión del archivo de la URL, para decidir cómo manejar una respuesta (renderizarla, descargarla, analizarla como un formato específico). Servir un `Content-Type` incorrecto es una clase de error real, aunque sutil: una respuesta de API JSON servida como `text/html` podría ser renderizada por un navegador como un bloque de texto sin formato en lugar de activar el analizador JSON de un cliente, o peor, es en sí misma una discrepancia relevante para la seguridad (el sniffing de MIME se ha explotado para XSS en el pasado, lo cual es parte de la razón por la que existe la cabecera `X-Content-Type-Options: nosniff`).
+
+## `Accept` es la contraparte del lado de la solicitud
+
+Mientras que `Content-Type` etiqueta lo que *es* un cuerpo, la cabecera de solicitud `Accept` le dice al servidor qué formatos está dispuesto a recibir el cliente — esta es la base de la negociación de contenido, una de las estrategias de [Versionado de API](/es/web-apis/api-versioning) cubiertas anteriormente:
+
+```http
+GET /api/users/42
+Accept: application/json
+```
+
+## Ver también
+
+- **[JSON](/es/data-serialization/json)**, **[XML](/es/data-serialization/xml)** — dos de los formatos que un tipo MIME identifica habitualmente.
+- **[Base64](/es/data-serialization/base64)** — una data URL (`data:image/png;base64,...`) incrusta tanto un tipo MIME como contenido codificado en una sola cadena.

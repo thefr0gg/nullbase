@@ -1,0 +1,53 @@
+---
+title: HTML
+description: البنية والمعنى، لا المظهر — ما يعبّر عنه العنصر لا يقل أهمية عن شكل عرضه.
+category: Web Platform
+weight: 0
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+يصف HTML (لغة الترميز التشعبي) **بنية ومعنى** المستند، لا شكل عرضه — تلك مهمة [CSS](/ar/web-platform/css). يمكن جعل `<button>` و`<div onclick="...">` يبدوان متطابقين تماماً، لكن أحدهما فقط يخبر المتصفح، وقارئ الشاشة، ومحرك البحث "هذا عنصر تحكم قابل للنقر" مجاناً: التركيز عبر لوحة المفاتيح، والتفعيل بـ`Enter`/`Space`، ودور إمكانية الوصول — كلها تأتي من اختيار العنصر الصحيح، لا من التنسيق.
+
+```html
+<article>
+  <h1>Article title</h1>
+  <p>Some text, with a <a href="/other-page">link</a>.</p>
+</article>
+```
+
+## العناصر الدلالية
+
+استخدام عنصر لما يعنيه — لا فقط لشكل عرضه — هو ما يشير إليه مصطلح "HTML الدلالي". إنه إمكانية وصول مجانية، وبنية SEO مجانية، ويوثّق بنية الصفحة للشخص التالي الذي يقرأ الترميز.
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "meaning", label: "يعني" },
+    { key: "insteadOf", label: "بدلاً من" },
+  ]}
+  items={[
+    { id: "nav", label: "<nav>", color: "blue", columns: { meaning: "كتلة من روابط التنقل", insteadOf: "<div class=\"nav\">" } },
+    { id: "main", label: "<main>", color: "green", columns: { meaning: "المحتوى الأساسي للصفحة، عنصر واحد فقط لكل صفحة", insteadOf: "<div id=\"main\">" } },
+    { id: "button", label: "<button>", color: "orange", columns: { meaning: "عنصر تحكم قابل للنقر — قابل للتركيز وقابل للتفعيل بلوحة المفاتيح مجاناً", insteadOf: "<div onclick=\"...\">" } },
+    { id: "article", label: "<article>", color: "purple", columns: { meaning: "محتوى قائم بذاته (منشور، بطاقة)", insteadOf: "<div class=\"card\">" } },
+    { id: "label", label: "<label>", color: "default", columns: { meaning: "نص مرتبط بعنصر تحكم في نموذج — النقر عليه يركّز على الحقل", insteadOf: "<span> بجانب <input>" } },
+  ]}
+/>
+
+## المستند كشجرة
+
+يحلّل المتصفح HTML إلى شجرة من العقد — هذه الشجرة المحلَّلة والمقيمة في الذاكرة هي [DOM](/ar/web-platform/dom)، وهي ما تقرأه [JavaScript](/ar/web-platform/javascript) وتعدّله فعلياً، لا نص HTML الأصلي. بمجرد التحليل، يختفي الترميز المصدري ولا يبقى سوى الشجرة.
+
+## النماذج
+
+`<form>` هي آلية HTML المدمجة لجمع مدخلات المستخدم وإرسالها — انظر [بيانات النموذج](/ar/data-serialization/form-data) لمعرفة كيف يُرمَّز الإرسال فعلياً على السلك، و[ترميز URL](/ar/data-serialization/url-encoding) لكيفية تهريب الأحرف الخاصة في قيم النموذج.
+
+## سمات تقوم بعمل حقيقي
+
+بعض السمات ليست مجرد بيانات وصفية — إنها تغيّر سلوك المتصفح مباشرة: `disabled` على عنصر تحكم في نموذج يزيله تماماً من ترتيب التبويب ومن إرسال النموذج، لا بصرياً فقط؛ `loading="lazy"` على `<img>` يؤجل التحميل حتى يقترب العنصر من منطقة العرض؛ `rel="noopener"` على رابط بـ`target="_blank"` يمنع الصفحة الجديدة من الحصول على مرجع يعود إلى نافذة الفتح (حد أمني حقيقي، لا مجرد تلميح تنسيقي).
+
+## طالع أيضاً
+
+- **[CSS](/ar/web-platform/css)** — كيف يحصل هيكل HTML على عرض بصري.
+- **[DOM](/ar/web-platform/dom)** — الشجرة الحية التي تُحلَّل منها HTML.

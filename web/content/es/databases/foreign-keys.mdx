@@ -1,0 +1,57 @@
+---
+title: Claves foráneas
+description: Una restricción que impide que una fila referencie algo que no existe — aplicada por la propia base de datos, no dejada al código de la aplicación para que se acuerde.
+category: Databases
+weight: 9
+interactive: true
+interactiveType: ["SqlPlayground"]
+---
+
+Una clave foránea es una columna (o conjunto de columnas) en una tabla que referencia la clave primaria de otra — `orders.customer_id` referenciando `customers.id`. Declararla como una restricción `FOREIGN KEY` real, en lugar de simplemente una columna entera que resulta que contiene el id de un cliente, significa que la propia base de datos rechaza cualquier fila que rompiera la referencia — un pedido nunca puede apuntar a un cliente que no existe, aplicado automáticamente, sin código de aplicación que pudiera olvidarse de comprobarlo.
+
+## Pruébalo — una violación de restricción real
+
+SQLite no aplica las claves foráneas por defecto (una rareza histórica, por compatibilidad hacia atrás) — este playground lo activa explícitamente, así que el error que ves abajo es un fallo de restricción genuino, no un mensaje guionizado.
+
+<SqlPlayground
+  title="Aplicación de claves foráneas, activada"
+  enforceForeignKeys
+  schema={`
+CREATE TABLE authors (id INTEGER PRIMARY KEY, name TEXT NOT NULL);
+CREATE TABLE books (
+  id INTEGER PRIMARY KEY,
+  title TEXT NOT NULL,
+  author_id INTEGER NOT NULL REFERENCES authors(id)
+);
+INSERT INTO authors (id, name) VALUES (1, 'Octavia Butler'), (2, 'Ursula K. Le Guin');
+INSERT INTO books (id, title, author_id) VALUES (1, 'Kindred', 1), (2, 'The Left Hand of Darkness', 2);
+`}
+  defaultQuery={`INSERT INTO books (title, author_id) VALUES ('Ghost Author Book', 999);`}
+/>
+
+Eso falla con un `FOREIGN KEY constraint failed` real — no hay ningún autor con `id = 999`. Ahora prueba una inserción válida en su lugar: `INSERT INTO books (title, author_id) VALUES ('Parable of the Sower', 1);` — tiene éxito de inmediato, ya que el autor `1` genuinamente existe.
+
+## Comportamiento de `ON DELETE`
+
+Una clave foránea también tiene que decidir qué pasa cuando se borra la fila a la que apunta — esto se define explícitamente por cada restricción, y equivocarse es una fuente real y común tanto de filas huérfanas como de borrados en cascada no deseados.
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[{ key: "behavior", label: "Al borrar la fila referenciada" }]}
+  items={[
+    { id: "restrict", label: "RESTRICT / NO ACTION", color: "blue", columns: { behavior: "Bloquea el borrado por completo mientras cualquier fila aún la referencie — el valor por defecto en la mayoría de motores." } },
+    { id: "cascade", label: "CASCADE", color: "red", columns: { behavior: "Borra también cada fila que la referencia — borrar a un autor borraría silenciosamente todos sus libros." } },
+    { id: "setnull", label: "SET NULL", color: "orange", columns: { behavior: "Pone la columna referenciante en NULL — solo válido si esa columna permite NULL, es decir, si la referencia es opcional." } },
+  ]}
+/>
+
+Prueba a añadir `ON DELETE CASCADE` al esquema de arriba (`author_id INTEGER NOT NULL REFERENCES authors(id) ON DELETE CASCADE`), reinicia, y luego `DELETE FROM authors WHERE id = 1;` seguido de `SELECT * FROM books;` — los libros de Octavia Butler también desaparecen, borrados automáticamente junto con su autor.
+
+## Por qué no simplemente comprobarlo en el código de la aplicación
+
+Una aplicación podría comprobar "existe este autor" antes de cada inserción en vez de declarar una restricción — pero esa comprobación y la inserción no son atómicas a menos que estén envueltas en una [transacción](/es/databases/transactions), una segunda ruta de código (un script de importación masiva, un servicio distinto, acceso directo a la base de datos) siempre puede olvidarse de la comprobación, y una clave foránea es una línea de esquema en lugar de lógica de aplicación que tiene que ser correcta y estar duplicada en cada lugar donde ocurren escrituras. La base de datos aplicándolo es estrictamente más confiable que confiar en que cada llamador se acuerde.
+
+## Ver también
+
+- **[Normalización de bases de datos](/es/databases/database-normalization)** — las claves foráneas son lo que mantiene consistentes entre sí a las tablas separadas de un esquema normalizado.
+- **[Transacciones](/es/databases/transactions)** — una violación de clave foránea a mitad de transacción hace que esa transacción falle y se revierta.

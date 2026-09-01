@@ -1,0 +1,54 @@
+---
+title: Índices de bases de datos
+description: Cómo una búsqueda pasa de escanear cada fila a saltar directamente a la respuesta — y cómo probar, no solo asumir, que un índice se está usando realmente.
+category: Databases
+weight: 5
+interactive: true
+interactiveType: ["SqlPlayground"]
+---
+
+Sin un índice, encontrar filas que coincidan con una condición `WHERE` significa revisar cada fila de la tabla — un **escaneo completo de tabla**. Un índice es una estructura de datos separada y ordenada (casi siempre un B-tree) que mapea los valores de una columna a las filas que los contienen, para que el motor pueda saltar directamente a una coincidencia en vez de escanear todo. Este es genuinamente el mismo compromiso que el índice de un libro: hojear cada página buscando un tema frente a ir directamente al número de página que el índice ya te dio.
+
+## Pruébalo — demostrándolo con un plan de consulta real
+
+Esto no es una afirmación de fe — `EXPLAIN QUERY PLAN` le pide a SQLite que te muestre exactamente cómo pretende ejecutar una consulta, y el playground de abajo está ejecutando SQLite real. Los datos precargados de abajo construyen 1.000 filas y ponen un índice real en una columna pero no en otra, para que puedas comparar el plan de una búsqueda indexada contra una sin indexar en la misma tabla.
+
+<SqlPlayground
+  title="Tabla de 1.000 filas — email indexado, age sin indexar"
+  schema={`
+CREATE TABLE users (id INTEGER PRIMARY KEY, email TEXT NOT NULL, age INTEGER NOT NULL);
+INSERT INTO users (id, email, age)
+WITH RECURSIVE seq(x) AS (SELECT 1 UNION ALL SELECT x + 1 FROM seq WHERE x < 1000)
+SELECT x, 'user' || x || '@example.com', 18 + (x % 50) FROM seq;
+CREATE INDEX idx_users_email ON users(email);
+`}
+  defaultQuery={`EXPLAIN QUERY PLAN SELECT * FROM users WHERE email = 'user500@example.com';`}
+/>
+
+Ese plan debería leerse algo como `SEARCH users USING INDEX idx_users_email (email=?)` — una búsqueda directa. Ahora prueba lo mismo en la columna sin índice:
+
+```sql
+EXPLAIN QUERY PLAN SELECT * FROM users WHERE age = 30;
+```
+
+Este devuelve `SCAN users` — se revisan las 1.000 filas, porque no hay nada que le indique al motor dónde viven realmente las filas con `age = 30`. En una tabla de este tamaño la diferencia es invisible para un humano; en una tabla con 100 millones de filas, es la diferencia entre un milisegundo y una consulta que agota el tiempo de espera.
+
+## Lo que realmente cuesta un índice
+
+Un índice no es gratis — cada `INSERT`, `UPDATE`, o `DELETE` sobre una columna indexada también tiene que actualizar la propia estructura de datos del índice, y el índice en sí ocupa espacio adicional en disco. Por eso los índices no se añaden a cada columna por defecto: un índice que acelera una consulta de informe poco frecuente pero ralentiza una ruta de escritura activa puede ser una pérdida neta. La regla general es indexar columnas que se buscan, filtran, o se usan en joins con frecuencia — no toda columna que meramente *podría* buscarse.
+
+## Índices compuestos y orden de columnas
+
+Un índice puede abarcar más de una columna, y el orden importa — un índice sobre `(last_name, first_name)` puede servir eficientemente una consulta que filtra solo por `last_name`, o por ambas columnas juntas, pero generalmente no puede servir eficientemente una consulta que filtra solo por `first_name`, por la misma razón que una guía telefónica ordenada por apellido no te ayuda a encontrar a todos con un nombre de pila dado.
+
+```sql
+CREATE INDEX idx_name ON people(last_name, first_name);
+-- Fast: WHERE last_name = 'Hopper'
+-- Fast: WHERE last_name = 'Hopper' AND first_name = 'Grace'
+-- Slow (falls back to a scan): WHERE first_name = 'Grace'
+```
+
+## Ver también
+
+- **[SQL](/es/databases/sql)** — las consultas que un índice acelera.
+- **[Normalización de bases de datos](/es/databases/database-normalization)** — un esquema normalizado a menudo necesita índices específicamente en columnas de clave foránea para mantener rápidos los joins, ver [Claves foráneas](/es/databases/foreign-keys).

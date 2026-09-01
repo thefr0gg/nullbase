@@ -1,0 +1,46 @@
+---
+title: Web Workers
+description: JavaScript en segundo plano en un hilo genuinamente separado — para cuando un cálculo es demasiado pesado para ejecutarse en el hilo que renderiza la interfaz.
+category: Web Platform
+weight: 8
+interactive: true
+interactiveType: ["StepFlow"]
+---
+
+import { webWorkerLifecycleSteps } from "./web-worker-lifecycle-steps";
+
+[JavaScript](/es/web-platform/javascript) en una página normalmente se ejecuta en un único hilo que también se encarga del renderizado y de la entrada del usuario — un cálculo de larga duración en ese hilo congela la página, ya que nada más puede ejecutarse hasta que termine. Un Web Worker ejecuta un script separado en su propio hilo del sistema operativo, en paralelo real, precisamente para evitar eso.
+
+## El ciclo de vida
+
+Por defecto no hay memoria compartida entre el hilo principal y un worker — cada mensaje cruza el límite como una copia, no como una referencia, lo cual determina cómo funciona todo el intercambio.
+
+<StepFlow title="Creando y comunicándose con un worker" steps={webWorkerLifecycleSteps} />
+
+## Lo que un worker no puede hacer
+
+Un worker no tiene acceso al [DOM](/es/web-platform/dom), a `window`, ni a las variables de la página padre — se ejecuta en un ámbito global completamente separado. Puede usar `fetch`, temporizadores, y la mayoría de las demás APIs del navegador que no son del DOM, pero nunca puede tocar directamente la página desde la que se generó; toda interacción pasa por `postMessage`.
+
+## Hilo principal frente a worker
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "domAccess", label: "Acceso al DOM" },
+    { key: "blocksUi", label: "¿Bloquea la UI si está ocupado?" },
+  ]}
+  items={[
+    { id: "main", label: "Main thread", color: "blue", columns: { domAccess: "Sí", blocksUi: "Sí — este es el hilo que renderiza" } },
+    { id: "worker", label: "Web Worker", color: "green", columns: { domAccess: "No", blocksUi: "No — se ejecuta en paralelo" } },
+    { id: "sw", label: "Service Worker", color: "purple", columns: { domAccess: "No", blocksUi: "No — también se ejecuta en su propio hilo" } },
+  ]}
+/>
+
+## Cuándo realmente merece la pena
+
+Crear un worker tiene un coste real (iniciar un nuevo hilo, y cada mensaje se copia, no es gratis) — vale la pena para trabajo genuinamente intensivo en CPU (analizar un conjunto de datos grande, procesamiento de imágenes/vídeo, cálculos complejos), no para el trabajo asíncrono cotidiano que `async`/`await` y las Promises ya manejan sin necesitar en absoluto un segundo hilo. La mayoría de la interactividad de una página nunca necesita un worker; recurre a uno solo cuando el perfilado muestre que el hilo principal es realmente el cuello de botella.
+
+## Ver también
+
+- **[JavaScript](/es/web-platform/javascript)** — el bucle de eventos de un solo hilo junto al cual existe esto, no en su lugar.
+- **[Service Workers](/es/web-platform/service-workers)** — un worker especializado para interceptación de red, no para cómputo general.

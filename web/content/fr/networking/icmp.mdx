@@ -1,0 +1,42 @@
+---
+title: ICMP
+description: Le protocole qu'IP utilise pour signaler ses propres problèmes — pas de ports, pas de charge utile applicative, juste des messages de diagnostic entre hôtes et routeurs.
+category: Networking
+weight: 7
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+**ICMP (Internet Control Message Protocol)** est le moyen par lequel routeurs et hôtes signalent des problèmes qu'[IP](/fr/networking/ip) lui-même n'a aucun moyen de signaler — une destination injoignable, un paquet expiré, un réseau inaccessible. Ce n'est pas un protocole de transport comme [TCP](/fr/networking/tcp) ou [UDP](/fr/networking/udp) : pas de numéro de port, pas de connexion, et ce n'est en général pas quelque chose que le code applicatif envoie directement.
+
+## Types de messages courants
+
+<ItemExplorer
+  title="Types de messages ICMP"
+  layout="pills"
+  items={[
+    { id: "echo-request", label: "Echo Request", color: "blue", detail: "Type 8 — « es-tu là ? » C'est ce que ping envoie." },
+    { id: "echo-reply", label: "Echo Reply", color: "green", detail: "Type 0 — la réponse à un Echo Request. Une réponse de ping." },
+    { id: "unreachable", label: "Destination Unreachable", color: "red", detail: "Type 3 — envoyé par un routeur qui ne peut pas transmettre un paquet (pas de route, ou un pare-feu l'a bloqué), avec des sous-codes expliquant pourquoi." },
+    { id: "ttl-exceeded", label: "Time Exceeded", color: "orange", detail: "Type 11 — envoyé quand le TTL d'un paquet atteint zéro. traceroute déclenche ces messages délibérément pour cartographier un chemin saut par saut." },
+    { id: "redirect", label: "Redirect", color: "purple", detail: "Type 5 — un routeur informant un hôte qu'un meilleur prochain saut existe pour une destination donnée." },
+  ]}
+/>
+
+## Comment `ping` fonctionne réellement
+
+`ping` envoie un ICMP Echo Request vers une cible et attend un Echo Reply — le temps d'aller-retour et la perte de paquets se mesurent directement à partir du fait (et de la vitesse à laquelle) la réponse revient. Pas de handshake, pas de port, rien d'autre que « as-tu répondu, et en combien de temps ».
+
+## Comment `traceroute` détourne le Time Exceeded
+
+`traceroute` envoie une série de paquets avec **TTL = 1, puis 2, puis 3**, et ainsi de suite. Chacun meurt au routeur situé à ce nombre de sauts, et ce routeur renvoie un message Time Exceeded — révélant sa propre adresse au passage. En collectant un tel message par saut, traceroute reconstruit le chemin complet vers la destination sans qu'aucun routeur n'ait besoin de coopérer au-delà du comportement ICMP standard.
+
+## Pourquoi certains pings ne reviennent jamais
+
+De nombreux réseaux limitent le débit ou bloquent entièrement ICMP au niveau des pare-feux, car ICMP a parfois été détourné à des fins de reconnaissance ou de trafic de déni de service. Un hôte qui ne répond jamais au ping n'est pas nécessairement hors service — il peut simplement être configuré pour ignorer ICMP tout en servant parfaitement normalement du trafic TCP sur d'autres ports.
+
+## Voir aussi
+
+- **[Routage](/fr/networking/routing)** — la transmission saut par saut que révèlent les messages ICMP Time Exceeded.
+- **[IP](/fr/networking/ip)** — le champ TTL qui déclenche le message Time Exceeded d'ICMP.
+- **[UDP](/fr/networking/udp)** — comme ICMP, sans connexion, mais transportant des données applicatives plutôt que du diagnostic.

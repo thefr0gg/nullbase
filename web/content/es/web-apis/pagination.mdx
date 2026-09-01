@@ -1,0 +1,78 @@
+---
+title: Paginación
+description: Devolver una gran cantidad de datos una página a la vez en lugar de todo de golpe — paginación por offset, cursor, y keyset comparadas.
+category: Web APIs
+weight: 10
+interactive: true
+interactiveType: ["RequestPlayground", "ItemExplorer"]
+---
+
+Un endpoint de listado que devuelve todo de golpe no escala — una tabla con un millón de filas significaría una respuesta de un millón de filas para un cliente que solo necesita mostrar 20. La paginación divide una lista en páginas, devueltas una solicitud a la vez, con algún marcador que le indica al cliente cómo obtener la siguiente.
+
+## Pruébalo
+
+El endpoint simulado `/api/items` admite tanto paginación por offset (`page`/`limit`) como por cursor (`cursor`/`limit`) sobre la misma lista de 24 elementos — prueba los chips de abajo, o edita tú mismo la cadena de consulta.
+
+<RequestPlayground
+  protocol="http"
+  defaultTarget="/api/items?page=1&limit=5"
+  examplePaths={[
+    { method: "GET", path: "/api/items?page=1&limit=5", label: "page 1" },
+    { method: "GET", path: "/api/items?page=2&limit=5", label: "page 2" },
+    { method: "GET", path: "/api/items?cursor=5&limit=5", label: "cursor" },
+  ]}
+/>
+
+## Estrategias comparadas
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "howItWorks", label: "Cómo funciona" },
+    { key: "weakness", label: "Debilidad" },
+  ]}
+  items={[
+    {
+      id: "offset",
+      label: "Offset",
+      color: "blue",
+      columns: {
+        howItWorks: "?page=2&limit=20 — \"salta 20, toma 20\"",
+        weakness: "Si se inserta/elimina una fila mientras se pagina, las páginas posteriores se desplazan — una fila puede saltarse o mostrarse dos veces. También se vuelve más lento en tablas muy grandes (la base de datos igual tiene que escanear más allá de cada fila saltada).",
+      },
+    },
+    {
+      id: "cursor",
+      label: "Cursor",
+      color: "green",
+      columns: {
+        howItWorks: "?cursor=<last item's id>&limit=20 — \"dame los siguientes 20 después de este\"",
+        weakness: "No se puede saltar directamente a una página arbitraria (\"muéstrame la página 50\") — solo avanzar/retroceder desde donde estás.",
+      },
+    },
+    {
+      id: "keyset",
+      label: "Keyset",
+      color: "purple",
+      columns: {
+        howItWorks: "Un cursor construido a partir de las columnas de ordenamiento reales (p. ej. ?after=2024-01-15T09:00:00Z), no un id opaco",
+        weakness: "Requiere que las columnas de ordenamiento estén indexadas y que la consulta se escriba específicamente en torno a ellas — más trabajo de diseño previo que offset.",
+      },
+    },
+  ]}
+/>
+
+La paginación por cursor y por keyset son efectivamente la misma idea (paginar por "después de este marcador" en lugar de "saltar N filas") — keyset simplemente usa el campo de ordenamiento real como marcador en lugar de un ID opaco, que es lo que hace que se mantenga rápido a gran escala: la base de datos puede saltar directamente a ese valor usando un índice en lugar de contar filas desde el principio.
+
+## Dando forma a la respuesta
+
+Sea cual sea la estrategia usada, la respuesta debería indicarle al cliente cómo obtener la siguiente página sin que tenga que adivinar — un `next_cursor` (o un enlace `next` completo, `_links.next`) junto con un booleano `has_more` es suficiente para que un cliente itere hasta quedarse sin páginas, sin adivinar errores de desplazamiento sobre si acaba de obtener la última.
+
+```json
+{ "data": [ /* ... */ ], "next_cursor": "42", "has_more": true }
+```
+
+## Ver también
+
+- **[REST](/es/web-apis/rest)** — la paginación casi siempre se aplica específicamente a un endpoint de listado `GET` de REST.
+- **[Limitación de tasa](/es/web-apis/rate-limiting)** — un cliente que pagina rápidamente a través de una lista enorme es exactamente el tipo de tráfico que un límite existe para suavizar.

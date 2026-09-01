@@ -1,0 +1,40 @@
+---
+title: Webhooks
+description: Plutôt que de demander au serveur « c'est arrivé ? », le serveur vous rappelle quand c'est le cas.
+category: Web APIs
+weight: 3
+interactive: true
+interactiveType: ["RequestPlayground", "StepFlow"]
+---
+
+import { webhookDeliverySteps } from "./webhooks-steps";
+
+La majeure partie de ce que couvre cette section jusqu'ici, c'est un client qui appelle un serveur. Un webhook inverse cela : c'est le serveur qui **vous** appelle — un `POST` HTTP vers une URL que vous avez enregistrée à l'avance, envoyé chaque fois qu'un événement se produit de l'autre côté. Au lieu d'interroger « ce paiement est-il passé ? » toutes les quelques secondes, vous enregistrez une URL une fois et êtes prévenu à l'instant où il passe.
+
+## La livraison, étape par étape
+
+<StepFlow title="Livraison d'un webhook" steps={webhookDeliverySteps} />
+
+## Essayez d'en recevoir un
+
+Le terrain de jeu ci-dessous est structuré comme votre endpoint recevant un webhook : quels que soient les headers et le payload que vous envoyez, vous obtenez en retour un écho `received: true`, tout comme un vrai récepteur retournerait un `2xx` pour accuser réception de la livraison.
+
+<RequestPlayground
+  protocol="webhook"
+  defaultTarget="/hooks/payments"
+  defaultHeaders={"X-Signature: sha256=4a1f9c...\nContent-Type: application/json"}
+  defaultBody={`{\n  "event": "payment.succeeded",\n  "id": "pay_123",\n  "amount": 4200\n}`}
+/>
+
+## Vérification de signature
+
+N'importe qui peut envoyer un `POST` à une URL publique. Les expéditeurs de webhooks prouvent que la requête vient réellement d'eux en signant le payload brut avec un secret partagé (généralement HMAC-SHA256) et en envoyant la signature dans un header. Votre récepteur recalcule la même signature sur les mêmes octets et rejette la requête si elles ne correspondent pas — c'est l'équivalent webhook de [l'Authentification API](/fr/web-apis/api-authentication).
+
+## Les réessais signifient des doublons
+
+Si votre endpoint est lent, en panne, ou renvoie une erreur, l'expéditeur réessaie — ce qui signifie que le même événement peut arriver deux fois. Traitez chaque gestionnaire de webhook comme **idempotent** : stockez l'ID d'événement déjà traité et ignorez tout ce que vous avez déjà vu. Voir [Idempotence](/fr/web-apis/idempotency) pour le même pattern appliqué aux requêtes sortantes plutôt qu'entrantes.
+
+## Voir aussi
+
+- **[WebSockets](/fr/web-apis/websockets)** — pour quand vous avez besoin d'une communication bidirectionnelle et continue plutôt que de notifications d'événement ponctuelles.
+- **[Server-Sent Events](/fr/web-apis/server-sent-events)** — une connexion persistante que le *client* ouvre, si interroger un récepteur de webhook n'est pas une option (par ex. depuis un navigateur).

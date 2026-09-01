@@ -12,7 +12,7 @@ Le **logging** consiste, pour un backend, à enregistrer ce qu'il a fait, à peu
 <ItemExplorer
   title="Niveaux de log courants"
   layout="table"
-  tableColumns={[{ key: "when", label: "Used for" }]}
+  tableColumns={[{ key: "when", label: "Utilisé pour" }]}
   items={[
     { id: "debug", label: "DEBUG", color: "default", columns: { when: "Détail verbeux utile uniquement pendant un débogage actif — généralement entièrement désactivé en production." } },
     { id: "info", label: "INFO", color: "blue", columns: { when: "Fonctionnement normal qui vaut la peine d'être enregistré — une requête terminée, un job terminé, un serveur démarré." } },
@@ -43,10 +43,10 @@ La sortie `console.log` d'un serveur unique est bien lisible directement. Dès q
 
 ## Ce qu'il ne faut pas journaliser
 
-Les logs sont souvent conservés longtemps et lus par plus de personnes que le développeur d'origine — journaliser un mot de passe en clair, un numéro de carte de crédit complet, ou un [JWT](/en/security/jwt) non expurgé transforme une commodité de débogage en un véritable problème de [gestion des secrets](/en/security/secrets-management). Le logging structuré facilite le fait de bien faire les choses de manière cohérente : une bibliothèque de logging peut être configurée pour expurger automatiquement les noms de champs connus comme sensibles avant que quoi que ce soit ne soit écrit.
+Les logs sont souvent conservés longtemps et lus par plus de personnes que le développeur d'origine — journaliser un mot de passe en clair, un numéro de carte de crédit complet, ou un [JWT](/fr/security/jwt) non expurgé transforme une commodité de débogage en un véritable problème de [gestion des secrets](/fr/security/secrets-management). Le logging structuré facilite le fait de bien faire les choses de manière cohérente : une bibliothèque de logging peut être configurée pour expurger automatiquement les noms de champs connus comme sensibles avant que quoi que ce soit ne soit écrit.
 
 ## Voir aussi
 
 - **[Error Handling](/fr/backend/error-handling)** — ce que fait réellement une erreur interceptée, le logging en étant une partie.
 - **[Monitoring](/fr/devops/monitoring)** — les logs sont l'un des signaux qu'un système de monitoring agrège et sur lequel il alerte.
-- **[Secrets Management](/en/security/secrets-management)** — pourquoi les valeurs sensibles doivent spécifiquement être tenues à l'écart des logs.
+- **[Secrets Management](/fr/security/secrets-management)** — pourquoi les valeurs sensibles doivent spécifiquement être tenues à l'écart des logs.

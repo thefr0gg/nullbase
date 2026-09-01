@@ -1,0 +1,80 @@
+---
+title: بيانات النموذج
+description: كيف تُرمَّز حقول نموذج HTML فعلياً عند الإرسال — ولماذا تحتاج عمليات رفع الملفات ترميزاً مختلفاً عن كل شيء آخر.
+category: Data & Serialization
+weight: 3
+interactive: true
+interactiveType: ["RequestPlayground", "ItemExplorer"]
+---
+
+لا يُرسِل `<form>` في HTML حقوله كـ [JSON](/ar/data-serialization/json) افتراضياً — بل يستخدم أحد ترميزَين أقدم، يُختار بواسطة سمة `enctype` الخاصة بالنموذج، ويسبقان JSON كصيغة ويب بالكامل.
+
+## جرّبها
+
+يقوم `/api/form-submit` في واجهة برمجة التطبيقات الوهمية لهذا الموقع بتحليل أي ترميز ترسله فعلياً — جرّب مثال urlencoded، ثم بدّل ترويسة `Content-Type` والجسم إلى JSON وأرسل مرة أخرى.
+
+<RequestPlayground
+  protocol="http"
+  defaultMethod="POST"
+  defaultTarget="/api/form-submit"
+  defaultHeaders="Content-Type: application/x-www-form-urlencoded"
+  defaultBody={"name=Grace+Hopper&role=admin"}
+/>
+
+## ترميزا النموذج
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "shape", label: "شكل الجسم" },
+    { key: "handlesFiles", label: "هل يتعامل مع رفع الملفات؟" },
+  ]}
+  items={[
+    {
+      id: "urlencoded",
+      label: "application/x-www-form-urlencoded",
+      color: "blue",
+      columns: { shape: "أزواج مفتاح=قيمة مفصولة بـ &، والقيم مُرمَّزة بالنسبة المئوية", handlesFiles: "لا" },
+    },
+    {
+      id: "multipart",
+      label: "multipart/form-data",
+      color: "green",
+      columns: { shape: "كل حقل هو \"جزء\" مستقل بذاته، مفصول بسلسلة حد، وله ترويساته الخاصة", handlesFiles: "نعم — يحمل جزء الملف نوع محتواه الخاص واسم ملفه" },
+    },
+  ]}
+/>
+
+`application/x-www-form-urlencoded` هو الافتراضي وهو ما يُرسله المثال أعلاه — إنه مُدمَج لكن لا يمكنه حمل بيانات ثنائية على الإطلاق، بما أن كل شيء يجب أن يكون نصاً مُرمَّزاً بالنسبة المئوية (انظر [ترميز الروابط](/ar/data-serialization/url-encoding)). يجب على نموذج يحتوي `<input type="file">` استخدام `multipart/form-data` بدلاً من ذلك، وهذا سبب أن نماذج رفع الملفات تحتاج دائماً ضبط `enctype="multipart/form-data"` صراحةً.
+
+```http
+POST /upload HTTP/1.1
+Content-Type: multipart/form-data; boundary=----abc123
+
+------abc123
+Content-Disposition: form-data; name="username"
+
+grace
+------abc123
+Content-Disposition: form-data; name="avatar"; filename="photo.png"
+Content-Type: image/png
+
+<binary bytes>
+------abc123--
+```
+
+## FormData في JavaScript
+
+يبني كائن `FormData` الخاص بالمتصفح أحد الترميزَين نيابة عنك عند الإرسال عبر `fetch` — لا تحتاج أبداً إلى بناء سلسلة الحد أو الترميز بالنسبة المئوية يدوياً في الكود الحديث:
+
+```js
+const form = new FormData();
+form.append("username", "grace");
+form.append("avatar", fileInput.files[0]);
+fetch("/upload", { method: "POST", body: form }); // browser sets Content-Type + boundary automatically
+```
+
+## طالع أيضاً
+
+- **[ترميز الروابط](/ar/data-serialization/url-encoding)** — مخطط الترميز بالنسبة المئوية الذي تستخدمه قيم `application/x-www-form-urlencoded`.
+- **[JSON](/ar/data-serialization/json)** — الصيغة التي تفضّلها معظم واجهات برمجة التطبيقات الحديثة على كلا ترميزَي النموذج، للإرسالات غير الملفية.

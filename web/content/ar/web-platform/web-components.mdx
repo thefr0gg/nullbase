@@ -1,0 +1,64 @@
+---
+title: مكونات الويب
+description: عناصر HTML مخصصة وقابلة لإعادة الاستخدام بترميز وتنسيق خاصين بها ومعزولين — مدمجة في المتصفح، بلا حاجة لإطار عمل.
+category: Web Platform
+weight: 9
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+مكونات الويب (Web Components) هي مجموعة من واجهات المتصفح البرمجية الأصلية لبناء عناصر مخصصة وقابلة لإعادة الاستخدام — `<user-card>`، `<rating-stars>` — تتصرف مثل أي عنصر [HTML](/ar/web-platform/html) آخر (يمكن استخدامها في أي ترميز، مع أي إطار عمل، أو بلا إطار على الإطلاق) مع عزل بنيتها الداخلية و[CSS](/ar/web-platform/css) الخاص بها بحيث لا تتسرب أنماط الصفحة إليها أو منها عن طريق الخطأ.
+
+```html
+<my-counter start="5"></my-counter>
+```
+
+```js
+class MyCounter extends HTMLElement {
+  connectedCallback() {
+    this.attachShadow({ mode: "open" }).innerHTML = `<button>Count: ${this.getAttribute("start")}</button>`;
+  }
+}
+customElements.define("my-counter", MyCounter);
+```
+
+## التقنيات الثلاث
+
+مكونات الويب ليست واجهة برمجية واحدة — إنها ثلاث ميزات منفصلة في المتصفح تُستخدَم معاً دائماً تقريباً.
+
+<ItemExplorer
+  layout="grid"
+  items={[
+    {
+      id: "custom-elements",
+      label: "Custom Elements",
+      color: "blue",
+      detail: "تتيح لـJavaScript تعريف اسم وسم HTML جديد، مدعوماً بصنف يمتد من HTMLElement — customElements.define(\"my-counter\", MyCounter).",
+    },
+    {
+      id: "shadow-dom",
+      label: "Shadow DOM",
+      color: "green",
+      detail: "تُلحق شجرة DOM فرعية مخفية ومنفصلة بعنصر — لا يستطيع CSS ولا querySelector من الصفحة الخارجية رؤيتها أو التأثير عليها، والعكس صحيح.",
+    },
+    {
+      id: "templates",
+      label: "HTML Templates",
+      color: "purple",
+      detail: "يحتفظ عنصر <template> بترميز خامل — لا يُعرَض، ولا يُشغَّل — حتى تستنسخه JavaScript صراحة في DOM الحية.",
+    },
+  ]}
+/>
+
+## لماذا يهم العزل هنا
+
+`<div class="counter">` عادي مكشوف بالكامل لكل قاعدة CSS على مستوى الصفحة ولكل `document.querySelector` — قاعدة `button { color: red; }` على مستوى الصفحة تؤثر عليه سواء أراد مؤلف المكون ذلك أم لا. حد Shadow DOM يعني أن الأنماط الداخلية لمكون الويب لا تتسرب أبداً إلى الخارج، وأن أنماط الصفحة لا تتسرب إلى الداخل (ما لم تُكشَف عمداً عبر خصائص CSS المخصصة)، وهذا ما يجعل مكوناً آمناً للاستخدام المباشر بغض النظر عن CSS الموجود مسبقاً في الصفحة المضيفة.
+
+## مستقل عن إطار العمل بالتصميم
+
+بما أن العناصر المخصصة (Custom Elements) ليست سوى وسوم HTML في جوهرها، يمكن استخدام مكون ويب مبني مرة واحدة داخل تطبيق React، أو تطبيق Vue، أو HTML عادي، أو أي إطار عمل مستقبلي، دون غلاف خاص بإطار عمل معين — هذا هو العرض الرئيسي مقارنة بمكون مبني في نموذج مكونات إطار عمل معين، والذي لا تستطيع استهلاكه إلا تطبيقات ذلك الإطار.
+
+## طالع أيضاً
+
+- **[DOM](/ar/web-platform/dom)** — Shadow DOM هو نسخة من نفس بنية الشجرة، مع إضافة حد للرؤية فقط.
+- **[CSS](/ar/web-platform/css)** — ينطبق التتالي عادة عالمياً؛ Shadow DOM إحدى الطرق القليلة لإخراج شجرة فرعية كاملة منه.

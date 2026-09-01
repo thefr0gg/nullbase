@@ -1,0 +1,56 @@
+---
+title: Transacciones
+description: Agrupar varias escrituras para que tengan éxito o fallen juntas — y deshacerlas todas, de verdad, con un rollback.
+category: Databases
+weight: 6
+interactive: true
+interactiveType: ["SqlPlayground"]
+---
+
+Una transacción agrupa varias sentencias en una sola unidad: o bien cada sentencia en ella surte efecto, o ninguna lo hace. El ejemplo canónico es una transferencia de fondos — restar de una cuenta y sumar a otra tiene que ocurrir junto, porque un fallo entre los dos pasos de otro modo podría destruir dinero o crearlo de la nada.
+
+## Pruébalo — un rollback real
+
+Esto no está guionizado — es un `BEGIN` / `ROLLBACK` genuino ejecutándose contra el motor SQLite real, y los saldos de las cuentas realmente revierten.
+
+<SqlPlayground
+  title="Transferencia de fondos, revertida"
+  schema={`CREATE TABLE accounts (id INTEGER PRIMARY KEY, owner TEXT NOT NULL, balance INTEGER NOT NULL);
+INSERT INTO accounts (id, owner, balance) VALUES (1, 'Alice', 1000), (2, 'Bob', 500);`}
+  defaultQuery={`BEGIN;
+UPDATE accounts SET balance = balance - 100 WHERE id = 1;
+UPDATE accounts SET balance = balance + 100 WHERE id = 2;
+SELECT * FROM accounts;
+ROLLBACK;`}
+/>
+
+Ejecútalo tal cual: el `SELECT` de en medio muestra que la transferencia ocurrió — Alice baja a 900, Bob sube a 600 — pero eso es *dentro* de la transacción aún abierta. Ahora pulsa **Ejecutar consulta** de nuevo con solo `SELECT * FROM accounts;` — los saldos vuelven a 1000/500, exactamente como si la transferencia nunca hubiera ocurrido, porque `ROLLBACK` descartó cada cambio que hizo la transacción.
+
+Ahora edita la consulta, reemplazando `ROLLBACK` por `COMMIT`, y ejecútala. Sigue con un `SELECT * FROM accounts;` simple de nuevo — esta vez la transferencia se mantiene permanentemente, porque un commit hace duradero cada cambio de la transacción.
+
+## Por qué importa el `SELECT` de en medio
+
+Una sentencia ejecutada *dentro* de una transacción abierta ve los propios cambios sin confirmar de esa transacción — esto es lo que hace de "comprobar algo, y luego actuar en consecuencia, todo dentro de una transacción" un patrón coherente (verificar que un saldo es suficiente, y luego debitarlo, sin que otra transacción se cuele entre la comprobación y el débito — ver la propiedad de aislamiento de [ACID](/es/databases/acid)).
+
+## Transacciones explícitas vs. implícitas
+
+La mayoría de los clientes de bases de datos ejecutan cada sentencia individual en su propia transacción implícita a menos que empieces una explícitamente con `BEGIN` — un `UPDATE` solitario sin `BEGIN`/`COMMIT` alrededor sigue siendo transaccional, es solo una transacción de una sentencia, confirmada automáticamente de inmediato. Envolver varias sentencias en un `BEGIN` ... `COMMIT` explícito es lo que se necesita para hacer atómicas juntas a *varias* sentencias.
+
+## Savepoints — un rollback que no deshace todo
+
+Un `SAVEPOINT` marca un punto dentro de una transacción al que se puede revertir individualmente, sin descartar todo lo anterior — útil para una operación de varios pasos donde el fallo de un sub-paso no debería necesariamente abortar toda la transacción:
+
+```sql
+BEGIN;
+UPDATE accounts SET balance = balance - 100 WHERE id = 1;
+SAVEPOINT before_bonus;
+UPDATE accounts SET balance = balance + 9999 WHERE id = 2; -- oops, wrong amount
+ROLLBACK TO before_bonus; -- undoes only the bonus, keeps the first update
+UPDATE accounts SET balance = balance + 100 WHERE id = 2;  -- correct amount
+COMMIT;
+```
+
+## Ver también
+
+- **[ACID](/es/databases/acid)** — las cuatro propiedades que las transacciones existen para proporcionar.
+- **[Claves foráneas](/es/databases/foreign-keys)** — una violación de restricción a mitad de transacción es una razón más por la que una transacción podría necesitar revertirse.

@@ -1,0 +1,53 @@
+---
+title: HTML
+description: Structure et sens, pas apparence — ce qu'un élément communique compte autant que son rendu visuel.
+category: Web Platform
+weight: 0
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+HTML (HyperText Markup Language) décrit la **structure et le sens** d'un document, pas son apparence — c'est le travail de [CSS](/fr/web-platform/css). Un `<button>` et un `<div onclick="...">` peuvent être rendus identiques visuellement, mais un seul des deux indique gratuitement au navigateur, à un lecteur d'écran et à un moteur de recherche « ceci est un contrôle cliquable » : le focus clavier, l'activation par `Enter`/`Espace` et un rôle d'accessibilité viennent tous du choix du bon élément, pas du style.
+
+```html
+<article>
+  <h1>Article title</h1>
+  <p>Some text, with a <a href="/other-page">link</a>.</p>
+</article>
+```
+
+## Éléments sémantiques
+
+Utiliser un élément pour ce qu'il signifie — pas seulement pour son rendu visuel — c'est ce qu'on appelle le « HTML sémantique ». C'est de l'accessibilité gratuite, une structure SEO gratuite, et cela documente la structure de la page pour la prochaine personne qui lira le balisage.
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "meaning", label: "Signifie" },
+    { key: "insteadOf", label: "Au lieu de" },
+  ]}
+  items={[
+    { id: "nav", label: "<nav>", color: "blue", columns: { meaning: "Un bloc de liens de navigation", insteadOf: "<div class=\"nav\">" } },
+    { id: "main", label: "<main>", color: "green", columns: { meaning: "Le contenu principal de la page, un seul par page", insteadOf: "<div id=\"main\">" } },
+    { id: "button", label: "<button>", color: "orange", columns: { meaning: "Un contrôle cliquable — focalisable, activable au clavier gratuitement", insteadOf: "<div onclick=\"...\">" } },
+    { id: "article", label: "<article>", color: "purple", columns: { meaning: "Un contenu autonome (un article, une carte)", insteadOf: "<div class=\"card\">" } },
+    { id: "label", label: "<label>", color: "default", columns: { meaning: "Un texte lié à un contrôle de formulaire — cliquer dessus donne le focus au champ", insteadOf: "Un <span> à côté d'un <input>" } },
+  ]}
+/>
+
+## Le document comme arbre
+
+Le navigateur transforme le HTML en un arbre de nœuds — cet arbre analysé et conservé en mémoire est le [DOM](/fr/web-platform/dom), et c'est ce que [JavaScript](/fr/web-platform/javascript) lit et modifie réellement, pas le texte HTML d'origine. Une fois l'analyse terminée, le balisage source disparaît ; seul l'arbre subsiste.
+
+## Formulaires
+
+`<form>` est le mécanisme intégré de HTML pour collecter et soumettre les entrées utilisateur — voir [Form Data](/fr/data-serialization/form-data) pour la façon dont une soumission est réellement encodée sur le réseau, et [URL Encoding](/fr/data-serialization/url-encoding) pour la façon dont les caractères spéciaux des valeurs de formulaire sont échappés.
+
+## Des attributs qui font un vrai travail
+
+Certains attributs ne sont pas de simples métadonnées — ils changent directement le comportement du navigateur : `disabled` sur un contrôle de formulaire le retire entièrement de l'ordre de tabulation et de la soumission du formulaire, pas seulement visuellement ; `loading="lazy"` sur une `<img>` diffère son chargement jusqu'à ce qu'elle soit proche du viewport ; `rel="noopener"` sur un lien `target="_blank"` empêche la nouvelle page d'obtenir une référence vers la fenêtre d'origine (une vraie frontière de sécurité, pas un simple indice de style).
+
+## Voir aussi
+
+- **[CSS](/fr/web-platform/css)** — comment la structure de HTML reçoit une présentation visuelle.
+- **[Le DOM](/fr/web-platform/dom)** — l'arbre vivant dans lequel HTML est analysé.

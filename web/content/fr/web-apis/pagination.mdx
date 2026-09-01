@@ -1,0 +1,78 @@
+---
+title: Pagination
+description: Retourner beaucoup de données une page à la fois plutôt que tout d'un coup — pagination par offset, curseur et keyset comparées.
+category: Web APIs
+weight: 10
+interactive: true
+interactiveType: ["RequestPlayground", "ItemExplorer"]
+---
+
+Un endpoint de liste qui retourne tout d'un coup ne passe pas à l'échelle — une table avec un million de lignes signifierait une réponse d'un million de lignes pour un client qui n'a besoin d'en afficher que 20. La pagination découpe une liste en pages, retournées une requête à la fois, avec un marqueur indiquant au client comment récupérer la suivante.
+
+## Essayez
+
+L'endpoint simulé `/api/items` supporte à la fois la pagination par offset (`page`/`limit`) et par curseur (`cursor`/`limit`) sur la même liste de 24 éléments — essayez les puces ci-dessous, ou modifiez la query string vous-même.
+
+<RequestPlayground
+  protocol="http"
+  defaultTarget="/api/items?page=1&limit=5"
+  examplePaths={[
+    { method: "GET", path: "/api/items?page=1&limit=5", label: "page 1" },
+    { method: "GET", path: "/api/items?page=2&limit=5", label: "page 2" },
+    { method: "GET", path: "/api/items?cursor=5&limit=5", label: "curseur" },
+  ]}
+/>
+
+## Stratégies comparées
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "howItWorks", label: "Fonctionnement" },
+    { key: "weakness", label: "Faiblesse" },
+  ]}
+  items={[
+    {
+      id: "offset",
+      label: "Offset",
+      color: "blue",
+      columns: {
+        howItWorks: "?page=2&limit=20 — \"saute 20, prends 20\"",
+        weakness: "Si une ligne est insérée/supprimée pendant la pagination, les pages suivantes se décalent — une ligne peut être sautée ou montrée deux fois. Ralentit aussi sur de très grandes tables (la base de données doit toujours parcourir chaque ligne sautée).",
+      },
+    },
+    {
+      id: "cursor",
+      label: "Curseur",
+      color: "green",
+      columns: {
+        howItWorks: "?cursor=<id du dernier élément>&limit=20 — \"donne-moi les 20 suivants après celui-ci\"",
+        weakness: "Impossible de sauter directement à une page arbitraire (\"montre-moi la page 50\") — seulement avancer/reculer depuis où l'on est.",
+      },
+    },
+    {
+      id: "keyset",
+      label: "Keyset",
+      color: "purple",
+      columns: {
+        howItWorks: "Un curseur construit à partir de la ou des colonnes de tri réelles (ex. ?after=2024-01-15T09:00:00Z), pas un ID opaque",
+        weakness: "Exige que la ou les colonnes de tri soient indexées et que la requête soit écrite spécifiquement autour d'elles — plus de travail de conception en amont que l'offset.",
+      },
+    },
+  ]}
+/>
+
+La pagination par curseur et par keyset sont en réalité la même idée (paginer par « après ce marqueur » plutôt que « saute N lignes ») — le keyset utilise simplement le champ de tri réel comme marqueur au lieu d'un ID opaque, ce qui est ce qui lui permet de rester rapide à l'échelle : la base de données peut chercher directement cette valeur via un index au lieu de compter les lignes depuis le début.
+
+## Structurer la réponse
+
+Quelle que soit la stratégie utilisée, la réponse doit indiquer au client comment obtenir la page suivante sans qu'il ait à deviner — un `next_cursor` (ou un lien `next` complet, `_links.next`) plus un booléen `has_more` suffit pour qu'un client boucle jusqu'à ne plus avoir de pages, sans deviner d'erreur d'un cran sur le fait qu'il vient de récupérer la dernière.
+
+```json
+{ "data": [ /* ... */ ], "next_cursor": "42", "has_more": true }
+```
+
+## Voir aussi
+
+- **[REST](/fr/web-apis/rest)** — la pagination est presque toujours appliquée spécifiquement à un endpoint de liste `GET` REST.
+- **[Limitation de débit](/fr/web-apis/rate-limiting)** — un client qui parcourt rapidement une immense liste est exactement le genre de trafic qu'une limite existe pour lisser.

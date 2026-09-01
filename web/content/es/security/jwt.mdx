@@ -1,0 +1,44 @@
+---
+title: JWT
+description: Un token firmado y autocontenido que lleva identidad y claims sin un almacén de sesión en el servidor — y las formas en que se usa mal habitualmente.
+category: Security
+weight: 4
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+Un **JWT (JSON Web Token)** empaqueta identidad y claims directamente en un token que guarda el cliente, firmado para que el servidor pueda verificar que no ha sido manipulado — sin necesidad de una búsqueda de sesión en el servidor, a diferencia de las [sesiones](/es/security/sessions). Esa naturaleza autocontenida es todo el atractivo de JWT para sistemas distribuidos, y también la fuente de la mayoría de sus tropiezos en el mundo real.
+
+## Tres partes separadas por puntos
+
+```text
+eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI0MiIsImV4cCI6MTcwMDAwMDAwMH0.dBjftJeZ4CVP-mB92K...
+└──────header──────┘ └───────────payload──────────┘ └─────signature─────┘
+```
+
+<ItemExplorer
+  title="Partes de un JWT"
+  layout="table"
+  tableColumns={[{ key: "contents", label: "Contenido" }]}
+  items={[
+    { id: "header", label: "Header", color: "blue", columns: { contents: "Algoritmo y tipo de token, p. ej. { \"alg\": \"HS256\", \"typ\": \"JWT\" } — codificado en base64url, no cifrado." } },
+    { id: "payload", label: "Payload", color: "green", columns: { contents: "Los claims reales — ID de usuario, roles, expiración (exp). También solo codificado en base64url, lo que significa que cualquiera puede decodificarlo y leerlo sin la clave de firma." } },
+    { id: "signature", label: "Signature", color: "purple", columns: { contents: "Una firma HMAC o de clave privada sobre el header y el payload — esta es la única parte que realmente requiere el secreto para producirse." } },
+  ]}
+/>
+
+El detalle crítico oculto en esa tabla: el payload está *codificado*, no *cifrado*. Cualquiera que tenga un JWT puede leer cada claim dentro de él — la firma solo prueba que los claims no han sido alterados, no los oculta. Nunca pongas una contraseña o un secreto directamente dentro del payload de un JWT.
+
+## El ataque `alg: none`
+
+Algunas librerías JWT tempranas confiaban en el campo `alg` de la propia cabecera del token para decidir cómo verificarlo — lo que significaba que un token forjado que declarara `"alg": "none"` podía aceptarse sin ninguna comprobación de firma. El código de verificación escrito correctamente fija de antemano el algoritmo *esperado* en el servidor y rechaza cualquier otro, en lugar de confiar en lo que el token dice de sí mismo.
+
+## La revocación es la parte difícil
+
+Como un JWT es autocontenido, un servidor no puede invalidarlo anticipadamente sin algún mecanismo extra — a diferencia de borrar una fila de un almacén de sesiones. Los sistemas reales manejan esto con tiempos de expiración cortos más tokens de refresco, o una lista de bloqueo del lado del servidor para el caso raro en que un token deba revocarse antes de que expire naturalmente — lo que reintroduce exactamente el estado en el servidor que los JWT pretendían evitar, solo que para un conjunto más pequeño de tokens.
+
+## Ver también
+
+- **[Sesiones](/es/security/sessions)** — la alternativa almacenada en el servidor a la que JWT renuncia a cambio de no tener estado.
+- **[OAuth 2.0](/es/security/oauth-2-0)** — comúnmente emite JWT como sus tokens de acceso.
+- **[Autorización](/es/security/authorization)** — los roles y permisos a menudo se codifican directamente en los claims de un JWT.

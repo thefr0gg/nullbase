@@ -1,0 +1,93 @@
+---
+title: APIs del navegador
+description: Todo lo que el navegador le da a una página más allá de los lenguajes básicos — capacidades de red, dispositivo, y plataforma expuestas como objetos JavaScript.
+category: Web Platform
+weight: 4
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+Más allá de [HTML](/es/web-platform/html), [CSS](/es/web-platform/css), y el [DOM](/es/web-platform/dom), el navegador expone un amplio conjunto de APIs de JavaScript integradas — capacidades que no forman parte del propio lenguaje JavaScript, pero que ofrece el entorno del navegador dentro del cual se ejecuta JavaScript. Node.js ejecuta el mismo lenguaje con un conjunto de APIs integradas completamente distinto, lo cual es la forma más clara de ver que estas son funciones de la plataforma, no del lenguaje.
+
+## Un glosario de trabajo
+
+<ItemExplorer
+  layout="grid"
+  items={[
+    {
+      id: "fetch",
+      label: "Fetch",
+      color: "blue",
+      detail: "Realiza solicitudes HTTP desde JavaScript, devolviendo una Promise — el reemplazo moderno de XMLHttpRequest.",
+    },
+    {
+      id: "geolocation",
+      label: "Geolocation",
+      color: "green",
+      detail: "Pide permiso al usuario y luego informa de la ubicación aproximada de su dispositivo.",
+    },
+    {
+      id: "notifications",
+      label: "Notifications",
+      color: "purple",
+      detail: "Muestra notificaciones a nivel de sistema operativo, con el permiso del usuario — a menudo combinada con un Service Worker para la entrega en segundo plano.",
+    },
+    {
+      id: "clipboard",
+      label: "Clipboard",
+      color: "orange",
+      detail: "Lee y escribe en el portapapeles del sistema — escribir normalmente requiere un gesto del usuario (un clic) para estar permitido.",
+    },
+    {
+      id: "intersection",
+      label: "IntersectionObserver",
+      color: "blue",
+      detail: "Detecta de forma eficiente cuándo un elemento entra o sale del viewport — impulsa la carga diferida (lazy-loading) y el scroll infinito sin un listener de eventos de scroll.",
+    },
+    {
+      id: "history",
+      label: "History",
+      color: "green",
+      detail: "Lee y manipula el historial de sesión del navegador — history.pushState() es lo que permite a las aplicaciones de una sola página cambiar la URL sin una carga completa de página.",
+    },
+    {
+      id: "webrtc",
+      label: "WebRTC",
+      color: "purple",
+      detail: "Audio, video y datos de igual a igual (peer-to-peer) — impulsa las videollamadas basadas en navegador sin enrutar el medio a través de un servidor.",
+    },
+    {
+      id: "canvas",
+      label: "Canvas / WebGL",
+      color: "orange",
+      detail: "Superficies de dibujo 2D y 3D en modo inmediato — se usan para juegos, visualización de datos, y edición de imágenes en el navegador.",
+    },
+    {
+      id: "observer",
+      label: "MutationObserver",
+      color: "default",
+      detail: "Observa una parte del árbol del DOM y dispara un callback cada vez que cambia — usado por herramientas que necesitan reaccionar a marcado que no controlan.",
+    },
+  ]}
+/>
+
+## Detección de funciones en lugar de sniffing de navegador
+
+Como no todos los navegadores (o versiones) admiten todas las APIs, el código que depende de una debería comprobar su existencia directamente en lugar de intentar identificar el navegador:
+
+```js
+if ("clipboard" in navigator) {
+  await navigator.clipboard.writeText("copied!");
+} else {
+  // fall back to a manual copy affordance
+}
+```
+
+## Permisos
+
+Varias de estas APIs (geolocalización, notificaciones, portapapeles, cámara/micrófono) están protegidas detrás de un aviso de permiso explícito del usuario la primera vez que una página las solicita — y la mayoría solo funciona en un contexto seguro (`https://` o `localhost`), una restricción deliberada dado que exponen capacidad real del dispositivo/usuario.
+
+## Ver también
+
+- **[Cookies](/es/web-platform/cookies)** y **[Web Storage](/es/web-platform/web-storage)** — dos de las APIs de navegador más usadas, cubiertas por separado porque hay suficiente que decir sobre cada una.
+- **[Service Workers](/es/web-platform/service-workers)** — la API detrás del soporte sin conexión y las notificaciones en segundo plano.

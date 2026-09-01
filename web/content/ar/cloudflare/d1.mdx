@@ -5,7 +5,7 @@ category: Cloudflare
 weight: 1
 ---
 
-**D1** هو منتج قاعدة البيانات المُدارة من Cloudflare — [SQLite](/en/databases/sqlite) في الجوهر، يُصل إليه من [Worker](/ar/cloudflare/workers) عبر [binding](/ar/cloudflare/workers-bindings) بدلاً من سلسلة اتصال دائمة تقليدية. اختيار SQLite تحديداً (بدلاً من بناء نظير موزّع لـ Postgres من الصفر) يعني أن D1 يرث لغة SQL التي تعرفها على الأرجح بالفعل، بلا أي من همّ إدارة الاتصالات المنفصل الذي تحمله قاعدة بيانات نمطية بنموذج عميل/خادم.
+**D1** هو منتج قاعدة البيانات المُدارة من Cloudflare — [SQLite](/ar/databases/sqlite) في الجوهر، يُصل إليه من [Worker](/ar/cloudflare/workers) عبر [binding](/ar/cloudflare/workers-bindings) بدلاً من سلسلة اتصال دائمة تقليدية. اختيار SQLite تحديداً (بدلاً من بناء نظير موزّع لـ Postgres من الصفر) يعني أن D1 يرث لغة SQL التي تعرفها على الأرجح بالفعل، بلا أي من همّ إدارة الاتصالات المنفصل الذي تحمله قاعدة بيانات نمطية بنموذج عميل/خادم.
 
 ## الاستعلام من Worker
 
@@ -21,7 +21,7 @@ export default {
 };
 ```
 
-`env.DB` هو الـ binding المضبوط في `wrangler.jsonc`؛ `.prepare().bind().all()` استعلام مُعامَل (parameterized) — يربط القيمة منفصلة عن نص الاستعلام، نفس نمط [الحماية من SQL injection](/en/security/sql-injection) الذي يتبعه أي استعلام مُعامَل، بغض النظر عن قاعدة البيانات.
+`env.DB` هو الـ binding المضبوط في `wrangler.jsonc`؛ `.prepare().bind().all()` استعلام مُعامَل (parameterized) — يربط القيمة منفصلة عن نص الاستعلام، نفس نمط [الحماية من SQL injection](/ar/security/sql-injection) الذي يتبعه أي استعلام مُعامَل، بغض النظر عن قاعدة البيانات.
 
 ## بلا اتصالات دائمة
 
@@ -51,6 +51,6 @@ wrangler d1 migrations apply my-database --remote   # production
 
 ## طالع أيضاً
 
-- **[SQL](/en/databases/sql)** و**[SQLite](/en/databases/sqlite)** — اللغة والمحرك اللذان يشغّلهما D1.
+- **[SQL](/ar/databases/sql)** و**[SQLite](/ar/databases/sqlite)** — اللغة والمحرك اللذان يشغّلهما D1.
 - **[Workers Bindings](/ar/cloudflare/workers-bindings)** — كيف يصل `env.DB` أعلاه فعلياً.
 - **[KV](/ar/cloudflare/kv)** — خيار جيد عندما لا تحتاج البيانات إلى بنية علائقية أو اتساق قوي إطلاقاً.

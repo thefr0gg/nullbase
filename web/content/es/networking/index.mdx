@@ -1,0 +1,30 @@
+---
+title: Redes
+description: Cómo las máquinas realmente se encuentran y se comunican entre sí — el direccionamiento, los protocolos que mueven bytes de forma fiable o rápida, y cómo un paquete llega de aquí hasta allá.
+category: Networking
+weight: 5
+---
+
+[TCP/IP](/es/web-fundamentals/tcp-ip) ya introdujo el modelo por capas sobre el que funciona Internet. Esta sección profundiza en los protocolos que viven en las capas de red y transporte de ese modelo — cómo se asignan y estructuran las direcciones, qué ocurre cuando algo sale mal, y cómo un paquete encuentra realmente su camino a través de redes de las que nunca se le informó específicamente.
+
+## Transporte: fiable frente a rápido
+
+- **[TCP](/es/networking/tcp)** — el protocolo orientado a conexión detrás del handshake, con entrega garantizada y ordenada.
+- **[UDP](/es/networking/udp)** — sin handshake, sin garantías, simplemente envía el paquete.
+
+## Direccionamiento
+
+- **[IP](/es/networking/ip)** — la dirección que todo dispositivo de una red necesita, y el formato de paquete que la transporta.
+- **[IPv4](/es/networking/ipv4)** — el espacio de direcciones de 32 bits que todavía hace funcionar la mayor parte de Internet, y por qué se agotó.
+- **[IPv6](/es/networking/ipv6)** — el sucesor de 128 bits construido para no agotarse nunca más.
+- **[Direccionamiento de red](/es/networking/network-addressing)** — máscaras de subred, notación CIDR, y cómo dividir una red en muchas.
+
+## Conseguir una dirección, y seguir siendo alcanzable
+
+- **[DHCP](/es/networking/dhcp)** — cómo un dispositivo obtiene una dirección IP automáticamente en vez de que alguien la escriba a mano.
+- **[NAT](/es/networking/nat)** — cómo toda una red doméstica comparte una única dirección IP pública.
+- **[ICMP](/es/networking/icmp)** — el protocolo detrás de `ping` y de «por qué ese paquete no llegó».
+
+## Llegar hasta allí
+
+- **[Enrutamiento](/es/networking/routing)** — cómo un paquete cruza redes de las que su emisor nunca ha oído hablar.

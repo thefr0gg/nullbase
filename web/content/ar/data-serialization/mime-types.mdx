@@ -1,0 +1,60 @@
+---
+title: أنواع MIME
+description: كيف يُخبر طلب أو استجابة الطرف الآخر بنوع البيانات التي يرسلها فعلياً — قيمة ترويسة Content-Type.
+category: Data & Serialization
+weight: 6
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+نوع MIME (Multipurpose Internet Mail Extensions type — الاسم متبقٍ من البريد الإلكتروني، استخدامه الأصلي) هو سلسلة نصية قصيرة تُعرِّف صيغة بيانات: `application/json`، `image/png`، `text/html`. يجب على كل طلب أو استجابة [HTTP](/ar/web-fundamentals/http) ذي جسم أن يُصنَّف بترويسة `Content-Type` تحمل واحداً منها، حتى يعرف المُستقبِل كيفية تحليله أو عرضه دون تخمين.
+
+```http
+Content-Type: application/json; charset=utf-8
+```
+
+## البنية: النوع/النوع الفرعي
+
+كل نوع MIME هو زوج `type/subtype`، واختيارياً معلمات بعد فاصلة منقوطة (مثل `charset` أعلاه، أو `boundary` لـ `multipart/form-data` — انظر [بيانات النموذج](/ar/data-serialization/form-data)):
+
+```
+application / json
+    type    subtype
+```
+
+## الأنواع الشائعة
+
+<ItemExplorer
+  layout="table"
+  tableColumns={[
+    { key: "used", label: "يُستخدم من أجل" },
+  ]}
+  items={[
+    { id: "json", label: "application/json", color: "blue", columns: { used: "JSON — الافتراضي لمعظم أجسام واجهات برمجة التطبيقات" } },
+    { id: "form", label: "application/x-www-form-urlencoded", color: "blue", columns: { used: "إرسالات نماذج HTML البسيطة" } },
+    { id: "multipart", label: "multipart/form-data", color: "blue", columns: { used: "إرسالات نماذج تتضمن رفع ملفات" } },
+    { id: "html", label: "text/html", color: "green", columns: { used: "مستند HTML" } },
+    { id: "plain", label: "text/plain", color: "green", columns: { used: "نص غير منسَّق — أيضاً الخيار الاحتياطي عندما لا ينطبق شيء أكثر تحديداً" } },
+    { id: "png", label: "image/png", color: "purple", columns: { used: "صور PNG" } },
+    { id: "octet", label: "application/octet-stream", color: "orange", columns: { used: "\"بعض البيانات الثنائية\" — الخيار الاحتياطي العام عندما تكون الصيغة المحددة غير معروفة" } },
+    { id: "pdf", label: "application/pdf", color: "orange", columns: { used: "مستندات PDF" } },
+  ]}
+/>
+
+## لماذا يثق المتصفح بهذه الترويسة
+
+اسم ملف مثل `report.json` لا يضمن محتوى JSON — يثق المتصفح ومعظم عملاء HTTP بترويسة `Content-Type`، لا بامتداد ملف الرابط، لتقرير كيفية التعامل مع الاستجابة (عرضها، تنزيلها، تحليلها كصيغة معينة). تقديم `Content-Type` خاطئ هو فئة حقيقية، وإن كانت دقيقة، من الأخطاء: استجابة واجهة برمجة تطبيقات JSON مُقدَّمة كـ `text/html` قد تُعرَض ككتلة نص خام من قبل متصفح بدلاً من تفعيل محلِّل JSON الخاص بالعميل، أو أسوأ من ذلك، تكون هي نفسها عدم تطابق ذا صلة بالأمان (استُغل استنشاق MIME للـ XSS في الماضي، وهذا جزء من سبب وجود ترويسة `X-Content-Type-Options: nosniff`).
+
+## `Accept` هو النظير من جانب الطلب
+
+بينما تُصنِّف `Content-Type` ما *يكون* عليه الجسم، تُخبر ترويسة الطلب `Accept` الخادم بالصيغ التي يرغب العميل في استقبالها — هذا هو أساس التفاوض على المحتوى، إحدى استراتيجيات [إصدار واجهة برمجة التطبيقات](/ar/web-apis/api-versioning) التي غُطِّيت سابقاً:
+
+```http
+GET /api/users/42
+Accept: application/json
+```
+
+## طالع أيضاً
+
+- **[JSON](/ar/data-serialization/json)**، **[XML](/ar/data-serialization/xml)** — اثنتان من الصيغ التي يُعرِّفها نوع MIME عادة.
+- **[Base64](/ar/data-serialization/base64)** — رابط بيانات (`data:image/png;base64,...`) يُضمِّن نوع MIME ومحتوى مُرمَّزاً في سلسلة واحدة.

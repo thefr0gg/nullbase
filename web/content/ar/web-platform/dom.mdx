@@ -1,0 +1,47 @@
+---
+title: DOM
+description: الشجرة الحية والمقيمة في الذاكرة التي يبنيها المتصفح من HTML المحلَّل — ما تقرأه JavaScript وتعدّله فعلياً، وكيف تنتقل الأحداث عبرها.
+category: Web Platform
+weight: 3
+interactive: true
+interactiveType: ["StepFlow", "ItemExplorer"]
+---
+
+import { eventPropagationSteps } from "./dom-event-propagation-steps";
+
+DOM (نموذج كائن المستند) هو ما يحوّل المتصفح إليه [HTML](/ar/web-platform/html) بعد تحليله: شجرة من الكائنات في الذاكرة، يمثل كل منها عنصراً، أو جزءاً من نص، أو تعليقاً. لا تلمس [JavaScript](/ar/web-platform/javascript) مصدر HTML الأصلي أبداً — إنها تقرأ هذه الشجرة وتعدّلها، ويعيد المتصفح عرض ما تغيّر.
+
+```js
+const el = document.querySelector("#greeting");
+el.textContent = "Hello";     // mutates the tree — the page updates
+el.classList.add("visible");  // same
+```
+
+## أنواع العُقد
+
+<ItemExplorer
+  layout="pills"
+  items={[
+    { id: "element", label: "عقدة عنصر (Element node)", color: "blue", detail: "وسم — <div>، <p>، <button>. له سمات، ويمكن أن يحتوي على عناصر فرعية." },
+    { id: "text", label: "عقدة نص (Text node)", color: "green", detail: "محتوى النص الفعلي بين الوسوم — عقدة منفصلة عن العنصر الذي يحتويها." },
+    { id: "comment", label: "عقدة تعليق (Comment node)", color: "default", detail: "تعليق HTML — <!-- ... --> — موجود في الشجرة لكنه لا يُعرَض أبداً." },
+    { id: "document", label: "عقدة المستند (Document node)", color: "purple", detail: "الجذر الوحيد للشجرة بأكملها — document نفسه." },
+  ]}
+/>
+
+كل عقدة عنصر هي أيضاً حاوية تحتوي نصاً: `<p>Hello</p>` هي عقدة عنصر لها عنصر فرعي واحد، عقدة نص تحتوي `"Hello"` — تقرأ/تكتب `el.textContent` ذلك العنصر الفرعي مباشرة، وهذا ما يفسر أن تعيين قيمته يستبدل كل عنصر فرعي دفعة واحدة بدلاً من الدمج مع المحتوى الموجود.
+
+## كيف ينتقل حدث عبر الشجرة
+
+لا يُطلَق النقر مرة واحدة فقط على العنصر الذي نقرت عليه — إنه ينتقل عبر سلسلة الأسلاف بأكملها، في اتجاهين، وهذا هو أساس نمط يُسمى تفويض الأحداث (event delegation) (مستمع واحد على عنصر أب، يتعامل مع أحداث من أي عنصر فرعي حالي أو مستقبلي).
+
+<StepFlow title="انتشار الأحداث" steps={eventPropagationSteps} />
+
+## القراءة مقابل الكتابة تترتب عليها تكاليف مختلفة
+
+قراءة معلومات التخطيط (`el.offsetHeight`، `getBoundingClientRect()`) يمكن أن تجبر المتصفح على إعادة حساب التخطيط مبكراً إذا كانت هناك كتابة سابقة لا تزال معلّقة — القيام بعمليات قراءة-ثم-كتابة-ثم-قراءة كثيرة في حلقة ("layout thrash") خطأ كلاسيكي في أداء DOM؛ تجميع كل القراءات، ثم كل الكتابات، يتجنب ذلك.
+
+## طالع أيضاً
+
+- **[JavaScript](/ar/web-platform/javascript)** — اللغة التي تقرأ هذه الشجرة وتعدّلها.
+- **[HTML](/ar/web-platform/html)** — المصدر الذي تُحلَّل منه DOM أصلاً.

@@ -1,0 +1,48 @@
+---
+title: Base64
+description: Representar datos binarios arbitrarios como caracteres ASCII simples, seguros para texto/URL — no es cifrado, no es compresión, solo un alfabeto distinto.
+category: Data & Serialization
+weight: 5
+interactive: true
+interactiveType: ["Codec"]
+---
+
+Base64 convierte datos binarios arbitrarios en texto compuesto únicamente por 64 caracteres seguros (`A-Z`, `a-z`, `0-9`, `+`, `/`, más `=` para el relleno) — útil en cualquier lugar donde los datos binarios necesiten viajar por un canal que solo maneja texto de forma fiable: incrustar una imagen directamente en un payload JSON o un archivo CSS, un adjunto de correo electrónico (el correo era originalmente solo texto), los segmentos de cabecera/payload de un JWT (ver [Autenticación de API](/es/web-apis/api-authentication)).
+
+```
+"Hi" -> "SGk="
+```
+
+## Pruébalo
+
+<Codec mode="base64" defaultInput="Hello, nullbase!" />
+
+## No es cifrado
+
+Esto es lo más importante que hay que saber sobre Base64: **no** es un mecanismo de seguridad. Decodificarlo no requiere ninguna clave ni secreto — es puramente un cambio de representación, reversible por cualquiera que tenga la cadena. Una contraseña codificada en Base64 está tan expuesta como una en texto plano; simplemente es más difícil de leer a simple vista, lo cual no es lo mismo que estar protegida.
+
+```js
+atob("cGFzc3dvcmQ=");  // "password" — no se necesita ningún secreto
+```
+
+## Por qué es ~33% más grande
+
+Base64 empaqueta 3 bytes de entrada binaria en 4 caracteres de salida, cada uno con 6 bits en vez de los 8 de un byte — esto es lo que compra la seguridad para texto, a un coste de tamaño fijo: cualquier payload codificado en Base64 es aproximadamente 4/3 del tamaño del binario original, razón por la cual incrustar blobs binarios grandes como Base64 (en vez de servirlos como su propia solicitud) tiene un coste real de ancho de banda.
+
+## Cómo funciona el relleno (padding)
+
+Los caracteres `=` finales rellenan la salida hasta un múltiplo de 4 caracteres cuando la entrada no es un múltiplo de 3 bytes — un `=` si sobra 1 byte de bits, dos `=` si sobran 2:
+
+```
+"Hi"  (2 bytes) -> "SGk="   (1 carácter de relleno)
+"Hii" (3 bytes) -> "SGlp"    (sin relleno — divide de forma exacta)
+```
+
+## Base64 vs. Base64URL
+
+Los caracteres `+` y `/` del Base64 estándar no son seguros dentro de una URL o un nombre de archivo sin una codificación adicional (ver [Codificación de URL](/es/data-serialization/url-encoding)) — una variante segura para URL, Base64URL, sustituye esos dos caracteres por `-` y `_` y normalmente omite el relleno `=` por completo. Los JWT usan específicamente Base64URL por esta misma razón, ya que un JWT se pasa habitualmente como parte de una URL o una cabecera HTTP.
+
+## Ver también
+
+- **[Codificación de URL](/es/data-serialization/url-encoding)** — la codificación que Base64URL evita necesitar además de sí misma.
+- **[Tipos MIME](/es/data-serialization/mime-types)** — una data URL (`data:image/png;base64,...`) combina un tipo MIME con contenido codificado en Base64 en línea.
