@@ -58,20 +58,47 @@ const TOKEN_RE = new RegExp(
   "gu",
 );
 
-/** Splits one line/snippet of code into typed pieces, dropping whitespace
- *  (chips are laid out with CSS gap, not preserved spacing). */
-export function tokenizeCode(raw: string): CodeToken[] {
-  const tokens: CodeToken[] = [];
+/** Classifies every character of `raw`, whitespace included — the shared
+ *  scan both `tokenizeCode` (drops whitespace) and `highlightCode` (keeps
+ *  it, to preserve original layout) build on. */
+function scanTokens(raw: string): Array<{ text: string; type: CodeTokenType | "ws" }> {
+  const tokens: Array<{ text: string; type: CodeTokenType | "ws" }> = [];
   for (const match of raw.matchAll(TOKEN_RE)) {
     const groups = match.groups!;
-    if (groups.ws) continue;
-    if (groups.comment) tokens.push({ text: match[0], type: "comment" });
+    if (groups.ws) tokens.push({ text: match[0], type: "ws" });
+    else if (groups.comment) tokens.push({ text: match[0], type: "comment" });
     else if (groups.string) tokens.push({ text: match[0], type: "string" });
     else if (groups.number) tokens.push({ text: match[0], type: "number" });
     else if (groups.word) tokens.push({ text: match[0], type: KEYWORDS.has(match[0]) ? "keyword" : "identifier" });
     else tokens.push({ text: match[0], type: "punct" });
   }
   return tokens;
+}
+
+/** Splits one line/snippet of code into typed pieces, dropping whitespace
+ *  (chips are laid out with CSS gap, not preserved spacing). */
+export function tokenizeCode(raw: string): CodeToken[] {
+  return scanTokens(raw).filter((t): t is CodeToken => t.type !== "ws");
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/** Colors a whole snippet (original spacing/newlines intact) as an HTML
+ *  string — for read-only display (the "reveal answer" panel), as opposed
+ *  to `tokenizeCode`'s discrete drag pieces. Safe for
+ *  `dangerouslySetInnerHTML`: every `<`/`>`/`&` is escaped before any
+ *  `<span>` is added, so the only tags produced are our own static-class
+ *  ones. */
+export function highlightCode(raw: string): string {
+  return scanTokens(raw)
+    .map(({ text, type }) => {
+      const escaped = escapeHtml(text);
+      if (type === "ws") return escaped;
+      return `<span class="${codeTokenClassName(type)}">${escaped}</span>`;
+    })
+    .join("");
 }
 
 export function codeTokenClassName(type: CodeTokenType): string {

@@ -6,7 +6,7 @@ import { Plus, X } from "lucide-react";
 import clsx from "clsx";
 import { Button } from "@/app/_components/ui";
 import { useInteractiveDict } from "@/lib/i18n/step-flow-context";
-import { codeTokenClassName, tokenizeCode, type CodeTokenType } from "./_code-tokens";
+import { codeTokenClassName, highlightCode, tokenizeCode, type CodeTokenType } from "./_code-tokens";
 import { DetailPanel, EyebrowLabel, Ltr, PlaygroundSection, PlaygroundShell } from "./_shared";
 
 /**
@@ -175,14 +175,9 @@ export default function OrderingExercise({ prompt, items, correctOrder, title }:
     setSubmitted(false);
   }
 
-  function addLine(afterLineId: string) {
+  function addLine() {
     const newLine: Line = { id: `line-${lineCounter.current++}`, pieces: [] };
-    setLines((prev) => {
-      const index = prev.findIndex((l) => l.id === afterLineId);
-      const next = [...prev];
-      next.splice(index + 1, 0, newLine);
-      return next;
-    });
+    setLines((prev) => [...prev, newLine]);
     setActiveLineId(newLine.id);
   }
 
@@ -270,21 +265,25 @@ export default function OrderingExercise({ prompt, items, correctOrder, title }:
               )}
             >
               <div className="flex shrink-0 items-center gap-1 pt-0.5">
+                {lineIndex === lines.length - 1 ? (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      addLine();
+                    }}
+                    aria-label="Add new line"
+                    title="Add new line"
+                    className="rounded p-0.5 text-text-secondary transition-colors hover:bg-background hover:text-electric-blue"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                  </button>
+                ) : (
+                  <span className="block h-[18px] w-[18px]" aria-hidden="true" />
+                )}
                 <span className="w-5 select-none text-right font-mono text-[0.7rem] text-text-secondary/70">
                   {lineIndex + 1}
                 </span>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    addLine(line.id);
-                  }}
-                  aria-label="Add new line"
-                  title="Add new line"
-                  className="rounded p-0.5 text-text-secondary transition-colors hover:bg-background hover:text-electric-blue"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                </button>
                 {lines.length > 1 && line.pieces.length === 0 && (
                   <button
                     type="button"
@@ -389,16 +388,22 @@ export default function OrderingExercise({ prompt, items, correctOrder, title }:
 
       {revealed && (
         <PlaygroundSection divider="top">
-          <DetailPanel className="p-4">
-            <EyebrowLabel>{dict.correctOrderLabel}</EyebrowLabel>
-            <Ltr as="pre" className="mt-2 whitespace-pre-wrap font-mono text-sm leading-6">
+          <DetailPanel className="overflow-hidden p-0">
+            <EyebrowLabel className="p-4 pb-0">{dict.correctOrderLabel}</EyebrowLabel>
+            <div className="mt-2 pb-3">
               {correctOrder.map((itemId, i) => (
-                <span key={itemId}>
-                  {items.find((it) => it.id === itemId)?.label}
-                  {i < correctOrder.length - 1 ? "\n" : ""}
-                </span>
+                <div key={itemId} className="flex items-start gap-2 px-4 py-1">
+                  <span className="w-5 shrink-0 select-none text-right font-mono text-[0.7rem] text-text-secondary/70">
+                    {i + 1}
+                  </span>
+                  <Ltr
+                    as="pre"
+                    className="whitespace-pre-wrap font-mono text-sm leading-6 text-text-primary"
+                    dangerouslySetInnerHTML={{ __html: highlightCode(items.find((it) => it.id === itemId)?.label ?? "") }}
+                  />
+                </div>
               ))}
-            </Ltr>
+            </div>
           </DetailPanel>
         </PlaygroundSection>
       )}
