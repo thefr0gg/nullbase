@@ -4,7 +4,7 @@ description: Building real types in C++ with constructors, access modifiers, and
 category: Programming Languages
 weight: 6
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -90,6 +90,7 @@ int main() {
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to build a Rectangle class with a constructor and an area() method."
@@ -146,6 +147,7 @@ int main() {
   explanation={`Even though s is declared as a Shape*, it actually points to a Square object, and name() is virtual. Virtual dispatch resolves the call based on the object's real runtime type, not the pointer's declared type, so "Square" is printed.`}
   actualOutput="Square"
 />
+</ExerciseTabs>
 
 ## See also
 

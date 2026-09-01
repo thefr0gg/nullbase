@@ -4,7 +4,7 @@ description: How Rust groups data with struct, attaches behavior with impl block
 category: Programming Languages
 weight: 6
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -114,6 +114,7 @@ fn main() {
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to define a Rectangle struct with an associated `square` constructor and an `area` method."
@@ -172,3 +173,4 @@ fn main() {
   explanation="scale takes &mut self, but rect was declared with `let rect` (no mut) — calling a method that mutably borrows an immutable binding is a compile error, not something caught only at runtime. Adding `mut` to `let mut rect` is what fixes it."
   actualOutput="error[E0596]: cannot borrow `rect` as mutable, as it is not declared as mutable"
 />
+</ExerciseTabs>

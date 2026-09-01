@@ -4,7 +4,7 @@ description: ES module import/export syntax, package.json, and how npm manages J
 category: Programming Languages
 weight: 8
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -110,6 +110,7 @@ skipped by `npm install --omit=dev` in production installs.
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to define named exports in one file and import them in another."
@@ -152,6 +153,7 @@ console.log(typeof area, shapeCount);`}
   explanation={`area binds to the default export, which is the circleArea function, so typeof area is "function". shapeCount is a named export imported by its exact name in braces, so it comes through as the number 1. Mixing a default and named imports in one statement, as done here, is valid ES module syntax.`}
   actualOutput="function 1"
 />
+</ExerciseTabs>
 
 ## See also
 

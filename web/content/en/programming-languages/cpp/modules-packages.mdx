@@ -4,7 +4,7 @@ description: How #include, headers, and translation units fit together, and how 
 category: Programming Languages
 weight: 8
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -67,6 +67,7 @@ C++ has no single official build tool the way other languages have `npm` or `car
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to build a header file with a proper include guard around one function declaration."
@@ -115,6 +116,7 @@ int main() {
   explanation="Both blocks are guarded by the same SHAPE_H macro. The first #ifndef sees SHAPE_H undefined, so it defines the macro and pastes in perimeter's definition. The second #ifndef then finds SHAPE_H already defined and skips its contents entirely, so perimeter is only ever defined once — this is exactly the scenario include guards exist to prevent when the same header gets pulled in more than once."
   actualOutput="12"
 />
+</ExerciseTabs>
 
 ## See also
 

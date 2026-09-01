@@ -4,7 +4,7 @@ description: A systems language that guarantees memory safety without a garbage 
 category: Programming Languages
 weight: 1
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -73,6 +73,7 @@ error[E0382]: borrow of moved value: `s1`
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to build a program that prints a greeting three times using a mutable counter."
@@ -116,3 +117,4 @@ error[E0382]: borrow of moved value: `s1`
   explanation="The range 0..3 produces 0, 1, 2 — three iterations — so count is incremented three times, ending at 3. 0..3 is exclusive of the upper bound, which is the value people most often get wrong when reading a Rust range for the first time."
   actualOutput="3"
 />
+</ExerciseTabs>

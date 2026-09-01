@@ -4,7 +4,7 @@ description: The rule set — ownership, borrowing, and lifetimes — that lets 
 category: Programming Languages
 weight: 9
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -125,6 +125,7 @@ Without the `'a` annotation, the compiler has no way to know whether the returne
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to build a function that borrows a String to compute its length, then prints both the original and the length."
@@ -174,3 +175,4 @@ fn main() {
   explanation="Passing s1 by value moves ownership into takes_ownership, which drops it when the function returns. The second println! tries to use s1 after it's been moved, which the borrow checker rejects at compile time — it never gets the chance to print an empty string or a stale value, because the program never compiles."
   actualOutput={`error[E0382]: borrow of moved value: \`s1\``}
 />
+</ExerciseTabs>

@@ -4,7 +4,7 @@ description: Bindings, mutability, shadowing, and the primitive types Rust build
 category: Programming Languages
 weight: 2
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -71,6 +71,7 @@ Without the `: u32` annotation here, `parse()` has no way to know which numeric 
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to build a program that shadows a string with its length."
@@ -109,3 +110,4 @@ Without the `: u32` annotation here, `parse()` has no way to know which numeric 
   explanation="Each let re-declares x via shadowing: it starts at 5, becomes 6 (5 + 1), then becomes 12 (6 * 2). Because these are new bindings rather than mutation, this compiles even though x was never declared mut — that's exactly the distinction shadowing makes possible."
   actualOutput="12"
 />
+</ExerciseTabs>

@@ -4,7 +4,7 @@ description: Java has no free-standing functions — every reusable block of cod
 category: Programming Languages
 weight: 4
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -111,6 +111,7 @@ public static int sum(int... numbers) {
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to build a static method that doubles a number and a main that calls it."
@@ -158,6 +159,7 @@ public static int sum(int... numbers) {
   explanation="Overload resolution prefers the most specific applicable match without a widening conversion. The literal 5 is already an int, so the int overload matches exactly and is chosen over long, which would require widening."
   actualOutput="int: 5"
 />
+</ExerciseTabs>
 
 ## See also
 

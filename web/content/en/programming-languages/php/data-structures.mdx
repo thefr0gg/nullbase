@@ -4,7 +4,7 @@ description: PHP's single array type doing double duty as both an indexed list a
 category: Programming Languages
 weight: 5
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -116,6 +116,7 @@ echo $total . "\n";                   // 17
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to build an indexed array, append to it, and print its count."
@@ -154,6 +155,7 @@ var_dump("abc" == 0);`}
   explanation="'10' == '1e1' is true: both are numeric strings, so PHP compares them as numbers (10 == 10.0). But since PHP 8, a non-numeric string like 'abc' compared to a number no longer coerces the string to 0 — instead the number is cast to a string, so 0 == 'abc' compares '0' to 'abc' and is false. This flipped from PHP 7, where both lines would have been true — a famous PHP type-juggling gotcha."
   actualOutput="bool(true)\nbool(false)\nbool(false)"
 />
+</ExerciseTabs>
 
 ## See also
 

@@ -4,7 +4,7 @@ description: Typed arrays, fixed-length tuples, and the Record and Map generic t
 category: Programming Languages
 weight: 5
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -81,6 +81,7 @@ Note that `ages.get("Ada")` is typed `number | undefined`, not just `number` —
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to declare a typed tuple and destructure it into two variables."
@@ -118,6 +119,7 @@ console.log(adaAge.toFixed(0));`}
   explanation={`Map<string, number>'s get method returns number | undefined, since the key might not exist — TypeScript doesn't know "Ada" was just set. Calling .toFixed directly on that value without first checking for undefined is a type error, even though this particular call would succeed at runtime.`}
   actualOutput="Type error: Object is possibly 'undefined'"
 />
+</ExerciseTabs>
 
 ## See also
 

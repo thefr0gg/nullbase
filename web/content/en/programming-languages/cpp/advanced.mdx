@@ -4,7 +4,7 @@ description: Pointers, references, and manual memory management with new/delete 
 category: Programming Languages
 weight: 9
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -83,6 +83,7 @@ int main() {
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to declare a pointer to an int, dereference it to change the value, and print the result."
@@ -130,6 +131,7 @@ int main() {
   explanation={`The Widget is created when make_unique runs, "using " prints inside the inner block, and then w goes out of scope at the closing brace — its destructor runs automatically right there, printing "destroyed ", before "done" prints. No explicit delete is needed for any of this to happen.`}
   actualOutput="created using destroyed done"
 />
+</ExerciseTabs>
 
 ## See also
 

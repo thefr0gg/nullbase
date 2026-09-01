@@ -4,7 +4,7 @@ description: "How C organizes code across files with #include and header files, 
 category: Programming Languages
 weight: 8
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -88,6 +88,7 @@ A typical modern C project might use CMake to describe *how* to build, and vcpkg
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble a header guard"
   prompt="Drag these lines into the order that safely declares add() in a header file, guarded against double inclusion."
@@ -126,6 +127,7 @@ struct Shape {
   explanation="Without a header guard, if shape.h ends up pasted into the same translation unit twice (directly or through a chain of includes), the compiler sees struct Shape defined twice and reports a redefinition error. Header guards (#ifndef/#define/#endif) exist specifically to make the second paste a no-op instead."
   actualOutput="error: redefinition of 'struct Shape'"
 />
+</ExerciseTabs>
 
 ## See also
 

@@ -4,7 +4,7 @@ description: Directing execution in C++ with if/else, switch, and the three loop
 category: Programming Languages
 weight: 3
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -95,6 +95,7 @@ The classic `for (init; condition; increment)` gives full control over the loop 
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to build an if/else chain that labels a temperature."
@@ -149,6 +150,7 @@ int main() {
   explanation={`x matches case 2, but there's no break after it, so execution falls through into case 3 as well, printing "two" then "three" before hitting the break. case 1 and default are never reached because switch jumps straight to the matching case.`}
   actualOutput="twothree"
 />
+</ExerciseTabs>
 
 ## See also
 

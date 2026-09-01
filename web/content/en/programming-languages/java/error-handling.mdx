@@ -4,7 +4,7 @@ description: Java's exception model, the checked-vs-unchecked distinction unique
 category: Programming Languages
 weight: 7
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -120,6 +120,7 @@ public void printFirstLine(String path) throws IOException {
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to build a try/catch/finally that handles division by zero."
@@ -172,6 +173,7 @@ public class Main {
   explanation="IOException is checked, and main declares no throws clause and has no try/catch around the call. The compiler refuses to build code that can propagate an unhandled checked exception past a method that doesn't declare it — this fails at compile time, not run time."
   actualOutput="error: unreported exception IOException; must be caught or declared to be thrown"
 />
+</ExerciseTabs>
 
 ## See also
 

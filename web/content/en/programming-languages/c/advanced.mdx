@@ -4,7 +4,7 @@ description: Pointers, pointer arithmetic, and manual memory management with mal
 category: Programming Languages
 weight: 9
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -128,6 +128,7 @@ None of these three functions will reliably crash — that's exactly what makes 
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble a pointer swap through addresses"
   prompt="Drag these lines into the order that reads a value through a pointer and then modifies it through the same pointer."
@@ -170,6 +171,7 @@ int main(void) {
   explanation="p + 2 advances the pointer by two int-sized steps, not two bytes and not 2 added to the pointed-to value -- it now points at nums[2], which holds 15. The compiler automatically scales pointer arithmetic by sizeof(int), which is exactly what makes p[i] and *(p + i) equivalent."
   actualOutput="15"
 />
+</ExerciseTabs>
 
 ## See also
 

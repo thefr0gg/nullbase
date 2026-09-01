@@ -4,7 +4,7 @@ description: C#'s async/await model, Task and Task<T>, and how asynchronous code
 category: Programming Languages
 weight: 9
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -103,6 +103,7 @@ not 900ms, unlike awaiting each one immediately after starting it.
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to build an async method that awaits a delay and returns a value."
@@ -151,6 +152,7 @@ await RunAsync();`}
   explanation={`Calling SlowGreetingAsync() starts the task but doesn't block, so "2" prints immediately after "1", before the delay finishes. Only the subsequent await suspends RunAsync until the task completes, after which "done" prints.`}
   actualOutput="1 2 done"
 />
+</ExerciseTabs>
 
 ## See also
 

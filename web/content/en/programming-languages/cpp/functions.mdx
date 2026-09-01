@@ -4,7 +4,7 @@ description: Declaring C++ functions, choosing between pass-by-value and pass-by
 category: Programming Languages
 weight: 4
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -86,6 +86,7 @@ int main() {
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to build a function that swaps two integers by reference and a main that calls it."
@@ -145,6 +146,7 @@ int main() {
   explanation="addOne(value) passes by value, so it only modifies a local copy and value stays 5. addOneRef(value) passes by reference, so it modifies value directly, bringing it to 6. The by-value call has no lasting effect at all."
   actualOutput="6"
 />
+</ExerciseTabs>
 
 ## See also
 

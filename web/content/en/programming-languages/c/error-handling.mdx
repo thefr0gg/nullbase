@@ -4,7 +4,7 @@ description: C has no exceptions — errors are reported through return codes, t
 category: Programming Languages
 weight: 7
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -99,6 +99,7 @@ Most C code sticks to plain return codes and `errno` — `setjmp`/`longjmp` show
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble a return-code error check"
   prompt="Drag these lines into the order that safely divides two numbers using an error-code return and an output parameter."
@@ -149,6 +150,7 @@ int main(void) {
   explanation="Because b is 0, safeDivide returns -1 immediately without ever touching *out, so result keeps its original value of 999 — it's never zeroed out or reset just because the function failed. status correctly reports -1. Assuming result gets some 'default' failure value like 0 is the tempting mistake here."
   actualOutput="-1 999"
 />
+</ExerciseTabs>
 
 ## See also
 

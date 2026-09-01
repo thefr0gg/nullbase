@@ -4,7 +4,7 @@ description: Variable declarations with type annotations, TypeScript's primitive
 category: Programming Languages
 weight: 2
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -83,6 +83,7 @@ Aliases are purely a compile-time convenience — `UserId` is erased to `number`
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to declare a typed age variable, attempt an invalid reassignment, then log it."
@@ -116,6 +117,7 @@ count = "zero";`}
   explanation="TypeScript infers count's type as number from its initializer 0, then enforces that type on every later assignment — even though count was never explicitly annotated. Inference is just as strict as an explicit annotation."
   actualOutput="Type error: Type 'string' is not assignable to type 'number'"
 />
+</ExerciseTabs>
 
 ## See also
 

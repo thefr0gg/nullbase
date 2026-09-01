@@ -4,7 +4,7 @@ description: Creating threads, synchronizing shared state with synchronized, and
 category: Programming Languages
 weight: 9
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -136,6 +136,7 @@ System.out.println(count.get());
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to start a thread that prints its name, then wait for it to finish."
@@ -191,6 +192,7 @@ public class Main {
   explanation="increment() isn't synchronized, so count++ (a read-modify-write of three separate steps) can interleave between the two threads and lose updates. The final count is almost always less than 200,000, but the exact value depends on unpredictable thread scheduling — it's a race condition, not a fixed wrong answer, and the code compiles fine."
   actualOutput="false (typically — the exact value varies between runs)"
 />
+</ExerciseTabs>
 
 ## See also
 

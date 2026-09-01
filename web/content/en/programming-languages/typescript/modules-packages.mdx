@@ -4,7 +4,7 @@ description: ES modules, npm packages, tsconfig.json, and how @types packages br
 category: Programming Languages
 weight: 8
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -91,6 +91,7 @@ Once `@types/express` is installed, TypeScript picks it up automatically (from `
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to export a typed function from one module and import it correctly in another."
@@ -134,6 +135,7 @@ subtract(5, 2);`}
   explanation="math.ts only exports add — subtract was never declared with export. TypeScript checks a module's actual export list at compile time, so importing a name that doesn't exist there fails immediately, rather than becoming a runtime 'subtract is not a function' error the way it would with an unchecked require()."
   actualOutput={`Type error: Module '"./math"' has no exported member 'subtract'`}
 />
+</ExerciseTabs>
 
 ## See also
 

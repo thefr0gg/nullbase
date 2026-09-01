@@ -4,7 +4,7 @@ description: PHP exceptions with try/catch/finally, custom exception classes, an
 category: Programming Languages
 weight: 7
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -111,6 +111,7 @@ rather than just emitting a warning and continuing with `null`.
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to build a try/catch/finally block around a risky operation."
@@ -165,6 +166,7 @@ try {
   explanation="finally always runs before the exception propagates further up the call stack, even though the try block never reaches its return statement. Only after finally completes does the exception continue unwinding to the outer catch."
   actualOutput="finally ran\ncaught: fail\n"
 />
+</ExerciseTabs>
 
 ## See also
 

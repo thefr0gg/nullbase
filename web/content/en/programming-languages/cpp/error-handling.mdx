@@ -4,7 +4,7 @@ description: Signaling and recovering from failure in C++ with try/catch/throw, 
 category: Programming Languages
 weight: 7
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -72,6 +72,7 @@ int main() {
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to build a function that throws on negative input, called from a try/catch."
@@ -123,6 +124,7 @@ int main() {
   explanation={`"before" prints, then throw immediately transfers control to the matching catch block — the std::cout << "after" line is skipped entirely because execution never reaches it once an exception is thrown. Only "before" and the catch block's output actually run.`}
   actualOutput="before\ncaught: failed"
 />
+</ExerciseTabs>
 
 ## See also
 

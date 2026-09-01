@@ -4,7 +4,7 @@ description: Python's four built-in containers — lists, tuples, dicts, and set
 category: Programming Languages
 weight: 5
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -52,6 +52,7 @@ The one thing to internalize about lists (and dicts, and sets) is that they're m
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to build a user dict, add a field, then print every entry."
@@ -84,4 +85,5 @@ The one thing to internalize about lists (and dicts, and sets) is that they're m
   explanation="b = a doesn't copy the list — it makes b point at the exact same list object a already points at. Calling b.append(4) mutates that one shared list, so the change is visible through a too, even though a itself was never directly reassigned."
   actualOutput="[1, 2, 3, 4]"
 />
+</ExerciseTabs>
 

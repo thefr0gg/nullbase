@@ -4,7 +4,7 @@ description: Organizing Java code with package and import, and building projects
 category: Programming Languages
 weight: 8
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -130,6 +130,7 @@ configurability.
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to declare a class in a package and import it from another file."
@@ -189,6 +190,7 @@ public class Main {
   explanation="Helper has no access modifier, so it's package-private — visible only within com.example.a. Main lives in com.example.b and doesn't import Helper (and couldn't successfully, since it isn't public), so the compiler can't resolve the name at all."
   actualOutput="error: cannot find symbol: class Helper"
 />
+</ExerciseTabs>
 
 ## See also
 

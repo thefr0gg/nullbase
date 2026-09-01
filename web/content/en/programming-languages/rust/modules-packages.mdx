@@ -4,7 +4,7 @@ description: Organizing code with mod and use, and how Cargo and crates.io handl
 category: Programming Languages
 weight: 8
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -85,6 +85,7 @@ With that in place, `use serde::Serialize;` or `use rand::Rng;` becomes availabl
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to define a shapes module with a public Circle struct and area method, then use it from main."
@@ -142,3 +143,4 @@ fn main() {
   explanation="internal_helper is never called from main, and it not being pub only matters if something outside the module tries to call it — an unused private function is at most a dead-code warning, not an error. Circle and radius are both pub, so the program compiles and prints the radius, 2."
   actualOutput="2"
 />
+</ExerciseTabs>

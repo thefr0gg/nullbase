@@ -4,7 +4,7 @@ description: How if/else, loop, while, for, and match steer execution in Rust â€
 category: Programming Languages
 weight: 3
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -102,6 +102,7 @@ This one `match` shows several pattern forms at once: an exact value (`0`), alte
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to build a function that classifies temperature using if/else as an expression."
@@ -154,3 +155,4 @@ fn main() {
   explanation={`7 falls in the inclusive range 4..=9, so the "medium" arm matches. It's tempting to think 7 falls through to the catch-all "large" arm, but match checks arms in order and stops at the first one that fits â€” the range arm comes before _.`}
   actualOutput="medium"
 />
+</ExerciseTabs>

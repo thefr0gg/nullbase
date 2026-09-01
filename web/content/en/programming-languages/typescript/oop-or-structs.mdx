@@ -4,7 +4,7 @@ description: Classes with access modifiers, and how interface and type differ wh
 category: Programming Languages
 weight: 6
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -101,6 +101,7 @@ A class can `implements` either form, as long as the shape is an object type —
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to build a BankAccount class with a private balance field and a deposit method."
@@ -148,6 +149,7 @@ p.x = 10;`}
   explanation="x is declared readonly via the constructor parameter shorthand, so it can only be set once, during construction. Assigning to it afterward — even to a value of the correct type, number — is rejected at compile time before the code ever runs."
   actualOutput="Type error: Cannot assign to 'x' because it is a read-only property"
 />
+</ExerciseTabs>
 
 ## See also
 

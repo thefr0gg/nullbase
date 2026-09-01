@@ -4,7 +4,7 @@ description: Declaring methods in C#, return types, optional and named parameter
 category: Programming Languages
 weight: 4
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -98,6 +98,7 @@ Console.WriteLine(Outer(5)); // 11
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to build a method that adds two numbers and calls it."
@@ -135,6 +136,7 @@ Describe(age: 25, name: "Rae");`}
   explanation="Named arguments can appear in any order at the call site; C# matches them by name, not position. age and name are swapped in the call but still bind correctly, and vip falls back to its default, false."
   actualOutput="Rae, 25, vip=False"
 />
+</ExerciseTabs>
 
 ## See also
 

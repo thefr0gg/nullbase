@@ -4,7 +4,7 @@ description: C's conditionals and loops — if/else, switch, while, for, and the
 category: Programming Languages
 weight: 3
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -103,6 +103,7 @@ int main(void) {
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble a grading if/else chain"
   prompt="Drag these lines into the order that correctly classifies a score into a letter grade."
@@ -155,6 +156,7 @@ int main(void) {
   explanation="There's no break after case 2, so execution falls through into case 3's printf before finally hitting break — printing both 'two' and 'three'. It's tempting to assume switch stops after the matching case, like it would in some other languages, but C requires an explicit break to get that behavior."
   actualOutput="two\nthree"
 />
+</ExerciseTabs>
 
 ## See also
 

@@ -4,7 +4,7 @@ description: JavaScript's class syntax, inheritance, and the prototype chain tha
 category: Programming Languages
 weight: 6
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -123,6 +123,7 @@ time it's called.
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to build a subclass that calls its parent constructor with super()."
@@ -174,6 +175,7 @@ console.log(b.greet());`}
   explanation="Instance methods aren't copied onto each object — b just holds a link to Base.prototype and looks greet up there every time it's called. Since Base.prototype.greet was reassigned after b was created, b.greet() finds the new version, not the one that existed at construction time."
   actualOutput="overridden"
 />
+</ExerciseTabs>
 
 ## See also
 

@@ -40,6 +40,7 @@ export const interactiveComponents = {
   DiagramExplorer: lazy(() => import("./DiagramExplorer")),
   StateMachine: lazy(() => import("./StateMachine")),
   CodePlayground: lazy(() => import("./CodePlayground")),
+  ExerciseTabs: lazy(() => import("./ExerciseTabs")),
   OrderingExercise: lazy(() => import("./OrderingExercise")),
   PredictOutput: lazy(() => import("./PredictOutput")),
   InteractiveTerminal: lazy(() => import("./InteractiveTerminal")),

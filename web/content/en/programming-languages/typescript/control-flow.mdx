@@ -4,7 +4,7 @@ description: How if/switch statements narrow union types, and the type-checking 
 category: Programming Languages
 weight: 3
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -74,6 +74,7 @@ After adding `"triangle"` to `Shape` without adding a matching `case`, `shape` i
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to build a function that narrows a string | number union with typeof."
@@ -124,6 +125,7 @@ describe(s);`}
   explanation={`The if (shape.kind === "circle") check narrows shape to the circle branch of the union, so shape.radius is valid there and shape.side is valid in the implicit else. Calling describe with a circle-shaped value simply runs that branch and produces "circle r=2".`}
   actualOutput={`"circle r=2"`}
 />
+</ExerciseTabs>
 
 ## See also
 

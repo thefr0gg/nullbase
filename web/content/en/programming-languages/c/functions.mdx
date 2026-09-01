@@ -4,7 +4,7 @@ description: Declaring, defining, and calling functions in C — pass-by-value s
 category: Programming Languages
 weight: 4
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -86,6 +86,7 @@ Each call to `factorial` gets its own stack frame with its own copy of `n` — r
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble a function with a prototype"
   prompt="Drag these lines into the order that declares a prototype, calls the function from main, and defines it afterward."
@@ -134,6 +135,7 @@ int main(void) {
   explanation="increment receives a copy of count each time it's called, so modifying n inside the function has no effect on count in main — it stays 10 no matter how many times increment is called. To actually change count, increment would need to take an int * and dereference it."
   actualOutput="10"
 />
+</ExerciseTabs>
 
 ## See also
 

@@ -4,7 +4,7 @@ description: PHP's <?php ?> tags, the $ sigil on every variable, loose vs. stric
 category: Programming Languages
 weight: 2
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -118,6 +118,7 @@ echo double(5) . "\n";   // 10
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to declare a variable and interpolate it into a double-quoted string."
@@ -156,6 +157,7 @@ echo gettype($total);`}
   explanation="Outside strict_types, the arithmetic operator + triggers type juggling: the numeric string '5' is converted to the integer 5, so $total is 6, an int. String concatenation would use . instead of +, which is a common beginner mix-up."
   actualOutput="6int"
 />
+</ExerciseTabs>
 
 ## See also
 

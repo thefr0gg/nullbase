@@ -4,7 +4,7 @@ description: Classes, interfaces, inheritance, and C#'s auto-implemented propert
 category: Programming Languages
 weight: 6
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -145,6 +145,7 @@ Console.WriteLine(a.Speak()); // Meow — resolved at runtime via the actual typ
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to build a class with an auto-implemented property and use it."
@@ -196,6 +197,7 @@ Console.WriteLine(acc.Balance);`}
   explanation="The property's set accessor clamps any negative value to 0 before storing it in the backing field, so reading Balance back afterward returns 0, not the -50 that was assigned. This is exactly the kind of validation a plain public field couldn't intercept."
   actualOutput="0"
 />
+</ExerciseTabs>
 
 ## See also
 

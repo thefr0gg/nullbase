@@ -4,7 +4,7 @@ description: Variables, type inference with var, value vs. reference types, and 
 category: Programming Languages
 weight: 2
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -85,6 +85,7 @@ need a value type that can also be `null`.
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to declare two variables — one explicit, one inferred — and print their sum."
@@ -120,6 +121,7 @@ Console.WriteLine(original[0]);`}
   explanation="Arrays are reference types in C#. alias doesn't copy the array — it's a second reference to the same array object, so mutating through alias is visible through original too."
   actualOutput="100"
 />
+</ExerciseTabs>
 
 ## See also
 

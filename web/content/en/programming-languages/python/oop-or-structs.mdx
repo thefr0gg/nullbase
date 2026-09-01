@@ -4,7 +4,7 @@ description: Defining real classes in Python — __init__, instance attributes, 
 category: Programming Languages
 weight: 6
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -69,6 +69,7 @@ Without `__eq__`, `==` falls back to identity comparison — whether the two nam
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to define a Dog class and call a method on an instance."
@@ -106,4 +107,5 @@ Without `__eq__`, `==` falls back to identity comparison — whether the two nam
   explanation="Without a custom __eq__ method, Python's default equality check compares object identity — whether p1 and p2 are literally the same object in memory. They're two separate Point instances that merely have equal coordinates, so == is False even though the values look identical."
   actualOutput="False"
 />
+</ExerciseTabs>
 

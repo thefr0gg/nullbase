@@ -4,7 +4,7 @@ description: PHP's if/elseif/else, its match and switch expressions, loops, and 
 category: Programming Languages
 weight: 3
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -131,6 +131,7 @@ template files for exactly this reason.
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to build a foreach loop that prints each fruit with its index."
@@ -179,6 +180,7 @@ switch ($value) {
   explanation="switch compares with loose ==, so case 1 matches the string '1' via type juggling before PHP ever reaches the case '1' branch. This is exactly the kind of surprise match's strict === comparison was introduced to avoid."
   actualOutput="matched int 1"
 />
+</ExerciseTabs>
 
 ## See also
 

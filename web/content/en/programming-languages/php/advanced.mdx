@@ -4,7 +4,7 @@ description: PHP's generators and yield for lazy iteration, and an honest look a
 category: Programming Languages
 weight: 9
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -127,6 +127,7 @@ microservices), but it's the exception, not how most PHP is written.
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to build a generator that yields the squares of 1 through 4."
@@ -184,6 +185,7 @@ foreach ($gen as $value) {
   explanation="Calling firstThree() does not run any of its code yet — a generator function's body only executes lazily, as the generator is iterated. That's why 'generator created' prints before 'start'; each subsequent foreach step resumes the function right after its last yield until the next one."
   actualOutput="generator created\nstart\ngot 1\nmiddle\ngot 2\nend\ngot 3\n"
 />
+</ExerciseTabs>
 
 ## See also
 

@@ -4,7 +4,7 @@ description: Go's variable declarations, basic types, zero values, and the := sh
 category: Programming Languages
 weight: 2
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -95,6 +95,7 @@ func main() {
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to declare two variables with `:=` and print their sum."
@@ -138,6 +139,7 @@ func main() {
   explanation={`Declaring a variable without an initializer gives it the type's zero value: 0 for int, an empty string for string. Comparing an empty string to "" is true, not an error or nil.`}
   actualOutput="0 true"
 />
+</ExerciseTabs>
 
 ## See also
 

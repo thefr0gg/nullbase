@@ -4,7 +4,7 @@ description: try/catch in TypeScript, why a caught error is typed unknown under 
 category: Programming Languages
 weight: 7
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -86,6 +86,7 @@ Because `field` is a declared, typed property on `ValidationError` (not just som
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to safely narrow a caught unknown value with instanceof before reading its message."
@@ -129,6 +130,7 @@ Because `field` is a declared, typed property on `ValidationError` (not just som
   explanation="Under strict mode, catch variables are always typed unknown regardless of what's actually thrown in the try block — the compiler can't see into the throw statement and infer Error from it. Accessing .message directly, without first narrowing with instanceof, is a compile-time error even though this particular throw would produce a real Error at runtime."
   actualOutput="Type error: 'err' is of type 'unknown'"
 />
+</ExerciseTabs>
 
 ## See also
 

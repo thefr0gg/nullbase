@@ -4,7 +4,7 @@ description: Python's signature intermediate-level features — wrapping functio
 category: Programming Languages
 weight: 9
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -63,6 +63,7 @@ print(list(squares))       # [4, 9, 16] — the rest, in one go
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to build a logging decorator and apply it to a function."
@@ -101,4 +102,5 @@ print(list(squares))       # [4, 9, 16] — the rest, in one go
   explanation="A generator produces each value exactly once and can't be restarted. The first list(gen) drains every value the generator will ever produce, so by the second call there's nothing left to pull — list() on an already-exhausted generator simply returns an empty list, not an error."
   actualOutput='[0, 1, 2]\n[]'
 />
+</ExerciseTabs>
 

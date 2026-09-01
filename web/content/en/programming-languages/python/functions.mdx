@@ -4,7 +4,7 @@ description: Defining reusable code with def — default arguments, keyword argu
 category: Programming Languages
 weight: 4
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -56,6 +56,7 @@ print(double(5), triple(5))  # 10 15
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to build a greeting function with a default argument and call it twice."
@@ -89,4 +90,5 @@ print(double(5), triple(5))  # 10 15
   explanation="A default argument's value is created exactly once, when the function is defined — not on every call. Since basket=[] is a mutable list, every call that doesn't pass its own basket shares and mutates that same list, so the second call sees the first call's leftover item still in it."
   actualOutput='["apple"] then ["apple", "banana"]'
 />
+</ExerciseTabs>
 

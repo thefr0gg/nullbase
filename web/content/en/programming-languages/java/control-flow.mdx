@@ -4,7 +4,7 @@ description: Java's if/else, switch (including the modern arrow form), and for/w
 category: Programming Languages
 weight: 3
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -115,6 +115,7 @@ accept a label (`outer:`) to target an enclosing loop when loops are nested.
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to build an if/else chain that classifies a score."
@@ -167,6 +168,7 @@ System.out.println(result);`}
   explanation="Classic switch falls through when there's no break. Matching case 2 runs its body and then keeps executing case 3's body too, since there's no break until after case 3, producing 'Tue' + 'Wed'."
   actualOutput="TueWed"
 />
+</ExerciseTabs>
 
 ## See also
 

@@ -4,7 +4,7 @@ description: Go's convention of returning errors as values instead of throwing e
 category: Programming Languages
 weight: 7
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -109,6 +109,7 @@ belongs in a returned `error`.
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to build a function that returns an error and check it with the if err != nil idiom."
@@ -157,6 +158,7 @@ func main() {
   explanation={`error is an interface, and its zero value is nil, so an unassigned error variable compares equal to nil. After assigning errors.New("boom"), it holds a non-nil error value, so the second comparison is false.`}
   actualOutput="true false"
 />
+</ExerciseTabs>
 
 ## See also
 

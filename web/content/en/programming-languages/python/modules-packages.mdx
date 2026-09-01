@@ -4,7 +4,7 @@ description: Organizing and sharing Python code — import, installing packages 
 category: Programming Languages
 weight: 8
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -61,6 +61,7 @@ dependencies = ["requests>=2.31"]
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to import math and datetime, then use both."
@@ -93,4 +94,5 @@ dependencies = ["requests>=2.31"]
   explanation="Python caches every module the first time it's imported in a process. The second import greet finds it already in that cache and reuses it instead of re-running the file, so the top-level print only fires once no matter how many places import the same module."
   actualOutput='greet module loaded\nhello'
 />
+</ExerciseTabs>
 

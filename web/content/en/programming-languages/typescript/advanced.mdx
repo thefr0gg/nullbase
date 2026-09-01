@@ -4,7 +4,7 @@ description: Writing functions and types that work across many types while keepi
 category: Programming Languages
 weight: 9
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -75,6 +75,7 @@ Once `numberBox` is declared as `Box<number>`, `T` is fixed to `number` for that
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to build a generic first function and two calls that infer different type parameters."
@@ -113,6 +114,7 @@ getLength(42);`}
   explanation="The constraint T extends { length: number } only allows types that actually have a numeric length property — strings and arrays qualify, but number does not have a .length at all. The compiler rejects the call before ever generating code that would try to read .length off 42."
   actualOutput="Type error: Argument of type 'number' is not assignable to parameter of type '{ length: number }'"
 />
+</ExerciseTabs>
 
 ## See also
 

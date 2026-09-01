@@ -4,7 +4,7 @@ description: Declaring PHP functions, default arguments, variadic functions, typ
 category: Programming Languages
 weight: 4
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -126,6 +126,7 @@ echo $classic(5) . " " . $arrow(5) . "\n"; // 15 15
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to build a function with a default argument and call it."
@@ -169,6 +170,7 @@ echo $value;`}
   explanation="Without a & in the parameter list, PHP passes $n by value. addOne mutates its own local copy; $value in the caller's scope is untouched, so it still prints 10."
   actualOutput="10"
 />
+</ExerciseTabs>
 
 ## See also
 

@@ -4,7 +4,7 @@ description: Catching and raising exceptions in Python — try/except/else/final
 category: Programming Languages
 weight: 7
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -62,6 +62,7 @@ Here a specific, expected failure mode (the file doesn't exist yet) is handled w
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to build a try/except/else/finally block that safely converts user input to an int."
@@ -103,4 +104,5 @@ Here a specific, expected failure mode (the file doesn't exist yet) is handled w
   explanation='finally always executes before control actually leaves the function, even when a return statement inside try has already decided what value will be returned — so "finally runs" prints first, and only afterward does f() actually return "try" for the outer print() to display.'
   actualOutput='finally runs\ntry'
 />
+</ExerciseTabs>
 

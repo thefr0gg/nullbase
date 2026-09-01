@@ -4,7 +4,7 @@ description: Organizing C# code with namespaces and using directives, and managi
 category: Programming Languages
 weight: 8
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -111,6 +111,7 @@ from `package.json`.
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to declare a namespace with a class, then use it from another namespace."
@@ -163,6 +164,7 @@ namespace Nullbase.App
   explanation="Program is in the Nullbase.App namespace but never adds 'using Nullbase.Payments;', so the unqualified name Invoice doesn't resolve — the compiler can't find a type named Invoice in scope. It would need to be written as Nullbase.Payments.Invoice, or the namespace imported with using."
   actualOutput="Compile error: Invoice not found"
 />
+</ExerciseTabs>
 
 ## See also
 

@@ -4,7 +4,7 @@ description: A typed superset of JavaScript that adds compile-time type checking
 category: Programming Languages
 weight: 1
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -62,6 +62,7 @@ TypeScript builds on JavaScript — see the [JavaScript](/en/programming-languag
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to build a function that greets a typed name and a call that triggers a type error."
@@ -108,6 +109,7 @@ getId(raw);`}
   explanation="raw.id is a string, but User.id is declared as number. TypeScript's structural check compares each property's type, not just its presence — a mismatched property type fails the check even though the shape otherwise lines up."
   actualOutput="Type error: Argument of type '{ id: string; name: string; }' is not assignable to parameter of type 'User'"
 />
+</ExerciseTabs>
 
 ## See also
 

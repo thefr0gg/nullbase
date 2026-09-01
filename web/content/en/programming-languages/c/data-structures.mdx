@@ -4,7 +4,7 @@ description: C's built-in arrays and strings, and how they're combined with stru
 category: Programming Languages
 weight: 5
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -103,6 +103,7 @@ int main(void) {
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble an array sum"
   prompt="Drag these lines into the order that declares an array, sums its elements, and prints the result."
@@ -146,6 +147,7 @@ int main(void) {
   explanation="a and b are two separate arrays living at different memory addresses, so a == b compares those addresses and is false (0) even though the characters they hold are identical. strcmp actually inspects the contents and correctly reports them as equal, returning 0, so strcmp(a, b) == 0 is true (1)."
   actualOutput="0 1"
 />
+</ExerciseTabs>
 
 ## See also
 

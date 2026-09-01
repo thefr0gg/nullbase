@@ -4,7 +4,7 @@ description: Java's fixed-size arrays alongside the resizable collections ArrayL
 category: Programming Languages
 weight: 5
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -93,6 +93,7 @@ a null check or `getOrDefault`. If you need predictable iteration order,
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to create a fixed-size array, fill it, and print its length."
@@ -129,6 +130,7 @@ System.out.println(result);`}
   explanation="HashMap.get returns null when the key isn't present rather than throwing — result is an Integer (a reference type), so it can legally hold null and printing it prints the string 'null'. This is a classic gotcha: unboxing that null into a primitive int later would throw, but printing the Integer reference itself does not."
   actualOutput="null"
 />
+</ExerciseTabs>
 
 ## See also
 

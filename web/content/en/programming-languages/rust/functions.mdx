@@ -4,7 +4,7 @@ description: Declaring functions, returning values without a return statement, a
 category: Programming Languages
 weight: 4
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -71,6 +71,7 @@ Unlike a plain `fn`, this closure can see `threshold` without it being passed in
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to build a function that adds two numbers and a call site that prints the result."
@@ -118,3 +119,4 @@ fn main() {
   explanation="The semicolon after a + b turns it into a statement, so the function body's last expression becomes the implicit unit value () — but the signature promises i32. Rust rejects this at compile time with a mismatched types error rather than silently returning 0 or unit."
   actualOutput="error[E0308]: mismatched types — expected `i32`, found `()`"
 />
+</ExerciseTabs>

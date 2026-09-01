@@ -4,7 +4,7 @@ description: How Go organizes code into packages and dependencies into modules t
 category: Programming Languages
 weight: 8
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -99,6 +99,7 @@ compiler rather than by convention alone.
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to set up a new module and its main package."
@@ -147,6 +148,7 @@ func add(a, b int) int {
   explanation="Unlike a scripting language read top to bottom, Go compiles a whole file (and package) before running it, so declaration order inside a file doesn't matter — add can be defined after main and still be called from it. Lowercase names are usable within the same package regardless of export status."
   actualOutput="5"
 />
+</ExerciseTabs>
 
 ## See also
 

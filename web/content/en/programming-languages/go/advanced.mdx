@@ -4,7 +4,7 @@ description: Go's concurrency model — lightweight goroutines and the channels 
 category: Programming Languages
 weight: 9
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -113,6 +113,7 @@ func main() {
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to launch a goroutine that sends one value on a channel, then receive it in main."
@@ -163,6 +164,7 @@ func main() {
   explanation="The channel is buffered with capacity 1. The first send (10) fits in the buffer and returns immediately. The second send (20) blocks because the buffer is full and nothing has received yet — and since this all happens on the single main goroutine with no other goroutine to drain it, the program deadlocks (a runtime fatal error: all goroutines are asleep)."
   actualOutput="fatal error: all goroutines are asleep - deadlock!"
 />
+</ExerciseTabs>
 
 ## See also
 

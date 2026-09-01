@@ -4,7 +4,7 @@ description: require/include for file inclusion, PHP namespaces for organizing c
 category: Programming Languages
 weight: 8
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -127,6 +127,7 @@ available with no further manual includes.
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to declare a namespaced class and use it from another file."
@@ -167,6 +168,7 @@ echo square(4);`}
   explanation="require_once tracks which files have already been included and silently skips a repeat request for the same file, unlike plain require which would re-run the file and cause a fatal 'cannot redeclare function' error the second time."
   actualOutput="16"
 />
+</ExerciseTabs>
 
 ## See also
 

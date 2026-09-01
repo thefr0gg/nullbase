@@ -4,7 +4,7 @@ description: Typed parameters and return types, plus optional and default parame
 category: Programming Languages
 weight: 4
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -69,6 +69,7 @@ Because `role`'s type is inferred from its default value (`string`), passing any
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to build a typed add function and a call that fails the type checker."
@@ -110,6 +111,7 @@ greet("Ada", 5);`}
   explanation="title is optional, so it accepts a string or being omitted entirely — but it does not widen to accept just any type. Passing a number for an optional string parameter is still a type mismatch, just like it would be for a required one."
   actualOutput="Type error: Argument of type 'number' is not assignable to parameter of type 'string | undefined'"
 />
+</ExerciseTabs>
 
 ## See also
 

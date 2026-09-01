@@ -4,7 +4,7 @@ description: Rust has no exceptions — Result<T, E> and Option<T> make failure 
 category: Programming Languages
 weight: 7
 interactive: true
-interactiveType: ["OrderingExercise", "PredictOutput"]
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
 toc: true
 ---
 
@@ -114,6 +114,7 @@ Rust's designers chose this over exceptions deliberately: an exception can be th
 
 ## Exercises
 
+<ExerciseTabs>
 <OrderingExercise
   title="Assemble the code"
   prompt="Drag the lines into the correct order to build a function returning Option<i32> that finds the first even number, plus a match on its result."
@@ -162,3 +163,4 @@ fn main() {
   explanation="unwrap() on an Err doesn't return the error string or a fallback number — it panics and crashes the program immediately, printing the Err's contents as part of the panic message. unwrap() is meant for cases you're certain are Ok; calling it on a Result you haven't checked is exactly what match or ? exist to avoid."
   actualOutput={`thread 'main' panicked at 'called Result::unwrap() on an Err value: "division by zero"'`}
 />
+</ExerciseTabs>
