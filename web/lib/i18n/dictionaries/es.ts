@@ -105,15 +105,15 @@ export const es: Dictionary = {
     emptyOutput: "(sin salida)",
   },
   exercise: {
-    moveUp: "Subir",
-    moveDown: "Bajar",
     submit: "Comprobar respuesta",
     retry: "Intentar de nuevo",
     showAnswer: "Ver la respuesta",
     correct: "¡Correcto!",
     incorrect: "No del todo.",
-    yourOrderLabel: "Tu orden",
+    yourOrderLabel: "Tu respuesta",
     correctOrderLabel: "Orden correcto",
+    bankLabel: "Piezas disponibles",
+    emptyAnswer: "Toca o arrastra las piezas de abajo para construir el código.",
   },
   predictOutput: {
     submit: "Comprobar respuesta",

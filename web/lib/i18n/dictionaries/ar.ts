@@ -105,15 +105,15 @@ export const ar: Dictionary = {
     emptyOutput: "(لا يوجد ناتج)",
   },
   exercise: {
-    moveUp: "تحريك لأعلى",
-    moveDown: "تحريك لأسفل",
     submit: "تحقّق من الإجابة",
     retry: "أعد المحاولة",
     showAnswer: "إظهار الإجابة",
     correct: "إجابة صحيحة!",
     incorrect: "ليست صحيحة تمامًا.",
-    yourOrderLabel: "ترتيبك",
+    yourOrderLabel: "إجابتك",
     correctOrderLabel: "الترتيب الصحيح",
+    bankLabel: "القطع المتاحة",
+    emptyAnswer: "اضغط أو اسحب القطع أدناه لبناء الكود.",
   },
   predictOutput: {
     submit: "تحقّق من الإجابة",

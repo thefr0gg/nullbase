@@ -131,8 +131,6 @@ export interface Dictionary {
     emptyOutput: string;
   };
   exercise: {
-    moveUp: string;
-    moveDown: string;
     submit: string;
     retry: string;
     showAnswer: string;
@@ -140,6 +138,8 @@ export interface Dictionary {
     incorrect: string;
     yourOrderLabel: string;
     correctOrderLabel: string;
+    bankLabel: string;
+    emptyAnswer: string;
   };
   predictOutput: {
     submit: string;
