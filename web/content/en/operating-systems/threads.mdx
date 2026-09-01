@@ -1,0 +1,53 @@
+---
+title: Threads
+description: How the OS schedules threads within a process, the tradeoffs between kernel-level and user-level threading, the three classic threading models, and why shared memory forces synchronization.
+category: Operating Systems
+weight: 2
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+A **thread** is the unit of execution the scheduler actually dispatches; a process is really just a container — an address space, a set of open files, a security context — that one or more threads run inside. Every process has at least one thread; a *multi-threaded* process has several threads sharing that same address space, which is what makes threads so much cheaper to create and switch between than whole processes: there's no new page table to build, no new file descriptor table to copy, just a new stack and a new saved register set. [Processes](/en/devops/processes) already covers the memory-sharing tradeoff between processes and threads at a practical level, and [Application Servers](/en/backend/application-servers) covers how real servers pick a concurrency model built on threads (or deliberately avoid them). This page is about the OS mechanics underneath both: who actually schedules a thread, and why threads sharing memory is a double-edged sword.
+
+## Kernel threads vs user threads
+
+The critical question for any thread is: **who knows it exists?**
+
+- **Kernel-level threads** are visible to the OS scheduler directly — the kernel has a PCB-like structure (often called a thread control block, or TCB) for each one, and decides which kernel thread runs on which CPU core exactly the way it decides between processes. This is what lets one process's threads genuinely run in parallel across multiple cores, and it's what lets the kernel preempt one thread stuck in a blocking system call without stalling the other threads in the same process.
+- **User-level threads** are managed entirely by a library or runtime *inside* the process, with the kernel only ever seeing a single schedulable entity. Switching between user threads is extremely cheap (no trip into kernel mode at all), but it comes with a serious catch: if one user thread makes a blocking system call, the kernel has no idea the process has other, runnable threads — it just blocks the entire process, taking every user thread down with it.
+
+## The three threading models
+
+How a runtime maps its user-visible threads onto the kernel's schedulable threads determines which of those tradeoffs you actually get:
+
+<ItemExplorer
+  title="Threading Models"
+  layout="table"
+  tableColumns={[{ key: "mapping", label: "Mapping" }, { key: "tradeoff", label: "Tradeoff" }]}
+  items={[
+    { id: "many-to-one", label: "Many-to-one", color: "blue", columns: { mapping: "Many user threads run on a single kernel thread", tradeoff: "Thread switching is very cheap and needs no kernel involvement, but one blocking call or one core is all the process ever gets — no real parallelism." } },
+    { id: "one-to-one", label: "One-to-one", color: "green", columns: { mapping: "Each user thread maps directly to its own kernel thread", tradeoff: "True parallelism across cores and no whole-process blocking, but creating and switching threads costs a real kernel-mode transition each time. This is what most modern OS thread APIs (pthreads, Windows threads) actually use." } },
+    { id: "many-to-many", label: "Many-to-many", color: "purple", columns: { mapping: "Many user threads are multiplexed across a smaller (or equal) pool of kernel threads", tradeoff: "Tries to get cheap user-thread switching and real parallelism at once, at the cost of a genuinely more complex scheduler that has to manage both levels." } },
+  ]}
+/>
+
+## Thread states
+
+A thread moves through essentially the same states a process does — new, ready, running, and terminated, plus a blocked/waiting state whenever it's stuck on I/O or synchronization — the difference is scope: the scheduler is choosing among *threads*, not whole processes, and several threads belonging to the same process can be in different states simultaneously (one running, one blocked on a socket read, one ready and waiting for a core to free up).
+
+## Why shared memory needs synchronization
+
+The thing that makes threads cheap — a shared address space — is exactly what makes them dangerous. Two threads reading and writing the same variable with no coordination can interleave their instructions in ways the programmer never intended, producing a **race condition**: the final result depends on the unpredictable timing of which thread's instruction happens to execute first, and can differ from run to run even with identical input. A classic example is two threads both executing "read balance, add 10, write balance" on the same account — if both read the original value before either writes back, one of the two additions is silently lost.
+
+This is the entire reason **synchronization primitives** exist, at a conceptual level:
+
+- A **mutex** (mutual exclusion lock) allows only one thread at a time into a marked section of code — any other thread that tries to enter first has to wait until the lock is released, guaranteeing the "read, modify, write" sequence above happens atomically from every other thread's point of view.
+- A **semaphore** generalizes that idea to a counter rather than a strict one-at-a-time lock — it allows up to *N* threads into a resource simultaneously, which is useful for something like a fixed-size connection pool where a handful of concurrent users is fine but unlimited concurrency isn't.
+
+Neither primitive makes threads faster; both exist purely to trade away some of that concurrency in exchange for correctness, at exactly the points where two threads touching the same memory would otherwise produce an undefined result.
+
+## See also
+
+- **[Processes](/en/operating-systems/processes)** — the states, PCB, and lifecycle a thread's containing process goes through.
+- **[Application Servers](/en/backend/application-servers)** — how thread pools, event loops, and multi-process workers get chosen in real server design.
+- **[Processes](/en/devops/processes)** — the practical process-vs-thread memory comparison this page builds on.

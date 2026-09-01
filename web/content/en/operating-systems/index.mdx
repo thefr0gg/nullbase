@@ -1,0 +1,26 @@
+---
+title: Operating Systems
+description: What the kernel is actually doing underneath a process, a file, or a running program — the theory behind concepts this site otherwise covers from a practical, day-to-day angle.
+category: Operating Systems
+weight: 14
+---
+
+Several sections on this site already touch operating-system concepts from a practical angle — [Processes](/en/devops/processes) and [Linux](/en/devops/linux) in DevOps, concurrency models in [Application Servers](/en/backend/application-servers). This section goes one level under those: the actual kernel mechanisms — process states, memory paging, the system-call boundary — that make the practical, day-to-day version of those concepts work at all. Each page here links back to its practical counterpart rather than repeating it.
+
+## Running code
+
+- **[Processes](/en/operating-systems/processes)** — the state machine every process moves through, and what fork/exec/wait/exit do to it.
+- **[Threads](/en/operating-systems/threads)** — a cheaper unit of scheduling that shares a process's memory.
+- **[Scheduling](/en/operating-systems/scheduling)** — how the kernel decides what runs next when there's more runnable work than CPU cores.
+
+## Memory and storage
+
+- **[Virtual Memory](/en/operating-systems/virtual-memory)** — why every process believes it has its own private address space.
+- **[File Systems](/en/operating-systems/file-systems)** — how the OS organizes raw disk blocks into named files and directories.
+
+## The boundary between programs and the kernel
+
+- **[System Calls](/en/operating-systems/system-calls)** — the user-mode/kernel-mode boundary every privileged operation has to cross.
+- **[Permissions](/en/operating-systems/permissions)** — how the kernel decides whether a given process is allowed to do something.
+- **[Signals](/en/operating-systems/signals)** — how one process asynchronously interrupts another's normal control flow.
+- **[Inter-Process Communication](/en/operating-systems/inter-process-communication)** — how memory-isolated processes intentionally share data anyway.

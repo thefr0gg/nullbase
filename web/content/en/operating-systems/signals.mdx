@@ -1,0 +1,72 @@
+---
+title: Signals
+description: The kernel's mechanism for interrupting a running process — default dispositions, custom handlers, async-signal-safety, and masking.
+category: Operating Systems
+weight: 7
+interactive: true
+interactiveType: ["MermaidDiagram"]
+---
+
+A **signal** is an asynchronous notification the kernel delivers to a process, interrupting whatever it was doing to inform it that something happened — a user pressed Ctrl+C, another process asked it to terminate, it tried to dereference invalid memory, a child process it was watching just exited. "Asynchronous" is the key word: a signal can arrive at essentially any point in a process's execution, in between arbitrary instructions, which is what makes writing correct signal-handling code harder than it looks. [Processes](/en/devops/processes) covers `SIGTERM` vs `SIGKILL` from a practical deployment angle; this page is about the mechanism underneath that: what a signal actually is and how a process reacts to one.
+
+## Default disposition
+
+Every signal type has a default action the kernel takes if the receiving process hasn't installed its own handler for it. These fall into a handful of categories:
+
+- **Terminate** — the process is killed. `SIGTERM` and `SIGINT` default to this.
+- **Terminate with core dump** — killed, and the kernel writes a snapshot of the process's memory to disk for post-mortem debugging. `SIGSEGV` (invalid memory access) defaults to this.
+- **Ignore** — nothing happens. `SIGCHLD` (a child process changed state) defaults to being ignored by many processes that don't care to track their children closely.
+- **Stop** / **Continue** — the process is suspended or resumed, independent of whether it's handling anything else. This is what lets a shell pause a foreground job with Ctrl+Z and resume it later.
+
+A process can override the default for most signals by installing a handler — but not for every signal. `SIGKILL` and `SIGSTOP` are intentionally not interceptable, ignorable, or blockable, because the system needs a way to guarantee it can always terminate or suspend a process no matter what that process's code does.
+
+## Custom handlers, and why they're a restricted place to be
+
+Installing a handler tells the kernel "when this signal arrives, stop what the process is doing and run this function instead." That sounds like an ordinary function call, but it isn't one: the handler runs at an arbitrary point in the middle of whatever the process's normal code was doing, possibly mid-way through a library call that itself isn't reentrant. If the interrupted code was in the middle of `malloc()`, updating the heap's internal bookkeeping, and the signal handler also calls `malloc()`, the two calls can corrupt that same bookkeeping.
+
+This is the idea behind **async-signal-safety**: only a small, specific set of functions (documented per platform — things like `write()`, but not `printf()`, and not general heap allocation) are safe to call from inside a signal handler, because they're guaranteed not to rely on state that might be mid-mutation when the signal arrived. The common, safe pattern is to do as little as possible in the handler itself — typically just setting a flag (a `volatile sig_atomic_t`) or writing a byte to a pipe — and letting the process's normal control flow notice that flag and react once it's back in a safe, ordinary context.
+
+## Masking and blocking
+
+A process can temporarily tell the kernel "don't deliver this signal right now" by **masking** (blocking) it — the signal doesn't get lost, it's just held pending until the process unblocks it. This matters for protecting critical sections: if a piece of code is updating some shared state in a few steps that need to happen atomically with respect to a particular signal, it can block that signal for the duration, do the update, then unblock it (at which point the kernel delivers whatever arrived in the meantime). This trades a small risk — the signal is delayed, not instantaneous — for the guarantee that it can never land in the middle of that specific sequence of steps.
+
+<MermaidDiagram
+  title="A signal's path from sender to disposition"
+  chart={`
+sequenceDiagram
+    participant Sender as Sending process / kernel event
+    participant Kernel
+    participant Proc as Receiving process
+
+    Sender->>Kernel: raise signal (e.g. kill(pid, SIGTERM))
+    alt signal is blocked
+        Kernel->>Kernel: mark pending, hold delivery
+    else signal is deliverable
+        Kernel->>Proc: interrupt normal execution
+        alt custom handler installed
+            Proc->>Proc: run handler (async-signal-safe code only)
+        else no handler (default disposition)
+            Proc->>Proc: terminate / ignore / stop / core dump
+        end
+    end
+`}
+/>
+
+## A wider signal vocabulary
+
+| Signal | Typical default | Common cause |
+| --- | --- | --- |
+| `SIGINT` | Terminate | Ctrl+C from the controlling terminal |
+| `SIGHUP` | Terminate | Controlling terminal closed, or "reload your config" by convention |
+| `SIGCHLD` | Ignore | A child process exited or stopped |
+| `SIGSEGV` | Terminate + core dump | Invalid memory access |
+| `SIGTERM` | Terminate | A polite request to shut down, interceptable |
+| `SIGKILL` | Terminate | Immediate, not interceptable |
+
+`SIGHUP`'s dual meaning is a good example of convention layered on top of a signal's mechanical behavior: originally "the terminal hung up," many long-running daemons now treat receiving it as "re-read your configuration file," even though nothing about the kernel enforces that meaning — it's just what the handler the daemon chooses to install does with it.
+
+## See also
+
+- **[Processes](/en/devops/processes)** — `SIGTERM` vs `SIGKILL` from the practical angle of gracefully restarting a running service.
+- **[Permissions](/en/operating-systems/permissions)** — a process generally needs a matching user identity (or root) to signal another process at all.
+- **[Inter-Process Communication](/en/operating-systems/inter-process-communication)** — signals are a minimal way for processes to notify each other, alongside richer mechanisms for exchanging actual data.

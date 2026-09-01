@@ -1,0 +1,66 @@
+---
+title: Processes
+description: The states a process moves through from creation to termination, what the OS actually tracks about it in the process control block, and what fork/exec/wait/exit do to the process table underneath.
+category: Operating Systems
+weight: 1
+interactive: true
+interactiveType: ["MermaidDiagram"]
+---
+
+A **process** doesn't just exist or not exist — between the moment it's created and the moment it exits, the operating system tracks it as being in one of a small number of well-defined states, and moves it between them constantly as it competes with every other process for the CPU. This page covers that theory: the state machine every process lives inside, the bookkeeping structure the kernel keeps for each one, and what the handful of system calls that create and destroy processes actually do to that bookkeeping. For the practical, sysadmin-facing side of processes — PIDs, signals, file descriptors, parent/child trees — see [Processes](/en/devops/processes) instead; this page assumes that ground and goes underneath it.
+
+## The process states
+
+At any instant, a process is in exactly one of five states, and the kernel's **scheduler** is the thing deciding when it moves from one to the next:
+
+<MermaidDiagram title="Process state transitions" chart={`stateDiagram-v2
+    [*] --> New
+    New --> Ready: admitted
+    Ready --> Running: scheduler dispatch
+    Running --> Ready: time slice expires / preempted
+    Running --> Waiting: blocks on I/O or event
+    Waiting --> Ready: I/O or event completes
+    Running --> Terminated: exit
+    Terminated --> [*]
+`} />
+
+- **New** — the process has been created (its PCB exists) but hasn't yet been admitted to the pool competing for the CPU.
+- **Ready** — loaded and able to run, but the CPU is currently busy with something else; it's simply waiting its turn.
+- **Running** — actually executing on a CPU core right now. On a single core, exactly one process is in this state at any instant; on a multi-core system, one per core.
+- **Waiting** (also called blocked) — the process has requested something it can't have yet — the result of an I/O operation, or a synchronization event — and can't make progress until it arrives. A waiting process is deliberately excluded from scheduling, since running it would accomplish nothing.
+- **Terminated** — finished (or killed), and waiting for its parent to collect its exit status.
+
+The Running → Ready transition is what makes **preemptive multitasking** possible at all: the scheduler can interrupt a process that hasn't finished and isn't blocked, simply because its time slice ran out, and hand the CPU to someone else. Without that transition, one CPU-bound process could hold the processor forever.
+
+## The process control block
+
+Every process the kernel knows about has a corresponding **process control block (PCB)** — the process's entire identity from the OS's point of view. When the scheduler switches away from a process, everything needed to resume it later has to live somewhere, and the PCB is that somewhere. It typically holds:
+
+- **Process state** — which of the five states above the process is currently in.
+- **Program counter** — the address of the next instruction to execute when this process runs again.
+- **CPU registers** — the full register file (general-purpose registers, stack pointer, condition codes) as they stood the instant the process stopped running.
+- **Memory management info** — the process's page table pointers or segment limits, defining exactly which regions of physical memory this process is allowed to touch. See [Virtual Memory](/en/operating-systems/virtual-memory) for what that mapping actually does.
+- **Open file list** — the table of file descriptors this process currently holds open, and what they point to.
+- **Scheduling info** — priority, how much CPU time it's already used, and whatever else the scheduler's algorithm needs to decide who runs next.
+- **Accounting and identity** — PID, parent PID, owner, and resource usage totals.
+
+The process table is, at its core, just the collection of every PCB currently known to the kernel — one entry per process, New through Terminated.
+
+## fork, exec, wait, exit
+
+Four system calls (on Unix-like systems) are responsible for essentially the entire lifecycle:
+
+- **`fork()`** duplicates the calling process: the kernel allocates a new PCB, copies the parent's memory image (using copy-on-write, so pages are only actually duplicated once one side writes to them) and file descriptor table, then inserts the new PCB into the process table in the Ready state. The two processes are now identical except for their PID and the return value `fork()` gives each — zero to the child, the child's new PID to the parent.
+- **`exec()`** (a family of calls — `execve` and friends) replaces the *current* process's memory image with a new program, loading fresh code and data and resetting the program counter, while keeping the same PID and PCB. `fork()` then `exec()` together is how a shell launches a program — duplicate itself, then overwrite the duplicate with something else entirely.
+- **`wait()`** lets a parent block until a specific child, or any child, terminates, then retrieves that child's exit status. This is also what actually removes a Terminated process's PCB from the table — a child that exits before its parent calls `wait()` sits as a **zombie**, still occupying an entry, until its exit status is collected.
+- **`exit()`** ends the calling process: it releases the resources it can release immediately, sets its state to Terminated, and stores its exit code in its PCB for a future `wait()` call to pick up.
+
+## What a context switch actually does
+
+Every time the scheduler moves the CPU from one process to another, it performs a **context switch**: it saves the currently-running process's CPU register state, program counter, and stack pointer into that process's PCB, then loads the *next* process's saved state from its own PCB into the actual hardware registers. The CPU has no idea it just switched between two unrelated programs — from its perspective it simply resumes executing at a program counter with a particular set of register values, because that's all a context switch is: swapping which PCB's saved state currently lives in the physical registers. This save/restore work is pure overhead — no useful instructions execute during it — which is why a very fine-grained scheduling interval trades responsiveness for real, measurable time spent just switching.
+
+## See also
+
+- **[Processes](/en/devops/processes)** — PIDs, signals, file descriptors, and the practical side of process management.
+- **[Threads](/en/operating-systems/threads)** — a cheaper unit of scheduling that shares a process's memory instead of getting its own.
+- **[System Calls](/en/operating-systems/system-calls)** — the user-mode/kernel-mode boundary that `fork`, `exec`, `wait`, and `exit` all cross.

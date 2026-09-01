@@ -1,0 +1,37 @@
+---
+title: Permissions
+description: How the kernel decides whether a process is allowed to touch a resource — the owner/group/other model, what execute really means on a directory, and the setuid/setgid/sticky bits.
+category: Operating Systems
+weight: 6
+---
+
+**Permissions** are how the kernel answers a question it has to ask on essentially every system call: is *this* process allowed to do *that* to *this* resource? Every process runs under an identity — a user ID and one or more group IDs, inherited from whoever started it — and every resource (a file, a directory, a device) carries permission metadata describing who's allowed to read it, write it, and execute it. The kernel checks the process's identity against the resource's permissions on the access itself, not just once when a file is opened — which is part of why permission models end up subtler than "can I open this file."
+
+## Identity, not intent
+
+A process doesn't get to declare what it's trying to do and have the OS trust it. It has a fixed identity (its effective user ID and group ID) attached to it by the kernel, and every operation — opening a file, sending a signal to another process, binding to a privileged network port — is checked against that identity at the moment it happens. This is why, for example, a long-running process that drops its privileges after startup (a common pattern for network daemons that need a privileged port at boot but not afterward) genuinely can't get those privileges back without help — the kernel isn't tracking "used to be root," it's checking the identity the process holds right now.
+
+## The three bits, and what execute means on a directory
+
+The familiar `rwx` triad — read, write, execute — is checked separately for the file's owner, its group, and everyone else, which is why `ls -l` shows nine permission characters in three groups of three (see [Linux](/en/devops/linux) for the `chmod`/`ls -l` syntax itself). What those bits *mean* depends on whether they're attached to a file or a directory, and the execute bit in particular means something genuinely different for each:
+
+- On a **file**, execute means "the kernel will let you run this as a program" (or interpret it as a script with a shebang line).
+- On a **directory**, execute means "you can traverse *into* this directory" — resolve a path through it and access things inside by name — which is a completely different capability from read. A directory with read but not execute lets you list what's in it (see the filenames) but not `cd` into it or open any of the files by path; a directory with execute but not read lets you access a file inside it if you already know its exact name, but not discover what's there by listing it. This split trips people up constantly because "execute" reads as "run," but a directory isn't a program — the bit was reused for traversal instead.
+
+## setuid, setgid, and the sticky bit
+
+Three additional bits change how the owner/group/other model behaves for specific cases, and each does something concrete at the kernel level rather than just being a policy flag:
+
+- **setuid** on an executable file tells the kernel to run that program with the *file's owner's* identity rather than the identity of whoever launched it. This is how `passwd` works: an ordinary user needs to modify `/etc/shadow`, a file only root can write, in order to change their own password — `passwd` is owned by root and has setuid set, so when a normal user runs it, the process temporarily executes as root just long enough to make that one controlled change, then exits. Without setuid, only root could ever change any password.
+- **setgid** does the equivalent for group identity, and on a *directory* specifically it has a second effect: any new file or subdirectory created inside inherits the directory's group instead of the creating user's primary group — useful for shared project directories where everyone's files need to stay in one common group regardless of who created them.
+- The **sticky bit**, on a directory, restricts deletion and renaming: even if a user has write access to the directory (which would normally let them delete anything in it), they can only delete or rename files they themselves own. `/tmp` is the canonical example — everyone needs to write there, but nobody should be able to delete another user's temp files just because the directory itself is world-writable.
+
+## Beyond owner/group/other: ACLs
+
+The owner/group/other model can only express one specific user (the owner) and one specific group getting distinct treatment — anyone else falls into a single "other" bucket. That's often not granular enough: giving read access to three specific unrelated users without putting them all in a new shared group is awkward under the classic model. **Access Control Lists (ACLs)** extend the model by attaching an arbitrary list of (user or group, permissions) pairs to a resource, checked in order, so you can grant or deny specific access to specific identities beyond the single owner and single group the traditional bits allow. Most modern filesystems support them as an optional extension layered on top of, not instead of, the classic bits.
+
+## See also
+
+- **[Linux](/en/devops/linux)** — the practical `chmod`/`ls -l` commands for reading and setting these bits day to day.
+- **[Signals](/en/operating-systems/signals)** — another case where a process's identity determines what it's allowed to do to another process.
+- **[Processes](/en/devops/processes)** — the user/group identity described here is a property of the process, not just the program file.

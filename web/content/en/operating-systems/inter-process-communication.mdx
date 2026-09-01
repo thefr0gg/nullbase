@@ -1,0 +1,48 @@
+---
+title: Inter-Process Communication
+description: Why memory-isolated processes need the kernel's help to share data on purpose, and the tradeoffs between pipes, message queues, shared memory, and sockets.
+category: Operating Systems
+weight: 8
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+**Inter-process communication (IPC)** is the set of kernel-provided mechanisms that let two separate processes exchange data on purpose. This has to exist as a deliberate feature because process isolation — each process getting its own virtual memory space, enforced by the hardware — is a design goal, not an accident: it's what keeps a bug or a crash in one process from corrupting another process's memory. But plenty of real systems are built from multiple cooperating processes (a shell piping output from one program into another, a browser's renderer processes talking to its main process, a database's worker processes coordinating access to shared buffers), and isolation-by-default means they can't just reach into each other's memory to collaborate. The kernel has to broker that exchange explicitly, and it offers several different mechanisms because "processes need to share data" covers genuinely different shapes of problem.
+
+## Pipes: a byte stream between processes
+
+A **pipe** is the simplest form — a unidirectional byte stream with a read end and a write end, most visible in a shell command like `producer | consumer`, where the shell wires the producer's stdout directly to the consumer's stdin. An anonymous pipe like this only works between processes that share a common ancestor, because the pipe is created as a file descriptor before the two processes are forked apart — an unrelated process has no way to obtain that descriptor. **Named pipes (FIFOs)** solve that by giving the pipe a name in the filesystem, so any process that knows the path can open it, whether or not it's related to the process on the other end. Either way, a pipe is just a stream of bytes — there's no message framing built in, so anything beyond "arbitrary bytes in the order they were written" is a convention the two ends agree on themselves.
+
+## Message queues: structure, not just bytes
+
+A **message queue** is a step up in structure: instead of a raw byte stream, the kernel buffers discrete, delimited messages, each with a size and (depending on the implementation) a type or priority. A reader can pull a specific type of message out of the queue without having to first consume everything ahead of it, and messages don't get concatenated together the way pipe writes can. This costs more than a pipe — the kernel is doing more bookkeeping per message — but it's a better fit when what's being exchanged is naturally a sequence of discrete events or commands rather than a continuous stream.
+
+## Shared memory: fastest, but you're on your own
+
+**Shared memory** maps the same physical memory pages into more than one process's address space, so writing a value in one process makes it immediately visible to the other with no data actually being copied through the kernel at all — no `read()`/`write()` system call overhead, no buffering. This makes it the fastest IPC mechanism by a wide margin for large or frequent transfers. The cost is that the kernel gets out of the way entirely once the mapping exists: it does nothing to stop both processes from writing to the same memory at the same time and corrupting each other's data. Using shared memory correctly almost always means pairing it with a separate synchronization primitive — commonly a semaphore — that the processes use to take turns, so only one of them is touching the shared region at a time.
+
+## Sockets: also a networking primitive
+
+A **socket** provides a bidirectional communication channel between two endpoints, and — unlike every mechanism above — it doesn't require the two processes to be on the same machine. A Unix domain socket is IPC in the classic sense, local-machine only, but the same socket API is what two processes use to talk over an actual network via TCP or UDP; see [TCP](/en/networking/tcp) for that side of it. This dual role is why sockets tend to be the default choice when a system might need to scale from "two processes on one box" to "two services on different machines" without a rewrite — the same interface covers both.
+
+<ItemExplorer
+  title="IPC Mechanisms Compared"
+  layout="table"
+  tableColumns={[{ key: "speed", label: "Speed" }, { key: "complexity", label: "Complexity" }, { key: "useCase", label: "Typical use case" }]}
+  items={[
+    { id: "pipes", label: "Pipes / FIFOs", color: "blue", columns: { speed: "Moderate — goes through the kernel as a byte stream", complexity: "Low — simplest to use correctly", useCase: "Chaining commands, simple parent/child data flow" } },
+    { id: "message-queues", label: "Message queues", color: "green", columns: { speed: "Moderate — kernel-buffered, more overhead per message than a pipe", complexity: "Medium — message framing and types handled for you", useCase: "Discrete commands/events between processes, not a continuous stream" } },
+    { id: "shared-memory", label: "Shared memory", color: "orange", columns: { speed: "Fastest — no copying through the kernel", complexity: "High — the processes must synchronize access themselves", useCase: "High-frequency or large data transfer where speed dominates" } },
+    { id: "sockets", label: "Sockets", color: "purple", columns: { speed: "Slowest of the four locally, but the only one that works across machines", complexity: "Medium — well-standardized API", useCase: "Anything that might not stay on one machine" } },
+  ]}
+/>
+
+## Choosing one
+
+In practice the choice tends to fall out of two questions: does this ever need to cross a machine boundary (if so, it's sockets, full stop), and if not, how much raw throughput matters versus how much complexity you're willing to own. A quick one-off exchange between a parent and a child process reaches for a pipe by default; a tight loop pushing large buffers between two processes on the same box that genuinely needs the extra speed reaches for shared memory and accepts the synchronization work that comes with it.
+
+## See also
+
+- **[Signals](/en/operating-systems/signals)** — a much narrower form of inter-process notification, with no payload beyond the signal type itself.
+- **[Permissions](/en/operating-systems/permissions)** — named pipes and shared memory segments are filesystem-visible objects, subject to the same owner/group access checks as files.
+- **[TCP](/en/networking/tcp)** — the networking protocol underneath a socket connection that crosses machine boundaries.

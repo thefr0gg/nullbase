@@ -1,0 +1,50 @@
+---
+title: Virtual Memory
+description: Why every process gets its own illusion of a full address space, how paging and the TLB make that illusion fast, and what happens on a page fault when the illusion runs into physical limits.
+category: Operating Systems
+weight: 3
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+**Virtual memory** is the layer of indirection that lets every process believe it has an entire, private address space to itself — starting at address zero, as large as the CPU's architecture allows — regardless of how much physical RAM the machine actually has or what other processes are doing at the same time. No process ever touches a physical RAM address directly; every memory access it makes is a *virtual* address that the hardware and OS translate to a real physical location behind the scenes, and that one layer of indirection is what makes process isolation, running programs bigger than RAM, and safe multitasking all possible at once.
+
+## What the illusion buys you
+
+- **Isolation** — because process A's virtual addresses are mapped to a completely different set of physical addresses than process B's, A has no way to even *express* an address that lands in B's memory. A bug or a malicious write in one process cannot silently corrupt another's data, without the OS having to check every single memory access by hand.
+- **Programs larger than RAM** — a process's virtual address space doesn't need to be entirely resident in physical memory at once. Parts of it can live on disk until actually touched, so a program can be written as though memory were effectively unlimited.
+- **A simpler mental model for every program** — because addresses are private and start from the same place for everyone, a compiler and linker can lay out a program's memory without knowing anything about what else happens to be running on the machine at the same time.
+
+## Paging
+
+The mechanism that makes this practical is **paging**: both virtual and physical memory are chopped up into fixed-size chunks called **pages** (4 KB is a common default), and the OS maintains a **page table** per process that maps each of that process's virtual pages to a physical page frame somewhere in RAM. A memory access like "read from virtual address `0x4000`" gets split into a page number and an offset within the page; the page table turns the page number into the actual physical page frame, and the offset is added on afterward unchanged. Because it works in fixed-size units instead of arbitrary variable-size regions, the OS can place any process's pages anywhere in physical memory without needing physical memory to be contiguous — dramatically simplifying allocation compared to earlier schemes that required whole programs to fit in one unbroken block.
+
+## The TLB
+
+Walking a full page table on *every single memory access* would be prohibitively slow, so the CPU keeps a small, extremely fast cache of recent virtual-to-physical translations called the **translation lookaside buffer (TLB)**. On a **TLB hit**, the CPU already has the physical address and skips the page table walk entirely; on a **TLB miss**, it has to walk the page table (or hardware-managed structures) to find the mapping, then caches that result in the TLB for next time. Because programs tend to access a relatively small set of pages repeatedly in a short window (locality of reference), the TLB's hit rate is usually very high in practice — but a context switch to a different process invalidates most of those cached translations, since a new process's virtual addresses map somewhere else entirely, which is part of why context switches carry real cost beyond just the register save/restore [covered on the Processes page](/en/operating-systems/processes).
+
+## Page faults
+
+A **page fault** happens when a process accesses a virtual page that its page table says isn't currently mapped to a valid physical frame, and it isn't automatically a crash — the two cases look very different:
+
+<ItemExplorer
+  title="Page Fault Types"
+  layout="table"
+  tableColumns={[{ key: "cause", label: "What triggers it" }, { key: "cost", label: "Cost to resolve" }]}
+  items={[
+    { id: "minor", label: "Minor (soft) fault", color: "blue", columns: { cause: "The page is actually already in physical memory (e.g. shared with another process, or reclaimed but not yet reused) but not yet mapped into this process's page table", cost: "Cheap — the OS just updates the page table entry to point at memory that's already resident. No disk access." } },
+    { id: "major", label: "Major (hard) fault", color: "red", columns: { cause: "The page genuinely isn't in RAM at all — it has to be read in from disk (from the executable file, or from swap)", cost: "Orders of magnitude slower — a real disk (or SSD) read has to complete before the process can resume, which is why heavy paging activity is such a visible performance cliff." } },
+  ]}
+/>
+
+An *invalid* access — one that isn't backed by any legitimate mapping at all, such as a genuine out-of-bounds pointer dereference — is also technically a page fault, but the OS resolves it by delivering a fault to the process instead of fixing up a mapping, which on most systems is exactly what a segmentation fault is under the hood.
+
+## Swapping
+
+When physical memory genuinely runs out, the OS falls back to **swapping** (or paging out): it picks some page currently resident in RAM that hasn't been used recently, writes its contents out to a reserved area of disk (swap space), and reuses that physical frame for whatever needs memory right now. If the original process touches that page again later, it takes a major page fault and the OS reads it back in from swap. This keeps the system running instead of simply failing an allocation, but disk access is vastly slower than RAM, so a system that's swapping heavily ("thrashing") can spend more time shuffling pages to and from disk than doing actual work — the classic sign that a machine needs more RAM rather than more optimization.
+
+## See also
+
+- **[Processes](/en/operating-systems/processes)** — the process control block that holds each process's page table pointer.
+- **[File Systems](/en/operating-systems/file-systems)** — the disk-side structures that swap space and major page faults ultimately read from.
+- **[System Calls](/en/operating-systems/system-calls)** — the kernel-mode privilege a process needs in order to have its page tables touched at all.

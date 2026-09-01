@@ -1,0 +1,38 @@
+---
+title: File Systems
+description: How the OS turns a raw block device into named files and directories, what an inode actually stores, and how journaling keeps a crash mid-write from corrupting the whole volume.
+category: Operating Systems
+weight: 4
+---
+
+A **file system** is the scheme the operating system uses to organize the raw, undifferentiated bytes of a block device — a hard disk, an SSD, a partition — into the named files and directories that every program, including the shell you type into, takes completely for granted. A disk on its own knows nothing about "files": it's just a huge array of fixed-size blocks that can be read or written by number. Everything about `/home/user/notes.txt` being a distinct, named, resizable, permission-protected thing is a structure the file system imposes on top of that raw block array — and different file systems (ext4, NTFS, APFS) impose that structure differently, which is why a disk formatted for one usually can't just be read by another.
+
+## Inodes: metadata separate from the name
+
+The single most important idea underneath a Unix-style file system is that a file's **name** and a file's **metadata** are stored in two completely separate places. Every file on disk has an **inode** — a data structure holding everything about the file *except* its name: its size, permissions, owner, timestamps, and, critically, the actual list of disk blocks that hold its content. A directory, in turn, is really just a simple table mapping human-readable names to inode numbers — nothing more than a list of `(name, inode number)` pairs.
+
+This separation is exactly why a file can have more than one name at once. A **hard link** is simply a second directory entry pointing at the *same* inode number as an existing one — not a copy, not a shortcut, but a second name for the identical underlying file. Both names are equally "real"; the file's actual content and metadata only disappear once the inode's link count drops to zero, meaning no directory entry anywhere still points at it. This also explains why renaming a file within the same file system is instant regardless of the file's size — a rename just rewrites one `(name, inode number)` pair in a directory, and never touches the file's actual data blocks at all.
+
+## The directory tree is a graph of names to inodes
+
+What looks like a single clean hierarchy — `/`, then `/home`, then `/home/user` — is really just directories (themselves files, containing name→inode mappings) pointing at other directories' inodes, forming a tree only because the file system's conventions (and the fact that hard links to directories are normally disallowed) keep it from becoming a general graph with cycles. Strip away that convention and what's actually there is a graph: any inode can, in principle, be reachable through more than one path, which is precisely what a hard link demonstrates — the same underlying file reachable by two different name chains through the directory structure.
+
+## Journaling
+
+Writing a file to disk is rarely a single atomic operation — updating a file's content, its inode's metadata, and the block-allocation bookkeeping that tracks which blocks are free are all separate writes, and a power loss or crash that happens between them can leave the file system in an inconsistent state: blocks marked used that no file points to, an inode that references data half-written, a directory entry pointing at a partially-updated inode. **Journaling** is the fix — before making a set of related changes to the actual file system structures, the file system first writes a description of the intended changes to a dedicated log (the journal). If a crash happens mid-write, the file system doesn't have to scan the entire volume to figure out what might be broken; on the next mount, it replays the journal, either finishing or cleanly discarding whatever operation was interrupted, and the volume comes back consistent in a fraction of the time a full filesystem check would take. This is the same write-ahead-log idea a database's transaction log uses to survive a crash mid-write, applied one level down, to the file system that the database's own files live on.
+
+## Common file systems, briefly
+
+Most operating systems ship with (or default to) one particular file system, and the differences mostly come down to how each implements the ideas above plus platform-specific features layered on top:
+
+- **ext4** — the default on most Linux distributions; journaled, inode-based in the classic Unix sense described above.
+- **NTFS** — Windows' default since Windows NT; also journaled, with its own metadata structure (the Master File Table) playing a role broadly analogous to an inode table.
+- **APFS** — Apple's file system since 2017, built around copy-on-write for snapshots and space-efficient cloning rather than in-place journaling of the traditional kind.
+
+None of these are drop-in compatible with each other at the byte level — mounting a disk written by one under an OS expecting another generally requires an explicit driver or compatibility layer, precisely because "file system" means "a specific, mutually understood scheme," not a universal standard.
+
+## See also
+
+- **[Virtual Memory](/en/operating-systems/virtual-memory)** — swap space, one of the specific disk regions a file system-adjacent mechanism reads and writes.
+- **[System Calls](/en/operating-systems/system-calls)** — `open`, `read`, and `write` are the actual boundary a program crosses to touch a file at all.
+- **[Linux](/en/devops/linux)** — the command-line tools (`ls`, `df`, `mount`) used to interact with a real file system day to day.

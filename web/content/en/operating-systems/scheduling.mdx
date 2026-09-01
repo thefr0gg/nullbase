@@ -1,0 +1,43 @@
+---
+title: Scheduling
+description: How the kernel decides which of many runnable processes gets the CPU next and for how long — FCFS, Round Robin, priority scheduling, and multilevel feedback queues.
+category: Operating Systems
+weight: 9
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+A **scheduler** is the part of the kernel that decides, at any given moment, which runnable process (or thread) actually gets to run on a CPU core next, and for how long. This has to exist because there are almost always more runnable processes than there are cores to run them on — a typical machine has a handful of cores and routinely dozens or hundreds of processes that want CPU time. Something has to arbitrate, and the algorithm it uses has real, felt consequences: it's the difference between a system that feels responsive under load and one where one heavy task makes everything else stall.
+
+## Preemptive vs cooperative
+
+The first design decision is whether a running process can be interrupted before it voluntarily gives up the CPU. Under **cooperative scheduling**, a process runs until it chooses to yield — blocking on I/O, or explicitly calling something like `yield()` — which means a single misbehaving or simply long-running process can freeze the entire system, since nothing forces it to give the CPU back. Under **preemptive scheduling**, the kernel can forcibly interrupt a running process — typically via a hardware timer interrupt that fires at a fixed interval — and hand the CPU to something else regardless of whether the interrupted process was ready to stop. Every general-purpose OS in wide use today (Linux, Windows, macOS) is preemptive; cooperative scheduling mostly survives in constrained embedded systems and in userspace concurrency models (like a single-threaded event loop) that are a different, higher-level thing from OS process scheduling.
+
+## Classic algorithms and their tradeoffs
+
+- **First-Come-First-Served (FCFS)** runs processes in the order they became runnable, with no interruption once a process starts. It's about as simple as a scheduler can be, but it has a well-known failure mode called the **convoy effect**: if one process runs for a long time, every other process that arrived after it — even short, quick ones — sits waiting behind it the entire time, tanking average responsiveness even though most of the work involved was fast.
+- **Round Robin** gives every process a fixed **time slice** (a quantum) and cycles through the runnable processes, preempting whoever's running when their slice ends and moving to the next in line. This is fair in a direct sense — no process waits behind another indefinitely — but the fairness has a cost: every preemption is a **context switch**, which itself takes real time (saving one process's CPU state, loading another's). Set the time slice too short and the CPU spends a meaningful fraction of its time context-switching instead of doing useful work; set it too long and Round Robin starts behaving like FCFS.
+- **Priority Scheduling** always runs the highest-priority runnable process next. This lets a system express "this matters more" directly, but taken naively it has an obvious failure mode: a steady stream of high-priority work can **starve** a low-priority process indefinitely, since it never becomes the highest-priority thing in the queue. The standard fix is **aging** — gradually raising a process's effective priority the longer it's been waiting, so eventually even the lowest-priority work is guaranteed to run.
+- **Multilevel feedback queues** are less a single algorithm than a framework combining the ideas above: multiple queues at different priority levels, each perhaps with its own time-slice length, where a process that uses its full slice (behaving like a CPU-heavy task) gets demoted to a lower-priority queue with longer slices, while a process that yields quickly (behaving like an I/O-bound, interactive task) gets kept at a high-priority queue with short slices so it stays responsive. This is roughly the shape real general-purpose schedulers approximate — Linux's Completely Fair Scheduler (CFS), for instance, doesn't use literal fixed queues but pursues the same underlying goal: keep interactive work snappy, still make forward progress on CPU-bound work, and avoid starving anything indefinitely.
+
+<ItemExplorer
+  title="Scheduling Algorithms Compared"
+  layout="table"
+  tableColumns={[{ key: "fairness", label: "Fairness" }, { key: "overhead", label: "Overhead" }, { key: "weakness", label: "Main weakness" }]}
+  items={[
+    { id: "fcfs", label: "First-Come-First-Served", color: "red", columns: { fairness: "Poor — order of arrival only", overhead: "Lowest — no preemption needed", weakness: "Convoy effect: one long process blocks everything behind it" } },
+    { id: "round-robin", label: "Round Robin", color: "blue", columns: { fairness: "High — every process gets regular turns", overhead: "Scales with how short the time slice is", weakness: "Too-short slices waste time on context switching" } },
+    { id: "priority", label: "Priority Scheduling", color: "orange", columns: { fairness: "Deliberately unequal by design", overhead: "Low, unless aging is implemented", weakness: "Starvation of low-priority work without aging" } },
+    { id: "mlfq", label: "Multilevel Feedback Queue", color: "green", columns: { fairness: "Adapts to how a process actually behaves", overhead: "Highest — tracking and adjusting behavior over time", weakness: "Genuinely complex to tune correctly" } },
+  ]}
+/>
+
+## Why this still matters day to day
+
+Most application code never calls into the scheduler directly, but its behavior explains things developers see constantly: why a CPU-bound background job can make an interactive request feel sluggish on the same box, why setting a process's `nice` value changes how much CPU it actually gets relative to its neighbors, and why a system under heavy load doesn't fail outright but instead degrades — every process still gets *some* time, just less of it, which is exactly what a preemptive, fairness-oriented scheduler is designed to guarantee.
+
+## See also
+
+- **[Signals](/en/operating-systems/signals)** — a related but distinct kernel mechanism: signals interrupt a process's *logic*, while scheduling decides when a process's logic runs at all.
+- **[Processes](/en/devops/processes)** — the unit of work the scheduler is actually choosing between.
+- **[Linux](/en/devops/linux)** — `ps` and related tools for inspecting what's actually running on a real system.

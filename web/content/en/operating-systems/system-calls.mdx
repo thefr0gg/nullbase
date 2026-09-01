@@ -1,0 +1,54 @@
+---
+title: System Calls
+description: The user-mode/kernel-mode boundary every program has to cross to touch hardware, and how a system call mechanically switches the CPU across it and back.
+category: Operating Systems
+weight: 5
+interactive: true
+interactiveType: ["MermaidDiagram"]
+---
+
+A **system call** is the only way an ordinary program is ever allowed to touch hardware, another process, or anything else the kernel considers privileged — reading a file, sending a network packet, allocating memory, even asking what time it is. A running program can't simply reach out and manipulate a disk controller or another process's memory directly; it has to ask the kernel to do it on its behalf, through a narrow, well-defined interface. Understanding why that boundary exists, and what actually happens when code crosses it, explains a lot about why operating systems are trustworthy at all despite running arbitrary, sometimes buggy or malicious, user programs side by side.
+
+## User mode and kernel mode
+
+CPUs that run general-purpose operating systems support at least two privilege levels, commonly called **user mode** and **kernel mode**. Code running in user mode is deliberately restricted: it cannot execute certain instructions (like the ones that reconfigure the memory management unit or talk directly to a disk controller), and it can only touch the memory its own process has been mapped into. Code running in kernel mode has no such restrictions — it can execute any instruction and touch any physical memory address.
+
+Nearly everything a normal program does runs in user mode, for a simple reason: if every process ran fully privileged, a single buggy or malicious program could overwrite another process's memory, corrupt the disk directly, or disable protections for everyone else on the machine. Confining ordinary code to user mode is what makes process isolation ([covered on the Processes page](/en/operating-systems/processes)) actually enforceable rather than just a polite convention.
+
+## What a system call mechanically does
+
+Since a user-mode process can't just jump into kernel code and start executing privileged instructions — that would defeat the entire point of having two privilege levels — a system call works through a controlled, hardware-supported mechanism: a **trap** (also called a software interrupt). The process executes a special instruction that the CPU recognizes, which switches the processor into kernel mode and transfers control to a single, fixed entry point inside the kernel — never to an address the user process gets to choose. From there:
+
+<MermaidDiagram title="A system call crossing the user/kernel boundary" chart={`sequenceDiagram
+    participant U as User-mode process
+    participant K as Kernel
+    U->>U: calls a library wrapper (e.g. read())
+    U->>K: trap instruction — CPU switches to kernel mode
+    K->>K: kernel handler validates args, does privileged work
+    K->>U: return — CPU switches back to user mode
+    U->>U: library wrapper returns a value to the caller
+`} />
+
+1. The process places the system call number and its arguments somewhere the convention expects (specific registers, typically), then executes the trap instruction.
+2. The CPU switches to kernel mode and jumps to the kernel's single trap handler, using the system call number to look up which actual kernel routine to run.
+3. The kernel routine does the requested privileged work — reading disk blocks, delivering a signal, updating a page table — with full access to hardware and kernel data structures.
+4. The kernel places a return value (or an error code) back where the calling convention expects it, then executes an instruction that switches the CPU back to user mode and resumes the original process exactly where it left off.
+
+The whole exchange is a controlled hand-off: the user process never runs privileged instructions itself, and the kernel only ever runs code it wrote at an entry point it chose, no matter what the user process asked for.
+
+## A few concrete system calls
+
+- **`open`** — asks the kernel to locate a file (via the file system's own inode structures, see [File Systems](/en/operating-systems/file-systems)) and hand back a file descriptor referencing it.
+- **`read`** / **`write`** — asks the kernel to copy bytes between a file descriptor and a buffer in the process's own memory.
+- **`fork`** — asks the kernel to duplicate the calling process, as covered on the [Processes](/en/operating-systems/processes) page.
+- **`execve`** — asks the kernel to replace the calling process's memory image with a new program.
+
+## Why `printf` and `fopen` are wrappers, not syscalls themselves
+
+Almost nobody actually issues a raw trap instruction by hand — the C standard library (and equivalents in every other language's runtime) provides ordinary functions like `printf`, `fopen`, and `malloc` that look like normal function calls but are, underneath, thin wrappers that eventually call `write`, `open`, or `brk`/`mmap`. The library layer exists for convenience and portability: `printf` does buffering and format-string parsing entirely in user mode, only calling the real `write` system call occasionally to flush a full buffer, and `fopen` wraps `open` with a buffered `FILE*` abstraction on top. The actual privileged work — the part that could touch a disk, allocate real memory, or affect another process — always bottoms out at a genuine trap into the kernel; everything above that in a standard library is bookkeeping.
+
+## See also
+
+- **[Processes](/en/operating-systems/processes)** — `fork`, `exec`, `wait`, and `exit` are themselves system calls whose kernel-side effects that page describes.
+- **[Virtual Memory](/en/operating-systems/virtual-memory)** — page faults are handled by the same trap mechanism, even though no program explicitly requests them.
+- **[File Systems](/en/operating-systems/file-systems)** — what `open`, `read`, and `write` are actually operating on inside the kernel.
