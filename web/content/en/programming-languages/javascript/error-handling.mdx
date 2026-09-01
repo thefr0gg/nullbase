@@ -1,0 +1,174 @@
+---
+title: Error Handling
+description: try/catch/finally, throwing values, and building custom Error subclasses in JavaScript.
+category: Programming Languages
+weight: 7
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+JavaScript handles errors with exceptions: `throw` raises one, and
+`try`/`catch`/`finally` handles it. Unlike some languages, JavaScript lets
+you `throw` any value at all — a string, a number, a plain object — but in
+practice you should always throw an `Error` (or a subclass of it), because
+`Error` objects capture a stack trace at the point they're created, which
+is invaluable for debugging.
+
+## try/catch/finally
+
+```js
+function parseConfig(json) {
+  try {
+    return JSON.parse(json);
+  } catch (err) {
+    console.error("Invalid config JSON:", err.message);
+    return {};
+  } finally {
+    console.log("Parse attempt finished.");
+  }
+}
+
+console.log(parseConfig('{"port": 8080}')); // { port: 8080 }
+console.log(parseConfig("not json"));         // logs the error, returns {}
+```
+
+`finally` runs whether or not an error was thrown, and whether or not the
+`try` or `catch` block returned early — it's the right place for cleanup
+that has to happen either way, like closing a connection or clearing a
+loading flag.
+
+```js
+function withLogging(fn) {
+  console.log("starting");
+  try {
+    return fn();
+  } finally {
+    console.log("done"); // runs even though the try block returns above
+  }
+}
+
+withLogging(() => 42);
+// starting
+// done
+```
+
+## Custom Error subclasses
+
+Extending the built-in `Error` class lets you attach extra data to an
+error and lets callers distinguish error kinds with `instanceof`, instead
+of parsing error messages as strings.
+
+```js
+class ValidationError extends Error {
+  constructor(message, field) {
+    super(message);
+    this.name = "ValidationError"; // shows up in stack traces and logs
+    this.field = field;
+  }
+}
+
+function validateAge(age) {
+  if (typeof age !== "number" || age < 0) {
+    throw new ValidationError("Age must be a non-negative number", "age");
+  }
+  return age;
+}
+
+try {
+  validateAge(-5);
+} catch (err) {
+  if (err instanceof ValidationError) {
+    console.log(`${err.name}: ${err.message} (field: ${err.field})`);
+  } else {
+    throw err; // not ours — let it propagate rather than swallowing it silently
+  }
+}
+// ValidationError: Age must be a non-negative number (field: age)
+```
+
+Re-throwing unrecognized errors from a `catch` block — rather than
+swallowing everything — is important: a `catch` that doesn't check what it
+caught can hide real bugs (a `TypeError` from a typo, say) behind whatever
+generic handling you wrote for the error you expected.
+
+## Errors and async code
+
+`try`/`catch` also works around `await`ed Promises that reject, which is
+one of the biggest ergonomic wins of `async`/`await` over raw
+`.then()`/`.catch()` chains:
+
+```js
+async function fetchUser(id) {
+  try {
+    const response = await fetch(`/api/users/${id}`);
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}`);
+    }
+    return await response.json();
+  } catch (err) {
+    console.error("Could not fetch user:", err.message);
+    return null;
+  }
+}
+```
+
+A plain `.then()` chain needs a `.catch()` at the end to handle rejections;
+forgetting one lets a rejected Promise vanish silently (or trigger an
+"unhandled rejection" warning) instead of being handled at all.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a try/catch/finally block around a risky JSON parse."
+  items={[
+    { id: "tryOpen", label: "try {" },
+    { id: "parse", label: "  const data = JSON.parse(input);" },
+    { id: "return", label: "  console.log(data);" },
+    { id: "catchOpen", label: "} catch (err) {" },
+    { id: "catchBody", label: "  console.error(\"Parse failed:\", err.message);" },
+    { id: "finallyOpen", label: "} finally {" },
+    { id: "finallyBody", label: "  console.log(\"attempt complete\");" },
+    { id: "close", label: "}" },
+  ]}
+  correctOrder={["tryOpen", "parse", "return", "catchOpen", "catchBody", "finallyOpen", "finallyBody", "close"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Put these lines in order to define a custom Error subclass and throw an instance of it."
+  items={[
+    { id: "classOpen", label: "class NotFoundError extends Error {" },
+    { id: "ctorOpen", label: "  constructor(resource) {" },
+    { id: "superCall", label: "    super(`${resource} was not found`);", explanation: "super() must run first so the base Error class can set up the message and stack trace." },
+    { id: "name", label: "    this.name = \"NotFoundError\";" },
+    { id: "ctorClose", label: "  }" },
+    { id: "classClose", label: "}" },
+    { id: "throwLine", label: "throw new NotFoundError(\"user\");" },
+  ]}
+  correctOrder={["classOpen", "ctorOpen", "superCall", "name", "ctorClose", "classClose", "throwLine"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`function attempt() {
+  try {
+    return "from try";
+  } finally {
+    console.log("cleanup ran");
+  }
+}
+
+console.log(attempt());`}
+  options={["\"from try\" then \"cleanup ran\"", "\"cleanup ran\" then \"from try\"", "just \"from try\"", "just \"cleanup ran\""]}
+  correctIndex={1}
+  explanation={`Even though the try block hits return first, finally always runs before the function actually returns control to the caller — so "cleanup ran" logs before the outer console.log(attempt()) ever gets its value to print. The return value is computed but held until finally finishes.`}
+  actualOutput="cleanup ran
+from try"
+/>
+
+## See also
+
+- [Classes & Objects](/en/programming-languages/javascript/oop-or-structs)
+- [Async & Promises](/en/programming-languages/javascript/advanced)

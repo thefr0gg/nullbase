@@ -1,0 +1,155 @@
+---
+title: Classes & Interfaces
+description: Classes with access modifiers, and how interface and type differ when describing object shapes.
+category: Programming Languages
+weight: 6
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+JavaScript classes have supported `class`, `constructor`, and methods since ES2015, but they have no concept of a field being private or public — every property is reachable from outside the instance. TypeScript adds **access modifiers** that the compiler enforces, plus `interface`, a declaration form dedicated to describing shapes that plain JavaScript has no equivalent of at all.
+
+## Classes with access modifiers
+
+```ts
+class BankAccount {
+  public owner: string;
+  private balance: number;
+  readonly accountId: string;
+
+  constructor(owner: string, accountId: string, startingBalance: number) {
+    this.owner = owner;
+    this.accountId = accountId;
+    this.balance = startingBalance;
+  }
+
+  deposit(amount: number): void {
+    this.balance += amount;
+  }
+
+  getBalance(): number {
+    return this.balance;
+  }
+}
+
+const acct = new BankAccount("Ada", "acc-1", 100);
+acct.deposit(50); // OK — public method
+console.log(acct.balance); // Type error: Property 'balance' is private and only accessible within class 'BankAccount'
+acct.accountId = "acc-2"; // Type error: Cannot assign to 'accountId' because it is a read-only property
+```
+
+- `public` (the default) — accessible from anywhere.
+- `private` — accessible only inside the class body itself, not from instances or subclasses.
+- `readonly` — assignable only once, in the constructor.
+
+These checks disappear entirely from the compiled JavaScript output — `private` and `readonly` are compile-time-only guarantees. (TypeScript also supports true runtime-private fields via the `#field` syntax, which JavaScript itself defines and enforces at runtime, unlike `private`.)
+
+## Shorthand constructor properties
+
+Writing a field, then re-assigning it from a same-named constructor parameter, is common enough that TypeScript lets you collapse both into one declaration by adding an access modifier directly to a constructor parameter:
+
+```ts
+class Point {
+  constructor(
+    public x: number,
+    public y: number,
+  ) {}
+}
+
+const p = new Point(3, 4);
+console.log(p.x, p.y); // 3 4
+```
+
+This declares `x` and `y` as public fields on the class *and* assigns them from the constructor arguments, with no separate field declarations or `this.x = x` lines needed.
+
+## interface vs type
+
+Both `interface` and `type` can describe an object's shape, and for plain object shapes they're often interchangeable:
+
+```ts
+interface UserI {
+  id: number;
+  name: string;
+}
+
+type UserT = {
+  id: number;
+  name: string;
+};
+```
+
+The differences that matter in practice:
+
+- **Declaration merging**: two `interface` declarations with the same name merge into one; two `type` aliases with the same name are a compile-time error (duplicate identifier).
+- **What they can describe**: `type` can alias anything — unions, tuples, primitives (`type Id = string | number`) — while `interface` can only describe object/class shapes.
+- **Extending**: `interface` extends another with `extends`; `type` combines shapes with an intersection (`&`).
+
+```ts
+interface Animal {
+  name: string;
+}
+interface Dog extends Animal {
+  breed: string;
+}
+
+type Vehicle = { wheels: number };
+type Car = Vehicle & { brand: string };
+```
+
+A class can `implements` either form, as long as the shape is an object type — `class Labrador implements Dog { ... }` works the same as `class Labrador implements Car { ... }` would, structurally.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a BankAccount class with a private balance field and a deposit method."
+  items={[
+    { id: "class-open", label: "class BankAccount {" },
+    { id: "field-private", label: "  private balance: number;" },
+    { id: "ctor", label: "  constructor(startingBalance: number) {", explanation: "The constructor must come after the field declaration it initializes." },
+    { id: "ctor-body", label: "    this.balance = startingBalance;" },
+    { id: "ctor-close", label: "  }" },
+    { id: "deposit", label: "  deposit(amount: number): void {" },
+    { id: "deposit-body", label: "    this.balance += amount;" },
+    { id: "deposit-close", label: "  }" },
+    { id: "class-close", label: "}" },
+  ]}
+  correctOrder={["class-open", "field-private", "ctor", "ctor-body", "ctor-close", "deposit", "deposit-body", "deposit-close", "class-close"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to extend one interface into another."
+  items={[
+    { id: "animal-open", label: "interface Animal {" },
+    { id: "animal-name", label: "  name: string;" },
+    { id: "animal-close", label: "}" },
+    { id: "dog-open", label: "interface Dog extends Animal {", explanation: "Dog must reference Animal after Animal has already been declared." },
+    { id: "dog-breed", label: "  breed: string;" },
+    { id: "dog-close", label: "}" },
+  ]}
+  correctOrder={["animal-open", "animal-name", "animal-close", "dog-open", "dog-breed", "dog-close"]}
+/>
+
+<PredictOutput
+  title="What does the type checker say?"
+  code={`class Point {
+  constructor(
+    public readonly x: number,
+    public readonly y: number,
+  ) {}
+}
+
+const p = new Point(3, 4);
+p.x = 10;`}
+  options={["p.x becomes 10", "10", "Type error: Cannot assign to 'x' because it is a read-only property", "undefined"]}
+  correctIndex={2}
+  explanation="x is declared readonly via the constructor parameter shorthand, so it can only be set once, during construction. Assigning to it afterward — even to a value of the correct type, number — is rejected at compile time before the code ever runs."
+  actualOutput="Type error: Cannot assign to 'x' because it is a read-only property"
+/>
+
+## See also
+
+- [Data Structures](/en/programming-languages/typescript/data-structures)
+- [Error Handling](/en/programming-languages/typescript/error-handling)

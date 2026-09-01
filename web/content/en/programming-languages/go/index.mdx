@@ -1,0 +1,120 @@
+---
+title: Go
+description: An overview of Go, the compiled, statically typed language from Google built for simplicity and concurrency.
+category: Programming Languages
+weight: 1
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Go (also called Golang) is a compiled, statically typed language created at
+Google in 2009 by Robert Griesemer, Rob Pike, and Ken Thompson. It was
+designed as a reaction to the complexity of large C++ codebases: fast
+compilation, a small language spec, garbage collection, and concurrency
+primitives built into the language itself rather than bolted on as a
+library.
+
+Go compiles straight to a single static binary — no runtime to install, no
+virtual machine, no dependency tree to ship alongside your program. That
+property, combined with a batteries-included standard library (HTTP servers,
+JSON encoding, cryptography), made it the default choice for a huge amount
+of modern infrastructure software: Docker, Kubernetes, Terraform, and
+Cloudflare's own edge tooling are all written in Go.
+
+## What makes Go distinctive
+
+- **Goroutines and channels.** Concurrency is a first-class language
+  feature, not a library. Starting a concurrent unit of work is one keyword:
+  `go`.
+- **Explicit error handling.** Go has no exceptions. Functions that can fail
+  return an `error` value as an ordinary return value, and callers check it
+  immediately.
+- **No inheritance.** There are no classes. Behavior is composed through
+  `struct` embedding and satisfied implicitly through `interface`s — a type
+  never declares "I implement X," it just does.
+- **Opinionated formatting.** `gofmt` is part of the toolchain and formats
+  every `.go` file the same way. Go codebases don't have style debates about
+  brace placement.
+- **Fast, simple builds.** `go build` produces a single native binary with
+  no external runtime dependency.
+
+Here's a minimal, complete Go program:
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+	fmt.Println("Hello, nullbase!")
+}
+```
+
+Every executable Go program has a `package main` and a `main` function as
+its entry point — there is no ambiguity about where execution starts, unlike
+scripting languages where top-level statements run in file order.
+
+## When you'd reach for Go
+
+Go shines for network services, CLI tools, and anything where you want a
+single deployable binary and predictable performance without hand-tuning
+memory management. It is less suited to domains that lean on generics-heavy
+abstraction or numerical computing with rich operator overloading, though
+generics (added in Go 1.18) closed part of that gap.
+
+## What's next
+
+The following pages walk through Go from syntax to its concurrency model:
+variables and types, control flow, functions, the built-in data structures,
+structs and interfaces, error handling, and the module system, finishing
+with goroutines and channels.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a minimal, working Go program that prints a greeting."
+  items={[
+    { id: "pkg", label: "package main" },
+    { id: "import", label: "import \"fmt\"" },
+    { id: "funcopen", label: "func main() {" },
+    { id: "body", label: "\tfmt.Println(\"Hello, Go\")" },
+    { id: "funcclose", label: "}" },
+  ]}
+  correctOrder={["pkg", "import", "funcopen", "body", "funcclose"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Put these lines in order to declare a package-level constant and print it from main."
+  items={[
+    { id: "pkg2", label: "package main" },
+    { id: "import2", label: "import \"fmt\"" },
+    { id: "const", label: "const Version = \"1.0\"", explanation: "Package-level declarations come before func main, after imports." },
+    { id: "main2", label: "func main() {" },
+    { id: "print2", label: "\tfmt.Println(Version)" },
+    { id: "close2", label: "}" },
+  ]}
+  correctOrder={["pkg2", "import2", "const", "main2", "print2", "close2"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`package main
+
+import "fmt"
+
+func main() {
+	fmt.Println("nullbase")
+}`}
+  options={["nullbase", "\"nullbase\"", "Compile error: missing package", "Hello, nullbase!"]}
+  correctIndex={0}
+  explanation="fmt.Println prints the string's contents without surrounding quotes, followed by a newline. The quotes in the source only delimit the string literal; they aren't part of the value."
+  actualOutput="nullbase"
+/>
+
+## See also
+
+- [Syntax & Variables](/en/programming-languages/go/syntax-basics)
+- [Goroutines & Channels](/en/programming-languages/go/advanced)

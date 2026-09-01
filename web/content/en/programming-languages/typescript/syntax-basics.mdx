@@ -1,0 +1,123 @@
+---
+title: Syntax & Types
+description: Variable declarations with type annotations, TypeScript's primitive types, and type aliases.
+category: Programming Languages
+weight: 2
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Every JavaScript variable declaration form — `let`, `const`, `var` — works unchanged in TypeScript. What TypeScript adds is an optional **type annotation** after the variable name, and a type checker that enforces it for the rest of the variable's life.
+
+## Type annotations
+
+```ts
+let age: number = 36;
+const name: string = "Ada";
+let isAdmin: boolean = false;
+
+age = "thirty-six"; // Type error: Type 'string' is not assignable to type 'number'
+```
+
+Once `age` is annotated as `number`, assigning a string to it later is a compile-time error — not a silent coercion, and not something you find out about only when the code runs. This is the core difference from plain JavaScript: the type isn't just documentation, it's a constraint the compiler actively checks at every assignment and every use.
+
+## Type inference
+
+You rarely need to annotate every variable. TypeScript infers a type from the initializer, and that inferred type is just as strictly enforced as an explicit one:
+
+```ts
+let count = 0; // inferred as number
+count = "zero"; // Type error: Type 'string' is not assignable to type 'number'
+
+const tag = "release"; // inferred as the literal type "release", not just string
+```
+
+Note the difference between `let` and `const` inference: `let count = 0` infers the general `number` type (because `count` can be reassigned), while `const tag = "release"` infers the narrower **literal type** `"release"`, since a `const` binding can never hold a different value.
+
+## Primitive types
+
+TypeScript's primitive types mirror JavaScript's runtime primitives, plus a few TypeScript-only additions for describing values that don't fit a normal type:
+
+| Type | Example | Notes |
+|---|---|---|
+| `string` | `"hello"` | Any string, template literal, or literal string type |
+| `number` | `42`, `3.14` | No separate int/float — one numeric type |
+| `boolean` | `true`, `false` | — |
+| `bigint` | `42n` | Arbitrary-precision integers |
+| `null` / `undefined` | `null`, `undefined` | Distinct types; see below |
+| `any` | — | Opts out of type checking entirely — avoid it |
+| `unknown` | — | Type-safe counterpart to `any`; must be narrowed before use |
+| `void` | — | The return type of a function that returns nothing |
+
+`any` and `unknown` both mean "could be anything," but `any` disables checking (you can call any method on it, assign it anywhere), while `unknown` forces you to narrow the type before doing anything with the value — see [Control Flow](/en/programming-languages/typescript/control-flow) for how narrowing works.
+
+```ts
+function logLength(value: unknown) {
+  console.log(value.length); // Type error: Object is of type 'unknown'
+}
+```
+
+## Type aliases
+
+A `type` alias gives a name to any type — a primitive, an object shape, a union, anything — so you can reuse it instead of repeating the structure everywhere:
+
+```ts
+type UserId = number;
+
+type User = {
+  id: UserId;
+  name: string;
+  isActive: boolean;
+};
+
+function deactivate(user: User): User {
+  return { ...user, isActive: false };
+}
+
+const ada: User = { id: 1, name: "Ada", isActive: true };
+deactivate(ada);
+```
+
+Aliases are purely a compile-time convenience — `UserId` is erased to `number` in the emitted JavaScript, and `User` is erased entirely. They exist only to make signatures like `deactivate(user: User): User` readable instead of spelling out the full object shape at every call site.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to declare a typed age variable, attempt an invalid reassignment, then log it."
+  items={[
+    { id: "decl", label: "let age: number = 36;" },
+    { id: "bad-assign", label: "age = \"thirty-six\"; // Type error", explanation: "The invalid reassignment must come after age is declared with its type." },
+    { id: "log", label: "console.log(age);" },
+  ]}
+  correctOrder={["decl", "bad-assign", "log"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to define a User type alias and construct a value of that type."
+  items={[
+    { id: "type-open", label: "type User = {" },
+    { id: "type-id", label: "  id: number;" },
+    { id: "type-name", label: "  name: string;", explanation: "Every field goes inside the type alias body before it closes." },
+    { id: "type-close", label: "};" },
+    { id: "const-decl", label: "const ada: User = { id: 1, name: \"Ada\" };" },
+  ]}
+  correctOrder={["type-open", "type-id", "type-name", "type-close", "const-decl"]}
+/>
+
+<PredictOutput
+  title="What does the type checker say?"
+  code={`let count = 0;
+count = "zero";`}
+  options={["\"zero\"", "0", "Type error: Type 'string' is not assignable to type 'number'", "undefined"]}
+  correctIndex={2}
+  explanation="TypeScript infers count's type as number from its initializer 0, then enforces that type on every later assignment — even though count was never explicitly annotated. Inference is just as strict as an explicit annotation."
+  actualOutput="Type error: Type 'string' is not assignable to type 'number'"
+/>
+
+## See also
+
+- [TypeScript](/en/programming-languages/typescript)
+- [Control Flow](/en/programming-languages/typescript/control-flow)

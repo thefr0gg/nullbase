@@ -1,0 +1,130 @@
+---
+title: Error Handling
+description: Signaling and recovering from failure in C++ with try/catch/throw, and why RAII often replaces explicit cleanup code entirely.
+category: Programming Languages
+weight: 7
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+C++ has two overlapping ways of dealing with failure: **exceptions**, which unwind the call stack until something catches them, and **RAII** (Resource Acquisition Is Initialization), a design pattern that ties resource cleanup to object lifetime so it happens automatically — including when an exception is in flight.
+
+## `try` / `catch` / `throw`
+
+```cpp
+#include <iostream>
+#include <stdexcept>
+
+double divide(double a, double b) {
+    if (b == 0) {
+        throw std::invalid_argument("division by zero");
+    }
+    return a / b;
+}
+
+int main() {
+    try {
+        std::cout << divide(10, 2) << "\n"; // 5
+        std::cout << divide(10, 0) << "\n"; // throws
+        std::cout << "This line never runs\n";
+    } catch (const std::invalid_argument& e) {
+        std::cout << "Caught: " << e.what() << "\n";
+    }
+
+    std::cout << "Program continues normally\n";
+    return 0;
+}
+```
+
+`throw` raises an exception — here, a `std::invalid_argument` from the `<stdexcept>` header, one of several standard exception types built into the library. Throwing immediately stops normal execution and starts unwinding the call stack, skipping every remaining statement in `divide` and in `main`'s `try` block, until it reaches a matching `catch`. `catch (const std::invalid_argument& e)` catches exceptions of exactly that type (or a type derived from it); `e.what()` returns the message passed to the constructor. Once the `catch` block finishes, execution resumes normally after the whole `try`/`catch` — the program doesn't crash, and code after it (like the final `std::cout`) still runs.
+
+## RAII instead of manual cleanup
+
+```cpp
+#include <iostream>
+#include <fstream>
+
+void writeLog(const std::string& message) {
+    std::ofstream logFile("app.log", std::ios::app); // resource acquired here
+
+    if (!logFile.is_open()) {
+        throw std::runtime_error("could not open log file");
+    }
+
+    logFile << message << "\n";
+    // no explicit close() call needed — logFile's destructor closes the
+    // file automatically when it goes out of scope, even if an exception
+    // is thrown somewhere after this point
+}
+
+int main() {
+    try {
+        writeLog("Application started");
+    } catch (const std::runtime_error& e) {
+        std::cout << "Logging failed: " << e.what() << "\n";
+    }
+    return 0;
+}
+```
+
+`std::ofstream` acquires its resource (an open file handle) in its constructor and releases it (closes the file) in its destructor. Because C++ guarantees a local object's destructor runs when it goes out of scope — whether that scope exits normally, via `return`, or because an exception is propagating through it — `logFile` never leaks an open file handle, with no `try`/`finally` and no explicit `close()` call required anywhere. This is the pattern most C++ standard library types follow (`std::vector`, `std::string`, `std::unique_ptr`), and it's why idiomatic modern C++ rarely needs manual cleanup code at all: wrap a resource in a type whose destructor releases it, and correctness follows automatically from scope.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a function that throws on negative input, called from a try/catch."
+  items={[
+    { id: "include", label: "#include <stdexcept>" },
+    { id: "fn-sig", label: "int squareRoot(int n) {" },
+    { id: "check", label: "    if (n < 0) throw std::invalid_argument(\"negative\");", explanation: "The check and throw must happen before any code that assumes n is valid." },
+    { id: "compute", label: "    return static_cast<int>(n);" },
+    { id: "fn-close", label: "}" },
+    { id: "try-open", label: "try {" },
+    { id: "call", label: "    squareRoot(-4);" },
+    { id: "catch", label: "} catch (const std::invalid_argument& e) {" },
+    { id: "handle", label: "    std::cout << e.what();" },
+    { id: "catch-close", label: "}" },
+  ]}
+  correctOrder={["include", "fn-sig", "check", "compute", "fn-close", "try-open", "call", "catch", "handle", "catch-close"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a class that acquires a resource in its constructor and releases it in its destructor (RAII)."
+  items={[
+    { id: "class-open", label: "class ScopedLock {" },
+    { id: "public", label: "public:" },
+    { id: "ctor", label: "    ScopedLock() { std::cout << \"locked\\n\"; }", explanation: "The constructor, which acquires the resource, must be declared before the destructor that releases it." },
+    { id: "dtor", label: "    ~ScopedLock() { std::cout << \"unlocked\\n\"; }" },
+    { id: "class-close", label: "};" },
+  ]}
+  correctOrder={["class-open", "public", "ctor", "dtor", "class-close"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`#include <iostream>
+#include <stdexcept>
+
+int main() {
+    try {
+        std::cout << "before\\n";
+        throw std::runtime_error("failed");
+        std::cout << "after\\n";
+    } catch (const std::runtime_error& e) {
+        std::cout << "caught: " << e.what() << std::endl;
+    }
+    return 0;
+}`}
+  options={["before\\nafter\\ncaught: failed", "before\\ncaught: failed", "caught: failed", "Compile error"]}
+  correctIndex={1}
+  explanation={`"before" prints, then throw immediately transfers control to the matching catch block — the std::cout << "after" line is skipped entirely because execution never reaches it once an exception is thrown. Only "before" and the catch block's output actually run.`}
+  actualOutput="before\ncaught: failed"
+/>
+
+## See also
+
+- [Classes & Objects](/en/programming-languages/cpp/oop-or-structs) — the constructors and destructors RAII relies on.
+- [Pointers & Memory](/en/programming-languages/cpp/advanced) — how smart pointers apply RAII to dynamic memory specifically.

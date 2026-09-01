@@ -1,0 +1,140 @@
+---
+title: Syntax & Variables
+description: Variable declarations, primitive types, template literals, and truthiness in JavaScript.
+category: Programming Languages
+weight: 2
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+JavaScript has three ways to declare a variable — `var`, `let`, and
+`const` — and they are not interchangeable. `var` is function-scoped and
+predates block scoping in the language; `let` and `const`, added in ES6,
+are block-scoped and should be your default. Use `const` unless you know
+the binding needs to be reassigned, then use `let`. Modern JavaScript
+codebases rarely use `var` at all.
+
+```js
+const name = "nullbase";
+let count = 0;
+
+count = count + 1; // fine, let allows reassignment
+// name = "other";  // TypeError: Assignment to constant variable.
+
+{
+  let count = 100; // a new binding, scoped to this block only
+  console.log(count); // 100
+}
+console.log(count); // 1 — the outer count is untouched
+```
+
+Note that `const` prevents *reassigning* the binding, not mutating the
+value it points to. A `const` array or object can still have its contents
+changed.
+
+## Primitive types and dynamic typing
+
+JavaScript has seven primitive types — `string`, `number`, `boolean`,
+`undefined`, `null`, `bigint`, and `symbol` — plus `object` for everything
+else (including arrays and functions, which `typeof` reports as `"object"`
+and `"function"` respectively). Unlike statically typed languages, a
+variable's type isn't fixed at declaration; it's determined by whatever
+value currently lives in it, and can change.
+
+```js
+let value = 42;
+console.log(typeof value); // "number"
+
+value = "now a string";
+console.log(typeof value); // "string"
+
+console.log(typeof undefined); // "undefined"
+console.log(typeof null);      // "object" — a famous, long-standing bug in the spec
+```
+
+There's only one numeric type, `number` (a 64-bit floating point value),
+which is why `0.1 + 0.2` famously does not equal `0.3` exactly — the same
+floating-point rounding issue every language with IEEE 754 doubles has.
+`bigint` exists separately for integers beyond `Number.MAX_SAFE_INTEGER`.
+
+## Template literals
+
+Backtick-delimited strings support interpolation with `${}` and can span
+multiple lines without escape sequences:
+
+```js
+const user = "ada";
+const attempts = 3;
+
+const message = `User "${user}" has ${attempts} failed login attempt${attempts === 1 ? "" : "s"}.`;
+console.log(message);
+// User "ada" has 3 failed login attempts.
+```
+
+## Truthiness and equality
+
+Every value is either "truthy" or "falsy" when used where a boolean is
+expected (an `if` condition, for example). The falsy values are exactly:
+`false`, `0`, `-0`, `0n`, `""`, `null`, `undefined`, and `NaN`. Everything
+else — including `"0"` and `[]`, which surprise a lot of newcomers — is
+truthy.
+
+```js
+if ("0") {
+  console.log("truthy!"); // this runs — non-empty strings are always truthy
+}
+
+console.log(0 == "0");   // true  — == coerces types before comparing
+console.log(0 === "0");  // false — === compares value AND type, no coercion
+console.log(null == undefined);  // true
+console.log(null === undefined); // false
+```
+
+Prefer `===` and `!==` over `==` and `!=` almost everywhere. The coercion
+rules behind `==` are inconsistent enough that relying on them is a common
+source of bugs rather than a useful convenience.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to declare a constant, build a message with a template literal, and log it."
+  items={[
+    { id: "decl", label: "const item = \"widget\";" },
+    { id: "price", label: "const price = 9.99;" },
+    { id: "msg", label: "const msg = `The ${item} costs $${price}.`;", explanation: "Both item and price must already exist before this line references them." },
+    { id: "log", label: "console.log(msg);" },
+  ]}
+  correctOrder={["decl", "price", "msg", "log"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Put these lines in order so the block-scoped let shadows the outer one correctly, then both get logged."
+  items={[
+    { id: "outer", label: "let level = \"outer\";" },
+    { id: "blockOpen", label: "{" },
+    { id: "inner", label: "  let level = \"inner\";" },
+    { id: "innerLog", label: "  console.log(level);" },
+    { id: "blockClose", label: "}" },
+    { id: "outerLog", label: "console.log(level);" },
+  ]}
+  correctOrder={["outer", "blockOpen", "inner", "innerLog", "blockClose", "outerLog"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`console.log([] == false);
+console.log([] === false);`}
+  options={["true then true", "true then false", "false then false", "false then true"]}
+  correctIndex={1}
+  explanation={`With ==, [] is coerced to a string (""), then to a number (0), and false also coerces to 0, so they're equal — true. === never coerces, and an array is never === to a boolean, so the second line is false. This gap between == and === is exactly why === is the safer default.`}
+  actualOutput="true
+false"
+/>
+
+## See also
+
+- [Control Flow](/en/programming-languages/javascript/control-flow)
+- [Data Structures](/en/programming-languages/javascript/data-structures)

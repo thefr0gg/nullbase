@@ -1,0 +1,162 @@
+---
+title: Control Flow
+description: C's conditionals and loops — if/else, switch, while, for, and the break/continue/goto statements that redirect them.
+category: Programming Languages
+weight: 3
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+C's control flow will look familiar to anyone who's used a C-family language (JavaScript, Java, C#, Go) — that's not a coincidence, since all of them borrowed their `if`, `for`, and `while` syntax directly from C. What's distinctly C is the lack of guardrails: conditions accept any integer (not just a `bool`), `switch` falls through by default unless you `break`, and `goto` is still a real, working keyword.
+
+## if / else and truthiness
+
+Any expression that evaluates to a nonzero value counts as "true" in a condition — there's no dedicated boolean requirement:
+
+```c
+#include <stdio.h>
+
+int main(void) {
+    int age = 20;
+
+    if (age < 13) {
+        printf("child\n");
+    } else if (age < 20) {
+        printf("teenager\n");
+    } else {
+        printf("adult\n");
+    }
+
+    int flag = 5; /* nonzero, so this branch runs even though 5 isn't 1 */
+    if (flag) {
+        printf("flag is truthy: %d\n", flag);
+    }
+
+    return 0;
+}
+```
+
+That last block is a common source of bugs: `if (flag)` is legal for any integer, so a typo like `if (result = 0)` (assignment, not comparison) silently compiles and always evaluates to false, since `0` itself is falsy — most compilers warn about this with `-Wall`, but it's not an error.
+
+## switch and fallthrough
+
+`switch` jumps to the matching `case` label and then **keeps executing every statement after it** until it hits a `break` or the end of the block — there's no implicit break like some other languages have:
+
+```c
+#include <stdio.h>
+
+int main(void) {
+    int day = 3;
+
+    switch (day) {
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+            printf("weekday\n");
+            break;
+        case 6:
+        case 7:
+            printf("weekend\n");
+            break;
+        default:
+            printf("invalid day\n");
+    }
+
+    return 0;
+}
+```
+
+Stacking `case 1:` through `case 5:` with no statements between them is intentional fallthrough, used here to group several values under one action. Forgetting a `break` where you *didn't* intend fallthrough is one of C's most common bugs.
+
+## Loops: while, do-while, for
+
+```c
+#include <stdio.h>
+
+int main(void) {
+    int i = 0;
+    while (i < 3) {          /* checks condition before each iteration */
+        printf("while: %d\n", i);
+        i++;
+    }
+
+    int j = 0;
+    do {                       /* always runs at least once */
+        printf("do-while: %d\n", j);
+        j++;
+    } while (j < 3);
+
+    for (int k = 0; k < 5; k++) {
+        if (k == 2) continue;  /* skip the rest of this iteration */
+        if (k == 4) break;     /* exit the loop entirely */
+        printf("for: %d\n", k);
+    }
+
+    return 0;
+}
+```
+
+`do-while` is the one loop guaranteed to run its body at least once, since the condition is checked *after* the first pass — useful for things like "prompt the user, then re-prompt while the input is invalid."
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble a grading if/else chain"
+  prompt="Drag these lines into the order that correctly classifies a score into a letter grade."
+  items={[
+    { id: "if90", label: "if (score >= 90) {", explanation: "The highest threshold must be checked first — if a lower threshold like >= 70 came first, a score of 95 would incorrectly match it." },
+    { id: "a", label: "    printf(\"A\\n\");" },
+    { id: "elif70", label: "} else if (score >= 70) {" },
+    { id: "b", label: "    printf(\"B\\n\");" },
+    { id: "else", label: "} else {" },
+    { id: "f", label: "    printf(\"F\\n\");" },
+    { id: "close", label: "}" },
+  ]}
+  correctOrder={["if90", "a", "elif70", "b", "else", "f", "close"]}
+/>
+
+<OrderingExercise
+  title="Order a for loop that sums 1 through 5"
+  prompt="Drag these lines into the order that computes and prints the sum of 1 through 5."
+  items={[
+    { id: "decl", label: "int sum = 0;" },
+    { id: "for", label: "for (int i = 1; i <= 5; i++) {" },
+    { id: "add", label: "    sum += i;", explanation: "Each iteration must add to sum before the loop moves to the next i." },
+    { id: "close", label: "}" },
+    { id: "print", label: "printf(\"%d\\n\", sum);" },
+  ]}
+  correctOrder={["decl", "for", "add", "close", "print"]}
+/>
+
+<PredictOutput
+  title="What does this switch print?"
+  code={`#include <stdio.h>
+
+int main(void) {
+    int n = 2;
+    switch (n) {
+        case 1:
+            printf("one\\n");
+        case 2:
+            printf("two\\n");
+        case 3:
+            printf("three\\n");
+            break;
+        default:
+            printf("other\\n");
+    }
+    return 0;
+}`}
+  options={["two", "two\\nthree", "one\\ntwo\\nthree", "Compile error"]}
+  correctIndex={1}
+  explanation="There's no break after case 2, so execution falls through into case 3's printf before finally hitting break — printing both 'two' and 'three'. It's tempting to assume switch stops after the matching case, like it would in some other languages, but C requires an explicit break to get that behavior."
+  actualOutput="two\nthree"
+/>
+
+## See also
+
+- **[Syntax & Variables](/en/programming-languages/c/syntax-basics)** — the operators and types these conditions and loops are built from.
+- **[Functions](/en/programming-languages/c/functions)** — organizing repeated control flow into reusable blocks.

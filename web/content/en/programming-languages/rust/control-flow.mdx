@@ -1,0 +1,156 @@
+---
+title: Control Flow
+description: How if/else, loop, while, for, and match steer execution in Rust — and why most of them are expressions, not statements.
+category: Programming Languages
+weight: 3
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Rust's control-flow constructs will look familiar coming from C-family languages, but with one recurring twist: `if`, `loop`, and `match` are **expressions** — they produce a value — rather than mere statements. That value can be assigned directly to a variable, which removes a whole category of "declare the variable, then conditionally assign it in each branch" boilerplate.
+
+## `if`/`else` as an expression
+
+```rust
+fn main() {
+    let temperature = 15;
+
+    let description = if temperature > 25 {
+        "hot"
+    } else if temperature > 10 {
+        "mild"
+    } else {
+        "cold"
+    };
+
+    println!("It's {description} today");
+}
+```
+
+Every branch must produce the same type (here, `&str`), and there's no trailing semicolon on the branch expressions — a semicolon would turn `"mild"` into a statement that evaluates to `()` (unit), which wouldn't match the other branches' type and would fail to compile.
+
+## Loops: `loop`, `while`, `for`
+
+`loop` runs forever until an explicit `break`, and — like `if` — a `loop` can also produce a value, by passing it to `break`:
+
+```rust
+fn main() {
+    let mut attempts = 0;
+
+    let result = loop {
+        attempts += 1;
+        if attempts == 3 {
+            break attempts * 10; // loop evaluates to this value
+        }
+    };
+
+    println!("Succeeded on attempt {attempts}, result = {result}");
+}
+```
+
+`while` is the conditional loop you'd expect from any C-family language, and `for` is Rust's preferred way to iterate — almost always over a range or an iterator, rather than a manually managed index:
+
+```rust
+fn main() {
+    let numbers = [10, 20, 30, 40];
+
+    // while: keep going as long as a condition holds
+    let mut i = 0;
+    while i < numbers.len() {
+        println!("index {i}: {}", numbers[i]);
+        i += 1;
+    }
+
+    // for: iterate directly over the collection, no index bookkeeping
+    for n in numbers.iter() {
+        println!("value: {n}");
+    }
+}
+```
+
+The `for` version is idiomatic Rust — it can't go out of bounds because there's no index to get wrong, and it reads as "for each value in this collection" rather than "count up to this length and index in."
+
+## `match`
+
+`match` compares a value against a series of patterns and runs the code for the first one that fits. Unlike `switch` in C-family languages, `match` in Rust is **exhaustive** — the compiler rejects a `match` that doesn't cover every possible value unless you add a catch-all `_` arm.
+
+```rust
+fn describe(n: i32) -> &'static str {
+    match n {
+        0 => "zero",
+        1 | 2 | 3 => "small",
+        4..=9 => "medium",
+        n if n < 0 => "negative",
+        _ => "large",
+    }
+}
+
+fn main() {
+    for n in [-5, 0, 2, 7, 100] {
+        println!("{n} is {}", describe(n));
+    }
+}
+```
+
+This one `match` shows several pattern forms at once: an exact value (`0`), alternatives (`1 | 2 | 3`), an inclusive range (`4..=9`), a guard condition (`n if n < 0`), and the catch-all `_`. Because `match` is exhaustive, deleting the `_` arm here would be a compile error — the compiler can prove there are `i32` values none of the other arms cover.
+
+## See also
+
+- **[Functions](/en/programming-languages/rust/functions)** — using these constructs inside function bodies and as return expressions.
+- **[Error Handling](/en/programming-languages/rust/error-handling)** — `match` is the primary way Rust code handles `Result` and `Option`.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a function that classifies temperature using if/else as an expression."
+  items={[
+    { id: "let-temp", label: "    let temperature = 15;" },
+    { id: "let-desc-open", label: "    let description = if temperature > 25 {" },
+    { id: "hot", label: "        \"hot\"" },
+    { id: "elif", label: "    } else if temperature > 10 {" },
+    { id: "mild", label: "        \"mild\"" },
+    { id: "else", label: "    } else {" },
+    { id: "cold", label: "        \"cold\"" },
+    { id: "close", label: "    };" },
+    { id: "print", label: "    println!(\"It's {description} today\");" },
+  ]}
+  correctOrder={["let-temp", "let-desc-open", "hot", "elif", "mild", "else", "cold", "close", "print"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a loop that breaks with a computed value on the third attempt."
+  items={[
+    { id: "let-attempts", label: "    let mut attempts = 0;" },
+    { id: "let-result-open", label: "    let result = loop {" },
+    { id: "increment", label: "        attempts += 1;" },
+    { id: "if-open", label: "        if attempts == 3 {" },
+    { id: "break", label: "            break attempts * 10;", explanation: "break must come after the check that decides when to stop, and inside the loop body." },
+    { id: "if-close", label: "        }" },
+    { id: "loop-close", label: "    };" },
+  ]}
+  correctOrder={["let-attempts", "let-result-open", "increment", "if-open", "break", "if-close", "loop-close"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`fn describe(n: i32) -> &'static str {
+    match n {
+        0 => "zero",
+        1 | 2 | 3 => "small",
+        4..=9 => "medium",
+        n if n < 0 => "negative",
+        _ => "large",
+    }
+}
+
+fn main() {
+    println!("{}", describe(7));
+}`}
+  options={["small", "medium", "large", "Compile error"]}
+  correctIndex={1}
+  explanation={`7 falls in the inclusive range 4..=9, so the "medium" arm matches. It's tempting to think 7 falls through to the catch-all "large" arm, but match checks arms in order and stops at the first one that fits — the range arm comes before _.`}
+  actualOutput="medium"
+/>

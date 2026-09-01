@@ -1,0 +1,125 @@
+---
+title: Data Structures
+description: Typed arrays, fixed-length tuples, and the Record and Map generic types for keyed collections.
+category: Programming Languages
+weight: 5
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+JavaScript's built-in data structures — arrays, plain objects, `Map` — don't track what's inside them. TypeScript layers type parameters on top of every one of these, so the compiler knows (and checks) what an array holds, what shape an object's keys and values take, and what a `Map`'s keys and values are, all without changing how any of them behave at runtime.
+
+## Typed arrays
+
+```ts
+const scores: number[] = [10, 20, 30];
+scores.push(40); // OK
+scores.push("fifty"); // Type error: Argument of type 'string' is not assignable to parameter of type 'number'
+
+const names: Array<string> = ["Ada", "Grace"]; // equivalent generic-syntax form
+```
+
+`number[]` and `Array<number>` are the same type written two ways. Once an array is typed, every mutating operation — `push`, `unshift`, direct index assignment — is checked against the element type, not just the initial values.
+
+## Tuples
+
+A **tuple** is a fixed-length array where each position has its own declared type — something plain JavaScript arrays have no concept of:
+
+```ts
+let point: [number, number] = [3, 4];
+point = [3, 4, 5]; // Type error: Source has 3 element(s) but target allows only 2
+
+let entry: [string, number] = ["age", 36];
+const [key, value] = entry; // key: string, value: number
+```
+
+This is useful for fixed-shape data like coordinate pairs or key/value entries, where a plain `number[]` would let you accidentally add a third element or forget the difference between position 0 and position 1's meaning.
+
+## Record for keyed collections
+
+`Record<K, V>` describes a plain object used as a dictionary — every key of type `K` maps to a value of type `V`:
+
+```ts
+const inventory: Record<string, number> = {
+  apples: 10,
+  bananas: 5,
+};
+
+inventory.cherries = 20; // OK — any string key, number value
+inventory.apples = "ten"; // Type error: Type 'string' is not assignable to type 'number'
+```
+
+`Record` can also constrain the *set* of allowed keys, using a union of string literals instead of the general `string`:
+
+```ts
+type Status = "pending" | "active" | "closed";
+
+const labels: Record<Status, string> = {
+  pending: "Pending",
+  active: "Active",
+  closed: "Closed",
+};
+```
+
+With `Status` as the key type, every key from the union must be present and no other key is allowed — omitting `closed` from `labels`, or adding an `archived` key, is a compile-time error.
+
+## Map with typed keys and values
+
+`Map<K, V>` is generic, so the compiler tracks both the key type and the value type through every `get`/`set` call:
+
+```ts
+const ages = new Map<string, number>();
+ages.set("Ada", 36);
+ages.set("Grace", 85);
+
+const adaAge = ages.get("Ada"); // type: number | undefined
+ages.set(1, 40); // Type error: Argument of type 'number' is not assignable to parameter of type 'string'
+```
+
+Note that `ages.get("Ada")` is typed `number | undefined`, not just `number` — `Map.get` can always return `undefined` for a missing key, and TypeScript reflects that in the type rather than letting you assume the key exists.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to declare a typed tuple and destructure it into two variables."
+  items={[
+    { id: "decl", label: "const entry: [string, number] = [\"age\", 36];" },
+    { id: "destructure", label: "const [key, value] = entry;", explanation: "Destructuring reads from entry, so entry must be declared first." },
+    { id: "log", label: "console.log(key, value);" },
+  ]}
+  correctOrder={["decl", "destructure", "log"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a status-labels Record keyed by a union of string literals."
+  items={[
+    { id: "type-decl", label: "type Status = \"pending\" | \"active\" | \"closed\";" },
+    { id: "record-open", label: "const labels: Record<Status, string> = {" },
+    { id: "pending", label: "  pending: \"Pending\"," },
+    { id: "active", label: "  active: \"Active\",", explanation: "All three Status keys must appear inside the Record literal for it to satisfy the type." },
+    { id: "closed", label: "  closed: \"Closed\"," },
+    { id: "record-close", label: "};" },
+  ]}
+  correctOrder={["type-decl", "record-open", "pending", "active", "closed", "record-close"]}
+/>
+
+<PredictOutput
+  title="What does the type checker say?"
+  code={`const ages = new Map<string, number>();
+ages.set("Ada", 36);
+
+const adaAge = ages.get("Ada");
+console.log(adaAge.toFixed(0));`}
+  options={["\"36\"", "36", "Type error: Object is possibly 'undefined'", "Type error: Property 'toFixed' does not exist on type 'Map<string, number>'"]}
+  correctIndex={2}
+  explanation={`Map<string, number>'s get method returns number | undefined, since the key might not exist — TypeScript doesn't know "Ada" was just set. Calling .toFixed directly on that value without first checking for undefined is a type error, even though this particular call would succeed at runtime.`}
+  actualOutput="Type error: Object is possibly 'undefined'"
+/>
+
+## See also
+
+- [Functions](/en/programming-languages/typescript/functions)
+- [Classes & Interfaces](/en/programming-languages/typescript/oop-or-structs)

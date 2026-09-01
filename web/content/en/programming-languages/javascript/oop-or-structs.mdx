@@ -1,0 +1,181 @@
+---
+title: Classes & Objects
+description: JavaScript's class syntax, inheritance, and the prototype chain that actually powers it underneath.
+category: Programming Languages
+weight: 6
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+JavaScript has had objects since 1995 but didn't get `class` syntax until
+ES6 (2015). It's important to understand that `class` is syntactic sugar:
+underneath, JavaScript is still doing prototype-based inheritance, the same
+mechanism it always has. Knowing both layers — the friendly `class` syntax
+and the prototype chain it compiles down to — explains a lot of behavior
+that otherwise looks like magic.
+
+## Class syntax
+
+```js
+class Animal {
+  constructor(name) {
+    this.name = name;
+  }
+
+  speak() {
+    return `${this.name} makes a sound.`;
+  }
+}
+
+class Dog extends Animal {
+  speak() {
+    return `${this.name} barks.`;
+  }
+}
+
+const generic = new Animal("Creature");
+const rex = new Dog("Rex");
+
+console.log(generic.speak()); // "Creature makes a sound."
+console.log(rex.speak());     // "Rex barks."
+```
+
+`extends` sets up inheritance, and `super(...)` inside a subclass
+constructor calls the parent constructor — required before you can use
+`this` in a derived class's constructor.
+
+```js
+class Employee extends Animal {
+  constructor(name, role) {
+    super(name);       // must run before `this` is used below
+    this.role = role;
+  }
+
+  speak() {
+    return `${super.speak()} ${this.name} works as ${this.role}.`;
+  }
+}
+
+const e = new Employee("Sam", "an engineer");
+console.log(e.speak());
+// "Sam makes a sound. Sam works as an engineer."
+```
+
+Classes also support `static` members (attached to the class itself, not
+instances), private fields with a `#` prefix (truly inaccessible from
+outside the class, unlike a `_prefix` convention), and getters/setters.
+
+```js
+class Counter {
+  #count = 0; // private field — not visible or settable outside the class
+
+  static description = "A simple counter";
+
+  increment() {
+    this.#count += 1;
+    return this.#count;
+  }
+
+  get value() {
+    return this.#count;
+  }
+}
+
+const c = new Counter();
+c.increment();
+c.increment();
+console.log(c.value);       // 2
+console.log(Counter.description); // "A simple counter"
+// console.log(c.#count);   // SyntaxError — #count is not accessible here
+```
+
+## What's actually happening: the prototype chain
+
+Every object in JavaScript has an internal link to another object called
+its prototype, forming a chain. When you access a property, the engine
+looks on the object itself first, then walks up the prototype chain until
+it finds the property or runs out of chain. `class` methods are just
+regular functions attached to `SomeClass.prototype`, shared by every
+instance rather than copied onto each one.
+
+```js
+function Animal(name) { // an old-style "constructor function" — pre-ES6 equivalent of a class
+  this.name = name;
+}
+
+Animal.prototype.speak = function () {
+  return `${this.name} makes a sound.`;
+};
+
+const a = new Animal("Creature");
+console.log(a.speak()); // "Creature makes a sound."
+
+// This is exactly what `class Animal { speak() {...} }` compiles down to.
+console.log(Object.getPrototypeOf(a) === Animal.prototype); // true
+console.log(a.hasOwnProperty("speak"));                       // false — speak lives on the prototype, not on `a` itself
+```
+
+This is why adding a method to `Animal.prototype` after creating instances
+still makes it available on those existing instances — they don't hold
+their own copy of the method, they look it up through the chain every
+time it's called.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a subclass that calls its parent constructor with super()."
+  items={[
+    { id: "base", label: "class Shape {" },
+    { id: "baseCtor", label: "  constructor(color) { this.color = color; }" },
+    { id: "baseClose", label: "}" },
+    { id: "sub", label: "class Circle extends Shape {" },
+    { id: "subCtor", label: "  constructor(color, radius) {" },
+    { id: "superCall", label: "    super(color);", explanation: "super() must run before `this` is used, and before the subclass constructor can finish." },
+    { id: "field", label: "    this.radius = radius;" },
+    { id: "subCtorClose", label: "  }" },
+    { id: "subClose", label: "}" },
+  ]}
+  correctOrder={["base", "baseCtor", "baseClose", "sub", "subCtor", "superCall", "field", "subCtorClose", "subClose"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Put these lines in order to attach a method to a constructor function's prototype the pre-ES6 way."
+  items={[
+    { id: "ctor", label: "function Robot(id) {" },
+    { id: "assign", label: "  this.id = id;" },
+    { id: "ctorClose", label: "}" },
+    { id: "proto", label: "Robot.prototype.announce = function () {" },
+    { id: "protoBody", label: "  return `Unit ${this.id} reporting.`;" },
+    { id: "protoClose", label: "};" },
+    { id: "instance", label: "const r2 = new Robot(2);" },
+  ]}
+  correctOrder={["ctor", "assign", "ctorClose", "proto", "protoBody", "protoClose", "instance"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`class Base {
+  greet() {
+    return "base";
+  }
+}
+
+const b = new Base();
+Base.prototype.greet = function () {
+  return "overridden";
+};
+
+console.log(b.greet());`}
+  options={["\"base\"", "\"overridden\"", "TypeError", "undefined"]}
+  correctIndex={1}
+  explanation="Instance methods aren't copied onto each object — b just holds a link to Base.prototype and looks greet up there every time it's called. Since Base.prototype.greet was reassigned after b was created, b.greet() finds the new version, not the one that existed at construction time."
+  actualOutput="overridden"
+/>
+
+## See also
+
+- [Data Structures](/en/programming-languages/javascript/data-structures)
+- [Error Handling](/en/programming-languages/javascript/error-handling)

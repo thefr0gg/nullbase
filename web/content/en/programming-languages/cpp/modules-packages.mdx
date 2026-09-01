@@ -1,0 +1,122 @@
+---
+title: Modules & Packages
+description: How #include, headers, and translation units fit together, and how CMake plus vcpkg or Conan handle dependencies in modern C++ projects.
+category: Programming Languages
+weight: 8
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+C++ predates the idea of a built-in module or package system baked into the language itself (a real `import`-style module system only arrived with C++20 and is still unevenly supported). For most existing code, sharing declarations across files still relies on the preprocessor, and sharing third-party code relies on external build tools rather than a language-level package manager.
+
+## Headers vs. translation units
+
+```cpp
+// math_utils.h — a header, declares what's available without defining it
+#ifndef MATH_UTILS_H
+#define MATH_UTILS_H
+
+int square(int n);
+int cube(int n);
+
+#endif
+```
+
+```cpp
+// math_utils.cpp — a translation unit, provides the actual definitions
+#include "math_utils.h"
+
+int square(int n) {
+    return n * n;
+}
+
+int cube(int n) {
+    return n * n * n;
+}
+```
+
+```cpp
+// main.cpp — another translation unit, uses the declarations from the header
+#include <iostream>
+#include "math_utils.h"
+
+int main() {
+    std::cout << square(4) << " " << cube(2) << "\n";
+    return 0;
+}
+```
+
+`#include "math_utils.h"` literally pastes the header's contents into whatever file includes it, textually, before compilation proper even begins — it's not an import in the module sense, just preprocessor text substitution. This is why a header should only contain *declarations* (what a function's signature is) and not *definitions* (what it actually does): if `square`'s body were in the header and two `.cpp` files both included it, the linker would see two definitions of the same function and fail. Each `.cpp` file, together with everything its `#include`s pull in, forms one **translation unit** compiled independently into its own object file; `main.cpp` and `math_utils.cpp` become `main.o` and `math_utils.o`, which the linker then combines. The `#ifndef`/`#define`/`#endif` block in the header is an **include guard** — it prevents the same header from being pasted in twice if it's (directly or indirectly) included more than once in the same translation unit, which would otherwise cause duplicate-declaration errors. `#pragma once` is a widely supported, less verbose alternative to the same guard pattern.
+
+## CMake and package management
+
+```cmake
+cmake_minimum_required(VERSION 3.20)
+project(MyApp)
+
+find_package(fmt REQUIRED)
+
+add_executable(my_app main.cpp math_utils.cpp)
+target_link_libraries(my_app PRIVATE fmt::fmt)
+```
+
+C++ has no single official build tool the way other languages have `npm` or `cargo`; **CMake** has become the de facto standard for describing how a project's sources should be compiled and linked, generating the actual build files (Makefiles, Ninja files, Visual Studio projects) for whatever platform you're on rather than compiling directly itself. `find_package(fmt REQUIRED)` looks for a dependency named `fmt` that's already installed somewhere CMake can find it — which is where a package manager comes in.
+
+**vcpkg** (from Microsoft) and **Conan** are the two dominant C++ package managers: both fetch a library's source (or a prebuilt binary), build it for your target platform and compiler, and hook the result into CMake via `find_package` so your project can link against it without manually downloading, configuring, and compiling that dependency by hand. Compared to package managers in newer languages, both still involve more manual setup — because C++ has no single stable ABI across compilers, a dependency often needs to be built (not just downloaded) specifically for your compiler and configuration, which is the underlying reason C++ dependency management still feels heavier than `pip install` or `npm install`.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a header file with a proper include guard around one function declaration."
+  items={[
+    { id: "ifndef", label: "#ifndef GREETER_H" },
+    { id: "define", label: "#define GREETER_H", explanation: "The guard macro must be defined immediately after the #ifndef check, before any declarations." },
+    { id: "declare", label: "void greet(const std::string& name);" },
+    { id: "endif", label: "#endif" },
+  ]}
+  correctOrder={["ifndef", "define", "declare", "endif"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a minimal CMakeLists.txt that compiles two source files into one executable."
+  items={[
+    { id: "cmake-min", label: "cmake_minimum_required(VERSION 3.20)" },
+    { id: "project", label: "project(MyApp)", explanation: "The project() call must come before add_executable() defines any build targets." },
+    { id: "add-exe", label: "add_executable(my_app main.cpp math_utils.cpp)" },
+  ]}
+  correctOrder={["cmake-min", "project", "add-exe"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`#ifndef SHAPE_H
+#define SHAPE_H
+inline int perimeter(int side) {
+    return side * 4;
+}
+#endif
+#ifndef SHAPE_H
+#define SHAPE_H
+inline int perimeter(int side) {
+    return side * 4;
+}
+#endif
+
+#include <iostream>
+int main() {
+    std::cout << perimeter(3) << std::endl;
+    return 0;
+}`}
+  options={["12", "Compile error: perimeter redefined", "0", "Runtime crash"]}
+  correctIndex={0}
+  explanation="Both blocks are guarded by the same SHAPE_H macro. The first #ifndef sees SHAPE_H undefined, so it defines the macro and pastes in perimeter's definition. The second #ifndef then finds SHAPE_H already defined and skips its contents entirely, so perimeter is only ever defined once — this is exactly the scenario include guards exist to prevent when the same header gets pulled in more than once."
+  actualOutput="12"
+/>
+
+## See also
+
+- [Functions](/en/programming-languages/cpp/functions) — the declarations that typically live in a header.
+- [Pointers & Memory](/en/programming-languages/cpp/advanced) — memory concerns that come up once code spans multiple files and libraries.

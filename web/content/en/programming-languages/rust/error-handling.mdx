@@ -1,0 +1,164 @@
+---
+title: Error Handling
+description: Rust has no exceptions — Result<T, E> and Option<T> make failure and absence part of a function's type signature, checked at compile time.
+category: Programming Languages
+weight: 7
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Rust has no `try`/`catch` and no `null`. Instead, a function that might fail returns `Result<T, E>`, and a value that might be absent is wrapped in `Option<T>`. Both are ordinary enums defined in the standard library — there's no special language magic, just a type the compiler forces you to handle before you can get at the value inside.
+
+```rust
+enum Option<T> {
+    Some(T),
+    None,
+}
+
+enum Result<T, E> {
+    Ok(T),
+    Err(E),
+}
+```
+
+Because failure and absence show up in the type signature, the compiler can enforce that you've dealt with them — you can't accidentally use a `Result<T, E>` as if it were a plain `T`, the way a language with exceptions lets you call a function and forget it might throw.
+
+## `Option<T>`: no null
+
+Where another language would return `null` or `undefined` for "nothing here," Rust returns `None`. There's no value that can silently stand in for "absent" the way `null` can in Java or JavaScript — `Option<T>` has to be explicitly unwrapped before the `T` inside it can be used.
+
+```rust
+fn find_even(numbers: &[i32]) -> Option<i32> {
+    for &n in numbers {
+        if n % 2 == 0 {
+            return Some(n);
+        }
+    }
+    None
+}
+
+fn main() {
+    let numbers = [1, 3, 5, 8, 9];
+
+    match find_even(&numbers) {
+        Some(n) => println!("found an even number: {n}"),
+        None => println!("no even number in the list"),
+    }
+}
+```
+
+## `Result<T, E>`: recoverable failure
+
+`Result<T, E>` is `Option`'s counterpart for operations that fail *with a reason* rather than simply coming up empty. `E` is typically an error type describing what went wrong.
+
+```rust
+fn divide(a: f64, b: f64) -> Result<f64, String> {
+    if b == 0.0 {
+        Err(String::from("division by zero"))
+    } else {
+        Ok(a / b)
+    }
+}
+
+fn main() {
+    match divide(10.0, 2.0) {
+        Ok(result) => println!("result: {result}"),
+        Err(e) => println!("error: {e}"),
+    }
+
+    match divide(10.0, 0.0) {
+        Ok(result) => println!("result: {result}"),
+        Err(e) => println!("error: {e}"),
+    }
+}
+```
+
+## The `?` operator
+
+Manually matching on every `Result` a function produces gets verbose fast, especially when a function calls several fallible operations in a row and just wants to bail out on the first error. The `?` operator does exactly that: applied to a `Result`, it unwraps `Ok(value)` into `value` and, on `Err(e)`, immediately returns that `Err` from the enclosing function — provided the enclosing function's own return type is compatible.
+
+```rust
+fn divide(a: f64, b: f64) -> Result<f64, String> {
+    if b == 0.0 {
+        Err(String::from("division by zero"))
+    } else {
+        Ok(a / b)
+    }
+}
+
+fn compute(a: f64, b: f64, c: f64) -> Result<f64, String> {
+    let step1 = divide(a, b)?; // returns early with Err if divide fails
+    let step2 = divide(step1, c)?;
+    Ok(step2 * 100.0)
+}
+
+fn main() {
+    match compute(100.0, 5.0, 0.0) {
+        Ok(result) => println!("result: {result}"),
+        Err(e) => println!("compute failed: {e}"),
+    }
+}
+```
+
+`compute` never explicitly matches on `divide`'s result — `?` does that inline. This only compiles because `compute` itself returns `Result<f64, String>`; `?` can only be used inside a function whose return type it's allowed to short-circuit out of.
+
+## Why not exceptions?
+
+Rust's designers chose this over exceptions deliberately: an exception can be thrown from almost anywhere and caught almost anywhere, which means a function's signature doesn't tell you what it might throw. `Result<T, E>` puts failure in the type system, so the compiler — not documentation, not runtime testing — enforces that a caller acknowledges an error case exists, even if all it does is immediately `?` it upward.
+
+## See also
+
+- **[Functions](/en/programming-languages/rust/functions)** — how `?`'s early-return interacts with a function's declared return type.
+- **[Structs & Traits](/en/programming-languages/rust/oop-or-structs)** — `Option` and `Result` are themselves enums with methods defined via `impl`, the same mechanism used for custom types.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a function returning Option<i32> that finds the first even number, plus a match on its result."
+  items={[
+    { id: "sig", label: "fn find_even(numbers: &[i32]) -> Option<i32> {" },
+    { id: "for-open", label: "    for &n in numbers {" },
+    { id: "if-open", label: "        if n % 2 == 0 {" },
+    { id: "some", label: "            return Some(n);", explanation: "The early return only makes sense once the loop and the evenness check that trigger it are in place." },
+    { id: "if-close", label: "        }" },
+    { id: "for-close", label: "    }" },
+    { id: "none", label: "    None" },
+    { id: "fn-close", label: "}" },
+  ]}
+  correctOrder={["sig", "for-open", "if-open", "some", "if-close", "for-close", "none", "fn-close"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a compute function that chains two fallible divisions with the ? operator."
+  items={[
+    { id: "sig", label: "fn compute(a: f64, b: f64, c: f64) -> Result<f64, String> {" },
+    { id: "step1", label: "    let step1 = divide(a, b)?;" },
+    { id: "step2", label: "    let step2 = divide(step1, c)?;", explanation: "step2 depends on step1's value, so step1 must be computed first." },
+    { id: "ok", label: "    Ok(step2 * 100.0)" },
+    { id: "close", label: "}" },
+  ]}
+  correctOrder={["sig", "step1", "step2", "ok", "close"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`fn divide(a: f64, b: f64) -> Result<f64, String> {
+    if b == 0.0 {
+        Err(String::from("division by zero"))
+    } else {
+        Ok(a / b)
+    }
+}
+
+fn main() {
+    let result = divide(10.0, 0.0);
+    println!("{}", result.unwrap());
+}`}
+  options={["division by zero", "0", "inf", "Runtime panic"]}
+  correctIndex={3}
+  explanation="unwrap() on an Err doesn't return the error string or a fallback number — it panics and crashes the program immediately, printing the Err's contents as part of the panic message. unwrap() is meant for cases you're certain are Ok; calling it on a Result you haven't checked is exactly what match or ? exist to avoid."
+  actualOutput={`thread 'main' panicked at 'called Result::unwrap() on an Err value: "division by zero"'`}
+/>

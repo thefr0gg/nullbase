@@ -1,0 +1,174 @@
+---
+title: Control Flow
+description: Go's if/else, its single for loop that replaces while and do-while, and switch statements.
+category: Programming Languages
+weight: 3
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Go deliberately keeps control flow minimal. There's no `while`, no
+`do-while`, no ternary operator — `for` covers every looping need, and
+`switch` is more flexible than in most C-family languages.
+
+## if / else
+
+Conditions never need parentheses, but the opening brace must be on the
+same line as `if` — Go's grammar relies on automatic semicolon insertion,
+and a brace on its own line breaks that.
+
+```go
+func classify(score int) string {
+	if score >= 90 {
+		return "A"
+	} else if score >= 80 {
+		return "B"
+	} else {
+		return "F"
+	}
+}
+```
+
+`if` also accepts an initializer statement, scoped to the `if`/`else`
+chain — commonly used to check an error right where it's produced:
+
+```go
+if value, ok := lookup("key"); ok {
+	fmt.Println("found:", value)
+} else {
+	fmt.Println("not found")
+}
+// value and ok are not visible here — they only exist inside the if/else
+```
+
+## for — Go's only loop
+
+Go has one looping keyword that covers what other languages split into
+`for`, `while`, and infinite loops.
+
+Classic three-part form:
+
+```go
+for i := 0; i < 5; i++ {
+	fmt.Println(i)
+}
+```
+
+Condition only — this is Go's `while`:
+
+```go
+n := 1
+for n < 100 {
+	n *= 2
+}
+```
+
+No condition at all — an infinite loop, typically paired with `break`:
+
+```go
+count := 0
+for {
+	count++
+	if count == 3 {
+		break
+	}
+}
+```
+
+`for ... range` iterates over slices, arrays, maps, strings, and channels:
+
+```go
+names := []string{"Ada", "Grace", "Linus"}
+for i, name := range names {
+	fmt.Println(i, name)
+}
+```
+
+## switch
+
+Go's `switch` doesn't fall through by default (the opposite of C/Java), so
+you rarely need `break`. Cases can also list multiple values or omit the
+switch expression entirely to act as a cleaner if/else chain:
+
+```go
+func describe(n int) string {
+	switch {
+	case n < 0:
+		return "negative"
+	case n == 0:
+		return "zero"
+	case n%2 == 0:
+		return "positive even"
+	default:
+		return "positive odd"
+	}
+}
+```
+
+Use `fallthrough` explicitly on the rare occasion you want the next case to
+run anyway:
+
+```go
+switch day := "sat"; day {
+case "sat", "sun":
+	fmt.Println("weekend")
+default:
+	fmt.Println("weekday")
+}
+```
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a for loop that prints numbers 0 through 2."
+  items={[
+    { id: "c1", label: "func main() {" },
+    { id: "c2", label: "\tfor i := 0; i < 3; i++ {" },
+    { id: "c3", label: "\t\tfmt.Println(i)", explanation: "The loop body is indented one level deeper than the for statement." },
+    { id: "c4", label: "\t}" },
+    { id: "c5", label: "}" },
+  ]}
+  correctOrder={["c1", "c2", "c3", "c4", "c5"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Order these lines to build an if/else-if/else chain that classifies a temperature."
+  items={[
+    { id: "d1", label: "if temp > 30 {" },
+    { id: "d2", label: "\tfmt.Println(\"hot\")" },
+    { id: "d3", label: "} else if temp > 15 {", explanation: "else if must directly follow the closing brace of the previous block, on the same line." },
+    { id: "d4", label: "\tfmt.Println(\"mild\")" },
+    { id: "d5", label: "} else {" },
+    { id: "d6", label: "\tfmt.Println(\"cold\")" },
+    { id: "d7", label: "}" },
+  ]}
+  correctOrder={["d1", "d2", "d3", "d4", "d5", "d6", "d7"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`package main
+
+import "fmt"
+
+func main() {
+	switch n := 4; {
+	case n%2 == 0:
+		fmt.Println("even")
+	case n%2 != 0:
+		fmt.Println("odd")
+	}
+}`}
+  options={["even", "odd", "even\\nodd", "Compile error: switch needs a value"]}
+  correctIndex={0}
+  explanation={`A switch with no expression after switch (just a semicolon-terminated init statement) evaluates each case as a boolean condition, like an if/else-if chain. It stops at the first true case and does not fall through, so only "even" prints.`}
+  actualOutput="even"
+/>
+
+## See also
+
+- [Syntax & Variables](/en/programming-languages/go/syntax-basics)
+- [Functions](/en/programming-languages/go/functions)

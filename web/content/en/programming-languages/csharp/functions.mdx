@@ -1,0 +1,142 @@
+---
+title: Methods
+description: Declaring methods in C#, return types, optional and named parameters, and expression-bodied members.
+category: Programming Languages
+weight: 4
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+In C#, functions are almost always declared as **methods** — members of a
+class or struct — rather than standalone free functions (local functions are
+the exception, covered below). A method declares a return type, a name, and
+a parameter list.
+
+## Basic methods
+
+```csharp
+class Calculator
+{
+    public int Add(int a, int b)
+    {
+        return a + b;
+    }
+
+    // Expression-bodied method: shorthand for a single-expression body
+    public int Square(int x) => x * x;
+}
+
+var calc = new Calculator();
+Console.WriteLine(calc.Add(2, 3));    // 5
+Console.WriteLine(calc.Square(4));    // 16
+```
+
+A method that returns nothing uses `void`. `static` methods belong to the
+type itself rather than an instance, which is why `Main` is always `static`.
+
+## Optional parameters and default values
+
+Parameters can declare a default value, making them optional at the call
+site — any parameter after one with a default must also have a default:
+
+```csharp
+string Greet(string name, string greeting = "Hello", bool shout = false)
+{
+    string message = $"{greeting}, {name}!";
+    return shout ? message.ToUpper() : message;
+}
+
+Console.WriteLine(Greet("Ada"));                        // Hello, Ada!
+Console.WriteLine(Greet("Ada", "Hey"));                  // Hey, Ada!
+Console.WriteLine(Greet("Ada", shout: true));            // HELLO, ADA!
+```
+
+## Named arguments
+
+Any call can pass arguments by name instead of position, in any order — this
+is especially useful when skipping over earlier optional parameters, as
+`shout: true` did above. Named arguments make call sites self-documenting
+when a method takes several parameters of the same type:
+
+```csharp
+void CreateUser(string name, int age, bool isAdmin = false)
+{
+    Console.WriteLine($"{name}, {age}, admin={isAdmin}");
+}
+
+CreateUser(name: "Grace", age: 40, isAdmin: true);
+CreateUser(age: 25, name: "Alan"); // order doesn't matter with names
+```
+
+## params and local functions
+
+`params` lets a method accept a variable number of trailing arguments as an
+array, and local functions let you nest a helper method inside another:
+
+```csharp
+int Sum(params int[] numbers)
+{
+    int total = 0;
+    foreach (int n in numbers)
+    {
+        total += n;
+    }
+    return total;
+}
+
+Console.WriteLine(Sum(1, 2, 3, 4)); // 10
+
+int Outer(int x)
+{
+    int Double(int n) => n * 2; // local function, only visible inside Outer
+    return Double(x) + 1;
+}
+
+Console.WriteLine(Outer(5)); // 11
+```
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a method that adds two numbers and calls it."
+  items={[
+    { id: "l1", label: "int Add(int a, int b)" },
+    { id: "l2", label: "{" },
+    { id: "l3", label: "    return a + b;" },
+    { id: "l4", label: "}" },
+    { id: "l5", label: "Console.WriteLine(Add(3, 4));" },
+  ]}
+  correctOrder={["l1", "l2", "l3", "l4", "l5"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Put these lines in order to declare a method with an optional parameter and call it two ways."
+  items={[
+    { id: "m1", label: "string Greet(string name, string greeting = \"Hi\") => $\"{greeting}, {name}!\";" },
+    { id: "m2", label: "Console.WriteLine(Greet(\"Sam\"));" , explanation: "The default value is used because greeting is omitted here."},
+    { id: "m3", label: "Console.WriteLine(Greet(\"Sam\", \"Yo\"));" },
+  ]}
+  correctOrder={["m1", "m2", "m3"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`void Describe(string name, int age = 30, bool vip = false)
+{
+    Console.WriteLine($"{name}, {age}, vip={vip}");
+}
+
+Describe(age: 25, name: "Rae");`}
+  options={["Rae, 25, vip=False", "25, Rae, vip=False", "Compile error", "Rae, 30, vip=False"]}
+  correctIndex={0}
+  explanation="Named arguments can appear in any order at the call site; C# matches them by name, not position. age and name are swapped in the call but still bind correctly, and vip falls back to its default, false."
+  actualOutput="Rae, 25, vip=False"
+/>
+
+## See also
+
+- [Control Flow](/en/programming-languages/csharp/control-flow)
+- [Data Structures](/en/programming-languages/csharp/data-structures)

@@ -1,0 +1,92 @@
+---
+title: Functions
+description: Defining reusable code with def — default arguments, keyword arguments, and the *args/**kwargs patterns for variable-length parameter lists.
+category: Programming Languages
+weight: 4
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Functions are defined with `def`, and Python doesn't require declaring a return type or parameter types — parameters can, however, be given default values, which makes them optional at the call site.
+
+```python
+def greet(name, greeting="Hello"):
+    return f"{greeting}, {name}!"
+
+print(greet("Sam"))                 # Hello, Sam!
+print(greet("Sam", greeting="Hey"))  # Hey, Sam!
+```
+
+`greeting="Hello"` gives that parameter a default, so callers can omit it entirely. Arguments can also be passed by keyword (`greeting="Hey"`) instead of position, which is useful once a function takes several parameters and the call site would otherwise be a confusing list of bare values.
+
+Sometimes the number of arguments a function should accept isn't fixed in advance. `*args` collects any extra positional arguments into a tuple, and `**kwargs` collects any extra keyword arguments into a dict — the names `args`/`kwargs` are just convention, the `*`/`**` prefixes are what matter.
+
+```python
+def total(*args, **kwargs):
+    print("positional:", args)     # (1, 2, 3)
+    print("keyword:", kwargs)       # {'label': 'sum'}
+    return sum(args)
+
+result = total(1, 2, 3, label="sum")
+print(result)  # 6
+```
+
+This pattern shows up constantly in library code — a wrapper function that needs to accept "whatever arguments the thing it wraps accepts" without knowing that signature in advance uses `def wrapper(*args, **kwargs)` and forwards them with `wrapped(*args, **kwargs)`.
+
+Functions are also regular objects: they can be assigned to variables, passed as arguments, and returned from other functions, which is what makes closures possible.
+
+```python
+def make_multiplier(factor):
+    def multiplier(x):
+        return x * factor
+    return multiplier
+
+double = make_multiplier(2)
+triple = make_multiplier(3)
+print(double(5), triple(5))  # 10 15
+```
+
+`multiplier` "remembers" the `factor` value from the call that created it, even after `make_multiplier` has already returned — that's a closure, and it's the mechanism behind Python decorators.
+
+## See also
+
+- **[Data Structures](/en/programming-languages/python/data-structures)** — how a bare `basket=[]` default parameter behaves across calls.
+- **[Decorators & Generators](/en/programming-languages/python/advanced)** — closures like `multiplier` used to wrap other functions.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a greeting function with a default argument and call it twice."
+  items={[
+    { id: "def", label: 'def greet(name, greeting="Hello"):' },
+    { id: "return", label: '    return f"{greeting}, {name}!"', explanation: "This line only makes sense as the body of the def above it." },
+    { id: "call1", label: 'print(greet("Sam"))' },
+    { id: "call2", label: 'print(greet("Sam", greeting="Hey"))' },
+  ]}
+  correctOrder={["def", "return", "call1", "call2"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a function that accepts variable positional and keyword arguments."
+  items={[
+    { id: "def", label: "def total(*args, **kwargs):" },
+    { id: "printargs", label: '    print("positional:", args)', explanation: "This must be inside the function body, after the def line." },
+    { id: "printkwargs", label: '    print("keyword:", kwargs)' },
+    { id: "return", label: "    return sum(args)" },
+    { id: "call", label: 'total(1, 2, 3, label="sum")', explanation: "The function has to be defined before it can be called." },
+  ]}
+  correctOrder={["def", "printargs", "printkwargs", "return", "call"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`def add_item(item, basket=[]):\n    basket.append(item)\n    return basket\n\nprint(add_item("apple"))\nprint(add_item("banana"))`}
+  options={['["apple"] then ["banana"]', '["apple"] then ["apple", "banana"]', 'An error, because basket is never initialized', '["apple"] then ["apple"]']}
+  correctIndex={1}
+  explanation="A default argument's value is created exactly once, when the function is defined — not on every call. Since basket=[] is a mutable list, every call that doesn't pass its own basket shares and mutates that same list, so the second call sees the first call's leftover item still in it."
+  actualOutput='["apple"] then ["apple", "banana"]'
+/>
+

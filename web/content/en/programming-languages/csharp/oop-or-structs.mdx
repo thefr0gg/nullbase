@@ -1,0 +1,203 @@
+---
+title: Classes & Interfaces
+description: Classes, interfaces, inheritance, and C#'s auto-implemented properties as a first-class alternative to plain fields.
+category: Programming Languages
+weight: 6
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+C# is thoroughly object-oriented: classes support single inheritance,
+interfaces support multiple implementation contracts, and encapsulation is
+built into the language through **properties** rather than left to
+convention.
+
+## Classes and fields
+
+A class groups state (fields) and behavior (methods) together:
+
+```csharp
+class Dog
+{
+    private string name;
+
+    public Dog(string name)
+    {
+        this.name = name;
+    }
+
+    public void Bark()
+    {
+        Console.WriteLine($"{name} says Woof!");
+    }
+}
+
+var rex = new Dog("Rex");
+rex.Bark(); // Rex says Woof!
+```
+
+A plain `private` field like `name` has no validation and no way to
+intercept reads or writes from outside the class — that's what properties
+are for.
+
+## Properties: a language feature, not a convention
+
+Unlike Java or C++, where "encapsulated fields" means hand-writing
+`getName()`/`setName()` methods, C# builds getter/setter syntax directly into
+the language. A property looks like a field to callers but can run code on
+every read or write:
+
+```csharp
+class Person
+{
+    private int age;
+
+    public string Name { get; set; } // auto-implemented property: compiler
+                                      // generates the backing field for you
+
+    public int Age
+    {
+        get => age;
+        set
+        {
+            if (value < 0)
+            {
+                throw new ArgumentException("Age cannot be negative");
+            }
+            age = value;
+        }
+    }
+
+    public string Greeting => $"Hi, I'm {Name}"; // read-only, expression-bodied
+
+    public Person(string name, int age)
+    {
+        Name = name;
+        Age = age;
+    }
+}
+
+var p = new Person("Ada", 36);
+Console.WriteLine(p.Greeting); // Hi, I'm Ada
+p.Age = -5; // throws ArgumentException
+```
+
+Callers write `p.Age = 30;` exactly as if `Age` were a field — the validation
+logic in the `set` block runs transparently. This is why C# style strongly
+favors public properties over public fields: you can start with an
+auto-implemented property and add logic later without breaking any caller.
+
+## Interfaces and inheritance
+
+An interface declares a contract with no implementation (default interface
+methods aside); a class implements one or more interfaces and inherits from
+at most one base class:
+
+```csharp
+interface IShape
+{
+    double Area();
+}
+
+class Circle : IShape
+{
+    public double Radius { get; }
+
+    public Circle(double radius) => Radius = radius;
+
+    public double Area() => Math.PI * Radius * Radius;
+}
+
+class Square : IShape
+{
+    public double Side { get; }
+
+    public Square(double side) => Side = side;
+
+    public double Area() => Side * Side;
+}
+
+List<IShape> shapes = new List<IShape> { new Circle(2), new Square(3) };
+foreach (IShape shape in shapes)
+{
+    Console.WriteLine(shape.Area());
+}
+```
+
+Base class inheritance uses the same `:` syntax and the `override` keyword
+for polymorphism:
+
+```csharp
+class Animal
+{
+    public virtual string Speak() => "...";
+}
+
+class Cat : Animal
+{
+    public override string Speak() => "Meow";
+}
+
+Animal a = new Cat();
+Console.WriteLine(a.Speak()); // Meow — resolved at runtime via the actual type
+```
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a class with an auto-implemented property and use it."
+  items={[
+    { id: "l1", label: "class Book" },
+    { id: "l2", label: "{" },
+    { id: "l3", label: "    public string Title { get; set; }" },
+    { id: "l4", label: "}" },
+    { id: "l5", label: "var b = new Book { Title = \"Dune\" };" },
+    { id: "l6", label: "Console.WriteLine(b.Title);" },
+  ]}
+  correctOrder={["l1", "l2", "l3", "l4", "l5", "l6"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Put these lines in order to declare an interface and a class that implements it."
+  items={[
+    { id: "m1", label: "interface IGreeter" },
+    { id: "m2", label: "{" },
+    { id: "m3", label: "    string Greet();" },
+    { id: "m4", label: "}" , explanation: "The interface body must be closed before the implementing class is declared."},
+    { id: "m5", label: "class English : IGreeter" },
+    { id: "m6", label: "{" },
+    { id: "m7", label: "    public string Greet() => \"Hello\";" },
+    { id: "m8", label: "}" },
+  ]}
+  correctOrder={["m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`class Account
+{
+    private decimal balance;
+
+    public decimal Balance
+    {
+        get => balance;
+        set => balance = value < 0 ? 0 : value;
+    }
+}
+
+var acc = new Account();
+acc.Balance = -50;
+Console.WriteLine(acc.Balance);`}
+  options={["-50", "0", "null", "Compile error"]}
+  correctIndex={1}
+  explanation="The property's set accessor clamps any negative value to 0 before storing it in the backing field, so reading Balance back afterward returns 0, not the -50 that was assigned. This is exactly the kind of validation a plain public field couldn't intercept."
+  actualOutput="0"
+/>
+
+## See also
+
+- [Data Structures](/en/programming-languages/csharp/data-structures)
+- [Error Handling](/en/programming-languages/csharp/error-handling)

@@ -1,0 +1,130 @@
+---
+title: C#
+description: An overview of C#, the statically typed, object-oriented language behind .NET, ASP.NET Core, and Unity.
+category: Programming Languages
+weight: 1
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+C# (pronounced "C sharp") is a statically typed, object-oriented language
+created by Microsoft in 2000, led by Anders Hejlsberg (who also designed
+TypeScript later on). It runs on .NET, a managed runtime with a
+garbage-collected memory model, a just-in-time (and increasingly
+ahead-of-time) compiler, and a huge standard library. C# has since grown far
+beyond Windows: modern .NET is cross-platform, open source, and runs
+production workloads on Linux containers, in Unity games, and on mobile via
+.NET MAUI.
+
+C# started as a close cousin of Java, but the two languages diverged quickly.
+C# added generics with real runtime support, properties as a first-class
+language construct, LINQ (query syntax built into the language), and, more
+recently, `async`/`await` for asynchronous code, nullable reference types for
+catching null-related bugs at compile time, and pattern matching that keeps
+expanding with every release.
+
+## What makes C# distinctive
+
+- **Properties, not just fields.** C# bakes getter/setter syntax into the
+  language (`public int Age { get; set; }`), so encapsulation doesn't require
+  writing `getAge()`/`setAge()` boilerplate.
+- **`async`/`await` as first-class syntax.** Asynchronous, non-blocking code
+  reads like synchronous code, backed by `Task` and `Task<T>`.
+- **Strong generics.** Unlike Java's type-erased generics, C#'s generics are
+  reified at runtime, which makes them faster and lets you do things like
+  `typeof(T)` inside a generic method.
+- **LINQ.** Query and transform collections with SQL-like syntax or fluent
+  method chains (`.Where(...)`, `.Select(...)`) built directly into the
+  language and standard library.
+- **Nullable reference types.** Since C# 8, the compiler can warn you at
+  compile time when a reference that isn't supposed to be `null` might be.
+
+Here's a minimal, complete C# program:
+
+```csharp
+Console.WriteLine("Hello, nullbase!");
+```
+
+Modern C# (since C# 9's top-level statements) doesn't require a `class` and
+`Main` method wrapper for simple programs — the compiler generates one for
+you behind the scenes. Older code, and most real-world projects, still write
+it explicitly:
+
+```csharp
+using System;
+
+namespace HelloWorld
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            Console.WriteLine("Hello, nullbase!");
+        }
+    }
+}
+```
+
+## When you'd reach for C#
+
+C# is the default choice for ASP.NET Core web APIs and backends, Windows
+desktop and enterprise line-of-business software, and — via the Unity game
+engine — a huge share of commercial games. Its combination of performance,
+memory safety, and a rich standard library makes it a strong general-purpose
+choice anywhere the JVM ecosystem might otherwise be considered.
+
+## What's next
+
+The following pages walk through C# from syntax to asynchronous programming:
+variables and types, control flow, methods, the built-in data structures,
+classes and interfaces, error handling, and the namespace/package system,
+finishing with `async`/`await` and `Task`.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a minimal, working C# console program that prints a greeting."
+  items={[
+    { id: "using", label: "using System;" },
+    { id: "ns", label: "namespace HelloWorld" },
+    { id: "nsopen", label: "{" },
+    { id: "class", label: "    class Program" },
+    { id: "classopen", label: "    {" },
+    { id: "main", label: "        static void Main(string[] args)" },
+    { id: "mainopen", label: "        {" },
+    { id: "print", label: "            Console.WriteLine(\"Hello, C#\");" },
+    { id: "mainclose", label: "        }" },
+    { id: "classclose", label: "    }" },
+    { id: "nsclose", label: "}" },
+  ]}
+  correctOrder={["using", "ns", "nsopen", "class", "classopen", "main", "mainopen", "print", "mainclose", "classclose", "nsclose"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Put these lines in order to build a top-level statements program (C# 9+) that declares a constant and prints it."
+  items={[
+    { id: "using2", label: "using System;" },
+    { id: "const2", label: "const string version = \"1.0\";", explanation: "Top-level statements run in order, top to bottom, after the using directives." },
+    { id: "print2", label: "Console.WriteLine(version);" },
+  ]}
+  correctOrder={["using2", "const2", "print2"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`using System;
+
+Console.WriteLine("nullbase");`}
+  options={["nullbase", "\"nullbase\"", "Compile error: missing Main", "Hello, nullbase!"]}
+  correctIndex={0}
+  explanation="Console.WriteLine prints the string's contents without the surrounding quotes, followed by a newline. Top-level statements (C# 9+) let a file skip the explicit class/Main wrapper entirely — the compiler still generates one."
+  actualOutput="nullbase"
+/>
+
+## See also
+
+- [Syntax & Variables](/en/programming-languages/csharp/syntax-basics)
+- [Async & Tasks](/en/programming-languages/csharp/advanced)

@@ -1,0 +1,119 @@
+---
+title: JavaScript
+description: An overview of JavaScript, the dynamically typed language that runs in every browser and, via Node.js, on servers too.
+category: Programming Languages
+weight: 1
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+JavaScript was created by Brendan Eich in 1995 in about ten days, originally
+to make web pages interactive inside Netscape Navigator. Despite that rushed
+origin — and a name chosen for marketing reasons rather than any real
+kinship with Java — it has become the only programming language that runs
+natively in every web browser, and, since Node.js arrived in 2009, a
+first-class choice for servers, CLIs, and desktop apps too. The language
+itself is standardized as ECMAScript, and modern JavaScript (commonly called
+"ES6+" after the 2015 revision) looks quite different from the JavaScript of
+the early 2000s.
+
+JavaScript is dynamically typed (variable types are checked at runtime, not
+compile time), single-threaded with an event loop for concurrency, and
+prototype-based under the hood even though it now offers `class` syntax on
+top. It is also famously forgiving: operations that would be a compile error
+in many languages — comparing a string to a number, calling a method on
+`undefined` — are often allowed and produce a result, sometimes a surprising
+one.
+
+## What makes JavaScript distinctive
+
+- **Runs everywhere.** Browsers, servers (Node.js, Deno, Bun), mobile
+  (React Native), even embedded devices. No other language has that reach.
+- **Single-threaded with an event loop.** JavaScript never runs two pieces
+  of your code at the same time. Long-running I/O (network requests, file
+  reads, timers) is handled asynchronously via callbacks, Promises, or
+  `async`/`await`, without blocking the rest of the program.
+- **Dynamic and loosely typed.** Variables have no declared type; the same
+  variable can hold a number, then a string, then a function.
+- **First-class functions.** Functions are values — you can store them in
+  variables, pass them as arguments, and return them from other functions.
+  This is what makes closures and callback-based APIs natural in JS.
+- **Prototype-based objects.** Objects inherit directly from other objects
+  through a prototype chain, rather than from classes in the classical
+  sense. `class` syntax (added in ES6) is convenient sugar over this
+  mechanism, not a different inheritance model.
+
+Here's a small but complete example:
+
+```js
+function greet(name) {
+  return `Hello, ${name}!`;
+}
+
+console.log(greet("nullbase"));
+```
+
+Running this with Node.js (`node greet.js`) or pasting it into a browser's
+console produces the same output — there's no compilation step, and the
+same syntax works in both environments.
+
+## When you'd reach for JavaScript
+
+JavaScript is the only option for client-side logic in a web page, and a
+strong option for servers when you want to share code (validation logic,
+data models) between frontend and backend, or when your workload is
+I/O-heavy — many concurrent network requests — rather than CPU-heavy. It is
+a weaker fit for CPU-bound number crunching or systems programming, where
+compiled, statically typed languages give more predictable performance and
+catch more mistakes before the code ever runs.
+
+## What's next
+
+The following pages walk through JavaScript from the ground up: variables
+and syntax, control flow, functions and closures, the built-in data
+structures, classes and prototypal inheritance, error handling, the module
+system and npm, and finally asynchronous programming with Promises and
+`async`/`await`.
+
+<CodePlayground title="Try it live" initialCode={`function greet(name) {\n  return \`Hello, \${name}!\`;\n}\n\nconsole.log(greet("World"));`} />
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a minimal, working JavaScript program that prints a greeting."
+  items={[
+    { id: "fn-open", label: "function greet(name) {" },
+    { id: "fn-body", label: "  return `Hello, ${name}!`;" },
+    { id: "fn-close", label: "}" },
+    { id: "call", label: "console.log(greet(\"nullbase\"));" },
+  ]}
+  correctOrder={["fn-open", "fn-body", "fn-close", "call"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Put these lines in order to declare a variable, check a condition on it, and log the result."
+  items={[
+    { id: "decl", label: "const age = 20;" },
+    { id: "if-open", label: "if (age >= 18) {", explanation: "The condition needs age to already exist, so the declaration must come first." },
+    { id: "if-body", label: "  console.log(\"adult\");" },
+    { id: "if-close", label: "}" },
+  ]}
+  correctOrder={["decl", "if-open", "if-body", "if-close"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`console.log(typeof "5" + 5);`}
+  options={["\"string5\"", "10", "\"5\" + 5", "NaN"]}
+  correctIndex={0}
+  explanation={`typeof "5" evaluates first and returns the string "string". Then "string" + 5 concatenates, producing "string5" — the classic trap is assuming the + 5 applies to the original value being typeof'd, when typeof already ran and returned a string.`}
+  actualOutput="string5"
+/>
+
+## See also
+
+- [Syntax & Variables](/en/programming-languages/javascript/syntax-basics)
+- [Async & Promises](/en/programming-languages/javascript/advanced)

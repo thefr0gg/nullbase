@@ -1,0 +1,136 @@
+---
+title: Error Handling
+description: try/catch in TypeScript, why a caught error is typed unknown under strict settings, and building custom Error subclasses.
+category: Programming Languages
+weight: 7
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+TypeScript's `try`/`catch`/`finally` runs with exactly the same semantics as JavaScript's — TypeScript adds no new control flow here. What it changes is the *type* of the value you catch, which is where TypeScript's type system runs into one of the harder truths about error handling: a `throw` statement can throw literally anything, so the compiler can't assume much about what lands in `catch`.
+
+## try/catch and the type of the caught value
+
+```ts
+try {
+  JSON.parse("{ invalid json");
+} catch (err) {
+  console.log(err.message); // Type error under strict mode: 'err' is of type 'unknown'
+}
+```
+
+Under TypeScript's `strict` mode (specifically `useUnknownInCatchVariables`, on by default with `strict: true`), a caught variable is typed `unknown`, not `any` and not `Error`. This is deliberate: JavaScript lets you `throw` any value at all — a string, a number, `undefined`, or a proper `Error` — so the compiler has no basis for assuming `err` is an `Error` just because it showed up in a `catch` block. You're required to narrow it before using it:
+
+```ts
+try {
+  JSON.parse("{ invalid json");
+} catch (err) {
+  if (err instanceof Error) {
+    console.log(err.message); // OK — narrowed to Error
+  } else {
+    console.log("Unknown error:", err);
+  }
+}
+```
+
+This is a direct application of the same narrowing covered in [Control Flow](/en/programming-languages/typescript/control-flow) — `instanceof` narrows `unknown` down to `Error` inside that branch, exactly like `typeof` narrows a union.
+
+## Custom Error classes
+
+Because `Error` is a real class, you can subclass it to create domain-specific error types that carry extra typed data:
+
+```ts
+class ValidationError extends Error {
+  constructor(
+    message: string,
+    public readonly field: string,
+  ) {
+    super(message);
+    this.name = "ValidationError";
+  }
+}
+
+function validateAge(age: number) {
+  if (age < 0) {
+    throw new ValidationError("Age cannot be negative", "age");
+  }
+}
+
+try {
+  validateAge(-5);
+} catch (err) {
+  if (err instanceof ValidationError) {
+    console.log(`${err.field}: ${err.message}`); // "age: Age cannot be negative"
+  }
+}
+```
+
+`err instanceof ValidationError` narrows `err` all the way down to the specific subclass, which is what makes `err.field` accessible — a plain `err instanceof Error` check would only have narrowed as far as the base `Error`, and `field` doesn't exist there.
+
+## A type error a custom Error class helps catch
+
+```ts
+class ValidationError extends Error {
+  constructor(message: string, public readonly field: string) {
+    super(message);
+  }
+}
+
+function handle(err: ValidationError) {
+  console.log(err.fieldd); // Type error: Property 'fieldd' does not exist on type 'ValidationError'
+}
+```
+
+Because `field` is a declared, typed property on `ValidationError` (not just something attached dynamically at runtime, as it would be in plain JavaScript), a typo like `fieldd` is caught immediately — the compiler knows the exact set of properties the class has.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to safely narrow a caught unknown value with instanceof before reading its message."
+  items={[
+    { id: "try-open", label: "try {" },
+    { id: "try-body", label: "  JSON.parse(\"{ invalid json\");" },
+    { id: "catch-open", label: "} catch (err) {", explanation: "err's type is only unknown once it reaches the catch clause." },
+    { id: "if-open", label: "  if (err instanceof Error) {" },
+    { id: "if-body", label: "    console.log(err.message);" },
+    { id: "if-close", label: "  }" },
+    { id: "catch-close", label: "}" },
+  ]}
+  correctOrder={["try-open", "try-body", "catch-open", "if-open", "if-body", "if-close", "catch-close"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to define a ValidationError subclass and throw it from a validation function."
+  items={[
+    { id: "class-open", label: "class ValidationError extends Error {" },
+    { id: "ctor", label: "  constructor(message: string, public readonly field: string) {" },
+    { id: "super-call", label: "    super(message);", explanation: "super() must run before the subclass constructor finishes, and before the class is usable." },
+    { id: "ctor-close", label: "  }" },
+    { id: "class-close", label: "}" },
+    { id: "fn-decl", label: "function validateAge(age: number) {" },
+    { id: "throw-stmt", label: "  if (age < 0) throw new ValidationError(\"bad age\", \"age\");" },
+    { id: "fn-close", label: "}" },
+  ]}
+  correctOrder={["class-open", "ctor", "super-call", "ctor-close", "class-close", "fn-decl", "throw-stmt", "fn-close"]}
+/>
+
+<PredictOutput
+  title="What does the type checker say?"
+  code={`try {
+  throw new Error("boom");
+} catch (err) {
+  console.log(err.message);
+}`}
+  options={["\"boom\"", "undefined", "Type error: 'err' is of type 'unknown'", "Runtime crash: cannot read properties of unknown"]}
+  correctIndex={2}
+  explanation="Under strict mode, catch variables are always typed unknown regardless of what's actually thrown in the try block — the compiler can't see into the throw statement and infer Error from it. Accessing .message directly, without first narrowing with instanceof, is a compile-time error even though this particular throw would produce a real Error at runtime."
+  actualOutput="Type error: 'err' is of type 'unknown'"
+/>
+
+## See also
+
+- [Classes & Interfaces](/en/programming-languages/typescript/oop-or-structs)
+- [Modules & Packages](/en/programming-languages/typescript/modules-packages)

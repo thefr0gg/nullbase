@@ -1,0 +1,141 @@
+---
+title: Modules & Packages
+description: ES modules, npm packages, tsconfig.json, and how @types packages bring type information to untyped JavaScript libraries.
+category: Programming Languages
+weight: 8
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+TypeScript's module system is JavaScript's ES module system (`import`/`export`) — there's no separate TypeScript-specific module syntax for everyday use. What TypeScript adds on top is compile-time checking of what a module actually exports, driven by a project-wide configuration file, `tsconfig.json`.
+
+## ES modules
+
+```ts
+// math.ts
+export function add(a: number, b: number): number {
+  return a + b;
+}
+
+export const PI = 3.14159;
+```
+
+```ts
+// main.ts
+import { add, PI } from "./math";
+
+console.log(add(2, 3), PI);
+import { subtract } from "./math"; // Type error: Module '"./math"' has no exported member 'subtract'
+```
+
+Because `math.ts`'s exports are known at compile time, importing something that isn't actually exported — a typo, or a function that was renamed — is caught immediately, at the `import` line, rather than surfacing later as `subtract is not a function` when the code runs.
+
+## npm and package.json
+
+TypeScript projects use npm (or an npm-compatible package manager) exactly like JavaScript projects do — dependencies live in `package.json`, installed into `node_modules`:
+
+```json
+{
+  "name": "my-app",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  }
+}
+```
+
+`typescript` itself is almost always a `devDependency` — it's a build-time tool (the `tsc` compiler), not something the compiled output needs at runtime.
+
+## tsconfig.json
+
+`tsconfig.json` at the project root configures how `tsc` compiles the project — which files to include, which JavaScript version to target, and how strict the type checker should be:
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "strict": true,
+    "outDir": "./dist",
+    "rootDir": "./src"
+  },
+  "include": ["src/**/*.ts"]
+}
+```
+
+`strict: true` is the single most impactful setting — it turns on a bundle of checks including `strictNullChecks` (variables can't be `null`/`undefined` unless the type says so) and `useUnknownInCatchVariables` (see [Error Handling](/en/programming-languages/typescript/error-handling)). Most TypeScript style guides treat `strict: true` as the baseline, not an opt-in extra.
+
+## @types packages: typing untyped JavaScript
+
+Many npm packages are written in plain JavaScript and ship no type information at all. Importing one without types gives everything from it the type `any`, silently disabling checking for that whole library:
+
+```ts
+import express from "express"; // Type error (without types): Could not find a declaration file for module 'express'
+```
+
+The DefinitelyTyped project publishes community-maintained type declarations for these packages under the `@types` scope on npm:
+
+```bash
+npm install --save-dev @types/express
+```
+
+Once `@types/express` is installed, TypeScript picks it up automatically (from `node_modules/@types`) and the same `import express from "express"` is now fully typed — autocomplete and type checking work against `express`'s actual API, even though `express` itself has no TypeScript in it. Some packages (like `zod`, seen above) ship their own types directly and need no separate `@types` package at all — check a package's own `package.json` for a `types` field before reaching for DefinitelyTyped.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to export a typed function from one module and import it correctly in another."
+  items={[
+    { id: "export-fn", label: "export function add(a: number, b: number): number {" },
+    { id: "export-body", label: "  return a + b;" },
+    { id: "export-close", label: "}", explanation: "The export must be fully written before another file can import from it." },
+    { id: "import-stmt", label: "import { add } from \"./math\";" },
+    { id: "use", label: "console.log(add(2, 3));" },
+  ]}
+  correctOrder={["export-fn", "export-body", "export-close", "import-stmt", "use"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a minimal tsconfig.json with strict mode and an output directory."
+  items={[
+    { id: "open", label: "{" },
+    { id: "opts-open", label: "  \"compilerOptions\": {" },
+    { id: "strict", label: "    \"strict\": true," },
+    { id: "outdir", label: "    \"outDir\": \"./dist\"", explanation: "Both compiler options sit inside the compilerOptions object, before it closes." },
+    { id: "opts-close", label: "  }," },
+    { id: "include", label: "  \"include\": [\"src/**/*.ts\"]" },
+    { id: "close", label: "}" },
+  ]}
+  correctOrder={["open", "opts-open", "strict", "outdir", "opts-close", "include", "close"]}
+/>
+
+<PredictOutput
+  title="What does the type checker say?"
+  code={`// math.ts
+export function add(a: number, b: number): number {
+  return a + b;
+}
+
+// main.ts
+import { subtract } from "./math";
+subtract(5, 2);`}
+  options={["3", "Type error: Module '\"./math\"' has no exported member 'subtract'", "undefined", "Type error: Cannot find module './math'"]}
+  correctIndex={1}
+  explanation="math.ts only exports add — subtract was never declared with export. TypeScript checks a module's actual export list at compile time, so importing a name that doesn't exist there fails immediately, rather than becoming a runtime 'subtract is not a function' error the way it would with an unchecked require()."
+  actualOutput={`Type error: Module '"./math"' has no exported member 'subtract'`}
+/>
+
+## See also
+
+- [Error Handling](/en/programming-languages/typescript/error-handling)
+- [Generics](/en/programming-languages/typescript/advanced)

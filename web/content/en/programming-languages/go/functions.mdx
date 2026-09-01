@@ -1,0 +1,180 @@
+---
+title: Functions
+description: Declaring functions in Go, multiple return values, named returns, and variadic parameters.
+category: Programming Languages
+weight: 4
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Functions in Go are declared with `func`, and the return type comes after
+the parameter list, not before the name:
+
+```go
+func add(a int, b int) int {
+	return a + b
+}
+```
+
+Consecutive parameters of the same type can share one type annotation:
+
+```go
+func add(a, b int) int {
+	return a + b
+}
+```
+
+## Multiple return values
+
+This is one of Go's most distinctive features, and it's used everywhere in
+the standard library. A function can return more than one value, comma-
+separated:
+
+```go
+func divide(a, b int) (int, int) {
+	quotient := a / b
+	remainder := a % b
+	return quotient, remainder
+}
+
+func main() {
+	q, r := divide(17, 5)
+	fmt.Println(q, r) // 3 2
+}
+```
+
+The most common use is pairing a result with an error or an "ok" flag,
+which is how Go replaces exceptions and nullable-return ambiguity in one
+idiom:
+
+```go
+func lookup(m map[string]int, key string) (int, bool) {
+	value, ok := m[key]
+	return value, ok
+}
+
+func main() {
+	scores := map[string]int{"ada": 100}
+	if value, ok := lookup(scores, "ada"); ok {
+		fmt.Println("score:", value)
+	}
+}
+```
+
+If you don't need one of the return values, discard it with `_`:
+
+```go
+_, remainder := divide(17, 5)
+```
+
+## Named return values
+
+Return values can be named in the signature. A bare `return` then returns
+their current values — useful for short functions, but easy to abuse into
+unreadable code if overused:
+
+```go
+func split(sum int) (x, y int) {
+	x = sum * 4 / 9
+	y = sum - x
+	return // returns x, y
+}
+```
+
+## Variadic parameters
+
+A parameter prefixed with `...` accepts any number of arguments, collected
+into a slice inside the function:
+
+```go
+func sum(nums ...int) int {
+	total := 0
+	for _, n := range nums {
+		total += n
+	}
+	return total
+}
+
+func main() {
+	fmt.Println(sum(1, 2, 3))    // 6
+	fmt.Println(sum())            // 0
+}
+```
+
+## Functions as values
+
+Functions are first-class values in Go — they can be assigned to variables,
+passed as arguments, and returned from other functions:
+
+```go
+func makeMultiplier(factor int) func(int) int {
+	return func(n int) int {
+		return n * factor
+	}
+}
+
+func main() {
+	double := makeMultiplier(2)
+	fmt.Println(double(21)) // 42
+}
+```
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a function returning two values and print both."
+  items={[
+    { id: "f1", label: "func minMax(a, b int) (int, int) {" },
+    { id: "f2", label: "\tif a < b {" },
+    { id: "f3", label: "\t\treturn a, b" },
+    { id: "f4", label: "\t}", explanation: "Close the if block before the fallback return." },
+    { id: "f5", label: "\treturn b, a" },
+    { id: "f6", label: "}" },
+    { id: "f7", label: "lo, hi := minMax(9, 3)" },
+    { id: "f8", label: "fmt.Println(lo, hi)" },
+  ]}
+  correctOrder={["f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Order these lines to build a variadic function that sums its arguments."
+  items={[
+    { id: "g1", label: "func sum(nums ...int) int {" },
+    { id: "g2", label: "\ttotal := 0" },
+    { id: "g3", label: "\tfor _, n := range nums {", explanation: "The loop must be declared after total is initialized to 0." },
+    { id: "g4", label: "\t\ttotal += n" },
+    { id: "g5", label: "\t}" },
+    { id: "g6", label: "\treturn total" },
+    { id: "g7", label: "}" },
+  ]}
+  correctOrder={["g1", "g2", "g3", "g4", "g5", "g6", "g7"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`package main
+
+import "fmt"
+
+func swap(a, b int) (int, int) {
+	return b, a
+}
+
+func main() {
+	x, y := 1, 2
+	x, y = swap(x, y)
+	fmt.Println(x, y)
+}`}
+  options={["1 2", "2 1", "Compile error: too many return values", "0 0"]}
+  correctIndex={1}
+  explanation="swap returns its arguments in reverse order via a multi-value return. Assigning x, y = swap(x, y) reassigns both variables at once, so x becomes 2 and y becomes 1."
+  actualOutput="2 1"
+/>
+
+## See also
+
+- [Control Flow](/en/programming-languages/go/control-flow)
+- [Error Handling](/en/programming-languages/go/error-handling)

@@ -1,0 +1,174 @@
+---
+title: Structs & Traits
+description: How Rust groups data with struct, attaches behavior with impl blocks, and shares behavior across types with traits instead of class inheritance.
+category: Programming Languages
+weight: 6
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Rust has no `class` keyword and no inheritance between data types. Instead, it splits the two things a class usually bundles into separate constructs: a **`struct`** holds data, and an **`impl`** block attaches functions to that struct. Shared behavior across unrelated types — what other languages reach for interfaces or inheritance to express — is done with **traits**.
+
+## Structs
+
+```rust
+struct Rectangle {
+    width: f64,
+    height: f64,
+}
+
+fn main() {
+    let rect = Rectangle { width: 30.0, height: 10.0 };
+    println!("area: {}", rect.width * rect.height);
+}
+```
+
+## `impl` blocks: methods and associated functions
+
+An `impl` block attaches functions to a struct. A method takes `&self` (or `&mut self`, or `self`) as its first parameter and is called with dot syntax; an **associated function** (no `self` parameter) is called on the type itself, most commonly as a constructor named `new` by convention.
+
+```rust
+struct Rectangle {
+    width: f64,
+    height: f64,
+}
+
+impl Rectangle {
+    // associated function — no `self`, called as Rectangle::square(5.0)
+    fn square(size: f64) -> Rectangle {
+        Rectangle { width: size, height: size }
+    }
+
+    // method — takes &self, called as rect.area()
+    fn area(&self) -> f64 {
+        self.width * self.height
+    }
+
+    fn scale(&mut self, factor: f64) {
+        self.width *= factor;
+        self.height *= factor;
+    }
+}
+
+fn main() {
+    let mut sq = Rectangle::square(5.0);
+    println!("area before scale: {}", sq.area());
+
+    sq.scale(2.0);
+    println!("area after scale: {}", sq.area());
+}
+```
+
+`&self` borrows the instance immutably (enough for `area`, which only reads), while `&mut self` borrows it mutably (needed for `scale`, which writes to `width` and `height`). This is the same borrowing rule that governs every other reference in Rust — methods aren't a special case.
+
+## Traits: shared behavior without inheritance
+
+A **trait** defines a set of methods a type promises to implement — Rust's answer to an interface. Unlike class inheritance, implementing a trait doesn't give a type any fields or behavior for free; it only requires the type to provide the methods the trait declares (traits can also supply default method bodies that implementers may override).
+
+```rust
+trait Describe {
+    fn describe(&self) -> String;
+}
+
+struct Rectangle {
+    width: f64,
+    height: f64,
+}
+
+struct Circle {
+    radius: f64,
+}
+
+impl Describe for Rectangle {
+    fn describe(&self) -> String {
+        format!("a {}x{} rectangle", self.width, self.height)
+    }
+}
+
+impl Describe for Circle {
+    fn describe(&self) -> String {
+        format!("a circle with radius {}", self.radius)
+    }
+}
+
+fn print_description(shape: &dyn Describe) {
+    println!("{}", shape.describe());
+}
+
+fn main() {
+    let rect = Rectangle { width: 3.0, height: 4.0 };
+    let circle = Circle { radius: 2.0 };
+
+    print_description(&rect);
+    print_description(&circle);
+}
+```
+
+`Rectangle` and `Circle` share no common ancestor and no fields — they're only related by both implementing `Describe`. `print_description` accepts `&dyn Describe`, meaning "a reference to anything that implements this trait," which is how Rust achieves polymorphism without a class hierarchy: the shared contract is the trait, not a shared base type.
+
+## See also
+
+- **[Data Structures](/en/programming-languages/rust/data-structures)** — the built-in collection types, as opposed to struct types you define yourself.
+- **[Error Handling](/en/programming-languages/rust/error-handling)** — `Result` and `Option` are themselves built from an `enum`, a close cousin of `struct` for modeling data.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to define a Rectangle struct with an associated `square` constructor and an `area` method."
+  items={[
+    { id: "struct-open", label: "struct Rectangle {" },
+    { id: "field-w", label: "    width: f64," },
+    { id: "field-h", label: "    height: f64," },
+    { id: "struct-close", label: "}" },
+    { id: "impl-open", label: "impl Rectangle {" },
+    { id: "square", label: "    fn square(size: f64) -> Rectangle {", explanation: "The struct fields must be defined before an impl block can reference them." },
+    { id: "square-body", label: "        Rectangle { width: size, height: size }" },
+    { id: "square-close", label: "    }" },
+    { id: "area", label: "    fn area(&self) -> f64 {" },
+    { id: "area-body", label: "        self.width * self.height" },
+    { id: "area-close", label: "    }" },
+    { id: "impl-close", label: "}" },
+  ]}
+  correctOrder={["struct-open", "field-w", "field-h", "struct-close", "impl-open", "square", "square-body", "square-close", "area", "area-body", "area-close", "impl-close"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to define a Describe trait and implement it for Circle."
+  items={[
+    { id: "trait-open", label: "trait Describe {" },
+    { id: "trait-method", label: "    fn describe(&self) -> String;" },
+    { id: "trait-close", label: "}" },
+    { id: "struct", label: "struct Circle { radius: f64 }", explanation: "The trait and the struct must both exist before an impl can connect them." },
+    { id: "impl-open", label: "impl Describe for Circle {" },
+    { id: "impl-body", label: "    fn describe(&self) -> String { format!(\"a circle with radius {}\", self.radius) }" },
+    { id: "impl-close", label: "}" },
+  ]}
+  correctOrder={["trait-open", "trait-method", "trait-close", "struct", "impl-open", "impl-body", "impl-close"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`struct Rectangle {
+    width: f64,
+    height: f64,
+}
+
+impl Rectangle {
+    fn scale(&mut self, factor: f64) {
+        self.width *= factor;
+    }
+}
+
+fn main() {
+    let rect = Rectangle { width: 3.0, height: 4.0 };
+    rect.scale(2.0);
+    println!("{}", rect.width);
+}`}
+  options={["3", "6", "Compile error", "Runtime panic"]}
+  correctIndex={2}
+  explanation="scale takes &mut self, but rect was declared with `let rect` (no mut) — calling a method that mutably borrows an immutable binding is a compile error, not something caught only at runtime. Adding `mut` to `let mut rect` is what fixes it."
+  actualOutput="error[E0596]: cannot borrow `rect` as mutable, as it is not declared as mutable"
+/>

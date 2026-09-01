@@ -1,0 +1,133 @@
+---
+title: Modules & Packages
+description: "How C organizes code across files with #include and header files, links multiple .c files into one program, and manages dependencies without an official package manager."
+category: Programming Languages
+weight: 8
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+C predates the idea of a language-level module system by decades. There's no `import` statement that understands packages — instead, the **preprocessor** textually pastes header file contents into your source before compilation, and separate `.c` files become one program only at the **linking** step, after each has been compiled independently. Dependency management is handled entirely outside the language, by the operating system's package manager, a build system, or a tool like vcpkg.
+
+## #include and header files
+
+`#include` is a preprocessor directive that copies a file's contents in place, before the compiler ever runs. A `.h` header file typically holds declarations (function prototypes, struct definitions, macros) — not implementations — so multiple `.c` files can share the same declarations without duplicating code:
+
+```c
+/* math_utils.h */
+#ifndef MATH_UTILS_H
+#define MATH_UTILS_H
+
+int add(int a, int b);
+int multiply(int a, int b);
+
+#endif
+```
+
+```c
+/* math_utils.c */
+#include "math_utils.h"
+
+int add(int a, int b) {
+    return a + b;
+}
+
+int multiply(int a, int b) {
+    return a * b;
+}
+```
+
+```c
+/* main.c */
+#include <stdio.h>
+#include "math_utils.h"
+
+int main(void) {
+    printf("%d\n", add(2, 3));
+    printf("%d\n", multiply(2, 3));
+    return 0;
+}
+```
+
+`#include <stdio.h>` (angle brackets) searches the compiler's standard system directories; `#include "math_utils.h"` (quotes) searches relative to the current file first. The `#ifndef` / `#define` / `#endif` pattern is a **header guard** — it prevents the same header from being pasted in twice if two different files both include it (directly or indirectly), which would otherwise cause "redefinition" compile errors.
+
+## Compiling and linking multiple files
+
+Each `.c` file compiles independently into an **object file** (`.o`); the **linker** then combines object files into one executable, resolving calls like `main.c`'s call to `add` against `math_utils.o`'s definition of it:
+
+```bash
+gcc -c math_utils.c -o math_utils.o   # compile only
+gcc -c main.c -o main.o                # compile only
+gcc math_utils.o main.o -o program     # link into one executable
+./program
+```
+
+In practice, most C projects skip typing this out by hand and use a **Makefile** or a build system like CMake to describe how files depend on each other, so `make` (or `cmake --build .`) recompiles only what changed and re-links automatically:
+
+```makefile
+program: main.o math_utils.o
+	gcc main.o math_utils.o -o program
+
+main.o: main.c math_utils.h
+	gcc -c main.c -o main.o
+
+math_utils.o: math_utils.c math_utils.h
+	gcc -c math_utils.c -o math_utils.o
+```
+
+## Package management: there's no single answer
+
+Unlike Python (`pip`), JavaScript (`npm`), or Rust (`cargo`), C has no official, language-level package manager — there's no central registry every C project pulls from. Instead, dependencies are handled by whichever layer of tooling a project has chosen:
+
+- **The OS package manager** (`apt`, `dnf`, `brew`) installs system-wide libraries — `sudo apt install libcurl4-openssl-dev` puts curl's headers and compiled library where the compiler and linker can find them.
+- **vcpkg** (Microsoft) and **Conan** are C/C++-specific package managers that install libraries per-project rather than system-wide, closer to what `npm` or `cargo` feel like.
+- **CMake**, strictly a build system rather than a package manager, is often used alongside one of the above — `find_package()` locates an already-installed library, and `FetchContent` can download and build a dependency's source directly as part of your own build.
+
+A typical modern C project might use CMake to describe *how* to build, and vcpkg (or the system package manager) to supply *what* to link against — there is no equivalent of running one command that "just installs everything a `Cargo.toml` or `package.json` lists," because no such single manifest format is universal to C.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble a header guard"
+  prompt="Drag these lines into the order that safely declares add() in a header file, guarded against double inclusion."
+  items={[
+    { id: "ifndef", label: "#ifndef MATH_UTILS_H", explanation: "The guard's #ifndef must come before the #define and the declarations it protects." },
+    { id: "define", label: "#define MATH_UTILS_H" },
+    { id: "decl", label: "int add(int a, int b);" },
+    { id: "endif", label: "#endif" },
+  ]}
+  correctOrder={["ifndef", "define", "decl", "endif"]}
+/>
+
+<OrderingExercise
+  title="Order the compile-and-link steps"
+  prompt="Drag these commands into the order that builds a program from two separate .c files."
+  items={[
+    { id: "compile-a", label: "gcc -c math_utils.c -o math_utils.o" },
+    { id: "compile-b", label: "gcc -c main.c -o main.o" },
+    { id: "link", label: "gcc math_utils.o main.o -o program", explanation: "Linking must come after both files have been compiled into object files — it's the step that resolves calls between them into one executable." },
+    { id: "run", label: "./program" },
+  ]}
+  correctOrder={["compile-a", "compile-b", "link", "run"]}
+/>
+
+<PredictOutput
+  title="What happens without a header guard?"
+  code={`/* shape.h, included by both a.c and b.c, WITHOUT a header guard */
+struct Shape {
+    int sides;
+};
+
+/* both a.c and b.c do: #include "shape.h" */
+/* both are compiled together into one program */`}
+  options={["Program compiles and runs fine", "Compile error: redefinition of struct Shape", "Runtime crash", "The second #include is silently ignored"]}
+  correctIndex={1}
+  explanation="Without a header guard, if shape.h ends up pasted into the same translation unit twice (directly or through a chain of includes), the compiler sees struct Shape defined twice and reports a redefinition error. Header guards (#ifndef/#define/#endif) exist specifically to make the second paste a no-op instead."
+  actualOutput="error: redefinition of 'struct Shape'"
+/>
+
+## See also
+
+- **[Structs & Methods](/en/programming-languages/c/oop-or-structs)** — struct definitions are exactly what typically gets shared through a header like this page's example.
+- **[Error Handling](/en/programming-languages/c/error-handling)** — errno and setjmp both come from standard headers included the same way.

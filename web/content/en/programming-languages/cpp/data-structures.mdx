@@ -1,0 +1,145 @@
+---
+title: Data Structures
+description: Storing collections of values in C++ with fixed-size arrays, the resizable std::vector, and the key-ordered std::map.
+category: Programming Languages
+weight: 5
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+C++ gives you a choice of containers depending on whether size is known up front and whether you need fast lookup by key rather than by position — picking the wrong one is a common source of both bugs and needless slowness.
+
+## Arrays
+
+```cpp
+#include <iostream>
+
+int main() {
+    int scores[5] = {90, 85, 77, 92, 60};
+
+    for (int i = 0; i < 5; i++) {
+        std::cout << "scores[" << i << "] = " << scores[i] << "\n";
+    }
+    return 0;
+}
+```
+
+A C-style array like `scores` has a size fixed at compile time and no bounds checking — reading or writing `scores[5]` compiles cleanly but reads past the array's memory, undefined behavior that can silently corrupt unrelated data. Its size also isn't tracked at runtime; a function receiving `scores` needs the length passed separately.
+
+## `std::vector`
+
+```cpp
+#include <iostream>
+#include <vector>
+
+int main() {
+    std::vector<int> scores;
+    scores.push_back(90);
+    scores.push_back(85);
+    scores.push_back(77);
+
+    scores.push_back(100);
+    std::cout << "Count: " << scores.size() << "\n";
+
+    for (int s : scores) {
+        std::cout << s << " ";
+    }
+    std::cout << "\n";
+
+    scores.pop_back();
+    std::cout << "After pop_back, count: " << scores.size() << "\n";
+    return 0;
+}
+```
+
+`std::vector<int>` is a resizable array: `push_back` appends an element and grows the underlying storage automatically, `size()` reports the current element count, and `pop_back()` removes the last element. Unlike a raw array, a vector always knows its own length and manages its own memory — this is why `std::vector` is the default choice for a sequence of values in modern C++, reserved for a fixed-size C-style array only when the size is truly constant and known at compile time (or in `std::array`, which offers the same fixed-size guarantee with a safer interface).
+
+## `std::map`
+
+```cpp
+#include <iostream>
+#include <map>
+#include <string>
+
+int main() {
+    std::map<std::string, int> ages;
+    ages["Ada"] = 36;
+    ages["Grace"] = 85;
+    ages["Alan"] = 41;
+
+    ages["Ada"] = 37; // overwrites the existing entry
+
+    for (const auto& pair : ages) {
+        std::cout << pair.first << " -> " << pair.second << "\n";
+    }
+    return 0;
+}
+```
+
+`std::map<K, V>` stores key-value pairs and keeps them ordered by key internally (using a balanced binary tree), so iterating over a map always visits entries in ascending key order — here, alphabetically by name. Indexing with `ages["Ada"]` either inserts a new entry or updates the existing one if the key is already present; looking up a key that doesn't exist with `[]` silently inserts it with a default-constructed value, which is a common surprise — `ages.find("Bob")` or `ages.count("Bob")` are the safer way to check for presence without inserting.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a vector, push three values, and print its size."
+  items={[
+    { id: "include-vector", label: "#include <vector>" },
+    { id: "include-iostream", label: "#include <iostream>" },
+    { id: "main-open", label: "int main() {" },
+    { id: "declare", label: "    std::vector<int> nums;", explanation: "The vector must exist before push_back can be called on it." },
+    { id: "push1", label: "    nums.push_back(10);" },
+    { id: "push2", label: "    nums.push_back(20);" },
+    { id: "print-size", label: "    std::cout << nums.size() << std::endl;" },
+    { id: "return", label: "    return 0;" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["include-vector", "include-iostream", "main-open", "declare", "push1", "push2", "print-size", "return", "main-close"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a std::map, insert two entries, and look one up."
+  items={[
+    { id: "include-map", label: "#include <map>" },
+    { id: "include-string", label: "#include <string>" },
+    { id: "main-open", label: "int main() {" },
+    { id: "declare", label: "    std::map<std::string, int> inventory;" },
+    { id: "insert1", label: "    inventory[\"apples\"] = 50;", explanation: "The map must be declared before any entries are inserted into it." },
+    { id: "insert2", label: "    inventory[\"bananas\"] = 30;" },
+    { id: "lookup", label: "    std::cout << inventory[\"apples\"] << std::endl;" },
+    { id: "return", label: "    return 0;" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["include-map", "include-string", "main-open", "declare", "insert1", "insert2", "lookup", "return", "main-close"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`#include <iostream>
+#include <map>
+#include <string>
+
+int main() {
+    std::map<std::string, int> scores;
+    scores["b"] = 2;
+    scores["a"] = 1;
+    scores["c"] = 3;
+
+    for (const auto& pair : scores) {
+        std::cout << pair.first;
+    }
+    std::cout << std::endl;
+    return 0;
+}`}
+  options={["bac", "abc", "cba", "Compile error"]}
+  correctIndex={1}
+  explanation={`std::map keeps its entries sorted by key at all times, regardless of insertion order. Even though "b" was inserted first, iterating the map visits keys in ascending order: a, b, c.`}
+  actualOutput="abc"
+/>
+
+## See also
+
+- [Functions](/en/programming-languages/cpp/functions) — passing vectors and maps into functions by reference.
+- [Classes & Objects](/en/programming-languages/cpp/oop-or-structs) — building your own custom data types beyond the standard containers.

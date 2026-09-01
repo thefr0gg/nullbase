@@ -1,0 +1,119 @@
+---
+title: PHP
+description: An overview of PHP, the server-side scripting language that powers a huge share of the web, from its origins to what makes it distinctive today.
+category: Programming Languages
+weight: 1
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+PHP started in 1994 as a small set of Perl scripts Rasmus Lerdorf wrote to
+track visits to his online resume — "Personal Home Page Tools." It grew,
+somewhat by accident, into one of the most widely deployed server-side
+languages on the internet. WordPress, large parts of Facebook's original
+codebase, Wikipedia, and a large share of the web's content-management
+systems are built on PHP.
+
+Unlike Go or Rust, PHP was never designed top-down as a cohesive language.
+It grew feature by feature to solve real problems people had building
+websites, and that history shows: PHP has some genuinely awkward corners
+(inconsistent standard library function names, historically loose type
+comparisons) alongside modern, well-designed features added in PHP 7 and 8
+(scalar type declarations, JIT compilation, enums, readonly properties).
+Modern PHP — the PHP you'd write today with Composer, PSR standards, and a
+framework like Laravel or Symfony — looks very different from the PHP of the
+early 2000s, even though the two remain source-compatible in most respects.
+
+## What makes PHP distinctive
+
+- **Built for the request/response cycle.** A PHP script runs once per HTTP
+  request and then its entire process state disappears — there's no
+  long-lived application server keeping objects in memory between requests
+  the way there is in Node.js or a JVM app, unless you reach for something
+  like Swoole or FrankenPHP.
+- **Embeds directly into HTML.** PHP was originally a templating language:
+  you drop into `<?php ?>` tags inside an otherwise ordinary HTML file, and
+  everything outside those tags is emitted as-is.
+- **Every variable starts with `$`.** There's no ambiguity between a bare
+  word (a function name, a constant) and a variable — the sigil settles it
+  at a glance.
+- **Arrays do double duty.** A single `array` type in PHP serves as both a
+  list and a hash map, which is convenient but has its own learning curve
+  (more on this in [Arrays](/en/programming-languages/php/data-structures)).
+- **Huge, uneven standard library.** PHP ships hundreds of built-in
+  functions covering strings, arrays, dates, and more — but naming and
+  argument order are inconsistent across them (`strpos($haystack, $needle)`
+  vs. `array_search($needle, $haystack)`), a well-known wart from PHP's
+  organic growth.
+
+Here's a minimal, complete PHP script:
+
+```php
+<?php
+
+echo "Hello, nullbase!\n";
+```
+
+Save that as `hello.php` and run it with `php hello.php`, or drop it on a
+server with a PHP runtime and request it over HTTP — both work with the
+exact same file.
+
+## When you'd reach for PHP
+
+PHP remains an excellent choice for server-rendered websites, content
+management, and anything where "request comes in, database gets queried,
+HTML goes out" is the core loop. Its share-nothing-between-requests model
+also makes it forgiving of memory leaks in application code — every request
+starts from a clean slate. It's less natural for long-running background
+processes or genuinely concurrent workloads, though extensions and
+alternative runtimes have chipped away at that limitation over the years.
+
+## What's next
+
+The following pages walk through PHP from syntax to its more advanced
+corners: variables and tags, control flow, functions, arrays, classes and
+traits, error handling, namespaces and Composer, and finally generators and
+where PHP's async story actually lives.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a minimal, working PHP script that prints a greeting."
+  items={[
+    { id: "open", label: "<?php" },
+    { id: "blank", label: "" },
+    { id: "echo", label: 'echo "Hello, PHP!\\n";', explanation: "The opening tag must come first — PHP code outside <?php ?> is treated as literal output." },
+  ]}
+  correctOrder={["open", "blank", "echo"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Put these lines in order to declare a variable and print it with string interpolation."
+  items={[
+    { id: "open2", label: "<?php" },
+    { id: "var2", label: '$name = "nullbase";' },
+    { id: "echo2", label: 'echo "Hello, $name!\\n";', explanation: "The variable must be assigned before it's interpolated into the string." },
+  ]}
+  correctOrder={["open2", "var2", "echo2"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`<?php
+
+$site = "nullbase";
+echo "Welcome to $site\\n";
+echo 'Welcome to $site\\n';`}
+  options={["Welcome to nullbase\\nWelcome to nullbase\\n", "Welcome to nullbase\\nWelcome to $site\\n", "Welcome to $site\\nWelcome to $site\\n", "Parse error: undefined variable"]}
+  correctIndex={1}
+  explanation="Double-quoted strings interpolate variables; single-quoted strings don't, so $site is printed literally (and \\n stays as two characters rather than a newline) in the second echo."
+  actualOutput="Welcome to nullbase\nWelcome to $site\\n"
+/>
+
+## See also
+
+- [Syntax & Variables](/en/programming-languages/php/syntax-basics)
+- [Generators & Async Patterns](/en/programming-languages/php/advanced)

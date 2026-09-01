@@ -1,0 +1,155 @@
+---
+title: Control Flow
+description: Conditionals, loops, switch statements, and short-circuit evaluation in JavaScript.
+category: Programming Languages
+weight: 3
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+JavaScript's control flow constructs will look familiar if you've used any
+C-family language, with a few JavaScript-specific conveniences layered on
+top: optional chaining, nullish coalescing, and a handful of loop variants
+suited to iterating collections rather than raw index ranges.
+
+## Conditionals
+
+`if`/`else if`/`else` works as expected. JavaScript also has a ternary
+operator for compact conditional expressions, and two operators worth
+knowing well: `??` (nullish coalescing) and `?.` (optional chaining).
+
+```js
+function describe(temp) {
+  if (temp < 0) {
+    return "freezing";
+  } else if (temp < 20) {
+    return "cool";
+  } else {
+    return "warm";
+  }
+}
+
+console.log(describe(-5)); // "freezing"
+
+const label = temp => (temp < 20 ? "cool" : "warm"); // ternary, no braces needed
+```
+
+`??` returns its right-hand side only when the left is `null` or
+`undefined` — unlike `||`, which also falls through on `0`, `""`, and
+`false`. `?.` short-circuits to `undefined` instead of throwing when a
+property access hits `null`/`undefined` partway through a chain.
+
+```js
+const config = { retries: 0 };
+
+console.log(config.retries || 3);  // 3  — 0 is falsy, so || overrides it (usually a bug!)
+console.log(config.retries ?? 3);  // 0  — 0 is not nullish, so ?? keeps it (usually what you want)
+
+console.log(config.server?.host ?? "localhost"); // "localhost", no crash on the missing server
+```
+
+## Loops
+
+`for`, `while`, and `do...while` all exist with their usual semantics.
+Two additional loop forms iterate collections directly: `for...of` (values
+of an iterable — arrays, strings, `Map`s, `Set`s) and `for...in` (enumerable
+property *keys* of an object, generally reserved for objects rather than
+arrays).
+
+```js
+const scores = [88, 92, 79];
+
+for (const score of scores) {
+  console.log(score);
+}
+// 88
+// 92
+// 79
+
+for (let i = 0; i < scores.length; i++) {
+  console.log(`index ${i}: ${scores[i]}`);
+}
+
+const user = { name: "ada", role: "admin" };
+for (const key in user) {
+  console.log(key, user[key]);
+}
+```
+
+`break` exits a loop entirely; `continue` skips to the next iteration.
+Both can target a labeled outer loop when you need to escape nested loops
+from the inside.
+
+## switch
+
+`switch` compares with `===` against each `case`. Forgetting `break` is
+one of the most common JavaScript bugs — execution falls through to the
+next case unless you explicitly stop it.
+
+```js
+function trafficAction(color) {
+  switch (color) {
+    case "red":
+      return "stop";
+    case "yellow":
+      return "slow down";
+    case "green":
+      return "go";
+    default:
+      return "unknown signal";
+  }
+}
+
+console.log(trafficAction("yellow")); // "slow down"
+```
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a for...of loop that sums an array of numbers."
+  items={[
+    { id: "arr", label: "const nums = [1, 2, 3];" },
+    { id: "total", label: "let total = 0;" },
+    { id: "loopOpen", label: "for (const n of nums) {" },
+    { id: "add", label: "  total += n;" },
+    { id: "loopClose", label: "}" },
+    { id: "log", label: "console.log(total);" },
+  ]}
+  correctOrder={["arr", "total", "loopOpen", "add", "loopClose", "log"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Put these lines in order to build a switch statement that returns a day type, including the fallthrough-preventing break."
+  items={[
+    { id: "fnOpen", label: "function dayType(day) {" },
+    { id: "switchOpen", label: "  switch (day) {" },
+    { id: "case1", label: "    case \"Sat\":" },
+    { id: "case2", label: "    case \"Sun\":" },
+    { id: "return1", label: "      return \"weekend\";", explanation: "Two case labels stacked with no break between them share this return — that's an intentional fallthrough." },
+    { id: "default", label: "    default:" },
+    { id: "return2", label: "      return \"weekday\";" },
+    { id: "switchClose", label: "  }" },
+    { id: "fnClose", label: "}" },
+  ]}
+  correctOrder={["fnOpen", "switchOpen", "case1", "case2", "return1", "default", "return2", "switchClose", "fnClose"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`const settings = { volume: 0 };
+console.log(settings.volume || 10);
+console.log(settings.volume ?? 10);`}
+  options={["0 then 0", "10 then 10", "0 then 10", "10 then 0"]}
+  correctIndex={3}
+  explanation="volume is 0, which is falsy, so || treats it as missing and falls back to 10. ?? only falls back on null or undefined, and 0 is neither, so it keeps the real value, 0. This distinction matters constantly for numeric settings that can legitimately be zero."
+  actualOutput="10
+0"
+/>
+
+## See also
+
+- [Syntax & Variables](/en/programming-languages/javascript/syntax-basics)
+- [Functions & Closures](/en/programming-languages/javascript/functions)

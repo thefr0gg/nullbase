@@ -1,0 +1,145 @@
+---
+title: Syntax & Variables
+description: Go's variable declarations, basic types, zero values, and the := shorthand.
+category: Programming Languages
+weight: 2
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Go is statically typed: every variable has a fixed type known at compile
+time. Unlike C, though, Go usually lets you skip writing the type out —
+the compiler infers it from the value you assign.
+
+## Declaring variables
+
+The verbose form uses `var`:
+
+```go
+var name string = "Ada"
+var age int = 36
+var isAdmin bool = false
+```
+
+You can drop the type when the value makes it obvious:
+
+```go
+var name = "Ada"
+var age = 36
+```
+
+But inside a function body, the idiomatic form is `:=`, the short variable
+declaration. It declares and initializes in one step, and only works for
+new variables inside a function (not at package level):
+
+```go
+func main() {
+	name := "Ada"
+	age := 36
+	isAdmin := false
+	fmt.Println(name, age, isAdmin)
+}
+```
+
+`var` and `:=` are not interchangeable in every context: `var` can appear at
+package scope and lets you declare a variable without an initial value,
+while `:=` requires at least one new variable on the left side and can only
+appear inside a function.
+
+## Zero values
+
+Go has no concept of an uninitialized variable. Every type has a **zero
+value** that a variable gets automatically if you declare it without an
+initializer:
+
+```go
+var count int     // 0
+var price float64 // 0.0
+var label string  // "" (empty string)
+var ready bool    // false
+var list []int    // nil (a nil slice, safe to read from)
+```
+
+This eliminates an entire class of "uninitialized variable" bugs that exist
+in languages like C.
+
+## Basic types
+
+Go's built-in types include:
+
+| Category | Types |
+|---|---|
+| Integers | `int`, `int8`, `int16`, `int32`, `int64`, and unsigned `uint*` variants |
+| Floating point | `float32`, `float64` |
+| Text | `string`, `rune` (a Unicode code point), `byte` (an alias for `uint8`) |
+| Other | `bool`, `complex64`, `complex128` |
+
+`int` is the general-purpose integer type and is 64-bit on virtually every
+modern platform; reach for a sized type like `int32` only when you need a
+specific width (binary formats, interop).
+
+## Constants
+
+`const` declares a compile-time constant. Constants can't use `:=` and must
+have a value known at compile time:
+
+```go
+const MaxRetries = 3
+const Pi = 3.14159
+
+func main() {
+	fmt.Println("Retrying up to", MaxRetries, "times")
+}
+```
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to declare two variables with `:=` and print their sum."
+  items={[
+    { id: "s1", label: "func main() {" },
+    { id: "s2", label: "\ta := 4" },
+    { id: "s3", label: "\tb := 7", explanation: "Both short declarations must come before they're used." },
+    { id: "s4", label: "\tfmt.Println(a + b)" },
+    { id: "s5", label: "}" },
+  ]}
+  correctOrder={["s1", "s2", "s3", "s4", "s5"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Order these lines to declare a package-level constant with `var`, giving it an explicit type, then print it."
+  items={[
+    { id: "t1", label: "package main" },
+    { id: "t2", label: "import \"fmt\"" },
+    { id: "t3", label: "var Threshold int = 100", explanation: "Package-level var declarations sit outside any function." },
+    { id: "t4", label: "func main() {" },
+    { id: "t5", label: "\tfmt.Println(Threshold)" },
+    { id: "t6", label: "}" },
+  ]}
+  correctOrder={["t1", "t2", "t3", "t4", "t5", "t6"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`package main
+
+import "fmt"
+
+func main() {
+	var count int
+	var label string
+	fmt.Println(count, label == "")
+}`}
+  options={["0 true", "nil false", "Compile error: uninitialized variable", "0 false"]}
+  correctIndex={0}
+  explanation={`Declaring a variable without an initializer gives it the type's zero value: 0 for int, an empty string for string. Comparing an empty string to "" is true, not an error or nil.`}
+  actualOutput="0 true"
+/>
+
+## See also
+
+- [Go](/en/programming-languages/go)
+- [Control Flow](/en/programming-languages/go/control-flow)

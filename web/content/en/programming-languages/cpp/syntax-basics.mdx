@@ -1,0 +1,120 @@
+---
+title: Syntax & Variables
+description: Declaring variables, choosing types, and reading/writing with streams — the syntax every other C++ topic builds on.
+category: Programming Languages
+weight: 2
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+C++ is **statically typed**: every variable has a type fixed at compile time, and the compiler rejects a program where a value doesn't match the type it's assigned to. This catches an entire class of bugs before the program ever runs, at the cost of having to write out (or infer) types up front rather than deciding them at runtime.
+
+```cpp
+#include <iostream>
+#include <string>
+
+int main() {
+    int age = 30;
+    double price = 19.99;
+    char grade = 'A';
+    bool isActive = true;
+    std::string name = "Ada";
+
+    std::cout << name << " is " << age << " years old.\n";
+    return 0;
+}
+```
+
+The fundamental built-in types are `int` (whole numbers), `double`/`float` (floating-point numbers), `char` (a single byte, usually one character), and `bool` (`true`/`false`). `std::string`, from the `<string>` header, is not a built-in type but part of the standard library — it manages its own memory, so unlike a raw C-style character array it grows and shrinks safely as text is assigned to it.
+
+## `auto` and `const`
+
+```cpp
+#include <iostream>
+
+int main() {
+    auto count = 42;          // deduced as int
+    auto ratio = 3.14;        // deduced as double
+    const int maxRetries = 5; // cannot be reassigned
+
+    std::cout << "count=" << count << " ratio=" << ratio << " max=" << maxRetries << "\n";
+    return 0;
+}
+```
+
+`auto` asks the compiler to deduce a variable's type from its initializer rather than spelling it out — the variable is still statically typed, just inferred instead of written explicitly. `const` marks a variable as unmodifiable after initialization; attempting `maxRetries = 10;` later in the function would fail to compile. Using `const` wherever a value genuinely shouldn't change documents that intent for readers and lets the compiler catch accidental reassignment.
+
+## Reading input
+
+```cpp
+#include <iostream>
+
+int main() {
+    std::string name;
+    int age;
+
+    std::cout << "Enter your name: ";
+    std::cin >> name;
+    std::cout << "Enter your age: ";
+    std::cin >> age;
+
+    std::cout << name << " is " << age << " years old.\n";
+    return 0;
+}
+```
+
+`std::cin` (declared in `<iostream>`) reads from standard input the same way `std::cout` writes to standard output, using `>>` instead of `<<`. By default `std::cin >> name` reads a single whitespace-delimited token, not a full line — reading `"Ada Lovelace"` this way would only capture `"Ada"`; a full line requires `std::getline(std::cin, name)` instead.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to declare two variables and print a sentence using them."
+  items={[
+    { id: "include", label: "#include <iostream>" },
+    { id: "main-open", label: "int main() {" },
+    { id: "declare-name", label: "    std::string city = \"Paris\";", explanation: "Declaration must happen before the variable is used in the print statement." },
+    { id: "declare-pop", label: "    int population = 2100000;" },
+    { id: "print", label: "    std::cout << city << \" has \" << population << \" people.\\n\";" },
+    { id: "return", label: "    return 0;" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["include", "main-open", "declare-name", "declare-pop", "print", "return", "main-close"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a program that reads an integer from the user and doubles it."
+  items={[
+    { id: "include", label: "#include <iostream>" },
+    { id: "main-open", label: "int main() {" },
+    { id: "declare", label: "    int n;", explanation: "n must exist before std::cin can read into it." },
+    { id: "read", label: "    std::cin >> n;" },
+    { id: "print", label: "    std::cout << n * 2 << std::endl;" },
+    { id: "return", label: "    return 0;" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["include", "main-open", "declare", "read", "print", "return", "main-close"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`#include <iostream>
+
+int main() {
+    const int limit = 10;
+    auto ratio = 5 / 2.0;
+    std::cout << limit << " " << ratio << std::endl;
+    return 0;
+}`}
+  options={["10 2", "10 2.5", "10.0 2.5", "Compile error"]}
+  correctIndex={1}
+  explanation="limit prints as the plain integer 10. ratio is deduced as double because 2.0 is a floating-point literal, so 5 / 2.0 performs floating-point division and yields 2.5 — no truncation, unlike integer division."
+  actualOutput="10 2.5"
+/>
+
+## See also
+
+- [C++](/en/programming-languages/cpp) — the overview this page's syntax builds on.
+- [Control Flow](/en/programming-languages/cpp/control-flow) — using these variables in conditions and loops.

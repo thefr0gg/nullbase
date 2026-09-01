@@ -1,0 +1,161 @@
+---
+title: Arrays
+description: PHP's single array type doing double duty as both an indexed list and an associative hash map, plus the common array functions.
+category: Programming Languages
+weight: 5
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+PHP has exactly one built-in compound data structure: `array`. Where many
+languages give you a separate list type and a separate map/dictionary type,
+PHP's array is both at once, backed internally by an ordered hash map. This
+is one of the most PHP-specific things to get comfortable with, because it
+means "array" in PHP is a much broader concept than "array" in C, Java, or
+Rust.
+
+## Indexed arrays
+
+Without explicit keys, PHP assigns sequential integer keys starting at 0 —
+this is the "list" use case:
+
+```php
+<?php
+
+$colors = ["red", "green", "blue"];
+
+echo $colors[0] . "\n";   // red
+echo count($colors) . "\n"; // 3
+
+$colors[] = "yellow"; // append
+foreach ($colors as $color) {
+    echo $color . "\n";
+}
+```
+
+## Associative arrays
+
+The exact same `array` type accepts arbitrary keys — strings, in this case
+— making it a hash map:
+
+```php
+<?php
+
+$user = [
+    "name" => "Ada",
+    "role" => "admin",
+    "age"  => 36,
+];
+
+echo $user["name"] . "\n"; // Ada
+
+foreach ($user as $key => $value) {
+    echo "$key: $value\n";
+}
+```
+
+## The quirk: they're the same type, and you can mix them
+
+Because indexed and associative arrays are the same underlying structure,
+nothing stops you from mixing integer and string keys in one array — and
+PHP's key ordering is **insertion order**, not sorted, which surprises
+people coming from languages with a separate hash-map type:
+
+```php
+<?php
+
+$mixed = [
+    "name" => "Grace",
+    0      => "first positional",
+    "role" => "engineer",
+    1      => "second positional",
+];
+
+foreach ($mixed as $key => $value) {
+    echo "$key => $value\n";
+}
+// Prints in insertion order: name, 0, role, 1 — not sorted by key type or value
+```
+
+This also means a "list" in PHP is really just a convention (sequential
+integer keys from 0), not a guarantee — `array_filter()` on an indexed array
+preserves the original keys and can leave gaps, which is a very common
+source of bugs when code assumes indices stay contiguous:
+
+```php
+<?php
+
+$numbers = [10, 20, 30, 40];
+$evens = array_filter($numbers, fn($n) => $n % 2 === 0);
+
+print_r($evens);
+// [1 => 20, 3 => 40]  — original keys kept, index 0 and 2 are gone
+echo array_values($evens)[0] . "\n"; // array_values() re-indexes from 0
+```
+
+## Common array functions
+
+PHP's standard library has well over a hundred `array_*` functions. A few
+that come up constantly:
+
+```php
+<?php
+
+$nums = [5, 3, 8, 1];
+
+sort($nums);                          // [1, 3, 5, 8], sorts in place
+echo implode(", ", $nums) . "\n";      // "1, 3, 5, 8"
+
+$doubled = array_map(fn($n) => $n * 2, $nums);
+$total = array_reduce($nums, fn($carry, $n) => $carry + $n, 0);
+
+echo implode(", ", $doubled) . "\n"; // 2, 6, 10, 16
+echo $total . "\n";                   // 17
+```
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build an indexed array, append to it, and print its count."
+  items={[
+    { id: "g1", label: "<?php" },
+    { id: "g2", label: '$tags = ["php", "web"];' },
+    { id: "g3", label: '$tags[] = "arrays";', explanation: "[] appends a new element with the next sequential integer key." },
+    { id: "g4", label: "echo count($tags) . \"\\n\";" },
+  ]}
+  correctOrder={["g1", "g2", "g3", "g4"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Order these lines to build an associative array and read one of its values."
+  items={[
+    { id: "h1", label: "<?php" },
+    { id: "h2", label: "$config = [" },
+    { id: "h3", label: '    "debug" => false,' },
+    { id: "h4", label: '    "env"   => "production",', explanation: "Each key => value pair is one array entry, comma-separated like any array literal." },
+    { id: "h5", label: "];" },
+    { id: "h6", label: 'echo $config["env"] . "\\n";' },
+  ]}
+  correctOrder={["h1", "h2", "h3", "h4", "h5", "h6"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`<?php
+
+var_dump("10" == "1e1");
+var_dump(0 == "abc");
+var_dump("abc" == 0);`}
+  options={["true / true / true", "true / false / false", "false / false / false", "true / false / true"]}
+  correctIndex={1}
+  explanation="'10' == '1e1' is true: both are numeric strings, so PHP compares them as numbers (10 == 10.0). But since PHP 8, a non-numeric string like 'abc' compared to a number no longer coerces the string to 0 — instead the number is cast to a string, so 0 == 'abc' compares '0' to 'abc' and is false. This flipped from PHP 7, where both lines would have been true — a famous PHP type-juggling gotcha."
+  actualOutput="bool(true)\nbool(false)\nbool(false)"
+/>
+
+## See also
+
+- [Functions](/en/programming-languages/php/functions)
+- [Classes & Traits](/en/programming-languages/php/oop-or-structs)

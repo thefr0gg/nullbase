@@ -1,0 +1,137 @@
+---
+title: Pointers & Memory
+description: Pointers, references, and manual memory management with new/delete in C++, and why smart pointers like unique_ptr replace most manual cleanup today.
+category: Programming Languages
+weight: 9
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+C++'s defining trade-off is direct access to memory addresses — powerful, since it lets you build data structures and control layout at a level most languages hide, and dangerous, since a mistake here (not garbage-collected, not automatically checked) produces bugs that can corrupt memory silently rather than failing loudly.
+
+## Pointers and references
+
+```cpp
+#include <iostream>
+
+int main() {
+    int value = 42;
+
+    int* ptr = &value;   // ptr holds the address of value
+    int& ref = value;    // ref is another name for value itself
+
+    std::cout << "value: " << value << "\n";
+    std::cout << "*ptr: " << *ptr << "\n";  // dereference: follow the pointer
+    std::cout << "ref: " << ref << "\n";
+
+    *ptr = 100;  // changes value, through the pointer
+    ref = 200;   // changes value, through the reference
+
+    std::cout << "value is now: " << value << "\n"; // 200
+    return 0;
+}
+```
+
+`&value` takes the address of `value`; `int* ptr` declares `ptr` as a variable that stores that address, and `*ptr` **dereferences** it — following the address to read or write the actual `int` it points to. `int& ref = value` declares a **reference**, which behaves like an alias for `value` rather than a separate variable holding an address: no explicit dereference is needed, and unlike a pointer, a reference can't be reseated to refer to something else after initialization, and can't be null. Pointers are more flexible (they can be reassigned, and a null pointer can represent "points to nothing"); references are safer whenever that flexibility isn't actually needed.
+
+## Manual memory: `new` and `delete`
+
+```cpp
+#include <iostream>
+
+int main() {
+    int* single = new int(10);       // allocate one int on the heap
+    int* array = new int[5]{1,2,3,4,5}; // allocate an array on the heap
+
+    std::cout << *single << "\n";
+    std::cout << array[2] << "\n";
+
+    delete single;      // free the single int
+    delete[] array;      // free the array — note the [] to match new[]
+
+    return 0;
+}
+```
+
+`new` allocates memory on the heap that outlives the function it was allocated in, and hands back a pointer to it; that memory stays allocated until something explicitly calls `delete` (or `delete[]` for an array allocated with `new[]` — mismatching them is undefined behavior). Forgetting to call `delete` at all is a **memory leak**: the memory is never reclaimed for the rest of the program's life. Calling `delete` on the same pointer twice, or using a pointer after it's been deleted, are equally dangerous and are the two most common categories of memory bugs in C-style manual memory management.
+
+## Smart pointers: RAII for the heap
+
+```cpp
+#include <iostream>
+#include <memory>
+
+class Resource {
+public:
+    Resource() { std::cout << "Resource acquired\n"; }
+    ~Resource() { std::cout << "Resource released\n"; }
+    void use() { std::cout << "Using resource\n"; }
+};
+
+int main() {
+    std::unique_ptr<Resource> res = std::make_unique<Resource>();
+    res->use();
+    // no delete needed — res's destructor runs automatically here,
+    // releasing the Resource exactly once, even if an exception
+    // had been thrown between make_unique and this closing brace
+    return 0;
+}
+```
+
+`std::unique_ptr<Resource>` owns a heap-allocated `Resource` and deletes it automatically in its own destructor when it goes out of scope — the same RAII pattern `std::ofstream` and `std::vector` use, applied directly to raw dynamic memory. There's no `delete` in this example anywhere, and there doesn't need to be: ownership is exactly one `unique_ptr` at a time (copying one is a compile error; it can only be *moved*), which makes it structurally impossible to double-free or forget to free the underlying `Resource`. Modern C++ guidance is to reach for `new`/`delete` directly only in rare, low-level cases — `std::unique_ptr` (single ownership) and `std::shared_ptr` (shared ownership, reference-counted) cover nearly everything else with none of the manual bookkeeping.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to declare a pointer to an int, dereference it to change the value, and print the result."
+  items={[
+    { id: "declare", label: "int number = 5;" },
+    { id: "pointer", label: "int* ptr = &number;", explanation: "ptr must be initialized with number's address before it can be dereferenced." },
+    { id: "modify", label: "*ptr = 10;" },
+    { id: "print", label: "std::cout << number << std::endl;" },
+  ]}
+  correctOrder={["declare", "pointer", "modify", "print"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to allocate an int array on the heap, use it, and free it correctly."
+  items={[
+    { id: "allocate", label: "int* data = new int[3]{1, 2, 3};" },
+    { id: "read", label: "std::cout << data[1] << std::endl;", explanation: "The array must be allocated before any element of it can be read." },
+    { id: "free", label: "delete[] data;" },
+  ]}
+  correctOrder={["allocate", "read", "free"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`#include <iostream>
+#include <memory>
+
+class Widget {
+public:
+    Widget() { std::cout << "created "; }
+    ~Widget() { std::cout << "destroyed "; }
+};
+
+int main() {
+    {
+        std::unique_ptr<Widget> w = std::make_unique<Widget>();
+        std::cout << "using ";
+    }
+    std::cout << "done" << std::endl;
+    return 0;
+}`}
+  options={["created using done", "created using destroyed done", "created destroyed using done", "Compile error"]}
+  correctIndex={1}
+  explanation={`The Widget is created when make_unique runs, "using " prints inside the inner block, and then w goes out of scope at the closing brace — its destructor runs automatically right there, printing "destroyed ", before "done" prints. No explicit delete is needed for any of this to happen.`}
+  actualOutput="created using destroyed done"
+/>
+
+## See also
+
+- [Error Handling](/en/programming-languages/cpp/error-handling) — RAII's role in exception safety, applied here to heap memory specifically.
+- [Classes & Objects](/en/programming-languages/cpp/oop-or-structs) — the constructors and destructors smart pointers rely on.

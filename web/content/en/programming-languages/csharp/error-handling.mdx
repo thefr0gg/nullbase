@@ -1,0 +1,182 @@
+---
+title: Error Handling
+description: try/catch/finally, exception filters, and writing custom exception types in C#.
+category: Programming Languages
+weight: 7
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+C# uses exceptions for error handling rather than error return values.
+Anything from an invalid array index to a failed network call throws an
+object derived from `System.Exception`, and code further up the call stack
+can catch it.
+
+## try / catch / finally
+
+```csharp
+try
+{
+    int[] numbers = { 1, 2, 3 };
+    Console.WriteLine(numbers[10]); // throws IndexOutOfRangeException
+}
+catch (IndexOutOfRangeException ex)
+{
+    Console.WriteLine($"Caught: {ex.Message}");
+}
+finally
+{
+    Console.WriteLine("This always runs, exception or not.");
+}
+```
+
+`finally` runs whether or not an exception was thrown, and even if the `try`
+or `catch` block returns early — it's the place for cleanup like closing a
+file or a connection.
+
+Multiple `catch` blocks let you handle different exception types
+differently; they're checked top to bottom, so put more specific types
+first:
+
+```csharp
+try
+{
+    string input = "not a number";
+    int value = int.Parse(input);
+}
+catch (FormatException ex)
+{
+    Console.WriteLine($"Bad format: {ex.Message}");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Something else went wrong: {ex.Message}");
+}
+```
+
+An exception filter (`when`) lets a single `catch` clause fire only under
+extra conditions, without swallowing exceptions that don't match:
+
+```csharp
+try
+{
+    throw new InvalidOperationException("disk full");
+}
+catch (InvalidOperationException ex) when (ex.Message.Contains("disk"))
+{
+    Console.WriteLine("Handling a disk-related failure specifically.");
+}
+```
+
+## Custom exceptions
+
+Deriving your own exception type from `Exception` (or a more specific base
+class) lets calling code catch precisely the failure it cares about, and lets
+you attach domain-specific data:
+
+```csharp
+class InsufficientFundsException : Exception
+{
+    public decimal Shortfall { get; }
+
+    public InsufficientFundsException(decimal shortfall)
+        : base($"Insufficient funds: short by {shortfall:C}")
+    {
+        Shortfall = shortfall;
+    }
+}
+
+class Account
+{
+    public decimal Balance { get; private set; } = 100m;
+
+    public void Withdraw(decimal amount)
+    {
+        if (amount > Balance)
+        {
+            throw new InsufficientFundsException(amount - Balance);
+        }
+        Balance -= amount;
+    }
+}
+
+var account = new Account();
+try
+{
+    account.Withdraw(150m);
+}
+catch (InsufficientFundsException ex)
+{
+    Console.WriteLine(ex.Message);      // Insufficient funds: short by $50.00
+    Console.WriteLine(ex.Shortfall);    // 50
+}
+```
+
+Custom exceptions should always call the base constructor (`: base(message)`)
+so the standard `.Message` property and stack trace machinery keep working
+as expected.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a try/catch/finally block that handles a divide-by-zero."
+  items={[
+    { id: "l1", label: "try" },
+    { id: "l2", label: "{" },
+    { id: "l3", label: "    int result = 10 / int.Parse(\"0\");" },
+    { id: "l4", label: "}" },
+    { id: "l5", label: "catch (DivideByZeroException ex)" },
+    { id: "l6", label: "{" },
+    { id: "l7", label: "    Console.WriteLine(ex.Message);" },
+    { id: "l8", label: "}" },
+    { id: "l9", label: "finally" },
+    { id: "l10", label: "{" },
+    { id: "l11", label: "    Console.WriteLine(\"Done\");" },
+    { id: "l12", label: "}" },
+  ]}
+  correctOrder={["l1", "l2", "l3", "l4", "l5", "l6", "l7", "l8", "l9", "l10", "l11", "l12"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Put these lines in order to declare a custom exception with a base constructor call."
+  items={[
+    { id: "m1", label: "class NegativeAmountException : Exception" },
+    { id: "m2", label: "{" },
+    { id: "m3", label: "    public NegativeAmountException(decimal amount)" },
+    { id: "m4", label: "        : base($\"Amount cannot be negative: {amount}\")" , explanation: "The base constructor call must appear on the constructor declaration itself, before the body opens."},
+    { id: "m5", label: "    {" },
+    { id: "m6", label: "    }" },
+    { id: "m7", label: "}" },
+  ]}
+  correctOrder={["m1", "m2", "m3", "m4", "m5", "m6", "m7"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`try
+{
+    Console.WriteLine("A");
+    throw new InvalidOperationException("oops");
+}
+catch (InvalidOperationException)
+{
+    Console.WriteLine("B");
+}
+finally
+{
+    Console.WriteLine("C");
+}
+Console.WriteLine("D");`}
+  options={["A B C D", "A C D", "A B D", "A B C"]}
+  correctIndex={0}
+  explanation="The try block runs until the throw, printing A. The matching catch runs, printing B. finally always runs after that, printing C. Since the exception was caught (not rethrown), execution continues normally to the line after the try/catch/finally, printing D."
+  actualOutput="A B C D"
+/>
+
+## See also
+
+- [Classes & Interfaces](/en/programming-languages/csharp/oop-or-structs)
+- [Namespaces & NuGet](/en/programming-languages/csharp/modules-packages)

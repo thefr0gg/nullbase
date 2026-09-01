@@ -1,0 +1,144 @@
+---
+title: Modules & Cargo
+description: Organizing code with mod and use, and how Cargo and crates.io handle dependencies, builds, and publishing.
+category: Programming Languages
+weight: 8
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Rust code is organized into **modules** (`mod`), which control both namespacing and visibility, and projects are managed by **Cargo**, Rust's build tool and package manager. Almost nobody invokes the `rustc` compiler directly for a real project — Cargo wraps it, plus dependency resolution, testing, and publishing.
+
+## `mod`: namespacing and privacy
+
+A module groups related items (functions, structs, other modules) and, by default, hides them from outside code — everything in Rust is **private unless marked `pub`**, the opposite default from most languages.
+
+```rust
+mod shapes {
+    pub struct Circle {
+        pub radius: f64,
+    }
+
+    impl Circle {
+        pub fn area(&self) -> f64 {
+            std::f64::consts::PI * self.radius * self.radius
+        }
+    }
+
+    fn internal_helper() {
+        // not pub — invisible outside this module, even to code in the same file
+    }
+}
+
+fn main() {
+    let c = shapes::Circle { radius: 2.0 };
+    println!("area: {}", c.area());
+}
+```
+
+Without `pub` on `Circle`, `radius`, and `area`, none of them would be reachable from `main` — the compiler would reject `shapes::Circle { radius: 2.0 }` as accessing a private struct. Privacy in Rust is enforced by the compiler at every boundary, not just a documentation convention.
+
+## `use`: bringing paths into scope
+
+Referring to something by its full path (`shapes::Circle`) every time gets tedious. `use` brings a path into the current scope so it can be named directly:
+
+```rust
+mod shapes {
+    pub struct Circle {
+        pub radius: f64,
+    }
+}
+
+use shapes::Circle;
+
+fn main() {
+    let c = Circle { radius: 3.0 }; // no shapes:: prefix needed
+    println!("radius: {}", c.radius);
+}
+```
+
+In a real multi-file project, modules typically live in their own files (`shapes.rs` or `shapes/mod.rs`), and `use` statements pull in items from other modules in the same crate, or from external dependencies.
+
+## Cargo and crates.io
+
+**Cargo** is Rust's build tool and package manager, initialized with `cargo new my_project`. It reads dependencies from `Cargo.toml` and downloads them from **crates.io**, the community package registry (a "crate" is Rust's term for a compiled library or package — roughly what npm calls a package).
+
+```toml
+# Cargo.toml
+[package]
+name = "my_project"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = "1.0"
+rand = "0.8"
+```
+
+With that in place, `use serde::Serialize;` or `use rand::Rng;` becomes available anywhere in the project — `cargo build` resolves and compiles the dependency graph automatically. The everyday Cargo commands cover the whole lifecycle: `cargo build` compiles, `cargo run` compiles and runs, `cargo test` runs tests, and `cargo publish` uploads a crate to crates.io for others to depend on.
+
+## See also
+
+- **[Structs & Traits](/en/programming-languages/rust/oop-or-structs)** — the types most often marked `pub` and exported from a module.
+- **[Ownership & Borrowing](/en/programming-languages/rust/advanced)** — a concept that applies identically whether code lives in one file or is split across modules and crates.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to define a shapes module with a public Circle struct and area method, then use it from main."
+  items={[
+    { id: "mod-open", label: "mod shapes {" },
+    { id: "struct-open", label: "    pub struct Circle {" },
+    { id: "field", label: "        pub radius: f64," },
+    { id: "struct-close", label: "    }" },
+    { id: "impl-open", label: "    impl Circle {", explanation: "The impl block must come after the struct it implements methods for." },
+    { id: "area", label: "        pub fn area(&self) -> f64 { std::f64::consts::PI * self.radius * self.radius }" },
+    { id: "impl-close", label: "    }" },
+    { id: "mod-close", label: "}" },
+    { id: "main-open", label: "fn main() {" },
+    { id: "let-c", label: "    let c = shapes::Circle { radius: 2.0 };" },
+    { id: "print", label: "    println!(\"area: {}\", c.area());" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["mod-open", "struct-open", "field", "struct-close", "impl-open", "area", "impl-close", "mod-close", "main-open", "let-c", "print", "main-close"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to define a module, bring its struct into scope with use, and construct it without the module prefix."
+  items={[
+    { id: "mod-open", label: "mod shapes {" },
+    { id: "struct", label: "    pub struct Circle { pub radius: f64 }" },
+    { id: "mod-close", label: "}" },
+    { id: "use", label: "use shapes::Circle;", explanation: "use must come after the module it imports from is declared." },
+    { id: "main-open", label: "fn main() {" },
+    { id: "let-c", label: "    let c = Circle { radius: 3.0 };" },
+    { id: "print", label: "    println!(\"radius: {}\", c.radius);" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["mod-open", "struct", "mod-close", "use", "main-open", "let-c", "print", "main-close"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`mod shapes {
+    pub struct Circle {
+        pub radius: f64,
+    }
+
+    fn internal_helper() -> f64 {
+        0.0
+    }
+}
+
+fn main() {
+    let c = shapes::Circle { radius: 2.0 };
+    println!("{}", c.radius);
+}`}
+  options={["2", "0", "Compile error naming internal_helper", "No output"]}
+  correctIndex={0}
+  explanation="internal_helper is never called from main, and it not being pub only matters if something outside the module tries to call it — an unused private function is at most a dead-code warning, not an error. Circle and radius are both pub, so the program compiles and prints the radius, 2."
+  actualOutput="2"
+/>

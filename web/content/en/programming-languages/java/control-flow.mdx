@@ -1,0 +1,174 @@
+---
+title: Control Flow
+description: Java's if/else, switch (including the modern arrow form), and for/while/do-while loops.
+category: Programming Languages
+weight: 3
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Java's control-flow constructs will look familiar if you know C, C++, or
+JavaScript — braces delimit blocks and conditions must be genuine `boolean`
+expressions, not truthy/falsy values coerced from numbers or objects.
+
+## if / else
+
+```java
+int score = 82;
+
+if (score >= 90) {
+    System.out.println("A");
+} else if (score >= 80) {
+    System.out.println("B");
+} else {
+    System.out.println("C or below");
+}
+```
+
+Unlike C, `if (score)` does not compile when `score` is an `int` — the
+condition must be a `boolean` expression such as `score != 0`. This rules
+out an entire class of "assignment instead of comparison" bugs, since
+`if (score = 0)` is also a compile error rather than a silent assignment.
+
+## switch: classic and arrow form
+
+The classic `switch` falls through to the next case unless you `break`:
+
+```java
+int day = 3;
+String name;
+switch (day) {
+    case 1:
+        name = "Monday";
+        break;
+    case 2:
+        name = "Tuesday";
+        break;
+    case 3:
+        name = "Wednesday";
+        break;
+    default:
+        name = "Unknown";
+}
+System.out.println(name);
+```
+
+Java 14 introduced the arrow form, which does not fall through and can
+produce a value directly with `yield` (or as an expression):
+
+```java
+int day = 3;
+String name = switch (day) {
+    case 1 -> "Monday";
+    case 2 -> "Tuesday";
+    case 3 -> "Wednesday";
+    default -> "Unknown";
+};
+System.out.println(name);
+```
+
+The arrow form is generally preferred in modern Java: it's harder to
+accidentally fall through, and using it as an expression means the compiler
+can check that every branch produces a value of the same type.
+
+## Loops
+
+Java has three loop forms. `for` with an explicit counter:
+
+```java
+for (int i = 0; i < 5; i++) {
+    System.out.println(i);
+}
+```
+
+The enhanced `for` (a "for-each") for iterating a collection or array
+without manual indexing:
+
+```java
+int[] scores = {70, 85, 92};
+for (int score : scores) {
+    System.out.println(score);
+}
+```
+
+`while` and `do-while`, distinguished by when the condition is checked —
+`while` checks before the first iteration, `do-while` always runs the body
+at least once:
+
+```java
+int n = 5;
+while (n > 0) {
+    System.out.println(n);
+    n--;
+}
+
+int attempts = 0;
+do {
+    attempts++;
+} while (attempts < 3);
+System.out.println(attempts);
+```
+
+`break` exits a loop entirely; `continue` skips to the next iteration. Both
+accept a label (`outer:`) to target an enclosing loop when loops are nested.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build an if/else chain that classifies a score."
+  items={[
+    { id: "a1", label: "int score = 82;" },
+    { id: "a2", label: "if (score >= 90) {" },
+    { id: "a3", label: "    System.out.println(\"A\");" },
+    { id: "a4", label: "} else if (score >= 80) {", explanation: "else if must directly follow the closing brace of the prior branch." },
+    { id: "a5", label: "    System.out.println(\"B\");" },
+    { id: "a6", label: "} else {" },
+    { id: "a7", label: "    System.out.println(\"C or below\");" },
+    { id: "a8", label: "}" },
+  ]}
+  correctOrder={["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Order these lines to build an arrow-form switch that assigns a day name and prints it."
+  items={[
+    { id: "b1", label: "int day = 2;" },
+    { id: "b2", label: "String name = switch (day) {" },
+    { id: "b3", label: "    case 1 -> \"Monday\";" },
+    { id: "b4", label: "    case 2 -> \"Tuesday\";", explanation: "The case for the matching value can appear anywhere among the branches, but all branches sit inside the switch block." },
+    { id: "b5", label: "    default -> \"Unknown\";" },
+    { id: "b6", label: "};" },
+    { id: "b7", label: "System.out.println(name);" },
+  ]}
+  correctOrder={["b1", "b2", "b3", "b4", "b5", "b6", "b7"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`int day = 2;
+String result = "";
+switch (day) {
+    case 1:
+        result += "Mon";
+    case 2:
+        result += "Tue";
+    case 3:
+        result += "Wed";
+        break;
+    default:
+        result += "Other";
+}
+System.out.println(result);`}
+  options={["Tue", "TueWed", "MonTueWed", "Other"]}
+  correctIndex={1}
+  explanation="Classic switch falls through when there's no break. Matching case 2 runs its body and then keeps executing case 3's body too, since there's no break until after case 3, producing 'Tue' + 'Wed'."
+  actualOutput="TueWed"
+/>
+
+## See also
+
+- [Syntax & Variables](/en/programming-languages/java/syntax-basics)
+- [Methods](/en/programming-languages/java/functions)

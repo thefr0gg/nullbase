@@ -1,0 +1,117 @@
+---
+title: Functions
+description: Typed parameters and return types, plus optional and default parameters, in TypeScript function signatures.
+category: Programming Languages
+weight: 4
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+JavaScript functions accept any arguments you hand them, and a call with the wrong number or type of arguments usually fails silently (extra arguments are ignored, missing ones become `undefined`) or throws deep inside the function body. TypeScript function signatures declare exactly what's expected, and the compiler checks every call site against that declaration before the code ever runs.
+
+## Typed parameters and return types
+
+```ts
+function add(a: number, b: number): number {
+  return a + b;
+}
+
+add(2, 3); // 5
+add(2, "3"); // Type error: Argument of type 'string' is not assignable to parameter of type 'number'
+add(2); // Type error: Expected 2 arguments, but got 1
+```
+
+`a: number` and `b: number` constrain the parameters; `: number` after the parameter list constrains what the function is allowed to `return`. If the function body tried to `return a + b + "!"` (a string), the compiler would reject that too — the declared return type is checked against the actual return statements, not just inferred and left unchecked.
+
+You can also let TypeScript infer the return type instead of writing it explicitly:
+
+```ts
+function multiply(a: number, b: number) {
+  return a * b; // return type inferred as number
+}
+```
+
+Explicit return types are still worth writing on exported/public functions — they act as a contract that doesn't shift silently if someone edits the function body later.
+
+## Optional parameters
+
+Appending `?` to a parameter name makes it optional — callers may omit it, and inside the function its type includes `undefined`:
+
+```ts
+function greet(name: string, title?: string): string {
+  if (title) {
+    return `Hello, ${title} ${name}!`;
+  }
+  return `Hello, ${name}!`;
+}
+
+greet("Ada"); // "Hello, Ada!"
+greet("Ada", "Dr."); // "Hello, Dr. Ada!"
+```
+
+Optional parameters must come after all required ones in the parameter list — `function f(a?: string, b: string)` is a compile-time error, since there'd be no way to tell which argument a single-value call was meant to fill.
+
+## Default parameters
+
+A default value makes a parameter optional at the call site while giving it a concrete value inside the function body — no `undefined` check needed:
+
+```ts
+function createUser(name: string, role: string = "member") {
+  return { name, role };
+}
+
+createUser("Ada"); // { name: "Ada", role: "member" }
+createUser("Ada", "admin"); // { name: "Ada", role: "admin" }
+```
+
+Because `role`'s type is inferred from its default value (`string`), passing anything other than a `string | undefined` still fails to compile — `createUser("Ada", 1)` is a type error, even though `role` has a default.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a typed add function and a call that fails the type checker."
+  items={[
+    { id: "fn-decl", label: "function add(a: number, b: number): number {" },
+    { id: "fn-body", label: "  return a + b;", explanation: "The return statement belongs inside the function body, between the signature and its closing brace." },
+    { id: "fn-close", label: "}" },
+    { id: "good-call", label: "add(2, 3);" },
+    { id: "bad-call", label: "add(2, \"3\"); // Type error" },
+  ]}
+  correctOrder={["fn-decl", "fn-body", "fn-close", "good-call", "bad-call"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a createUser function with a default role parameter."
+  items={[
+    { id: "fn-decl", label: "function createUser(name: string, role: string = \"member\") {" },
+    { id: "fn-body", label: "  return { name, role };", explanation: "The object literal is returned from inside the function body." },
+    { id: "fn-close", label: "}" },
+    { id: "call-one-arg", label: "createUser(\"Ada\");" },
+    { id: "call-two-args", label: "createUser(\"Ada\", \"admin\");" },
+  ]}
+  correctOrder={["fn-decl", "fn-body", "fn-close", "call-one-arg", "call-two-args"]}
+/>
+
+<PredictOutput
+  title="What does the type checker say?"
+  code={`function greet(name: string, title?: string): string {
+  if (title) {
+    return \`Hello, \${title} \${name}!\`;
+  }
+  return \`Hello, \${name}!\`;
+}
+
+greet("Ada", 5);`}
+  options={["\"Hello, 5 Ada!\"", "\"Hello, Ada!\"", "Type error: Argument of type 'number' is not assignable to parameter of type 'string | undefined'", "undefined"]}
+  correctIndex={2}
+  explanation="title is optional, so it accepts a string or being omitted entirely — but it does not widen to accept just any type. Passing a number for an optional string parameter is still a type mismatch, just like it would be for a required one."
+  actualOutput="Type error: Argument of type 'number' is not assignable to parameter of type 'string | undefined'"
+/>
+
+## See also
+
+- [Control Flow](/en/programming-languages/typescript/control-flow)
+- [Generics](/en/programming-languages/typescript/advanced)

@@ -1,0 +1,131 @@
+---
+title: Control Flow
+description: How if/switch statements narrow union types, and the type-checking twist TypeScript adds to plain JavaScript control flow.
+category: Programming Languages
+weight: 3
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+`if`, `else`, `switch`, `for`, and `while` all behave exactly as they do in JavaScript at runtime — TypeScript doesn't change control flow semantics. What it changes is what the compiler *knows* about your variables' types as execution moves through each branch. This is called **type narrowing**, and it's one of the most distinctly TypeScript features on this page.
+
+## Union types and narrowing
+
+A variable can be declared to hold one of several types with a **union type** (`A | B`):
+
+```ts
+function formatId(id: string | number): string {
+  if (typeof id === "string") {
+    return id.toUpperCase(); // id is narrowed to string here
+  }
+  return id.toFixed(2); // id is narrowed to number here
+}
+```
+
+Inside the `if (typeof id === "string")` branch, the compiler narrows `id`'s type from `string | number` down to just `string`, so `.toUpperCase()` is allowed. In the `else` branch (the implicit fall-through here), it narrows to `number`, so `.toFixed(2)` is allowed. Try calling `id.toUpperCase()` in the second branch and the compiler rejects it — `toUpperCase` doesn't exist on `number`.
+
+## Narrowing with switch
+
+`switch` narrows the same way, branch by branch, which makes it a natural fit for **discriminated unions** — types that share a common literal field used to distinguish them:
+
+```ts
+type Shape =
+  | { kind: "circle"; radius: number }
+  | { kind: "square"; side: number };
+
+function area(shape: Shape): number {
+  switch (shape.kind) {
+    case "circle":
+      return Math.PI * shape.radius ** 2; // shape is narrowed to the circle branch
+    case "square":
+      return shape.side ** 2; // shape is narrowed to the square branch
+  }
+}
+```
+
+Each `case` narrows `shape` based on the literal value of `kind`, so `shape.radius` is only accessible in the `"circle"` case and `shape.side` only in the `"square"` case — accessing `shape.side` inside the `"circle"` case would be a type error, because the compiler knows that branch's `shape` can't have a `side` property.
+
+## The TS-specific twist: exhaustiveness checking
+
+Plain JavaScript's `switch` has no idea whether you've handled every case. TypeScript can enforce it, by assigning the "impossible leftover" value to a variable typed `never`:
+
+```ts
+type Shape =
+  | { kind: "circle"; radius: number }
+  | { kind: "square"; side: number }
+  | { kind: "triangle"; base: number; height: number };
+
+function area(shape: Shape): number {
+  switch (shape.kind) {
+    case "circle":
+      return Math.PI * shape.radius ** 2;
+    case "square":
+      return shape.side ** 2;
+    default: {
+      const exhaustiveCheck: never = shape; // Type error if a case was missed
+      throw new Error(`Unhandled shape: ${exhaustiveCheck}`);
+    }
+  }
+}
+```
+
+After adding `"triangle"` to `Shape` without adding a matching `case`, `shape` in the `default` branch is no longer narrowed to nothing — it's still `{ kind: "triangle"; ... }`, which isn't assignable to `never`. The compiler flags that assignment as an error at the exact spot you forgot to handle a case, catching an incomplete `switch` before runtime rather than silently falling through.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a function that narrows a string | number union with typeof."
+  items={[
+    { id: "fn-decl", label: "function formatId(id: string | number): string {" },
+    { id: "if-open", label: "  if (typeof id === \"string\") {" },
+    { id: "if-body", label: "    return id.toUpperCase();", explanation: "id is only known to be a string inside this branch, after the typeof check." },
+    { id: "if-close", label: "  }" },
+    { id: "else-body", label: "  return id.toFixed(2);" },
+    { id: "fn-close", label: "}" },
+  ]}
+  correctOrder={["fn-decl", "if-open", "if-body", "if-close", "else-body", "fn-close"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a discriminated-union area function using switch."
+  items={[
+    { id: "fn-decl", label: "function area(shape: Shape): number {" },
+    { id: "switch-open", label: "  switch (shape.kind) {" },
+    { id: "case-circle", label: "    case \"circle\":" },
+    { id: "return-circle", label: "      return Math.PI * shape.radius ** 2;", explanation: "shape.radius only exists once the switch has narrowed shape to the circle case." },
+    { id: "case-square", label: "    case \"square\":" },
+    { id: "return-square", label: "      return shape.side ** 2;" },
+    { id: "switch-close", label: "  }" },
+    { id: "fn-close", label: "}" },
+  ]}
+  correctOrder={["fn-decl", "switch-open", "case-circle", "return-circle", "case-square", "return-square", "switch-close", "fn-close"]}
+/>
+
+<PredictOutput
+  title="What does the type checker say?"
+  code={`type Shape =
+  | { kind: "circle"; radius: number }
+  | { kind: "square"; side: number };
+
+function describe(shape: Shape): string {
+  if (shape.kind === "circle") {
+    return \`circle r=\${shape.radius}\`;
+  }
+  return \`square s=\${shape.side}\`;
+}
+
+const s: Shape = { kind: "circle", radius: 2 };
+describe(s);`}
+  options={["\"circle r=2\"", "\"square s=undefined\"", "Type error: Property 'radius' does not exist on type 'Shape'", "undefined"]}
+  correctIndex={0}
+  explanation={`The if (shape.kind === "circle") check narrows shape to the circle branch of the union, so shape.radius is valid there and shape.side is valid in the implicit else. Calling describe with a circle-shaped value simply runs that branch and produces "circle r=2".`}
+  actualOutput={`"circle r=2"`}
+/>
+
+## See also
+
+- [Syntax & Types](/en/programming-languages/typescript/syntax-basics)
+- [Functions](/en/programming-languages/typescript/functions)

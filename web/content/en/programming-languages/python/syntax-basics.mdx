@@ -1,0 +1,80 @@
+---
+title: Syntax & Variables
+description: Indentation-defined blocks, dynamic typing, and the built-in types every Python value falls into.
+category: Programming Languages
+weight: 2
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Python has no braces, no `end` keywords, and no statement-terminating semicolons — a block (the body of an `if`, a loop, a function) is defined entirely by its indentation level. Consistent indentation is not a style choice enforced by a linter; it's the actual syntax the interpreter parses, and mixing tabs and spaces or indenting inconsistently is a `SyntaxError` or `IndentationError`.
+
+```python
+# comments start with a hash and run to the end of the line
+count = 10          # int
+price = 3.14         # float
+name = "Nova"         # str
+is_ready = True        # bool
+result = None            # NoneType — Python's "no value" singleton
+
+print(type(count), type(name), type(is_ready))
+```
+
+Variables in Python are dynamically typed: a name doesn't declare a type up front, it's just a label pointing at whatever value it was last assigned, and that value's type is what `type()` reports. Reassigning `count = "ten"` later is completely legal — the variable now points at a string instead of an int — which is convenient for quick scripts but means type-related bugs surface at runtime rather than at compile time, unless you add type hints and run a checker like `mypy` separately.
+
+```python
+a, b = 1, 2
+a, b = b, a  # swap without a temporary variable
+print(a, b)  # 2 1
+```
+
+That swap works because the right-hand side `b, a` is evaluated completely — building a temporary pair `(2, 1)` — before either `a` or `b` on the left gets reassigned. This same tuple-unpacking mechanism is how Python functions return "multiple values": they actually return one tuple, which the caller unpacks.
+
+```python
+score = 87
+message = f"You scored {score} points ({score / 100:.0%})"
+print(message)  # You scored 87 points (87%)
+```
+
+f-strings (string literals prefixed with `f`) are the standard way to build formatted text: anything inside `{}` is evaluated as a Python expression, and an optional `:format_spec` after a `:` controls how it's rendered — `.0%` above turns `0.87` into `"87%"`.
+
+## See also
+
+- **[Control Flow](/en/programming-languages/python/control-flow)** — using these values inside `if`, `for`, and `while`.
+- **[Data Structures](/en/programming-languages/python/data-structures)** — the composite types (lists, dicts) built out of these basic ones.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to swap two variables and print the result."
+  items={[
+    { id: "a", label: "a = 1" },
+    { id: "b", label: "b = 2" },
+    { id: "swap", label: "a, b = b, a", explanation: "Both `a` and `b` must already have values before this line can swap them." },
+    { id: "print", label: "print(a, b)" },
+  ]}
+  correctOrder={["a", "b", "swap", "print"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build and print a formatted score message."
+  items={[
+    { id: "score", label: "score = 87" },
+    { id: "message", label: 'message = f"You scored {score} points"', explanation: "The f-string needs `score` defined first, since it reads that value at the point this line runs." },
+    { id: "print", label: "print(message)" },
+  ]}
+  correctOrder={["score", "message", "print"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`print(7 // 2)`}
+  options={["3.5", "3", "4", "Error: unsupported operand"]}
+  correctIndex={1}
+  explanation={'"//" is floor division — it always divides then rounds down to the nearest whole number, discarding the remainder entirely, unlike "/" which always returns a float (7 / 2 would give 3.5).'}
+  actualOutput="3"
+/>
+

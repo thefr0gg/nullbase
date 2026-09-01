@@ -1,0 +1,153 @@
+---
+title: Data Structures
+description: C's built-in arrays and strings, and how they're combined with structs and pointers to build larger data structures like linked lists.
+category: Programming Languages
+weight: 5
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+C's standard library ships almost no data structures at all — no built-in list, map, or dynamic array like Python's `list` or JavaScript's `Array`. What it gives you instead are fixed-size arrays and raw memory, and everything richer (dynamic arrays, linked lists, hash maps) is something you build yourself out of arrays, structs, and pointers, or pull in from a third-party library.
+
+## Arrays
+
+An array in C is a fixed-size, contiguous block of memory holding elements of one type — its size must be known at compile time (or provided when allocated dynamically) and never grows:
+
+```c
+#include <stdio.h>
+
+int main(void) {
+    int scores[5] = {90, 85, 77, 92, 88};
+
+    int total = 0;
+    for (int i = 0; i < 5; i++) {
+        total += scores[i];
+    }
+
+    printf("average: %.1f\n", total / 5.0);
+
+    int grid[2][3] = {{1, 2, 3}, {4, 5, 6}}; /* a 2D array is an array of arrays */
+    printf("grid[1][2] = %d\n", grid[1][2]);
+
+    return 0;
+}
+```
+
+Crucially, C performs **no bounds checking**: `scores[10]` compiles fine and reads whatever memory happens to sit past the array's end, which is undefined behavior — it might crash, might silently read garbage, or might appear to work until the day it doesn't.
+
+## Strings are just char arrays
+
+C has no dedicated string type. A "string" is a `char` array terminated by a `'\0'` null byte, and the standard library's string functions (in `<string.h>`) all rely on finding that terminator:
+
+```c
+#include <stdio.h>
+#include <string.h>
+
+int main(void) {
+    char name[20] = "Ada"; /* the compiler adds the '\0' terminator automatically */
+
+    printf("length: %zu\n", strlen(name)); /* 3, not counting the '\0' */
+
+    strcat(name, " Lovelace"); /* appends onto the existing buffer */
+    printf("name: %s\n", name);
+
+    if (strcmp(name, "Ada Lovelace") == 0) { /* strcmp, not == */
+        printf("matched\n");
+    }
+
+    return 0;
+}
+```
+
+`==` on two `char*` values compares *pointers* (memory addresses), not string contents — a classic beginner bug — which is why comparing string contents always requires `strcmp`. `strcat` and similar functions also don't check that the destination buffer is large enough, so writing more characters than a buffer can hold silently corrupts adjacent memory (a **buffer overflow**).
+
+## Building a linked list with structs and pointers
+
+Beyond arrays, C data structures are built by combining `struct` (grouping related fields) with pointers (linking nodes together):
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+struct Node {
+    int value;
+    struct Node *next; /* a struct can point to another instance of itself */
+};
+
+int main(void) {
+    struct Node *head = malloc(sizeof(struct Node));
+    head->value = 10;
+    head->next = malloc(sizeof(struct Node));
+    head->next->value = 20;
+    head->next->next = NULL; /* marks the end of the list */
+
+    for (struct Node *cur = head; cur != NULL; cur = cur->next) {
+        printf("%d -> ", cur->value);
+    }
+    printf("NULL\n");
+
+    /* every malloc needs a matching free, walked node by node */
+    struct Node *cur = head;
+    while (cur != NULL) {
+        struct Node *next = cur->next;
+        free(cur);
+        cur = next;
+    }
+
+    return 0;
+}
+```
+
+`head->value` is shorthand for `(*head).value` — dereference the pointer, then access the field. This linked list pattern (a struct holding a pointer to the next struct of the same type) is the basis for nearly every hand-built C data structure: linked lists, trees, and graphs all follow it. The [Structs & Methods](/en/programming-languages/c/oop-or-structs) page covers `struct` itself in more depth.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble an array sum"
+  prompt="Drag these lines into the order that declares an array, sums its elements, and prints the result."
+  items={[
+    { id: "decl", label: "int nums[4] = {2, 4, 6, 8};" },
+    { id: "total", label: "int total = 0;", explanation: "The accumulator must be initialized to 0 before the loop adds to it." },
+    { id: "for", label: "for (int i = 0; i < 4; i++) {" },
+    { id: "add", label: "    total += nums[i];" },
+    { id: "close", label: "}" },
+    { id: "print", label: "printf(\"%d\\n\", total);" },
+  ]}
+  correctOrder={["decl", "total", "for", "add", "close", "print"]}
+/>
+
+<OrderingExercise
+  title="Order a correct string comparison"
+  prompt="Drag these lines into the order that safely checks whether two strings hold the same text."
+  items={[
+    { id: "include", label: "#include <string.h>" },
+    { id: "decl", label: "char a[] = \"cat\", b[] = \"cat\";" },
+    { id: "if", label: "if (strcmp(a, b) == 0) {", explanation: "strcmp compares the characters, returning 0 for equal strings — using == here would compare the array addresses instead, which is almost always wrong." },
+    { id: "print", label: "    printf(\"equal\\n\");" },
+    { id: "close", label: "}" },
+  ]}
+  correctOrder={["include", "decl", "if", "print", "close"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`#include <stdio.h>
+#include <string.h>
+
+int main(void) {
+    char a[] = "cat";
+    char b[] = "cat";
+    printf("%d %d\\n", a == b, strcmp(a, b) == 0);
+    return 0;
+}`}
+  options={["1 1", "0 1", "1 0", "0 0"]}
+  correctIndex={1}
+  explanation="a and b are two separate arrays living at different memory addresses, so a == b compares those addresses and is false (0) even though the characters they hold are identical. strcmp actually inspects the contents and correctly reports them as equal, returning 0, so strcmp(a, b) == 0 is true (1)."
+  actualOutput="0 1"
+/>
+
+## See also
+
+- **[Structs & Methods](/en/programming-languages/c/oop-or-structs)** — a closer look at struct itself, used here to build the linked list.
+- **[Pointers & Memory](/en/programming-languages/c/advanced)** — malloc, free, and the pointer mechanics this page relies on.

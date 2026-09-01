@@ -1,0 +1,87 @@
+---
+title: Data Structures
+description: Python's four built-in containers — lists, tuples, dicts, and sets — and when to reach for each one.
+category: Programming Languages
+weight: 5
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Python has four container types built into the language itself, no import required, and picking the right one is mostly a question of whether order matters, whether the contents need to change, and whether you're looking things up by position or by name.
+
+A **list** is an ordered, mutable sequence — the default choice when you have a collection of things that might grow, shrink, or get reordered.
+
+```python
+numbers = [3, 1, 4, 1, 5, 9]
+numbers.append(2)
+numbers.sort()
+print(numbers)  # [1, 1, 2, 3, 4, 5, 9]
+```
+
+A **tuple** looks like a list but is immutable — once created, it can't be appended to or have an item reassigned. That immutability makes tuples usable as dict keys (lists can't be) and signals intent: a tuple says "this is a fixed, small group of values," like coordinates.
+
+```python
+point = (10, 20)  # tuples are immutable
+x, y = point       # unpacking works the same as with lists
+print(x, y)  # 10 20
+```
+
+A **dict** stores key-value pairs and looks values up by key rather than position, which makes it the natural fit for anything you'd otherwise describe as "a record with named fields."
+
+```python
+user = {"name": "Rae", "age": 29}
+user["email"] = "rae@example.com"
+for key, value in user.items():
+    print(key, value)
+```
+
+A **set** stores unique, unordered values and automatically discards duplicates on insertion — useful for membership tests (`x in my_set` is fast) and for deduplicating a collection.
+
+```python
+unique_ids = {1, 2, 2, 3, 3, 3}
+print(unique_ids)  # {1, 2, 3}
+```
+
+The one thing to internalize about lists (and dicts, and sets) is that they're mutable *objects* — a variable holding one doesn't hold a copy of its contents, it holds a reference to the same underlying list everyone else who has that variable is also pointing at.
+
+## See also
+
+- **[Functions](/en/programming-languages/python/functions)** — how this same aliasing behavior shows up with mutable default arguments.
+- **[Classes & Objects](/en/programming-languages/python/oop-or-structs)** — building your own structured types once dicts and tuples stop being descriptive enough.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a user dict, add a field, then print every entry."
+  items={[
+    { id: "create", label: 'user = {"name": "Rae", "age": 29}' },
+    { id: "add", label: 'user["email"] = "rae@example.com"', explanation: "`user` has to exist as a dict before a new key can be added to it." },
+    { id: "for", label: "for key, value in user.items():", explanation: "Iterating happens after the dict has its final set of keys." },
+    { id: "print", label: "    print(key, value)" },
+  ]}
+  correctOrder={["create", "add", "for", "print"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build, sort, and print a list of numbers."
+  items={[
+    { id: "numbers", label: "numbers = [3, 1, 4, 1, 5, 9]" },
+    { id: "append", label: "numbers.append(2)", explanation: "The list must exist before `.append()` can be called on it." },
+    { id: "sort", label: "numbers.sort()", explanation: "Sorting happens after every element, including the appended one, is in the list." },
+    { id: "print", label: "print(numbers)" },
+  ]}
+  correctOrder={["numbers", "append", "sort", "print"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`a = [1, 2, 3]\nb = a\nb.append(4)\nprint(a)`}
+  options={["[1, 2, 3]", "[1, 2, 3, 4]", "An error, because a is unchanged", "[4]"]}
+  correctIndex={1}
+  explanation="b = a doesn't copy the list — it makes b point at the exact same list object a already points at. Calling b.append(4) mutates that one shared list, so the change is visible through a too, even though a itself was never directly reassigned."
+  actualOutput="[1, 2, 3, 4]"
+/>
+

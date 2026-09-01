@@ -1,0 +1,153 @@
+---
+title: Classes & Objects
+description: Building real types in C++ with constructors, access modifiers, and inheritance — the object-oriented core of the language.
+category: Programming Languages
+weight: 6
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+A C++ **class** bundles data (member variables) and behavior (member functions) into a single type. Unlike a plain `struct` in C, a C++ class controls exactly which parts of that bundle outside code is allowed to touch — the mechanism that makes encapsulation possible.
+
+## Constructors and access modifiers
+
+```cpp
+#include <iostream>
+#include <string>
+
+class BankAccount {
+private:
+    std::string owner;
+    double balance;
+
+public:
+    // constructor: runs automatically when a BankAccount is created
+    BankAccount(std::string ownerName, double startingBalance) {
+        owner = ownerName;
+        balance = startingBalance;
+    }
+
+    void deposit(double amount) {
+        balance += amount;
+    }
+
+    double getBalance() const {
+        return balance;
+    }
+};
+
+int main() {
+    BankAccount account("Ada", 100.0);
+    account.deposit(50.0);
+    std::cout << account.getBalance() << "\n"; // 150
+
+    // account.balance = 1000000;  // would fail to compile: balance is private
+    return 0;
+}
+```
+
+`private` members (`owner`, `balance`) are only accessible from inside the class's own member functions; `public` members form the class's external interface. This is why `account.balance` can't be touched directly from `main` — all access has to go through `deposit()` and `getBalance()`, which lets the class enforce its own rules (for example, rejecting a negative deposit) instead of trusting every caller to do the right thing. The **constructor** — a function with the same name as the class and no return type — runs automatically whenever an object is created, guaranteeing every `BankAccount` starts in a valid state rather than relying on a separate `init()` call that's easy to forget.
+
+## Inheritance
+
+```cpp
+#include <iostream>
+#include <string>
+
+class Animal {
+protected:
+    std::string name;
+
+public:
+    Animal(std::string animalName) : name(animalName) {}
+
+    virtual std::string speak() const {
+        return name + " makes a sound.";
+    }
+};
+
+class Dog : public Animal {
+public:
+    Dog(std::string dogName) : Animal(dogName) {}
+
+    std::string speak() const override {
+        return name + " barks.";
+    }
+};
+
+int main() {
+    Animal generic("Creature");
+    Dog rex("Rex");
+
+    std::cout << generic.speak() << "\n"; // Creature makes a sound.
+    std::cout << rex.speak() << "\n";     // Rex barks.
+    return 0;
+}
+```
+
+`class Dog : public Animal` makes `Dog` inherit `Animal`'s members — `protected` members (like `name`) are visible to derived classes but still hidden from outside code, a middle ground between `private` and `public`. `Animal(dogName)` in `Dog`'s constructor initializer list calls the base class's constructor explicitly, since a derived class doesn't automatically know how to initialize the base part of itself. Marking `speak()` as `virtual` in the base class and `override` in the derived one enables **polymorphism**: calling `speak()` through a base-class reference or pointer dispatches to the actual derived type's version at runtime, rather than always calling `Animal::speak()`.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a Rectangle class with a constructor and an area() method."
+  items={[
+    { id: "class-open", label: "class Rectangle {" },
+    { id: "private", label: "private:" },
+    { id: "fields", label: "    double width, height;", explanation: "Members must be declared before the constructor initializer list can reference them." },
+    { id: "public", label: "public:" },
+    { id: "ctor", label: "    Rectangle(double w, double h) : width(w), height(h) {}" },
+    { id: "area", label: "    double area() const { return width * height; }" },
+    { id: "class-close", label: "};" },
+  ]}
+  correctOrder={["class-open", "private", "fields", "public", "ctor", "area", "class-close"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a Shape base class and a Circle derived class with a virtual describe() method."
+  items={[
+    { id: "base-open", label: "class Shape {" },
+    { id: "base-public", label: "public:" },
+    { id: "virtual-fn", label: "    virtual std::string describe() const { return \"a shape\"; }", explanation: "The base class's virtual function must exist before a derived class can override it." },
+    { id: "base-close", label: "};" },
+    { id: "derived-open", label: "class Circle : public Shape {" },
+    { id: "derived-public", label: "public:" },
+    { id: "override-fn", label: "    std::string describe() const override { return \"a circle\"; }" },
+    { id: "derived-close", label: "};" },
+  ]}
+  correctOrder={["base-open", "base-public", "virtual-fn", "base-close", "derived-open", "derived-public", "override-fn", "derived-close"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`#include <iostream>
+
+class Shape {
+public:
+    virtual std::string name() const { return "Shape"; }
+};
+
+class Square : public Shape {
+public:
+    std::string name() const override { return "Square"; }
+};
+
+int main() {
+    Shape* s = new Square();
+    std::cout << s->name() << std::endl;
+    delete s;
+    return 0;
+}`}
+  options={["Shape", "Square", "Compile error", "Runtime error"]}
+  correctIndex={1}
+  explanation={`Even though s is declared as a Shape*, it actually points to a Square object, and name() is virtual. Virtual dispatch resolves the call based on the object's real runtime type, not the pointer's declared type, so "Square" is printed.`}
+  actualOutput="Square"
+/>
+
+## See also
+
+- [Data Structures](/en/programming-languages/cpp/data-structures) — the built-in containers a class's members are often built from.
+- [Error Handling](/en/programming-languages/cpp/error-handling) — throwing from a constructor when initialization fails.

@@ -1,0 +1,93 @@
+---
+title: C++
+description: A compiled, statically typed systems language built around zero-overhead abstractions — where C++ fits and why it still matters for performance-critical software.
+category: Programming Languages
+weight: 1
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+**C++** is a compiled, statically typed, multi-paradigm programming language originally designed by Bjarne Stroustrup in the early 1980s as "C with Classes" — an extension of C that added object-oriented features without giving up C's low-level control over memory and hardware. Decades later, that combination is still the reason it gets picked: C++ lets you write high-level abstractions (classes, templates, the standard library) while retaining the ability to manage memory manually and reason precisely about what the machine is actually doing.
+
+The language's guiding philosophy is often summarized as **zero-overhead abstraction** — a feature you don't use shouldn't cost you anything, and a feature you do use shouldn't cost more than writing the equivalent code by hand. This is why C++ remains dominant in domains where performance is non-negotiable: game engines, operating systems, browsers, embedded firmware, high-frequency trading systems, and large parts of the standard libraries and runtimes other languages are built on top of.
+
+Unlike interpreted or JIT-compiled languages, a C++ program is compiled ahead of time into native machine code by a compiler (GCC, Clang, MSVC). There is no runtime interpreter and no automatic garbage collector — object lifetimes are determined by scope and, in modern C++, managed through a pattern called RAII rather than by a background collector deciding when to reclaim memory.
+
+```cpp
+#include <iostream>
+
+int main() {
+    std::cout << "Hello, World!" << std::endl;
+    return 0;
+}
+```
+
+Every C++ program needs an `int main()` function — it's the designated entry point the operating system calls to start execution. `#include <iostream>` pulls in the declarations for `std::cout`, C++'s standard output stream, and `std::endl` flushes the stream and writes a newline. Returning `0` from `main` tells the calling process the program exited successfully; a nonzero value signals an error.
+
+```cpp
+#include <iostream>
+
+int square(int n) {
+    return n * n;
+}
+
+int main() {
+    int value = 6;
+    std::cout << "Square: " << square(value) << std::endl;
+    return 0;
+}
+```
+
+This example shows two things that recur throughout C++: functions are declared with an explicit return type (`int square(int n)`), and `std::cout` chains multiple values with `<<` in a single statement — each `<<` call returns the stream itself, which is why they can be strung together.
+
+Getting from source code to a running program is a multi-stage process: the preprocessor expands `#include` directives and macros, the compiler translates the result into an object file, and the linker combines object files (and any libraries) into a final executable. Each `.cpp` file is compiled independently into its own object file before linking — a detail that matters once a project spans more than one source file.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a working 'Hello, World!' program."
+  items={[
+    { id: "include", label: "#include <iostream>", explanation: "The include directive must come before anything that uses std::cout." },
+    { id: "main-open", label: "int main() {" },
+    { id: "print", label: "    std::cout << \"Hello, World!\" << std::endl;" },
+    { id: "return", label: "    return 0;", explanation: "The return statement comes after the work is done, but still inside the function body." },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["include", "main-open", "print", "return", "main-close"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a program that adds two numbers and prints the sum."
+  items={[
+    { id: "include", label: "#include <iostream>" },
+    { id: "main-open", label: "int main() {" },
+    { id: "declare", label: "    int a = 3, b = 4;", explanation: "Variables must be declared before they're used in an expression." },
+    { id: "sum", label: "    int sum = a + b;" },
+    { id: "print", label: "    std::cout << sum << std::endl;" },
+    { id: "return", label: "    return 0;" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["include", "main-open", "declare", "sum", "print", "return", "main-close"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`#include <iostream>
+
+int main() {
+    std::cout << 7 / 2 << std::endl;
+    return 0;
+}`}
+  options={["3", "3.5", "4", "Compile error"]}
+  correctIndex={0}
+  explanation="Both 7 and 2 are int literals, so C++ performs integer division and truncates toward zero, discarding the remainder. To get 3.5 you'd need at least one operand to be a floating-point type, e.g. 7.0 / 2."
+  actualOutput="3"
+/>
+
+## See also
+
+- [Syntax & Variables](/en/programming-languages/cpp/syntax-basics) — the building blocks used in every example above.
+- [Modules & Packages](/en/programming-languages/cpp/modules-packages) — how `#include` and multi-file projects actually work.

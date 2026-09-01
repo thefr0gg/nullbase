@@ -1,0 +1,99 @@
+---
+title: Control Flow
+description: Branching and looping in Python — if/elif/else, for and while loops, and the for...else clause most languages don't have.
+category: Programming Languages
+weight: 3
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Python's conditional and loop statements read close to plain English, but the mechanics underneath are worth being precise about, especially the parts that differ from C-family languages.
+
+```python
+temperature = 72
+if temperature > 80:
+    print("hot")
+elif temperature > 60:
+    print("mild")
+else:
+    print("cold")
+```
+
+`elif` is Python's spelling of "else if" — there's no separate `else if` keyword pair, and conditions never need surrounding parentheses (though you can add them). Any value can be used as a condition, not just booleans: `0`, `""`, `None`, and empty collections (`[]`, `{}`, `()`) are all "falsy," and everything else is "truthy," so `if some_list:` is an idiomatic way to check "is this list non-empty" without comparing lengths explicitly.
+
+```python
+fruits = ["apple", "banana", "cherry"]
+for index, fruit in enumerate(fruits):
+    print(index, fruit)
+```
+
+Python's `for` loop iterates directly over the *items* of a sequence — there's no C-style `for (i = 0; i < len; i++)` counting pattern. When the index is actually needed alongside the value, `enumerate()` wraps the sequence to yield `(index, value)` pairs, which is the idiomatic way to get both without manually tracking a counter.
+
+```python
+n = 0
+while n < 5:
+    if n == 3:
+        n += 1
+        continue
+    print(n)
+    n += 1
+```
+
+`while` loops run as long as their condition stays truthy; `continue` skips straight to the next iteration's condition check, and `break` exits the loop entirely. There's also no `n++` — Python has no increment/decrement operators, only `n += 1`.
+
+One genuinely unusual feature: both `for` and `while` loops can have an `else` clause, which runs only if the loop finished normally — i.e. was *not* stopped by a `break`.
+
+```python
+for i in range(2, 10):
+    if i % 7 == 0:
+        print("found a multiple of 7:", i)
+        break
+else:
+    print("no multiples of 7 found")
+```
+
+Read `for...else` as "if we never broke out of this loop, then..." — it's most useful for search loops where `break` means "found it" and falling through to `else` means "searched everything, found nothing."
+
+## See also
+
+- **[Syntax & Variables](/en/programming-languages/python/syntax-basics)** — the truthy/falsy values these conditions rely on.
+- **[Functions](/en/programming-languages/python/functions)** — wrapping a loop like the ones above into a reusable function.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a temperature-grading script."
+  items={[
+    { id: "temp", label: "temperature = 72" },
+    { id: "if", label: "if temperature > 80:", explanation: "The condition needs `temperature` to exist before it can be compared." },
+    { id: "hot", label: '    print("hot")' },
+    { id: "elif", label: "elif temperature > 60:" },
+    { id: "mild", label: '    print("mild")' },
+    { id: "else", label: "else:" },
+    { id: "cold", label: '    print("cold")' },
+  ]}
+  correctOrder={["temp", "if", "hot", "elif", "mild", "else", "cold"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to loop over a list and print each index alongside its value."
+  items={[
+    { id: "fruits", label: 'fruits = ["apple", "banana", "cherry"]' },
+    { id: "for", label: "for index, fruit in enumerate(fruits):", explanation: "`enumerate(fruits)` needs `fruits` to already be defined." },
+    { id: "print", label: "    print(index, fruit)" },
+  ]}
+  correctOrder={["fruits", "for", "print"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`n = 0\nwhile n < 5:\n    if n == 3:\n        n += 1\n        continue\n    print(n)\n    n += 1`}
+  options={["0 1 2 3 4", "0 1 2 4", "0 1 2 3", "0 1 2"]}
+  correctIndex={1}
+  explanation="When n reaches 3, it's incremented and continue immediately jumps to the next condition check, skipping the print(n) call for that iteration entirely — so 3 is incremented past but never printed."
+  actualOutput="0 1 2 4"
+/>
+

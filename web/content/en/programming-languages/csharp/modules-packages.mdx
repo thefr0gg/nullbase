@@ -1,0 +1,170 @@
+---
+title: Namespaces & NuGet
+description: Organizing C# code with namespaces and using directives, and managing dependencies with NuGet and .csproj.
+category: Programming Languages
+weight: 8
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+C# organizes code with **namespaces** (a logical grouping, independent of
+file layout) and manages external dependencies with **NuGet** packages
+declared in a project's `.csproj` file. Unlike some languages, a namespace in
+C# doesn't have to match the folder structure on disk, though most projects
+keep them aligned by convention.
+
+## Namespaces and using
+
+A namespace groups related types and avoids name collisions between
+libraries that happen to define a type with the same name:
+
+```csharp
+namespace Nullbase.Payments
+{
+    public class Invoice
+    {
+        public decimal Amount { get; set; }
+    }
+}
+
+namespace Nullbase.App
+{
+    using Nullbase.Payments; // brings Invoice into scope unqualified
+
+    class Program
+    {
+        static void Main()
+        {
+            var invoice = new Invoice { Amount = 42.50m };
+            Console.WriteLine(invoice.Amount);
+        }
+    }
+}
+```
+
+Without the `using Nullbase.Payments;` directive, `Invoice` would need to be
+written out fully as `Nullbase.Payments.Invoice` everywhere it's used.
+
+Modern C# (10+) also supports **file-scoped namespaces**, which avoid an
+extra indentation level for the common case of one namespace per file:
+
+```csharp
+namespace Nullbase.Payments; // applies to the rest of the file — no braces
+
+public class Invoice
+{
+    public decimal Amount { get; set; }
+}
+```
+
+## Global usings
+
+A project can declare `using` directives once, project-wide, instead of
+repeating them in every file — useful for namespaces like `System` that
+almost every file needs:
+
+```csharp
+// GlobalUsings.cs
+global using System;
+global using System.Collections.Generic;
+global using System.Linq;
+```
+
+## .csproj and NuGet
+
+Every C# project is described by a `.csproj` XML file: target framework,
+source files (implicitly included by folder in the SDK-style format), and
+package references. NuGet is the package manager and public registry for
+.NET, playing the same role `npm` plays for Node.js:
+
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+</Project>
+```
+
+Adding a dependency is usually done from the command line rather than by
+hand-editing XML:
+
+```bash
+dotnet add package Newtonsoft.Json
+dotnet restore
+dotnet build
+dotnet run
+```
+
+`dotnet add package` writes the `<PackageReference>` entry into `.csproj` and
+`dotnet restore` downloads the package (and its transitive dependencies) into
+a local NuGet cache, similar to how `npm install` populates `node_modules`
+from `package.json`.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to declare a namespace with a class, then use it from another namespace."
+  items={[
+    { id: "l1", label: "namespace Shapes" },
+    { id: "l2", label: "{" },
+    { id: "l3", label: "    public class Circle { }" },
+    { id: "l4", label: "}" },
+    { id: "l5", label: "using Shapes;" , explanation: "The using directive to bring Circle into scope belongs before the code that references it, typically at the top of the consuming file."},
+    { id: "l6", label: "var c = new Circle();" },
+  ]}
+  correctOrder={["l1", "l2", "l3", "l4", "l5", "l6"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Put these dotnet CLI steps in the correct order to add a NuGet package and run the project."
+  items={[
+    { id: "m1", label: "dotnet add package Newtonsoft.Json" },
+    { id: "m2", label: "dotnet restore" },
+    { id: "m3", label: "dotnet build" },
+    { id: "m4", label: "dotnet run" },
+  ]}
+  correctOrder={["m1", "m2", "m3", "m4"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`namespace Nullbase.Payments
+{
+    public class Invoice
+    {
+        public decimal Amount = 10m;
+    }
+}
+
+namespace Nullbase.App
+{
+    class Program
+    {
+        static void Main()
+        {
+            var invoice = new Invoice { Amount = 5m };
+            Console.WriteLine(invoice.Amount);
+        }
+    }
+}`}
+  options={["10", "5", "Compile error: Invoice not found", "0"]}
+  correctIndex={2}
+  explanation="Program is in the Nullbase.App namespace but never adds 'using Nullbase.Payments;', so the unqualified name Invoice doesn't resolve — the compiler can't find a type named Invoice in scope. It would need to be written as Nullbase.Payments.Invoice, or the namespace imported with using."
+  actualOutput="Compile error: Invoice not found"
+/>
+
+## See also
+
+- [Error Handling](/en/programming-languages/csharp/error-handling)
+- [Async & Tasks](/en/programming-languages/csharp/advanced)

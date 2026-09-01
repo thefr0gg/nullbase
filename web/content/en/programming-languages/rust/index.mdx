@@ -1,0 +1,118 @@
+---
+title: Rust
+description: A systems language that guarantees memory safety without a garbage collector, enforced entirely at compile time by its ownership model.
+category: Programming Languages
+weight: 1
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+**Rust** is a statically typed, compiled systems language built around one central promise: memory safety and thread safety without a runtime garbage collector. It achieves this through the **ownership** system — a set of rules the compiler checks at compile time, with zero cost at runtime. Where languages like C and C++ leave memory management to the programmer (and accept the occasional use-after-free or data race as the price of that freedom), and languages like Java or Go pay a garbage collector to sweep up after you, Rust's compiler (specifically a component called the **borrow checker**) rejects a whole class of bugs before the program ever runs.
+
+This is why Rust code that compiles tends to be unusually reliable — not because Rust programmers are more careful, but because the compiler refuses to produce a binary for code with dangling pointers, data races, or iterator invalidation. The tradeoff is a steeper learning curve: the borrow checker has opinions about how data can be shared and mutated, and fighting it is a rite of passage for every new Rust developer.
+
+## What Rust is used for
+
+Rust shows up wherever C or C++ traditionally lived, plus places neither could go comfortably: operating system components, browser engines (parts of Firefox), command-line tools (`ripgrep`, `fd`), WebAssembly modules, embedded firmware, and increasingly backend services where predictable performance without GC pauses matters.
+
+## A first look
+
+```rust
+fn main() {
+    let name = "world";
+    let mut count = 0;
+
+    for _ in 0..3 {
+        count += 1;
+        println!("Hello, {name}! (greeting #{count})");
+    }
+}
+```
+
+Running this prints the greeting three times, incrementing `count` each pass. A few things are already visible here that are distinctly Rust: `let mut` for a variable that can change (plain `let` bindings are immutable by default), string interpolation directly inside `println!`'s format string (`{name}`), and a range (`0..3`) as something you can loop over directly without an index variable.
+
+## Compiler-enforced safety, by example
+
+The feature that most defines Rust is that this kind of mistake doesn't compile:
+
+```rust
+fn main() {
+    let s1 = String::from("hello");
+    let s2 = s1; // s1's value is *moved* into s2, not copied
+
+    println!("{s1}, world!"); // error: use of moved value
+}
+```
+
+```text
+error[E0382]: borrow of moved value: `s1`
+ --> src/main.rs:5:20
+  |
+2 |     let s1 = String::from("hello");
+  |         -- move occurs because `s1` has type `String`, which does not implement the `Copy` trait
+3 |     let s2 = s1; // s1's value is *moved* into s2, not copied
+  |              -- value moved here
+4 |
+5 |     println!("{s1}, world!"); // error: use of moved value
+  |                ^^ value borrowed here after move
+```
+
+`String` owns a heap allocation, so assigning `s1` to `s2` transfers ("moves") ownership rather than copying the data — `s1` is no longer valid afterward. This isn't a runtime crash waiting to happen; the compiler catches it before the program is even built. The [Ownership & Borrowing](/en/programming-languages/rust/advanced) page covers exactly why this rule exists and what it buys you.
+
+## How this section is organized
+
+- **[Syntax & Variables](/en/programming-languages/rust/syntax-basics)** — bindings, mutability, and Rust's basic types.
+- **[Control Flow](/en/programming-languages/rust/control-flow)** — `if`/`else` as expressions, loops, and `match`.
+- **[Functions](/en/programming-languages/rust/functions)** — declaring functions, return values, and closures.
+- **[Data Structures](/en/programming-languages/rust/data-structures)** — arrays, `Vec`, and `HashMap`.
+- **[Structs & Traits](/en/programming-languages/rust/oop-or-structs)** — Rust's approach to grouping data and shared behavior.
+- **[Error Handling](/en/programming-languages/rust/error-handling)** — `Result`, `Option`, and the `?` operator.
+- **[Modules & Cargo](/en/programming-languages/rust/modules-packages)** — organizing code and pulling in dependencies.
+- **[Ownership & Borrowing](/en/programming-languages/rust/advanced)** — the rules that make Rust's safety guarantees possible.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a program that prints a greeting three times using a mutable counter."
+  items={[
+    { id: "fn-open", label: "fn main() {" },
+    { id: "let-name", label: "    let name = \"world\";", explanation: "The name binding is declared before it's used in the loop." },
+    { id: "let-mut", label: "    let mut count = 0;", explanation: "count must exist and be mutable before the loop increments it." },
+    { id: "for-open", label: "    for _ in 0..3 {" },
+    { id: "increment", label: "        count += 1;" },
+    { id: "print", label: "        println!(\"Hello, {name}! (greeting #{count})\");" },
+    { id: "for-close", label: "    }" },
+    { id: "fn-close", label: "}" },
+  ]}
+  correctOrder={["fn-open", "let-name", "let-mut", "for-open", "increment", "print", "for-close", "fn-close"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a program that demonstrates a move — assigning a String to another variable, then printing only the new one."
+  items={[
+    { id: "fn-open", label: "fn main() {" },
+    { id: "s1", label: "    let s1 = String::from(\"hello\");", explanation: "s1 must be created before it can be moved into s2." },
+    { id: "s2", label: "    let s2 = s1;" },
+    { id: "print", label: "    println!(\"{s2}, world!\");" },
+    { id: "fn-close", label: "}" },
+  ]}
+  correctOrder={["fn-open", "s1", "s2", "print", "fn-close"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`fn main() {
+    let mut count = 0;
+    for _ in 0..3 {
+        count += 1;
+    }
+    println!("{count}");
+}`}
+  options={["0", "2", "3", "Compile error"]}
+  correctIndex={2}
+  explanation="The range 0..3 produces 0, 1, 2 — three iterations — so count is incremented three times, ending at 3. 0..3 is exclusive of the upper bound, which is the value people most often get wrong when reading a Rust range for the first time."
+  actualOutput="3"
+/>

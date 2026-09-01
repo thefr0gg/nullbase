@@ -1,0 +1,152 @@
+---
+title: Functions
+description: Declaring C++ functions, choosing between pass-by-value and pass-by-reference, default arguments, and overloading.
+category: Programming Languages
+weight: 4
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+A C++ function has an explicit return type, a name, and a fixed parameter list — the compiler checks every call site against that signature, so calling a function with the wrong number or type of arguments is a compile error, not something discovered at runtime.
+
+```cpp
+#include <iostream>
+
+int add(int a, int b) {
+    return a + b;
+}
+
+double average(int a, int b, int c) {
+    return (a + b + c) / 3.0;
+}
+
+int main() {
+    std::cout << add(4, 5) << "\n";
+    std::cout << average(2, 4, 9) << "\n";
+    return 0;
+}
+```
+
+## Pass by value vs. pass by reference
+
+```cpp
+#include <iostream>
+
+void incrementByValue(int n) {
+    n = n + 1; // only modifies the local copy
+}
+
+void incrementByReference(int& n) {
+    n = n + 1; // modifies the caller's variable
+}
+
+int main() {
+    int x = 10;
+    incrementByValue(x);
+    std::cout << "After by-value: " << x << "\n"; // still 10
+
+    incrementByReference(x);
+    std::cout << "After by-reference: " << x << "\n"; // now 11
+    return 0;
+}
+```
+
+By default, C++ passes arguments **by value** — the function receives a copy, so changes made inside it never affect the caller's variable. Adding `&` to a parameter's type makes it a **reference** parameter: `n` becomes another name for the caller's actual variable, so modifications inside the function are visible outside it. This is also how C++ avoids copying large objects: a `const std::string&` parameter, for example, lets a function read a string without copying it and without allowing it to be modified.
+
+## Default arguments and overloading
+
+```cpp
+#include <iostream>
+#include <string>
+
+void greet(const std::string& name, const std::string& greeting = "Hello") {
+    std::cout << greeting << ", " << name << "!\n";
+}
+
+int multiply(int a, int b) {
+    return a * b;
+}
+
+double multiply(double a, double b) {
+    return a * b;
+}
+
+int main() {
+    greet("Ada");                 // uses the default greeting
+    greet("Grace", "Welcome");    // overrides it
+
+    std::cout << multiply(3, 4) << "\n";       // calls the int version
+    std::cout << multiply(2.5, 4.0) << "\n";   // calls the double version
+    return 0;
+}
+```
+
+`greeting`'s default value means callers can omit it entirely; a default argument must come after all parameters that don't have one. **Overloading** lets multiple functions share a name as long as their parameter lists differ — the compiler picks the matching version based on the argument types at each call site, resolved entirely at compile time.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a function that swaps two integers by reference and a main that calls it."
+  items={[
+    { id: "include", label: "#include <iostream>" },
+    { id: "swap-sig", label: "void swap(int& a, int& b) {" },
+    { id: "temp", label: "    int temp = a;", explanation: "The original value of a must be saved before a is overwritten." },
+    { id: "assign-a", label: "    a = b;" },
+    { id: "assign-b", label: "    b = temp;" },
+    { id: "swap-close", label: "}" },
+    { id: "main-open", label: "int main() {" },
+    { id: "vars", label: "    int x = 1, y = 2;" },
+    { id: "call", label: "    swap(x, y);" },
+    { id: "return", label: "    return 0;" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["include", "swap-sig", "temp", "assign-a", "assign-b", "swap-close", "main-open", "vars", "call", "return", "main-close"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build an overloaded describe() function and a main that calls both versions."
+  items={[
+    { id: "include", label: "#include <iostream>" },
+    { id: "int-version", label: "void describe(int n) { std::cout << \"int: \" << n << \"\\n\"; }" },
+    { id: "double-version", label: "void describe(double n) { std::cout << \"double: \" << n << \"\\n\"; }", explanation: "Both overloads must be declared before main() calls them." },
+    { id: "main-open", label: "int main() {" },
+    { id: "call-int", label: "    describe(5);" },
+    { id: "call-double", label: "    describe(5.5);" },
+    { id: "return", label: "    return 0;" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["include", "int-version", "double-version", "main-open", "call-int", "call-double", "return", "main-close"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`#include <iostream>
+
+void addOne(int n) {
+    n += 1;
+}
+
+void addOneRef(int& n) {
+    n += 1;
+}
+
+int main() {
+    int value = 5;
+    addOne(value);
+    addOneRef(value);
+    std::cout << value << std::endl;
+    return 0;
+}`}
+  options={["5", "6", "7", "Compile error"]}
+  correctIndex={1}
+  explanation="addOne(value) passes by value, so it only modifies a local copy and value stays 5. addOneRef(value) passes by reference, so it modifies value directly, bringing it to 6. The by-value call has no lasting effect at all."
+  actualOutput="6"
+/>
+
+## See also
+
+- [Control Flow](/en/programming-languages/cpp/control-flow) — the loops and conditionals typically used inside a function body.
+- [Data Structures](/en/programming-languages/cpp/data-structures) — passing containers like std::vector into functions efficiently.

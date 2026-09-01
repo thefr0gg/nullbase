@@ -1,0 +1,106 @@
+---
+title: Error Handling
+description: Catching and raising exceptions in Python — try/except/else/finally, and defining your own exception types.
+category: Programming Languages
+weight: 7
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Python signals failure by raising exceptions, and handling one means wrapping the risky code in a `try` block with one or more `except` clauses that catch specific exception types.
+
+```python
+try:
+    value = int(input("Enter a number: "))
+except ValueError:
+    print("That wasn't a valid number.")
+else:
+    print(f"You entered {value}")
+finally:
+    print("Done processing input.")
+```
+
+Each clause has a distinct job: the `try` block holds the code that might fail; `except ValueError` only catches that specific error (a `TypeError` elsewhere in the block would propagate uncaught); `else` runs only if the `try` block completed with no exception at all; `finally` always runs — exception or not, `return` or not — which makes it the right place for cleanup like closing a file or releasing a lock.
+
+Catching `except ValueError` specifically, rather than a bare `except:`, matters: a bare `except` swallows *everything*, including typos that raise `NameError` and interrupts like `KeyboardInterrupt`, which makes real bugs silently disappear instead of surfacing.
+
+Custom exceptions are just classes that inherit from `Exception` (or a more specific built-in exception), which lets calling code catch your specific failure mode by name instead of guessing at string messages.
+
+```python
+class InsufficientFundsError(Exception):
+    """Raised when a withdrawal exceeds the account balance."""
+
+def withdraw(balance, amount):
+    if amount > balance:
+        raise InsufficientFundsError(f"Cannot withdraw {amount}, balance is {balance}")
+    return balance - amount
+
+try:
+    withdraw(100, 150)
+except InsufficientFundsError as e:
+    print(e)  # Cannot withdraw 150, balance is 100
+```
+
+`raise` is how code signals failure explicitly; `except ... as e` binds the caught exception instance to a name so its message (or any extra data attached to it) can be inspected.
+
+```python
+def read_config(path):
+    try:
+        with open(path) as f:
+            return f.read()
+    except FileNotFoundError:
+        return "{}"
+```
+
+Here a specific, expected failure mode (the file doesn't exist yet) is handled with a sensible fallback, while any other error — a permissions problem, a disk failure — is left to propagate, since silently swallowing those would hide a real problem.
+
+## See also
+
+- **[Classes & Objects](/en/programming-languages/python/oop-or-structs)** — custom exceptions are ordinary classes that inherit from `Exception`.
+- **[Modules & Packages](/en/programming-languages/python/modules-packages)** — the `with open(...)` pattern above and the standard library it comes from.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a try/except/else/finally block that safely converts user input to an int."
+  items={[
+    { id: "try", label: "try:" },
+    { id: "value", label: "    value = int(input())", explanation: "This risky conversion has to be the first line inside the try block." },
+    { id: "except", label: "except ValueError:" },
+    { id: "excbody", label: '    print("Not a valid number.")', explanation: "This only runs as the body of the except clause above it." },
+    { id: "else", label: "else:" },
+    { id: "elsebody", label: "    print(f\"Got {value}\")" },
+    { id: "finally", label: "finally:" },
+    { id: "finallybody", label: '    print("Done.")' },
+  ]}
+  correctOrder={["try", "value", "except", "excbody", "else", "elsebody", "finally", "finallybody"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to define a custom exception, raise it, and catch it."
+  items={[
+    { id: "class", label: "class InsufficientFundsError(Exception):" },
+    { id: "pass", label: "    pass", explanation: "The class body has to come directly after its class line." },
+    { id: "def", label: "def withdraw(balance, amount):" },
+    { id: "if", label: "    if amount > balance:", explanation: "The class must exist before a function can raise an instance of it." },
+    { id: "raise", label: "        raise InsufficientFundsError()" },
+    { id: "try", label: "try:" },
+    { id: "call", label: "    withdraw(100, 150)", explanation: "The function needs to be fully defined before it can be called inside the try block." },
+    { id: "except", label: "except InsufficientFundsError:" },
+    { id: "print", label: '    print("Not enough money.")' },
+  ]}
+  correctOrder={["class", "pass", "def", "if", "raise", "try", "call", "except", "print"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`def f():\n    try:\n        return "try"\n    finally:\n        print("finally runs")\n\nprint(f())`}
+  options={['"try" then "finally runs"', '"finally runs" then "try"', 'Only "finally runs", the return is skipped', 'An error: cannot return from inside a try']}
+  correctIndex={1}
+  explanation='finally always executes before control actually leaves the function, even when a return statement inside try has already decided what value will be returned — so "finally runs" prints first, and only afterward does f() actually return "try" for the outer print() to display.'
+  actualOutput='finally runs\ntry'
+/>
+

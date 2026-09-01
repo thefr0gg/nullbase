@@ -1,0 +1,135 @@
+---
+title: Syntax & Variables
+description: Java's variable declarations, primitive types, wrapper classes, and type inference with var.
+category: Programming Languages
+weight: 2
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Java is statically typed: every variable's type is fixed at compile time and
+checked before the program ever runs. Unlike dynamically typed languages,
+you can't reassign a variable to a value of an incompatible type — the
+compiler rejects it before you get the chance.
+
+## Declaring variables
+
+The explicit form states the type, then the name, then an optional
+initializer:
+
+```java
+int age = 36;
+double price = 19.99;
+boolean isAdmin = false;
+String name = "Ada";
+```
+
+Since Java 10, `var` lets the compiler infer the type from the
+initializer inside a method body. It is still statically typed — `var` is
+just a shorthand for the compiler figuring out the type at compile time, not
+a dynamic type:
+
+```java
+var age = 36;        // inferred as int
+var name = "Ada";    // inferred as String
+var isAdmin = false; // inferred as boolean
+```
+
+`var` cannot be used for fields, method parameters, or return types, and it
+requires an initializer so the compiler has something to infer from — `var
+x;` does not compile.
+
+## Primitive types vs. wrapper classes
+
+Java has eight built-in **primitive** types that are not objects and hold
+their value directly, without pointer indirection:
+
+| Category | Types |
+|---|---|
+| Integer | `byte`, `short`, `int`, `long` |
+| Floating point | `float`, `double` |
+| Other | `char` (a UTF-16 code unit), `boolean` |
+
+Every primitive has a corresponding **wrapper class** (`Integer`, `Double`,
+`Boolean`, and so on) that boxes it into an object — required whenever you
+need a primitive to behave like an object, such as storing it in a
+collection like `ArrayList<Integer>`, since generic collections can't hold
+primitives directly:
+
+```java
+int primitive = 42;
+Integer boxed = 42;          // autoboxing: implicit int -> Integer
+int backToPrimitive = boxed; // auto-unboxing: implicit Integer -> int
+```
+
+This implicit conversion is called autoboxing and unboxing. It's convenient
+but not free — boxing allocates an object — and a `null` wrapper unboxed
+into a primitive throws a `NullPointerException` at run time.
+
+## Constants with final
+
+`final` on a local variable or field means it can be assigned exactly once.
+It's Java's closest equivalent to a constant:
+
+```java
+final double PI = 3.14159;
+final int MAX_RETRIES = 3;
+
+// PI = 3.0; // compile error: cannot assign a value to final variable PI
+```
+
+By convention, `final` fields intended as constants are named in
+`SCREAMING_SNAKE_CASE`.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to declare two int variables and print their sum."
+  items={[
+    { id: "s1", label: "public class Main {" },
+    { id: "s2", label: "    public static void main(String[] args) {" },
+    { id: "s3", label: "        int a = 4;" },
+    { id: "s4", label: "        int b = 7;", explanation: "Both variables must be declared before they're used in the sum." },
+    { id: "s5", label: "        System.out.println(a + b);" },
+    { id: "s6", label: "    }" },
+    { id: "s7", label: "}" },
+  ]}
+  correctOrder={["s1", "s2", "s3", "s4", "s5", "s6", "s7"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Order these lines to declare a final constant, then use var to infer a variable's type and print both."
+  items={[
+    { id: "t1", label: "public class Main {" },
+    { id: "t2", label: "    static final int MAX_RETRIES = 3;", explanation: "final fields are conventionally declared at the top of the class, before main." },
+    { id: "t3", label: "    public static void main(String[] args) {" },
+    { id: "t4", label: "        var attempt = 1;" },
+    { id: "t5", label: "        System.out.println(attempt + \" of \" + MAX_RETRIES);" },
+    { id: "t6", label: "    }" },
+    { id: "t7", label: "}" },
+  ]}
+  correctOrder={["t1", "t2", "t3", "t4", "t5", "t6", "t7"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`public class Main {
+    public static void main(String[] args) {
+        Integer boxed = null;
+        int value = boxed;
+        System.out.println(value);
+    }
+}`}
+  options={["0", "null", "NullPointerException at run time", "Compile error"]}
+  correctIndex={2}
+  explanation="Unboxing a null Integer into an int calls boxed.intValue() implicitly, and calling a method on null throws a NullPointerException at run time. It compiles fine — the failure only shows up when the code actually runs."
+  actualOutput="Exception in thread 'main' java.lang.NullPointerException"
+/>
+
+## See also
+
+- [Java](/en/programming-languages/java)
+- [Control Flow](/en/programming-languages/java/control-flow)

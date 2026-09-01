@@ -1,0 +1,125 @@
+---
+title: Syntax & Variables
+description: C's core syntax — types, declarations, operators, and formatted I/O with printf and scanf.
+category: Programming Languages
+weight: 2
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+C is statically and (mostly) weakly typed: every variable has a fixed type declared up front, but the compiler will often let you convert between types with little complaint, sometimes silently truncating or reinterpreting data in the process. Understanding C's basic types and how they're declared is the foundation for everything else in the language.
+
+## Basic types and declarations
+
+C's built-in types describe raw storage sizes, not high-level concepts like "a whole number" — `int` is typically 32 bits, but the C standard only guarantees a minimum range, not an exact size, which is why fixed-width types like `int32_t` exist for when the exact size matters.
+
+```c
+#include <stdio.h>
+
+int main(void) {
+    int count = 42;          /* whole numbers */
+    float price = 19.99f;    /* single-precision floating point */
+    double precise = 3.14159265358979; /* double-precision floating point */
+    char grade = 'B';        /* a single byte, usually holding one character */
+    unsigned int score = 100; /* no sign bit, so it can't go negative */
+
+    printf("count=%d price=%.2f grade=%c\n", count, price, grade);
+    return 0;
+}
+```
+
+Every variable must be declared with a type before use, and uninitialized local variables hold whatever garbage bits happened to be in that memory already — C will not zero them out for you or complain at compile time if you read one before assigning it.
+
+## Operators and formatted I/O
+
+`printf` writes formatted output using **format specifiers** (`%d` for `int`, `%f` for floating point, `%s` for a string, `%c` for a character) that must match the type of the argument passed — mismatching them is legal C but produces garbage or a crash, since `printf` has no way to check types at compile time on its own. `scanf` reads input the same way, in reverse, and needs the *address* of the variable to write into (hence the `&`):
+
+```c
+#include <stdio.h>
+
+int main(void) {
+    int a, b;
+    printf("Enter two integers: ");
+    scanf("%d %d", &a, &b);
+
+    int sum = a + b;
+    int remainder = a % b;   /* modulo: remainder of a divided by b */
+
+    printf("sum = %d, remainder = %d\n", sum, remainder);
+    printf("a > b is %d\n", a > b); /* comparisons produce 0 or 1 as an int */
+    return 0;
+}
+```
+
+C has no dedicated boolean type in older standards — comparisons like `a > b` evaluate to the `int` `0` (false) or `1` (true), and any nonzero value is treated as "true" in a condition. `stdbool.h` (C99 and later) adds a `bool` type with `true`/`false` as aliases for `1`/`0`, but under the hood it's still just an integer.
+
+## Constants and scope
+
+`const` marks a variable as read-only after initialization (the compiler rejects reassignment), and `#define` creates a preprocessor macro that's textually substituted before compilation even begins:
+
+```c
+#include <stdio.h>
+
+#define MAX_USERS 100   /* preprocessor macro, substituted as text */
+
+const double PI = 3.14159; /* typed constant, checked by the compiler */
+
+int main(void) {
+    double radius = 2.0;
+    double area = PI * radius * radius;
+    printf("Area: %.2f, capacity: %d\n", area, MAX_USERS);
+    return 0;
+}
+```
+
+`MAX_USERS` never actually exists as a variable in memory — the preprocessor replaces every occurrence of the text `MAX_USERS` with `100` before the compiler even sees the code, whereas `PI` is a real, typed variable the compiler can check.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble a sum-and-average program"
+  prompt="Drag these lines into the order that reads two numbers and prints their sum and average."
+  items={[
+    { id: "include", label: "#include <stdio.h>" },
+    { id: "main", label: "int main(void) {" },
+    { id: "decl", label: "    int a, b;" },
+    { id: "scanf", label: "    scanf(\"%d %d\", &a, &b);" },
+    { id: "sum", label: "    int sum = a + b;", explanation: "The sum must be computed after both a and b have been read in, and before it's printed." },
+    { id: "printf", label: "    printf(\"sum=%d avg=%.1f\\n\", sum, sum / 2.0);" },
+    { id: "return", label: "    return 0;" },
+    { id: "close", label: "}" },
+  ]}
+  correctOrder={["include", "main", "decl", "scanf", "sum", "printf", "return", "close"]}
+/>
+
+<OrderingExercise
+  title="Order these declarations by what they actually create"
+  prompt="Arrange from something that exists only during preprocessing, to a compiler-checked constant, to an ordinary mutable variable."
+  items={[
+    { id: "macro", label: "#define LIMIT 10", explanation: "Pure text substitution — gone before the compiler proper even runs." },
+    { id: "const", label: "const int limit = 10;", explanation: "A real, typed variable the compiler enforces read-only access to." },
+    { id: "var", label: "int limit = 10;" },
+  ]}
+  correctOrder={["macro", "const", "var"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`#include <stdio.h>
+
+int main(void) {
+    int a = 7, b = 2;
+    printf("%d %d %d\\n", a / b, a % b, (float)a / b);
+    return 0;
+}`}
+  options={["3 1 3.500000", "3.5 1 3.5", "3 1 3", "Compile error"]}
+  correctIndex={0}
+  explanation="a / b is integer division (7 / 2 truncates to 3), a % b is the remainder (1), and casting a to float before dividing forces floating-point division, printed with %f's default six decimal places as 3.500000. Forgetting the cast is the classic trap — without it, integer division happens before the result is ever treated as a float."
+  actualOutput="3 1 3.500000"
+/>
+
+## See also
+
+- **[C](/en/programming-languages/c)** — the overview and compilation model these examples build on.
+- **[Control Flow](/en/programming-languages/c/control-flow)** — using these operators inside conditions and loops.

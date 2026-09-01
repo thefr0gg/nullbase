@@ -1,0 +1,181 @@
+---
+title: Control Flow
+description: If/else, loops, and C#'s pattern-matching switch expressions for branching on shape and value.
+category: Programming Languages
+weight: 3
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+C#'s control flow starts familiar — `if`/`else`, `for`, `while` — and then
+goes further than most C-family languages with `switch` expressions that
+match on type and structure, not just equality.
+
+## if / else and loops
+
+```csharp
+int score = 82;
+
+if (score >= 90)
+{
+    Console.WriteLine("A");
+}
+else if (score >= 80)
+{
+    Console.WriteLine("B");
+}
+else
+{
+    Console.WriteLine("C or below");
+}
+
+for (int i = 0; i < 3; i++)
+{
+    Console.WriteLine($"Iteration {i}");
+}
+
+int n = 5;
+while (n > 0)
+{
+    Console.WriteLine(n);
+    n--;
+}
+```
+
+`foreach` iterates any `IEnumerable<T>` — arrays, lists, dictionaries — without
+managing an index:
+
+```csharp
+string[] fruits = { "apple", "banana", "cherry" };
+foreach (string fruit in fruits)
+{
+    Console.WriteLine(fruit);
+}
+```
+
+## Classic switch
+
+The traditional `switch` statement matches a value against constant cases and
+requires an explicit `break` (or another jump statement) per case — falling
+through to the next case is a compile error unless the case body is empty:
+
+```csharp
+int day = 3;
+switch (day)
+{
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+        Console.WriteLine("Weekday");
+        break;
+    case 6:
+    case 7:
+        Console.WriteLine("Weekend");
+        break;
+    default:
+        Console.WriteLine("Invalid day");
+        break;
+}
+```
+
+## Pattern matching with switch expressions
+
+Since C# 8, `switch` can be used as an *expression* that returns a value, and
+its patterns go far beyond equality: type patterns, relational patterns, and
+property patterns let you branch on the shape of an object in one place.
+
+```csharp
+object shape = new { Kind = "circle", Radius = 3.0 };
+
+string Describe(object value) => value switch
+{
+    int n when n < 0 => "negative integer",
+    int n => $"non-negative integer: {n}",
+    string s when s.Length == 0 => "empty string",
+    string s => $"string of length {s.Length}",
+    null => "nothing at all",
+    _ => "something else",
+};
+
+Console.WriteLine(Describe(-5));   // negative integer
+Console.WriteLine(Describe("hi")); // string of length 2
+Console.WriteLine(Describe(null)); // nothing at all
+```
+
+Property patterns can destructure and match against an object's members
+directly, which is common when handling record types:
+
+```csharp
+record Point(int X, int Y);
+
+string Classify(Point p) => p switch
+{
+    { X: 0, Y: 0 } => "origin",
+    { X: 0 } => "on the Y axis",
+    { Y: 0 } => "on the X axis",
+    { X: > 0, Y: > 0 } => "first quadrant",
+    _ => "elsewhere",
+};
+
+Console.WriteLine(Classify(new Point(0, 0))); // origin
+Console.WriteLine(Classify(new Point(3, 5))); // first quadrant
+```
+
+Pattern-matching `switch` expressions must be exhaustive from the compiler's
+point of view — a `_` discard arm is the usual way to guarantee that, similar
+to `default` in a classic `switch` statement.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a for loop that prints numbers 0 through 2."
+  items={[
+    { id: "l1", label: "for (int i = 0; i < 3; i++)" },
+    { id: "l2", label: "{" },
+    { id: "l3", label: "    Console.WriteLine(i);" },
+    { id: "l4", label: "}" },
+  ]}
+  correctOrder={["l1", "l2", "l3", "l4"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Put these lines in order to build a switch expression that classifies an integer as negative, zero, or positive."
+  items={[
+    { id: "m1", label: "string Classify(int n) => n switch" },
+    { id: "m2", label: "{" },
+    { id: "m3", label: "    < 0 => \"negative\"," },
+    { id: "m4", label: "    0 => \"zero\"," , explanation: "Relational patterns like < 0 are checked in order, top to bottom, just like switch cases."},
+    { id: "m5", label: "    > 0 => \"positive\"," },
+    { id: "m6", label: "};" },
+  ]}
+  correctOrder={["m1", "m2", "m3", "m4", "m5", "m6"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`object value = 42;
+
+string Describe(object v) => v switch
+{
+    string => "a string",
+    int n when n > 100 => "a big int",
+    int n => $"an int: {n}",
+    _ => "unknown",
+};
+
+Console.WriteLine(Describe(value));`}
+  options={["a string", "a big int", "an int: 42", "unknown"]}
+  correctIndex={2}
+  explanation="value is boxed as an int (42). It fails the string pattern, fails the 'when n > 100' guard since 42 is not greater than 100, and matches the plain 'int n' pattern, printing its value."
+  actualOutput="an int: 42"
+/>
+
+## See also
+
+- [Syntax & Variables](/en/programming-languages/csharp/syntax-basics)
+- [Methods](/en/programming-languages/csharp/functions)

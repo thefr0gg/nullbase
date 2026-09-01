@@ -1,0 +1,136 @@
+---
+title: Data Structures
+description: Java's fixed-size arrays alongside the resizable collections ArrayList and HashMap from the Collections Framework.
+category: Programming Languages
+weight: 5
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Java gives you two tiers of container: built-in **arrays**, which are fixed
+in size once created, and the **Collections Framework** (`java.util`), whose
+resizable, generic types like `ArrayList` and `HashMap` are what most
+everyday code actually reaches for.
+
+## Arrays
+
+An array holds a fixed number of elements of a single type, allocated up
+front:
+
+```java
+int[] scores = new int[3];
+scores[0] = 70;
+scores[1] = 85;
+scores[2] = 92;
+
+int[] literal = {70, 85, 92}; // array literal, size inferred
+
+System.out.println(scores.length); // 3, a field, not a method call
+```
+
+Arrays are indexed from zero, and reading or writing outside `[0, length)`
+throws `ArrayIndexOutOfBoundsException` at run time rather than silently
+corrupting memory. `length` is a `final` field on the array object, not a
+method — unlike `String.length()` or `List.size()`, which are methods.
+
+## ArrayList
+
+`ArrayList<T>` is a resizable, array-backed list from `java.util`. Because
+Java generics can't hold primitives directly, `T` must be a reference type —
+use the wrapper class (`Integer`, not `int`) for primitive element types:
+
+```java
+import java.util.ArrayList;
+import java.util.List;
+
+List<String> names = new ArrayList<>();
+names.add("Ada");
+names.add("Linus");
+names.add(1, "Grace"); // insert at index 1, shifting later elements right
+
+System.out.println(names);       // [Ada, Grace, Linus]
+System.out.println(names.get(0)); // Ada
+System.out.println(names.size()); // 3
+
+names.remove("Linus");
+System.out.println(names); // [Ada, Grace]
+```
+
+Declaring the variable as `List<String>` (the interface) rather than
+`ArrayList<String>` (the concrete class) is idiomatic — it lets you swap in
+a different `List` implementation later without touching code that only
+calls interface methods.
+
+## HashMap
+
+`HashMap<K, V>` stores key-value pairs with average O(1) lookup, insertion,
+and removal, backed by a hash table. It makes no guarantee about iteration
+order:
+
+```java
+import java.util.HashMap;
+import java.util.Map;
+
+Map<String, Integer> ages = new HashMap<>();
+ages.put("Ada", 36);
+ages.put("Linus", 54);
+
+System.out.println(ages.get("Ada"));          // 36
+System.out.println(ages.get("Grace"));         // null: key absent
+System.out.println(ages.getOrDefault("Grace", 0)); // 0: safe default
+System.out.println(ages.containsKey("Linus")); // true
+
+for (Map.Entry<String, Integer> entry : ages.entrySet()) {
+    System.out.println(entry.getKey() + " is " + entry.getValue());
+}
+```
+
+`get` on a missing key returns `null` rather than throwing, which is a
+common source of `NullPointerException` bugs if the result is used without
+a null check or `getOrDefault`. If you need predictable iteration order,
+`LinkedHashMap` preserves insertion order and `TreeMap` keeps keys sorted.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to create a fixed-size array, fill it, and print its length."
+  items={[
+    { id: "d1", label: "int[] scores = new int[3];" },
+    { id: "d2", label: "scores[0] = 70;" },
+    { id: "d3", label: "scores[1] = 85;" },
+    { id: "d4", label: "scores[2] = 92;", explanation: "Each index must be assigned before length is printed, though the printed value wouldn't change either way." },
+    { id: "d5", label: "System.out.println(scores.length);" },
+  ]}
+  correctOrder={["d1", "d2", "d3", "d4", "d5"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Order these lines to build a HashMap, add an entry, and safely read a missing key with a default."
+  items={[
+    { id: "e1", label: "Map<String, Integer> ages = new HashMap<>();" },
+    { id: "e2", label: "ages.put(\"Ada\", 36);" },
+    { id: "e3", label: "int grace = ages.getOrDefault(\"Grace\", 0);", explanation: "getOrDefault needs the map populated first, even though \"Grace\" itself is never added." },
+    { id: "e4", label: "System.out.println(grace);" },
+  ]}
+  correctOrder={["e1", "e2", "e3", "e4"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`Map<String, Integer> ages = new HashMap<>();
+ages.put("Ada", 36);
+Integer result = ages.get("Linus");
+System.out.println(result);`}
+  options={["0", "null", "NullPointerException", "Compile error"]}
+  correctIndex={1}
+  explanation="HashMap.get returns null when the key isn't present rather than throwing — result is an Integer (a reference type), so it can legally hold null and printing it prints the string 'null'. This is a classic gotcha: unboxing that null into a primitive int later would throw, but printing the Integer reference itself does not."
+  actualOutput="null"
+/>
+
+## See also
+
+- [Methods](/en/programming-languages/java/functions)
+- [Classes & Interfaces](/en/programming-languages/java/oop-or-structs)

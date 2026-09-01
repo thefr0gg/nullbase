@@ -1,0 +1,153 @@
+---
+title: Data Structures
+description: Arrays, objects, and the Map and Set collections in JavaScript, including common gotchas around reference equality.
+category: Programming Languages
+weight: 5
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+JavaScript has two workhorse data structures built into the language
+syntax — arrays and objects — plus two dedicated collection types, `Map`
+and `Set`, added in ES6 for cases where plain objects fall short.
+
+## Arrays
+
+Arrays are ordered, resizable lists, and every array comes with a large
+set of built-in methods for transforming data without hand-written loops.
+`map`, `filter`, and `reduce` are the three you'll reach for constantly:
+
+```js
+const prices = [10, 25, 8, 40];
+
+const withTax = prices.map(p => p * 1.08);
+const affordable = prices.filter(p => p < 30);
+const total = prices.reduce((sum, p) => sum + p, 0);
+
+console.log(withTax);   // [10.8, 27, 8.64, 43.2]
+console.log(affordable); // [10, 25, 8]
+console.log(total);      // 83
+```
+
+`map` and `filter` return new arrays rather than mutating the original;
+`push`, `pop`, `splice`, and `sort`, by contrast, mutate the array
+in place — a distinction worth memorizing since it's easy to mutate an
+array you didn't mean to change.
+
+## Objects
+
+Objects are unordered collections of key/value pairs (in practice, modern
+engines preserve insertion order for string keys). Property access works
+with dot notation or brackets, and destructuring pulls values out
+concisely.
+
+```js
+const user = {
+  name: "ada",
+  role: "admin",
+  loginCount: 12,
+};
+
+const { name, role } = user; // destructuring
+console.log(`${name} (${role})`); // "ada (admin)"
+
+const updated = { ...user, loginCount: user.loginCount + 1 }; // spread — a shallow copy with one field changed
+console.log(updated.loginCount); // 13
+console.log(user.loginCount);    // 12 — the original object is untouched
+```
+
+## Reference equality
+
+Objects and arrays are compared by reference, not by value. Two arrays
+with identical contents are never `===` unless they're literally the same
+object in memory.
+
+```js
+const a = [1, 2, 3];
+const b = [1, 2, 3];
+const c = a;
+
+console.log(a === b); // false — different arrays, same contents
+console.log(a === c); // true  — c points at the exact same array as a
+
+c.push(4);
+console.log(a); // [1, 2, 3, 4] — mutating c also changes a, since they're the same object
+```
+
+## Map and Set
+
+A plain object only allows string or symbol keys, and iterating its
+entries in a guaranteed order is slightly awkward. `Map` fixes both: any
+value can be a key, and it iterates in insertion order.
+
+```js
+const scores = new Map();
+scores.set("alice", 90);
+scores.set("bob", 85);
+
+console.log(scores.get("alice")); // 90
+console.log(scores.size);          // 2
+
+for (const [player, score] of scores) {
+  console.log(`${player}: ${score}`);
+}
+```
+
+`Set` stores unique values — adding a duplicate is a no-op — which makes
+deduplication a one-liner:
+
+```js
+const tags = new Set(["js", "web", "js", "frontend"]);
+console.log(tags.size);       // 3
+console.log([...tags]);        // ["js", "web", "frontend"]
+console.log(tags.has("web"));  // true
+```
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to filter an array of numbers and sum the result."
+  items={[
+    { id: "arr", label: "const nums = [3, 8, 15, 4, 22];" },
+    { id: "big", label: "const big = nums.filter(n => n > 10);" },
+    { id: "total", label: "const total = big.reduce((sum, n) => sum + n, 0);", explanation: "reduce needs `big` to already exist as the array it's summing." },
+    { id: "log", label: "console.log(total);" },
+  ]}
+  correctOrder={["arr", "big", "total", "log"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Put these lines in order to build a Set from an array and check membership."
+  items={[
+    { id: "arr2", label: "const ids = [1, 2, 2, 3, 1];" },
+    { id: "set", label: "const uniqueIds = new Set(ids);" },
+    { id: "size", label: "console.log(uniqueIds.size);" },
+    { id: "has", label: "console.log(uniqueIds.has(2));" },
+  ]}
+  correctOrder={["arr2", "set", "size", "has"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`const original = { count: 1, tags: ["a"] };
+const copy = { ...original };
+
+copy.count = 99;
+copy.tags.push("b");
+
+console.log(original.count);
+console.log(original.tags);`}
+  options={["1 then [\"a\"]", "99 then [\"a\", \"b\"]", "1 then [\"a\", \"b\"]", "99 then [\"a\"]"]}
+  correctIndex={2}
+  explanation="Spreading with {...original} makes a shallow copy: top-level primitive fields like count are copied by value, so changing copy.count doesn't touch original.count. But tags is an object (an array), so the spread only copies the reference — copy.tags and original.tags point at the same array, so pushing onto one affects both."
+  actualOutput="1
+[ 'a', 'b' ]"
+/>
+
+## See also
+
+- [Functions & Closures](/en/programming-languages/javascript/functions)
+- [Classes & Objects](/en/programming-languages/javascript/oop-or-structs)

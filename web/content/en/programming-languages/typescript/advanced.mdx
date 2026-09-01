@@ -1,0 +1,120 @@
+---
+title: Generics
+description: Writing functions and types that work across many types while keeping full compile-time type safety.
+category: Programming Languages
+weight: 9
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+**Generics** are TypeScript's signature intermediate feature — the tool for writing code that works with many types without falling back to `any` and losing type safety entirely. A generic function or type takes a **type parameter**, conventionally named `T`, which acts as a placeholder that gets filled in with a concrete type at each call site.
+
+## The problem generics solve
+
+Without generics, you either write a function once per type, or you widen to `any` and lose all checking:
+
+```ts
+function firstAny(arr: any[]): any {
+  return arr[0];
+}
+
+const num = firstAny([1, 2, 3]); // typed any — no error if you misuse it
+num.toUpperCase(); // no compile error, but this crashes at runtime
+```
+
+`firstAny` compiles cleanly for any array, but the return value is `any`, so calling `.toUpperCase()` on a number sails right past the type checker and blows up at runtime.
+
+## Writing a generic function
+
+```ts
+function first<T>(arr: T[]): T {
+  return arr[0];
+}
+
+const num = first([1, 2, 3]); // T inferred as number; num: number
+const str = first(["a", "b"]); // T inferred as string; str: string
+
+num.toUpperCase(); // Type error: Property 'toUpperCase' does not exist on type 'number'
+```
+
+`first<T>` still works with an array of any type, exactly like `firstAny` did — but now the return type is tied to whatever `T` was inferred as for that specific call. `first([1, 2, 3])` returns `number`, so calling `.toUpperCase()` on the result is caught immediately, unlike the `any`-based version.
+
+## Constraining a type parameter
+
+`extends` restricts what a type parameter can be, so you can safely use operations that only make sense for a subset of types:
+
+```ts
+function getLength<T extends { length: number }>(value: T): number {
+  return value.length;
+}
+
+getLength("hello"); // 5 — string has .length
+getLength([1, 2, 3]); // 3 — array has .length
+getLength(42); // Type error: Argument of type 'number' is not assignable to parameter of type '{ length: number }'
+```
+
+`T extends { length: number }` means "`T` can be anything, as long as it has a `.length` property that's a number" — it doesn't limit `T` to one specific type, just to the shapes that make `value.length` a safe thing to write.
+
+## Generic types and interfaces
+
+Generics aren't limited to functions — a `type` or `interface` can also take a type parameter, which is how a single reusable shape like `Box<T>` can describe a box holding any type of contents:
+
+```ts
+interface Box<T> {
+  contents: T;
+}
+
+const numberBox: Box<number> = { contents: 42 };
+const stringBox: Box<string> = { contents: "hello" };
+
+numberBox.contents = "oops"; // Type error: Type 'string' is not assignable to type 'number'
+```
+
+Once `numberBox` is declared as `Box<number>`, `T` is fixed to `number` for that specific box — `contents` can never hold a `string`, even though `Box<T>` itself was written once and works for any `T`.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a generic first function and two calls that infer different type parameters."
+  items={[
+    { id: "fn-decl", label: "function first<T>(arr: T[]): T {" },
+    { id: "fn-body", label: "  return arr[0];", explanation: "The function body must sit between the generic signature and the closing brace." },
+    { id: "fn-close", label: "}" },
+    { id: "call-num", label: "const num = first([1, 2, 3]);" },
+    { id: "call-str", label: "const str = first([\"a\", \"b\"]);" },
+  ]}
+  correctOrder={["fn-decl", "fn-body", "fn-close", "call-num", "call-str"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a generic Box interface and two boxes holding different types."
+  items={[
+    { id: "iface-open", label: "interface Box<T> {" },
+    { id: "iface-field", label: "  contents: T;", explanation: "The field using T must be declared inside Box before the interface closes." },
+    { id: "iface-close", label: "}" },
+    { id: "number-box", label: "const numberBox: Box<number> = { contents: 42 };" },
+    { id: "string-box", label: "const stringBox: Box<string> = { contents: \"hello\" };" },
+  ]}
+  correctOrder={["iface-open", "iface-field", "iface-close", "number-box", "string-box"]}
+/>
+
+<PredictOutput
+  title="What does the type checker say?"
+  code={`function getLength<T extends { length: number }>(value: T): number {
+  return value.length;
+}
+
+getLength(42);`}
+  options={["42", "Type error: Argument of type 'number' is not assignable to parameter of type '{ length: number }'", "undefined", "NaN"]}
+  correctIndex={1}
+  explanation="The constraint T extends { length: number } only allows types that actually have a numeric length property — strings and arrays qualify, but number does not have a .length at all. The compiler rejects the call before ever generating code that would try to read .length off 42."
+  actualOutput="Type error: Argument of type 'number' is not assignable to parameter of type '{ length: number }'"
+/>
+
+## See also
+
+- [Modules & Packages](/en/programming-languages/typescript/modules-packages)
+- [TypeScript](/en/programming-languages/typescript)

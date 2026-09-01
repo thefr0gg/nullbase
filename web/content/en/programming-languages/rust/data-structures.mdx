@@ -1,0 +1,118 @@
+---
+title: Data Structures
+description: Fixed-size arrays, growable Vec collections, and key-value HashMaps — Rust's core built-in ways to hold multiple values.
+category: Programming Languages
+weight: 5
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Rust separates "how many elements, known at compile time" from "how many elements, decided at runtime" at the type level. An **array** is fixed-size and lives on the stack; a **`Vec`** (vector) is growable and owns a heap allocation. Reaching for the wrong one is a common early mistake — arrays can't grow, so anything built up element-by-element needs a `Vec`.
+
+## Arrays
+
+```rust
+fn main() {
+    let scores: [i32; 3] = [90, 85, 78];
+    println!("first score: {}", scores[0]);
+    println!("total scores: {}", scores.len());
+
+    // scores.push(100); // error: no method named `push` on array [i32; 3]
+}
+```
+
+The type `[i32; 3]` bakes the length into the type itself — an array of 3 `i32`s is a different type from an array of 4, and neither has a `push` method, because their size can never change after creation.
+
+## `Vec<T>`
+
+`Vec<T>` is the growable, heap-allocated alternative — the collection you reach for by default when the number of elements isn't fixed ahead of time.
+
+```rust
+fn main() {
+    let mut scores: Vec<i32> = Vec::new();
+    scores.push(90);
+    scores.push(85);
+    scores.push(78);
+
+    // vec! macro is the more common way to write this
+    let scores = vec![90, 85, 78];
+
+    let average: i32 = scores.iter().sum::<i32>() / scores.len() as i32;
+    println!("average: {average}");
+}
+```
+
+Indexing a `Vec` out of bounds (`scores[10]` on a 3-element vec) panics at runtime rather than silently returning garbage — Rust would rather crash loudly than let you read memory that isn't yours. For a non-panicking lookup, `scores.get(10)` returns `Option<&i32>` — `None` instead of a value when the index doesn't exist.
+
+## `HashMap<K, V>`
+
+`HashMap` stores key-value pairs, similar to a dictionary in Python or an object used as a map in JavaScript. It has to be imported explicitly from `std::collections` — unlike `Vec` and arrays, it's not in the default prelude.
+
+```rust
+use std::collections::HashMap;
+
+fn main() {
+    let mut inventory: HashMap<String, i32> = HashMap::new();
+    inventory.insert(String::from("apples"), 12);
+    inventory.insert(String::from("bananas"), 6);
+
+    match inventory.get("apples") {
+        Some(count) => println!("apples: {count}"),
+        None => println!("no apples tracked"),
+    }
+
+    // entry API: increment if present, insert 1 if not
+    *inventory.entry(String::from("apples")).or_insert(0) += 1;
+    println!("apples now: {}", inventory["apples"]);
+}
+```
+
+`get` returns `Option<&V>` rather than the value directly, because the key might not exist — this is the same `Option` pattern `Vec::get` uses, and it's central to how Rust avoids null-reference errors (covered in full on the [Error Handling](/en/programming-languages/rust/error-handling) page). The `entry` API above is the idiomatic way to do "update if present, insert a default otherwise" in one line without looking the key up twice.
+
+## See also
+
+- **[Structs & Traits](/en/programming-languages/rust/oop-or-structs)** — grouping related data into your own named types instead of loose tuples or maps.
+- **[Ownership & Borrowing](/en/programming-languages/rust/advanced)** — why `scores.iter()` borrows the vector instead of consuming it.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a Vec of scores and print their average."
+  items={[
+    { id: "let-scores", label: "    let scores = vec![90, 85, 78];" },
+    { id: "let-avg", label: "    let average: i32 = scores.iter().sum::<i32>() / scores.len() as i32;", explanation: "scores must exist before it can be summed and averaged." },
+    { id: "print", label: "    println!(\"average: {average}\");" },
+  ]}
+  correctOrder={["let-scores", "let-avg", "print"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a HashMap, insert a value, and read it back with a match."
+  items={[
+    { id: "use", label: "use std::collections::HashMap;" },
+    { id: "main-open", label: "fn main() {" },
+    { id: "new-map", label: "    let mut inventory: HashMap<String, i32> = HashMap::new();" },
+    { id: "insert", label: "    inventory.insert(String::from(\"apples\"), 12);", explanation: "The map must be created before anything is inserted into it." },
+    { id: "match-open", label: "    match inventory.get(\"apples\") {" },
+    { id: "some", label: "        Some(count) => println!(\"apples: {count}\")," },
+    { id: "none", label: "        None => println!(\"no apples tracked\")," },
+    { id: "match-close", label: "    }" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["use", "main-open", "new-map", "insert", "match-open", "some", "none", "match-close", "main-close"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`fn main() {
+    let scores = [90, 85, 78];
+    println!("{}", scores.get(10).is_some());
+}`}
+  options={["true", "false", "panic!", "Compile error"]}
+  correctIndex={1}
+  explanation="get() returns an Option, never panicking on an out-of-bounds index — it returns None here since index 10 doesn't exist in a 3-element array, so is_some() is false. Direct indexing (scores[10]) is the one that would panic; get() exists specifically to avoid that."
+  actualOutput="false"
+/>

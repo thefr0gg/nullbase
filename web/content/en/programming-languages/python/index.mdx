@@ -1,0 +1,91 @@
+---
+title: Python
+description: An interpreted, dynamically-typed, batteries-included language built around readability — used for scripting, web backends, data work, and automation alike.
+category: Programming Languages
+weight: 1
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Python is an interpreted, dynamically-typed language whose defining trait is that it makes readability a language feature rather than a style preference: blocks are defined by indentation instead of braces or `end` keywords, so a script's visual structure and its actual control flow can never drift apart. There's no separate compile step to run — the reference implementation, CPython, reads a `.py` file and executes it directly — which is part of why Python shows up everywhere from one-off scripts to production web backends to data pipelines and machine learning code.
+
+```python
+print("Hello, world!")
+
+name = "Ada"
+age = 36
+print(f"{name} is {age} years old")
+```
+
+Two things stand out even in that tiny example. First, there's no type declaration anywhere — `name` and `age` get their types from the values assigned to them, and a variable can be reassigned to a different type later without complaint. Second, the `f"..."` string is an f-string: a string literal with `{expression}` placeholders evaluated inline, which is how most Python code builds formatted output rather than concatenating pieces with `+`.
+
+Python also ships with a large standard library and an enormous third-party package ecosystem installed via `pip`, so a surprising amount of real work — reading JSON, making HTTP requests, parsing dates — needs no dependencies beyond what's already installed or a single `pip install`.
+
+```python
+def fizzbuzz(n):
+    for i in range(1, n + 1):
+        if i % 15 == 0:
+            print("FizzBuzz")
+        elif i % 3 == 0:
+            print("Fizz")
+        elif i % 5 == 0:
+            print("Buzz")
+        else:
+            print(i)
+
+fizzbuzz(15)
+```
+
+Notice there are no parentheses around the `if` condition, no semicolons ending statements, and the function body's extent is defined purely by how far its lines are indented — remove the indentation and it's a syntax error, not just messy formatting.
+
+## What's in this section
+
+- **[Syntax & Variables](/en/programming-languages/python/syntax-basics)** — indentation, dynamic typing, and Python's built-in types.
+- **[Control Flow](/en/programming-languages/python/control-flow)** — `if`/`elif`/`else`, loops, and Python's less common `for...else`.
+- **[Functions](/en/programming-languages/python/functions)** — `def`, default arguments, and `*args`/`**kwargs`.
+- **[Data Structures](/en/programming-languages/python/data-structures)** — lists, tuples, dicts, and sets.
+- **[Classes & Objects](/en/programming-languages/python/oop-or-structs)** — `__init__`, inheritance, and dunder methods.
+- **[Error Handling](/en/programming-languages/python/error-handling)** — `try`/`except`/`finally` and custom exceptions.
+- **[Modules & Packages](/en/programming-languages/python/modules-packages)** — `import`, `pip`, and virtual environments.
+- **[Decorators & Generators](/en/programming-languages/python/advanced)** — Python's signature intermediate-level features.
+
+## See also
+
+- **[Syntax & Variables](/en/programming-languages/python/syntax-basics)** — the concrete rules behind the variables and print statements used above.
+- **[Functions](/en/programming-languages/python/functions)** — turning a script like `fizzbuzz` into a reusable, parameterized piece of code.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a script that greets a user by name."
+  items={[
+    { id: "input", label: 'name = input("What is your name? ")' },
+    { id: "format", label: 'greeting = f"Hello, {name}!"', explanation: "The f-string needs `name` to already exist before it can be formatted into it." },
+    { id: "print", label: "print(greeting)", explanation: "Nothing can be printed until `greeting` has been built." },
+  ]}
+  correctOrder={["input", "format", "print"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a script that computes and prints the area of a rectangle."
+  items={[
+    { id: "width", label: "width = 5" },
+    { id: "height", label: "height = 3" },
+    { id: "area", label: "area = width * height", explanation: "Both `width` and `height` must be defined before this line can reference them." },
+    { id: "print", label: "print(area)", explanation: "`area` doesn't exist until the multiplication above has run." },
+  ]}
+  correctOrder={["width", "height", "area", "print"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`print(3 + 4 * 2)`}
+  options={["14", "11", "10", "Error: ambiguous expression"]}
+  correctIndex={1}
+  explanation="Python follows standard operator precedence: multiplication binds tighter than addition, so this is 3 + (4 * 2) = 3 + 8 = 11, not (3 + 4) * 2."
+  actualOutput="11"
+/>
+

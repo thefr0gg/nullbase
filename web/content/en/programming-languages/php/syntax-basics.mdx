@@ -1,0 +1,163 @@
+---
+title: Syntax & Variables
+description: PHP's <?php ?> tags, the $ sigil on every variable, loose vs. strict types, and string interpolation.
+category: Programming Languages
+weight: 2
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+PHP code lives inside `<?php ... ?>` tags. Everything outside those tags —
+even in the middle of a file — is passed straight through as output, which
+is what makes PHP convenient for mixing markup and logic in the same file.
+
+## The `<?php` tag
+
+```php
+<html>
+<body>
+<?php
+$name = "Ada";
+echo "<p>Hello, $name!</p>";
+?>
+</body>
+</html>
+```
+
+In practice, files that contain *only* PHP (no trailing HTML) should omit
+the closing `?>` entirely. It's optional, and leaving it out avoids a subtle
+bug: any whitespace or newline after `?>` gets sent to the output, which can
+break things like setting HTTP headers after the script "ends."
+
+```php
+<?php
+
+echo "No closing tag needed for a pure-PHP file.\n";
+```
+
+## Variables always start with `$`
+
+Every variable in PHP is prefixed with a dollar sign, with no exceptions —
+this is one of the most immediately recognizable things about PHP syntax.
+Variables are also dynamically typed: you don't declare a type up front, and
+a variable can hold a different kind of value after a later assignment.
+
+```php
+<?php
+
+$age = 30;          // int
+$age = "thirty";     // now a string — perfectly legal
+$isAdmin = true;      // bool
+$price = 19.99;        // float
+```
+
+Variable names are case-sensitive (`$Name` and `$name` are different
+variables) and must start with a letter or underscore, never a digit.
+
+## Constants
+
+`define()` and the more modern `const` both create values that can't be
+reassigned. `const` is preferred for simple scalar values and works at both
+top-level and inside classes:
+
+```php
+<?php
+
+const MAX_RETRIES = 3;
+define("APP_NAME", "nullbase");
+
+echo MAX_RETRIES . " retries allowed for " . APP_NAME . "\n";
+```
+
+Note that constants are referenced *without* the `$` sigil — another spot
+where PHP's sigil rule has a well-known exception.
+
+## String interpolation
+
+Double-quoted strings interpolate variables directly; single-quoted strings
+never do. This is a common source of subtle bugs when a literal `$` is
+meant, so it's worth knowing cold:
+
+```php
+<?php
+
+$user = "grace";
+echo "Logged in as $user\n";   // Logged in as grace
+echo 'Logged in as $user\n';    // Logged in as $user\n  (literal, no newline)
+```
+
+Curly braces disambiguate a variable from surrounding text, and are required
+when interpolating a property or array access cleanly:
+
+```php
+<?php
+
+$user = ["name" => "grace"];
+echo "Hello, {$user['name']}!\n";
+```
+
+## Loose typing and type juggling
+
+By default, PHP will convert types on the fly to make an operation work —
+this is called **type juggling**. `declare(strict_types=1)` at the top of a
+file turns that off for function argument and return type checks (though
+loose comparison operators like `==` still juggle regardless):
+
+```php
+<?php
+declare(strict_types=1);
+
+function double(int $n): int {
+    return $n * 2;
+}
+
+echo double(5) . "\n";   // 10
+// double("5") would now throw a TypeError instead of silently converting
+```
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to declare a variable and interpolate it into a double-quoted string."
+  items={[
+    { id: "a1", label: "<?php" },
+    { id: "a2", label: '$city = "Berlin";' },
+    { id: "a3", label: 'echo "Welcome to $city!\\n";', explanation: "The variable must exist before it's interpolated." },
+  ]}
+  correctOrder={["a1", "a2", "a3"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Order these lines to declare a strict-typed function and call it."
+  items={[
+    { id: "b1", label: "<?php" },
+    { id: "b2", label: "declare(strict_types=1);" },
+    { id: "b3", label: "function triple(int $n): int {", explanation: "declare(strict_types=1) must be the very first statement in the file." },
+    { id: "b4", label: "    return $n * 3;" },
+    { id: "b5", label: "}" },
+    { id: "b6", label: "echo triple(4) . \"\\n\";" },
+  ]}
+  correctOrder={["b1", "b2", "b3", "b4", "b5", "b6"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`<?php
+
+$count = "5";
+$total = $count + 1;
+echo $total;
+echo gettype($total);`}
+  options={["51int", "6int", "6string", "Fatal error: cannot add string and int"]}
+  correctIndex={1}
+  explanation="Outside strict_types, the arithmetic operator + triggers type juggling: the numeric string '5' is converted to the integer 5, so $total is 6, an int. String concatenation would use . instead of +, which is a common beginner mix-up."
+  actualOutput="6int"
+/>
+
+## See also
+
+- [PHP](/en/programming-languages/php)
+- [Control Flow](/en/programming-languages/php/control-flow)

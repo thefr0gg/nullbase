@@ -1,0 +1,183 @@
+---
+title: Async & Promises
+description: Promises, async/await, and the event loop that makes asynchronous JavaScript run on a single thread.
+category: Programming Languages
+weight: 9
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Asynchronous programming is JavaScript's signature intermediate topic —
+the point where the language's single-threaded, event-driven design
+becomes something you have to actively reason about rather than something
+that stays invisible. Understanding Promises, `async`/`await`, and roughly
+how the event loop schedules them is what separates "I can write
+JavaScript" from "I can predict what my JavaScript will do."
+
+## Promises
+
+A `Promise` represents a value that isn't available yet — the eventual
+result of an asynchronous operation like a network request. It's always in
+one of three states: pending, fulfilled (with a value), or rejected (with
+an error), and once it settles (fulfills or rejects), it stays that way
+permanently.
+
+```js
+function delay(ms, value) {
+  return new Promise(resolve => {
+    setTimeout(() => resolve(value), ms);
+  });
+}
+
+delay(1000, "done!")
+  .then(result => console.log(result)) // "done!" after ~1 second
+  .catch(err => console.error(err));
+```
+
+`.then()` registers a callback for fulfillment, `.catch()` for rejection,
+and both return a new Promise, which is what lets you chain them:
+
+```js
+delay(500, 5)
+  .then(n => n * 2)
+  .then(n => n + 1)
+  .then(result => console.log(result)) // 11
+  .catch(err => console.error("Something failed:", err));
+```
+
+`Promise.all` runs several Promises concurrently and resolves once every
+one of them has, in the original order — useful when operations don't
+depend on each other and you'd otherwise be waiting for them one at a
+time for no reason.
+
+```js
+Promise.all([delay(100, "a"), delay(50, "b"), delay(200, "c")]).then(
+  results => console.log(results) // ["a", "b", "c"] after ~200ms total, not 350ms
+);
+```
+
+## async/await
+
+`async`/`await` is syntax built on top of Promises that lets asynchronous
+code read like ordinary synchronous code. An `async` function always
+returns a Promise, and `await` pauses execution *within that function*
+(not the whole program) until the awaited Promise settles.
+
+```js
+async function getUserSummary(id) {
+  const response = await fetch(`/api/users/${id}`);
+  const user = await response.json();
+  return `${user.name} (${user.email})`;
+}
+
+getUserSummary(1).then(summary => console.log(summary));
+```
+
+This is exactly equivalent to the `.then()` chain, just easier to read and
+to wrap in `try`/`catch` for error handling. Running independent `await`s
+sequentially wastes time the same way a naive `.then()` chain would —
+use `Promise.all` when the operations don't depend on each other:
+
+```js
+// Sequential — waits for the first request to fully finish before starting the second.
+async function slow() {
+  const a = await delay(100, "a");
+  const b = await delay(100, "b");
+  return [a, b]; // takes ~200ms
+}
+
+// Concurrent — both requests are in flight at the same time.
+async function fast() {
+  const [a, b] = await Promise.all([delay(100, "a"), delay(100, "b")]);
+  return [a, b]; // takes ~100ms
+}
+```
+
+## The event loop, briefly
+
+JavaScript runs on a single thread, so it can't literally do two things at
+once. Instead, the runtime (a browser or Node.js) hands off slow
+operations — timers, network I/O, file access — to be handled outside
+that thread, and the **event loop** is the mechanism that brings their
+results back in as callbacks once your currently-running code finishes.
+Crucially, the call stack always runs to completion before the event loop
+processes anything queued behind it — this is why `setTimeout(fn, 0)`
+doesn't run immediately, it runs after all currently queued synchronous
+code has finished.
+
+```js
+console.log("1: start");
+
+setTimeout(() => console.log("2: timeout"), 0);
+
+Promise.resolve().then(() => console.log("3: promise"));
+
+console.log("4: end");
+
+// Output order: 1, 4, 3, 2
+```
+
+The synchronous code (`1` and `4`) always runs first, in order. Then
+queued Promise callbacks (the "microtask queue") run before queued timer
+callbacks (the "macrotask queue") — which is why `3` prints before `2`
+even though the Promise was scheduled after the timeout.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build an async function that fetches and logs JSON data with error handling."
+  items={[
+    { id: "fnOpen", label: "async function loadData(url) {" },
+    { id: "tryOpen", label: "  try {" },
+    { id: "fetchLine", label: "    const response = await fetch(url);" },
+    { id: "jsonLine", label: "    const data = await response.json();", explanation: "response must exist before you can call .json() on it." },
+    { id: "log", label: "    console.log(data);" },
+    { id: "catchOpen", label: "  } catch (err) {" },
+    { id: "catchBody", label: "    console.error(\"Load failed:\", err.message);" },
+    { id: "catchClose", label: "  }" },
+    { id: "fnClose", label: "}" },
+  ]}
+  correctOrder={["fnOpen", "tryOpen", "fetchLine", "jsonLine", "log", "catchOpen", "catchBody", "catchClose", "fnClose"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Put these lines in order to run two independent delayed values concurrently with Promise.all."
+  items={[
+    { id: "delayFn", label: "function delay(ms, value) { return new Promise(res => setTimeout(() => res(value), ms)); }" },
+    { id: "asyncOpen", label: "async function run() {" },
+    { id: "allCall", label: "  const [x, y] = await Promise.all([delay(100, 1), delay(100, 2)]);" },
+    { id: "log", label: "  console.log(x + y);" },
+    { id: "asyncClose", label: "}" },
+    { id: "invoke", label: "run();" },
+  ]}
+  correctOrder={["delayFn", "asyncOpen", "allCall", "log", "asyncClose", "invoke"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`console.log("a");
+
+setTimeout(() => console.log("b"), 0);
+
+Promise.resolve()
+  .then(() => console.log("c"))
+  .then(() => console.log("d"));
+
+console.log("e");`}
+  options={["a, b, c, d, e", "a, e, c, d, b", "a, e, b, c, d", "a, c, d, e, b"]}
+  correctIndex={1}
+  explanation="Synchronous code (a, e) always runs first and in order, since the call stack must empty before the event loop looks at anything else. Then the microtask queue (Promise callbacks) drains completely — both chained .then()s, c and then d — before the macrotask queue (the setTimeout callback, b) gets a turn, even though the timeout was scheduled with a 0ms delay."
+  actualOutput="a
+e
+c
+d
+b"
+/>
+
+## See also
+
+- [Functions & Closures](/en/programming-languages/javascript/functions)
+- [Error Handling](/en/programming-languages/javascript/error-handling)

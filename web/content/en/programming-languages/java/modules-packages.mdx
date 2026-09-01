@@ -1,0 +1,196 @@
+---
+title: Packages & Build Tools
+description: Organizing Java code with package and import, and building projects with Maven and Gradle.
+category: Programming Languages
+weight: 8
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Java organizes code into **packages** — a namespacing mechanism that also
+maps directly onto the filesystem — and relies on external build tools
+(Maven, Gradle) rather than a built-in package manager to fetch dependencies
+and orchestrate compilation.
+
+## package and import
+
+The first non-comment line of a `.java` file (if present) declares which
+package it belongs to. The package name must match the file's directory
+path relative to the project's source root:
+
+```java
+// src/main/java/com/example/billing/Invoice.java
+package com.example.billing;
+
+public class Invoice {
+    public double total() {
+        return 42.0;
+    }
+}
+```
+
+Code in another package brings a class into scope with `import`:
+
+```java
+package com.example.app;
+
+import com.example.billing.Invoice;
+
+public class Main {
+    public static void main(String[] args) {
+        Invoice invoice = new Invoice();
+        System.out.println(invoice.total());
+    }
+}
+```
+
+Without an `import`, you can still refer to the class by its **fully
+qualified name** (`com.example.billing.Invoice`) — `import` is purely a
+convenience for using the short name. Classes in the same package never
+need an import to see each other, and everything in `java.lang` (`String`,
+`Object`, `System`, and so on) is imported implicitly into every file.
+
+## Access modifiers and packages
+
+Package membership isn't just naming — it's also a visibility boundary. A
+member with no access modifier at all (**package-private**) is visible only
+to other classes in the same package:
+
+```java
+package com.example.billing;
+
+class InternalHelper { // package-private: no `public`
+    static void log(String message) {
+        System.out.println("[billing] " + message);
+    }
+}
+```
+
+`public` makes a class or member visible everywhere; `private` restricts it
+to the declaring class; `protected` allows access from the same package
+plus subclasses in any package.
+
+## Maven
+
+Maven describes a project's dependencies, plugins, and build steps in an
+XML file, `pom.xml`, and downloads dependencies from a shared repository
+(Maven Central by default):
+
+```xml
+<project>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.example</groupId>
+    <artifactId>billing-app</artifactId>
+    <version>1.0.0</version>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.10.0</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>
+```
+
+Common commands: `mvn compile` builds the project, `mvn test` runs tests,
+and `mvn package` produces a distributable JAR. Maven enforces a
+"convention over configuration" directory layout (`src/main/java`,
+`src/test/java`) so a bare-bones `pom.xml` is often enough to get started.
+
+## Gradle
+
+Gradle solves the same problem — dependency resolution and build
+orchestration — with a more flexible, script-based configuration (Groovy or
+Kotlin DSL) instead of Maven's fixed XML schema:
+
+```kotlin
+// build.gradle.kts
+plugins {
+    java
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
+}
+```
+
+`./gradlew build` compiles, tests, and packages the project in one step.
+Gradle's incremental build graph tends to make it faster than Maven on
+large, multi-module projects, which is part of why it's the default build
+tool for Android development; Maven's simpler, more rigid model remains
+common in enterprise Java shops that value predictability over
+configurability.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to declare a class in a package and import it from another file."
+  items={[
+    { id: "j1", label: "package com.example.billing;" },
+    { id: "j2", label: "public class Invoice {" },
+    { id: "j3", label: "    public double total() { return 42.0; }" },
+    { id: "j4", label: "}" },
+    { id: "j5", label: "package com.example.app;", explanation: "Each file's own package declaration must be its first line, before that file's imports." },
+    { id: "j6", label: "import com.example.billing.Invoice;" },
+    { id: "j7", label: "public class Main {" },
+    { id: "j8", label: "    public static void main(String[] args) { System.out.println(new Invoice().total()); }" },
+    { id: "j9", label: "}" },
+  ]}
+  correctOrder={["j1", "j2", "j3", "j4", "j5", "j6", "j7", "j8", "j9"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Order these lines to build a minimal pom.xml declaring a project's coordinates and one dependency."
+  items={[
+    { id: "k1", label: "<project>" },
+    { id: "k2", label: "    <modelVersion>4.0.0</modelVersion>" },
+    { id: "k3", label: "    <groupId>com.example</groupId>" },
+    { id: "k4", label: "    <artifactId>billing-app</artifactId>", explanation: "The project coordinates come before the dependencies section." },
+    { id: "k5", label: "    <version>1.0.0</version>" },
+    { id: "k6", label: "    <dependencies>" },
+    { id: "k7", label: "        <dependency>" },
+    { id: "k8", label: "            <groupId>org.junit.jupiter</groupId>" },
+    { id: "k9", label: "            <artifactId>junit-jupiter</artifactId>" },
+    { id: "k10", label: "        </dependency>" },
+    { id: "k11", label: "    </dependencies>" },
+    { id: "k12", label: "</project>" },
+  ]}
+  correctOrder={["k1", "k2", "k3", "k4", "k5", "k6", "k7", "k8", "k9", "k10", "k11", "k12"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`// File A: src/main/java/com/example/a/Helper.java
+package com.example.a;
+
+class Helper {
+    static String greet() { return "hi from Helper"; }
+}
+
+// File B: src/main/java/com/example/b/Main.java
+package com.example.b;
+
+public class Main {
+    public static void main(String[] args) {
+        System.out.println(Helper.greet());
+    }
+}`}
+  options={["hi from Helper", "Compile error: Helper cannot be resolved to a type", "Compile error: Helper has private access", "null"]}
+  correctIndex={1}
+  explanation="Helper has no access modifier, so it's package-private — visible only within com.example.a. Main lives in com.example.b and doesn't import Helper (and couldn't successfully, since it isn't public), so the compiler can't resolve the name at all."
+  actualOutput="error: cannot find symbol: class Helper"
+/>
+
+## See also
+
+- [Error Handling](/en/programming-languages/java/error-handling)
+- [Threads & Concurrency](/en/programming-languages/java/advanced)

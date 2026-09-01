@@ -1,0 +1,271 @@
+---
+title: Classes & Interfaces
+description: Classes, fields, constructors, inheritance, interfaces, and polymorphism — Java's object model in depth.
+category: Programming Languages
+weight: 6
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Java is a deeply object-oriented language: classes are the fundamental unit
+of organization, and almost every non-trivial program is a network of
+objects sending messages (calling methods) to each other. This page covers
+the core object model — classes, inheritance, interfaces, and polymorphism —
+in more depth than the other pages, since it's where most of Java's design
+philosophy lives.
+
+## Classes, fields, and constructors
+
+A class bundles state (**fields**) with behavior (**methods**). A
+**constructor** initializes a new instance:
+
+```java
+public class Point {
+    private final double x;
+    private final double y;
+
+    public Point(double x, double y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    public double distanceFromOrigin() {
+        return Math.sqrt(x * x + y * y);
+    }
+
+    @Override
+    public String toString() {
+        return "Point(" + x + ", " + y + ")";
+    }
+}
+```
+
+```java
+Point p = new Point(3.0, 4.0);
+System.out.println(p.distanceFromOrigin()); // 5.0
+System.out.println(p);                      // Point(3.0, 4.0) — toString is called implicitly
+```
+
+`private` fields are accessible only within the class itself — the standard
+Java idiom is to keep fields private and expose behavior (or getter/setter
+methods) instead of letting outside code reach directly into an object's
+state. `this` refers to the current instance and disambiguates a field from
+a same-named constructor parameter.
+
+## Inheritance with extends
+
+A class can `extend` exactly one superclass, inheriting its fields and
+methods and optionally overriding behavior:
+
+```java
+public class Shape {
+    protected String name;
+
+    public Shape(String name) {
+        this.name = name;
+    }
+
+    public double area() {
+        return 0.0;
+    }
+
+    public String describe() {
+        return name + " has area " + area();
+    }
+}
+
+public class Circle extends Shape {
+    private final double radius;
+
+    public Circle(double radius) {
+        super("Circle"); // must call the superclass constructor first
+        this.radius = radius;
+    }
+
+    @Override
+    public double area() {
+        return Math.PI * radius * radius;
+    }
+}
+```
+
+```java
+Shape s = new Circle(2.0);
+System.out.println(s.describe()); // Circle has area 12.566370614359172
+```
+
+`super(...)` calls the superclass constructor and must be the first
+statement in a subclass constructor if used explicitly; if omitted, Java
+inserts an implicit no-argument `super()` call. `@Override` is optional but
+strongly recommended — it tells the compiler "this must match a method in
+the superclass," catching typos (a misspelled method name silently becomes
+a new method rather than an override without it) at compile time.
+
+Java deliberately supports only **single inheritance** of classes — a class
+extends at most one superclass. This sidesteps the "diamond problem" that
+arises when a class would inherit conflicting implementations of the same
+method from two parents through full multiple inheritance.
+
+## Polymorphism
+
+A variable declared with a supertype can refer to any subtype instance, and
+calling an overridden method dispatches to the actual runtime type's
+implementation — not the declared (compile-time) type:
+
+```java
+Shape[] shapes = { new Circle(1.0), new Circle(2.0) };
+for (Shape shape : shapes) {
+    System.out.println(shape.describe()); // always calls Circle's area()
+}
+```
+
+This is **dynamic dispatch**: even though the array's declared element type
+is `Shape`, each call to `area()` resolves to `Circle.area()` at run time,
+because that's the actual type of the object stored there.
+
+## Interfaces
+
+An interface declares a contract — method signatures with no implementation
+(plus, since Java 8, optional `default` methods with a body) — that any
+number of unrelated classes can implement:
+
+```java
+public interface Movable {
+    void move(double dx, double dy);
+
+    default void stop() {
+        System.out.println("Stopped.");
+    }
+}
+
+public class Robot implements Movable {
+    private double x = 0;
+    private double y = 0;
+
+    @Override
+    public void move(double dx, double dy) {
+        x += dx;
+        y += dy;
+        System.out.println("Now at (" + x + ", " + y + ")");
+    }
+}
+```
+
+Unlike `extends`, a class can `implements` any number of interfaces — this
+is how Java gets most of the practical benefit of multiple inheritance
+without its pitfalls, since interfaces (mostly) don't carry conflicting
+field state. A class that implements an interface is assignable to a
+variable of that interface's type, exactly like it would be for a
+superclass:
+
+```java
+Movable m = new Robot();
+m.move(1.0, 2.0); // Now at (1.0, 2.0)
+m.stop();         // Stopped. (uses the interface's default implementation)
+```
+
+## abstract classes
+
+An `abstract` class can mix implemented methods with unimplemented
+`abstract` ones, and — unlike an interface — can hold non-`static`,
+non-`final` fields shared through inheritance. It can't be instantiated
+directly; only a concrete subclass that implements every `abstract` method
+can be:
+
+```java
+public abstract class Animal {
+    protected final String name;
+
+    public Animal(String name) {
+        this.name = name;
+    }
+
+    public abstract String sound();
+
+    public void speak() {
+        System.out.println(name + " says " + sound());
+    }
+}
+
+public class Dog extends Animal {
+    public Dog(String name) {
+        super(name);
+    }
+
+    @Override
+    public String sound() {
+        return "Woof";
+    }
+}
+```
+
+Choosing between an `abstract` class and an interface is mostly about
+whether subtypes share real state and whether a type needs to inherit from
+more than one source: reach for an interface by default, and an `abstract`
+class when several related subclasses genuinely share fields and
+constructor logic.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to define a Point class with a constructor and a method, then use it."
+  items={[
+    { id: "p1", label: "public class Point {" },
+    { id: "p2", label: "    private final double x, y;" },
+    { id: "p3", label: "    public Point(double x, double y) { this.x = x; this.y = y; }", explanation: "Fields must be declared before the constructor that initializes them." },
+    { id: "p4", label: "    public double sum() { return x + y; }" },
+    { id: "p5", label: "}" },
+    { id: "p6", label: "Point p = new Point(2.0, 3.0);" },
+    { id: "p7", label: "System.out.println(p.sum());" },
+  ]}
+  correctOrder={["p1", "p2", "p3", "p4", "p5", "p6", "p7"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Order these lines to build a Circle subclass extending Shape, overriding area(), and printing a polymorphic call."
+  items={[
+    { id: "q1", label: "public class Shape {" },
+    { id: "q2", label: "    public double area() { return 0.0; }" },
+    { id: "q3", label: "}" },
+    { id: "q4", label: "public class Circle extends Shape {", explanation: "Circle's declaration must come after Shape, the class it extends, is fully defined." },
+    { id: "q5", label: "    private final double radius;" },
+    { id: "q6", label: "    public Circle(double radius) { this.radius = radius; }" },
+    { id: "q7", label: "    @Override" },
+    { id: "q8", label: "    public double area() { return Math.PI * radius * radius; }" },
+    { id: "q9", label: "}" },
+    { id: "q10", label: "Shape s = new Circle(2.0);" },
+    { id: "q11", label: "System.out.println(s.area());" },
+  ]}
+  correctOrder={["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`public class Shape {
+    public String kind() { return "Shape"; }
+}
+
+public class Square extends Shape {
+    @Override
+    public String kind() { return "Square"; }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        Shape s = new Square();
+        System.out.println(s.kind());
+    }
+}`}
+  options={["Shape", "Square", "Compile error: incompatible types", "It depends on the declared type, so it prints nothing determinable"]}
+  correctIndex={1}
+  explanation="Method calls in Java use dynamic dispatch: the JVM looks at the object's actual runtime type (Square), not the variable's declared compile-time type (Shape), to decide which kind() implementation to run. This is what makes polymorphism useful."
+  actualOutput="Square"
+/>
+
+## See also
+
+- [Data Structures](/en/programming-languages/java/data-structures)
+- [Error Handling](/en/programming-languages/java/error-handling)

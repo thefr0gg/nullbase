@@ -1,0 +1,165 @@
+---
+title: Structs & Methods
+description: C has no classes — structs group data, function pointers stand in for methods, and composition (not inheritance) builds up behavior.
+category: Programming Languages
+weight: 6
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+C predates object-oriented programming as a mainstream idea, and it has no `class`, no inheritance, and no built-in method syntax. What it does have is `struct` for grouping related data, and the fact that functions are addressable values means you can store a pointer to a function inside a struct — which is how C-based codebases simulate "objects with methods" when they need to. It's a deliberate, hand-rolled substitute, not a hidden feature C was secretly OOP all along.
+
+## struct: grouping related data
+
+A `struct` bundles named fields of possibly different types into one type:
+
+```c
+#include <stdio.h>
+
+struct Point {
+    double x;
+    double y;
+};
+
+double distanceFromOrigin(struct Point p) {
+    /* passed by value: this receives a copy of the whole struct */
+    double dx = p.x;
+    double dy = p.y;
+    return dx * dx + dy * dy; /* squared distance, skipping sqrt for brevity */
+}
+
+int main(void) {
+    struct Point origin = {0.0, 0.0};
+    struct Point p1 = {3.0, 4.0};
+
+    printf("p1 = (%.1f, %.1f)\n", p1.x, p1.y);
+    printf("squared distance: %.1f\n", distanceFromOrigin(p1));
+
+    return 0;
+}
+```
+
+Like any other value, a `struct` is copied on assignment and passed by value into functions unless you explicitly pass a pointer to it — for a large struct, passing `struct Point *p` and using `p->x` avoids copying the whole thing on every call.
+
+## typedef and function pointers as "methods"
+
+`typedef` gives a struct a shorter alias, and a function pointer field lets a struct carry behavior alongside its data — the closest C gets to a method:
+
+```c
+#include <stdio.h>
+
+typedef struct Account {
+    double balance;
+    void (*deposit)(struct Account *self, double amount);
+} Account;
+
+void depositImpl(Account *self, double amount) {
+    self->balance += amount;
+}
+
+int main(void) {
+    Account acc = {0.0, depositImpl};
+
+    acc.deposit(&acc, 100.0); /* looks like a method call, but it's just a function pointer */
+    acc.deposit(&acc, 50.0);
+
+    printf("balance: %.2f\n", acc.balance);
+
+    return 0;
+}
+```
+
+`acc.deposit(&acc, 100.0)` reads almost like `acc.deposit(100.0)` would in an OOP language, except C requires the object (`&acc`) to be passed explicitly as the first argument — there's no implicit `this`. Real C codebases use exactly this pattern (a struct of function pointers acting as a "vtable") to implement interfaces and polymorphism — the Linux kernel's `file_operations` struct is a well-known example.
+
+## Composition instead of inheritance
+
+C has no way to say "this struct extends that struct." Instead, one struct embeds another as a named field, and shared behavior is expressed by writing functions that operate on the embedded piece:
+
+```c
+#include <stdio.h>
+
+typedef struct {
+    double x;
+    double y;
+} Point;
+
+typedef struct {
+    Point position; /* composition: a Circle "has a" Point, not "is a" Point */
+    double radius;
+} Circle;
+
+void printPoint(Point p) {
+    printf("(%.1f, %.1f)", p.x, p.y);
+}
+
+int main(void) {
+    Circle c = {{1.0, 2.0}, 5.0};
+
+    printf("circle at ");
+    printPoint(c.position); /* reuse the function written for Point */
+    printf(" with radius %.1f\n", c.radius);
+
+    return 0;
+}
+```
+
+Because there's no inheritance, code reuse in C comes from composing smaller structs and writing functions that operate on the pieces, rather than building a class hierarchy — a constraint that pushed later "OOP without classes" styles (like Go's embedding) toward the same idea.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble a struct and its use"
+  prompt="Drag these lines into the order that defines a Point struct, creates one, and prints its fields."
+  items={[
+    { id: "struct", label: "struct Point {\n    double x;\n    double y;\n};", explanation: "The struct's definition must appear before anything tries to declare a variable of that type." },
+    { id: "main", label: "int main(void) {" },
+    { id: "decl", label: "    struct Point p = {1.0, 2.0};" },
+    { id: "print", label: "    printf(\"(%.1f, %.1f)\\n\", p.x, p.y);" },
+    { id: "close", label: "    return 0;\n}" },
+  ]}
+  correctOrder={["struct", "main", "decl", "print", "close"]}
+/>
+
+<OrderingExercise
+  title="Order a function-pointer 'method' call"
+  prompt="Drag these lines into the order that defines a struct with a function-pointer field and calls it like a method."
+  items={[
+    { id: "typedef", label: "typedef struct {\n    int count;\n    void (*increment)(void *self);\n} Counter;" },
+    { id: "impl", label: "void incrementImpl(void *self) {\n    ((Counter *)self)->count++;\n}", explanation: "The implementation function must exist before it's assigned into a Counter instance." },
+    { id: "decl", label: "Counter c = {0, incrementImpl};" },
+    { id: "call", label: "c.increment(&c);" },
+    { id: "print", label: "printf(\"%d\\n\", c.count);" },
+  ]}
+  correctOrder={["typedef", "impl", "decl", "call", "print"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`#include <stdio.h>
+
+struct Point {
+    double x;
+    double y;
+};
+
+void movePoint(struct Point p) {
+    p.x += 10; /* p is a copy, passed by value */
+}
+
+int main(void) {
+    struct Point p1 = {1.0, 1.0};
+    movePoint(p1);
+    printf("%.1f\\n", p1.x);
+    return 0;
+}`}
+  options={["1.0", "11.0", "10.0", "Compile error"]}
+  correctIndex={0}
+  explanation="Structs are passed by value just like any other type in C, so movePoint receives an entirely separate copy of p1 — modifying p.x inside the function has no effect on the caller's p1. Changing it would require passing a struct Point * instead."
+  actualOutput="1.0"
+/>
+
+## See also
+
+- **[Data Structures](/en/programming-languages/c/data-structures)** — arrays and pointers, the other half of building structs into larger structures.
+- **[Modules & Packages](/en/programming-languages/c/modules-packages)** — sharing a struct's definition across multiple .c files via a header.

@@ -1,0 +1,104 @@
+---
+title: Decorators & Generators
+description: Python's signature intermediate-level features — wrapping functions with decorators, and lazily producing values with generators and yield.
+category: Programming Languages
+weight: 9
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+A **decorator** is a function that takes a function and returns a new function wrapping it — used to add behavior (logging, timing, access checks) without touching the original function's body. The `@decorator` syntax above a `def` is just shorthand for reassigning the function to the decorator's return value.
+
+```python
+def logged(func):
+    def wrapper(*args, **kwargs):
+        print(f"Calling {func.__name__}")
+        return func(*args, **kwargs)
+    return wrapper
+
+@logged
+def add(a, b):
+    return a + b
+
+print(add(2, 3))
+# Calling add
+# 5
+```
+
+`@logged` above `def add(...)` is equivalent to writing `add = logged(add)` right after defining it — every call to `add` now actually calls `wrapper`, which prints, then calls the original `add` via the closure over `func`, and returns its result. This is the same closure mechanism covered in [Functions](/en/programming-languages/python/functions), applied to wrap behavior rather than just capture a value.
+
+A **generator** is a function that produces a sequence of values lazily, one at a time, using `yield` instead of `return`. Calling a generator function doesn't run its body immediately — it returns a generator object, and the body only advances up to the next `yield` each time a value is requested.
+
+```python
+def countdown(n):
+    while n > 0:
+        yield n
+        n -= 1
+
+for number in countdown(3):
+    print(number)
+# 3
+# 2
+# 1
+```
+
+Each iteration of the `for` loop resumes `countdown` right after its `yield`, rather than re-running the whole function from scratch — the function's local state (`n`, and its position in the `while` loop) is preserved between yields. This makes generators memory-efficient for large or unbounded sequences: nothing beyond the current value has to exist in memory at once.
+
+A **generator expression** — `(expr for item in iterable)` — is the lazy counterpart to a list comprehension, producing the same kind of one-at-a-time generator without a `def` and `yield` at all.
+
+```python
+squares = (x * x for x in range(5))
+print(next(squares))       # 0
+print(next(squares))       # 1
+print(list(squares))       # [4, 9, 16] — the rest, in one go
+```
+
+`next()` pulls exactly one value out of the generator each time it's called; `list()` drains whatever's left. Note the first two values (`0`, `1`) are already gone by the time `list()` runs — a generator only produces each value once, and there's no way to "rewind" it.
+
+## See also
+
+- **[Functions](/en/programming-languages/python/functions)** — the closures that make decorators like `logged` possible.
+- **[Control Flow](/en/programming-languages/python/control-flow)** — the `for` loops that drive both generators and generator expressions.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a logging decorator and apply it to a function."
+  items={[
+    { id: "def", label: "def logged(func):" },
+    { id: "wrapperdef", label: "    def wrapper(*args, **kwargs):", explanation: "wrapper is defined inside logged, right after the outer def." },
+    { id: "printcall", label: '        print(f"Calling {func.__name__}")' },
+    { id: "returncall", label: "        return func(*args, **kwargs)" },
+    { id: "returnwrapper", label: "    return wrapper", explanation: "logged must return the wrapper it just built, as its last line." },
+    { id: "decorate", label: "@logged", explanation: "The decorator has to exist before it can be applied to a function with @." },
+    { id: "adddef", label: "def add(a, b):" },
+    { id: "addreturn", label: "    return a + b" },
+  ]}
+  correctOrder={["def", "wrapperdef", "printcall", "returncall", "returnwrapper", "decorate", "adddef", "addreturn"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a countdown generator and consume it in a loop."
+  items={[
+    { id: "def", label: "def countdown(n):" },
+    { id: "while", label: "    while n > 0:", explanation: "The loop belongs inside the generator function's body." },
+    { id: "yield", label: "        yield n" },
+    { id: "decrement", label: "        n -= 1" },
+    { id: "for", label: "for number in countdown(3):", explanation: "countdown must be fully defined before it can be called and iterated." },
+    { id: "print", label: "    print(number)" },
+  ]}
+  correctOrder={["def", "while", "yield", "decrement", "for", "print"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`gen = (x for x in range(3))\nprint(list(gen))\nprint(list(gen))`}
+  options={["[0, 1, 2] then [0, 1, 2]", "[0, 1, 2] then []", "[] then [0, 1, 2]", "An error: gen is exhausted after the first list()"]}
+  correctIndex={1}
+  explanation="A generator produces each value exactly once and can't be restarted. The first list(gen) drains every value the generator will ever produce, so by the second call there's nothing left to pull — list() on an already-exhausted generator simply returns an empty list, not an error."
+  actualOutput='[0, 1, 2]\n[]'
+/>
+

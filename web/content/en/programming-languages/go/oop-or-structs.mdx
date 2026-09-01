@@ -1,0 +1,193 @@
+---
+title: Structs & Interfaces
+description: How Go models objects without classes or inheritance, using structs, methods with receivers, and implicit interfaces.
+category: Programming Languages
+weight: 6
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Go has no classes and no inheritance. Instead it has two simpler pieces
+that combine to cover most of what object-oriented languages use classes
+for: `struct` types for data, and `interface` types for behavior contracts.
+Once you're used to it, this ends up simpler than a class hierarchy — there
+are no `super` calls, no diamond-inheritance problems, no ambiguity about
+which parent method runs.
+
+## Structs
+
+A `struct` groups named fields into a single type:
+
+```go
+type Point struct {
+	X int
+	Y int
+}
+
+func main() {
+	p := Point{X: 3, Y: 4}
+	fmt.Println(p.X, p.Y) // 3 4
+}
+```
+
+Fields starting with an uppercase letter are exported (visible outside the
+package); lowercase fields are package-private. This is Go's entire
+visibility system — there's no `public`/`private` keyword.
+
+## Methods with receivers
+
+Go doesn't put methods inside the struct definition. Instead, you declare a
+regular function with a **receiver** — an extra parameter before the
+function name that binds it to a type:
+
+```go
+type Rectangle struct {
+	Width, Height float64
+}
+
+func (r Rectangle) Area() float64 {
+	return r.Width * r.Height
+}
+
+func main() {
+	rect := Rectangle{Width: 3, Height: 4}
+	fmt.Println(rect.Area()) // 12
+}
+```
+
+A receiver can be a value (`r Rectangle`) or a pointer (`r *Rectangle`).
+Value receivers get a copy of the struct; pointer receivers can mutate the
+original and avoid copying large structs:
+
+```go
+func (r *Rectangle) Scale(factor float64) {
+	r.Width *= factor
+	r.Height *= factor
+}
+
+func main() {
+	rect := Rectangle{Width: 3, Height: 4}
+	rect.Scale(2)
+	fmt.Println(rect) // {6 8}
+}
+```
+
+## Composition instead of inheritance
+
+Go has no `extends`. To reuse fields and methods, you **embed** one struct
+inside another. The outer struct promotes the embedded type's fields and
+methods as if they were its own:
+
+```go
+type Animal struct {
+	Name string
+}
+
+func (a Animal) Describe() string {
+	return a.Name + " makes a sound"
+}
+
+type Dog struct {
+	Animal // embedded — not a named field
+	Breed  string
+}
+
+func main() {
+	d := Dog{Animal: Animal{Name: "Rex"}, Breed: "Labrador"}
+	fmt.Println(d.Describe()) // Rex makes a sound — promoted from Animal
+	fmt.Println(d.Name)        // Rex — also promoted
+}
+```
+
+## Interfaces are implicit
+
+An interface lists a set of methods. A type satisfies it automatically just
+by implementing those methods — there's no `implements` keyword and no
+declared relationship:
+
+```go
+type Shape interface {
+	Area() float64
+}
+
+func printArea(s Shape) {
+	fmt.Println(s.Area())
+}
+
+func main() {
+	rect := Rectangle{Width: 3, Height: 4}
+	printArea(rect) // Rectangle satisfies Shape simply by having an Area() method
+}
+```
+
+This means you can define an interface after the fact, in a completely
+different package, and existing types will already satisfy it if their
+method set matches. It decouples "what a type does" from "what a type
+declares it does."
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to define a struct with a value-receiver method and call it."
+  items={[
+    { id: "o1", label: "type Circle struct {" },
+    { id: "o2", label: "\tRadius float64" },
+    { id: "o3", label: "}" },
+    { id: "o4", label: "func (c Circle) Area() float64 {", explanation: "The method declaration comes after the struct it operates on is fully defined." },
+    { id: "o5", label: "\treturn 3.14 * c.Radius * c.Radius" },
+    { id: "o6", label: "}" },
+  ]}
+  correctOrder={["o1", "o2", "o3", "o4", "o5", "o6"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Order these lines to embed one struct in another and access a promoted field."
+  items={[
+    { id: "p1", label: "type Engine struct { Horsepower int }" },
+    { id: "p2", label: "type Car struct {" },
+    { id: "p3", label: "\tEngine", explanation: "The embedded type is listed by name only, with no field name of its own." },
+    { id: "p4", label: "\tModel string" },
+    { id: "p5", label: "}" },
+    { id: "p6", label: "c := Car{Engine: Engine{Horsepower: 300}, Model: \"GT\"}" },
+    { id: "p7", label: "fmt.Println(c.Horsepower)" },
+  ]}
+  correctOrder={["p1", "p2", "p3", "p4", "p5", "p6", "p7"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`package main
+
+import "fmt"
+
+type Counter struct {
+	Count int
+}
+
+func (c Counter) IncrementByValue() {
+	c.Count++
+}
+
+func (c *Counter) IncrementByPointer() {
+	c.Count++
+}
+
+func main() {
+	c := Counter{}
+	c.IncrementByValue()
+	c.IncrementByPointer()
+	fmt.Println(c.Count)
+}`}
+  options={["0", "1", "2", "Compile error: mismatched receivers"]}
+  correctIndex={1}
+  explanation="IncrementByValue has a value receiver, so it mutates a copy of c and the change is discarded. IncrementByPointer has a pointer receiver, so it mutates the real c. Only one increment survives, giving 1."
+  actualOutput="1"
+/>
+
+## See also
+
+- [Data Structures](/en/programming-languages/go/data-structures)
+- [Error Handling](/en/programming-languages/go/error-handling)

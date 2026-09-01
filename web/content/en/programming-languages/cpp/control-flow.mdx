@@ -1,0 +1,156 @@
+---
+title: Control Flow
+description: Directing execution in C++ with if/else, switch, and the three loop forms, including the range-based for introduced in C++11.
+category: Programming Languages
+weight: 3
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Control flow statements decide which code actually runs and how many times — without them a C++ program would just be a single straight-line sequence of statements executed once, top to bottom.
+
+## `if` / `else if` / `else`
+
+```cpp
+#include <iostream>
+
+int main() {
+    int score = 82;
+
+    if (score >= 90) {
+        std::cout << "Grade: A\n";
+    } else if (score >= 80) {
+        std::cout << "Grade: B\n";
+    } else if (score >= 70) {
+        std::cout << "Grade: C\n";
+    } else {
+        std::cout << "Grade: F\n";
+    }
+    return 0;
+}
+```
+
+Conditions are evaluated top to bottom, and the first branch whose condition is `true` runs — the rest are skipped, even if a later condition would also have been `true`. A bare `if` with no matching `else` simply does nothing when its condition is `false`.
+
+## `switch`
+
+```cpp
+#include <iostream>
+
+int main() {
+    int day = 3;
+
+    switch (day) {
+        case 1:
+            std::cout << "Monday\n";
+            break;
+        case 2:
+            std::cout << "Tuesday\n";
+            break;
+        case 3:
+            std::cout << "Wednesday\n";
+            break;
+        default:
+            std::cout << "Some other day\n";
+            break;
+    }
+    return 0;
+}
+```
+
+`switch` compares one value against a set of constant cases. Each `case` needs an explicit `break` — without one, execution **falls through** into the next case regardless of whether its value matches, a C++ quirk inherited from C that's a common source of bugs when forgotten.
+
+## Loops
+
+```cpp
+#include <iostream>
+#include <vector>
+
+int main() {
+    std::vector<int> scores = {70, 85, 90, 60};
+
+    // classic for loop, index-based
+    for (int i = 0; i < scores.size(); i++) {
+        std::cout << "Index " << i << ": " << scores[i] << "\n";
+    }
+
+    // range-based for (C++11), no index needed
+    for (int score : scores) {
+        if (score < 65) continue;
+        std::cout << "Passed with " << score << "\n";
+    }
+
+    // while loop
+    int attempts = 0;
+    while (attempts < 3) {
+        std::cout << "Attempt " << attempts << "\n";
+        attempts++;
+    }
+    return 0;
+}
+```
+
+The classic `for (init; condition; increment)` gives full control over the loop variable, which matters when you need the index itself (as above, printing it) or need to skip by more than one. The **range-based for**, added in C++11, iterates directly over a container's elements without manual indexing — it's the preferred form whenever the index isn't needed, since there's no off-by-one to get wrong. `continue` skips straight to the next iteration; `break` (not shown here) would exit the loop entirely. `while` runs as long as its condition holds, checked before each iteration — if the condition is `false` from the start, the body never runs at all, unlike `do...while`, which always runs the body at least once.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build an if/else chain that labels a temperature."
+  items={[
+    { id: "declare", label: "int temp = 15;" },
+    { id: "if-cold", label: "if (temp < 0) {" },
+    { id: "print-cold", label: "    std::cout << \"Freezing\";" },
+    { id: "else-if", label: "} else if (temp < 20) {", explanation: "else if must come immediately after the closing brace of the preceding if block." },
+    { id: "print-mild", label: "    std::cout << \"Mild\";" },
+    { id: "else", label: "} else {" },
+    { id: "print-warm", label: "    std::cout << \"Warm\";" },
+    { id: "close", label: "}" },
+  ]}
+  correctOrder={["declare", "if-cold", "print-cold", "else-if", "print-mild", "else", "print-warm", "close"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a range-based for loop that sums a vector's elements."
+  items={[
+    { id: "include", label: "#include <vector>" },
+    { id: "vec", label: "std::vector<int> nums = {1, 2, 3, 4};" },
+    { id: "total", label: "int total = 0;", explanation: "total must be initialized before the loop accumulates into it." },
+    { id: "for-open", label: "for (int n : nums) {" },
+    { id: "add", label: "    total += n;" },
+    { id: "for-close", label: "}" },
+  ]}
+  correctOrder={["include", "vec", "total", "for-open", "add", "for-close"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`#include <iostream>
+
+int main() {
+    int x = 2;
+    switch (x) {
+        case 1:
+            std::cout << "one";
+        case 2:
+            std::cout << "two";
+        case 3:
+            std::cout << "three";
+            break;
+        default:
+            std::cout << "other";
+    }
+    return 0;
+}`}
+  options={["two", "twothree", "twothreeother", "onetwothree"]}
+  correctIndex={1}
+  explanation={`x matches case 2, but there's no break after it, so execution falls through into case 3 as well, printing "two" then "three" before hitting the break. case 1 and default are never reached because switch jumps straight to the matching case.`}
+  actualOutput="twothree"
+/>
+
+## See also
+
+- [Syntax & Variables](/en/programming-languages/cpp/syntax-basics) — the variables and expressions used in conditions here.
+- [Functions](/en/programming-languages/cpp/functions) — organizing repeated control-flow logic into reusable blocks.

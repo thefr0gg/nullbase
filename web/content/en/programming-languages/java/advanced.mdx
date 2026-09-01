@@ -1,0 +1,198 @@
+---
+title: Threads & Concurrency
+description: Creating threads, synchronizing shared state with synchronized, and higher-level concurrency from java.util.concurrent.
+category: Programming Languages
+weight: 9
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Java has had built-in threading support since its very first release —
+unusually early for a mainstream language. `Thread` and the `synchronized`
+keyword are the low-level primitives; the `java.util.concurrent` package
+(added in Java 5) layers safer, higher-level tools on top that most modern
+code should reach for first.
+
+## Creating a thread
+
+The simplest way is to give `Thread` a `Runnable` — any object with a
+single `run()` method, usually written as a lambda:
+
+```java
+public class Main {
+    public static void main(String[] args) throws InterruptedException {
+        Thread worker = new Thread(() -> {
+            System.out.println("Running on: " + Thread.currentThread().getName());
+        });
+        worker.start(); // schedules the thread; does NOT run it inline
+        worker.join();  // blocks main until worker finishes
+    }
+}
+```
+
+`start()` asks the JVM to schedule a new OS-backed thread to run `run()`;
+calling `run()` directly instead would just execute it synchronously on the
+current thread, defeating the point. `join()` blocks the calling thread
+until the target thread finishes — commonly used to wait for background
+work before continuing.
+
+## Race conditions and synchronized
+
+When multiple threads read and write shared mutable state without
+coordination, the result is a **race condition** — the outcome depends on
+unpredictable thread scheduling. This counter is not thread-safe:
+
+```java
+public class Counter {
+    private int count = 0;
+
+    public void increment() {
+        count++; // NOT atomic: read, add 1, write — three separate steps
+    }
+
+    public int get() {
+        return count;
+    }
+}
+```
+
+If two threads call `increment()` at nearly the same time, both can read
+the same starting value before either writes back, silently losing an
+update. `synchronized` fixes this by letting only one thread execute a
+guarded block (or method) on a given object at a time:
+
+```java
+public class Counter {
+    private int count = 0;
+
+    public synchronized void increment() {
+        count++;
+    }
+
+    public synchronized int get() {
+        return count;
+    }
+}
+```
+
+Every `synchronized` method here locks on `this`, so calls to `increment()`
+from different threads on the same `Counter` instance now execute one at a
+time, eliminating the lost-update race. The cost is that threads waiting for
+the lock block until it's free, which can hurt throughput if held too long
+or too often.
+
+## A taste of java.util.concurrent
+
+Writing correct, efficient concurrent code with raw `Thread` and
+`synchronized` is hard to get right at scale. `java.util.concurrent`
+provides higher-level building blocks. `ExecutorService` manages a pool of
+reusable threads instead of creating one `Thread` object per task:
+
+```java
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+public class Main {
+    public static void main(String[] args) throws Exception {
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+
+        Future<Integer> result = pool.submit(() -> {
+            return 21 * 2;
+        });
+
+        System.out.println(result.get()); // blocks until the task completes
+        pool.shutdown();
+    }
+}
+```
+
+`ConcurrentHashMap` is a drop-in, thread-safe alternative to `HashMap` that
+avoids locking the entire map on every operation the way wrapping a
+`HashMap` in `synchronized` would:
+
+```java
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
+
+Map<String, Integer> hits = new ConcurrentHashMap<>();
+hits.put("home", 0);
+hits.merge("home", 1, Integer::sum); // atomic read-modify-write
+System.out.println(hits.get("home")); // 1
+```
+
+`AtomicInteger` and its siblings in `java.util.concurrent.atomic` give
+lock-free atomic operations for single values, which is often enough to fix
+the `Counter` race above without `synchronized` at all:
+
+```java
+import java.util.concurrent.atomic.AtomicInteger;
+
+AtomicInteger count = new AtomicInteger(0);
+count.incrementAndGet(); // atomic, thread-safe, no lock needed
+System.out.println(count.get());
+```
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to start a thread that prints its name, then wait for it to finish."
+  items={[
+    { id: "l1", label: "Thread worker = new Thread(() -> {" },
+    { id: "l2", label: "    System.out.println(Thread.currentThread().getName());" },
+    { id: "l3", label: "});" },
+    { id: "l4", label: "worker.start();", explanation: "The Thread object must be fully constructed before start() can be called on it." },
+    { id: "l5", label: "worker.join();" },
+  ]}
+  correctOrder={["l1", "l2", "l3", "l4", "l5"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Order these lines to submit a task to an ExecutorService and read its result."
+  items={[
+    { id: "m1", label: "ExecutorService pool = Executors.newFixedThreadPool(2);" },
+    { id: "m2", label: "Future<Integer> result = pool.submit(() -> 21 * 2);", explanation: "The pool must exist before you can submit a task to it." },
+    { id: "m3", label: "System.out.println(result.get());" },
+    { id: "m4", label: "pool.shutdown();" },
+  ]}
+  correctOrder={["m1", "m2", "m3", "m4"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`public class Counter {
+    private int count = 0;
+    public void increment() { count++; }
+    public int get() { return count; }
+}
+
+public class Main {
+    public static void main(String[] args) throws InterruptedException {
+        Counter counter = new Counter();
+        Runnable task = () -> {
+            for (int i = 0; i < 100_000; i++) {
+                counter.increment();
+            }
+        };
+        Thread t1 = new Thread(task);
+        Thread t2 = new Thread(task);
+        t1.start();
+        t2.start();
+        t1.join();
+        t2.join();
+        System.out.println(counter.get() == 200_000);
+    }
+}`}
+  options={["true, always", "false, always", "It's not guaranteed — usually false, but not deterministic", "Compile error: count++ is not thread-safe"]}
+  correctIndex={2}
+  explanation="increment() isn't synchronized, so count++ (a read-modify-write of three separate steps) can interleave between the two threads and lose updates. The final count is almost always less than 200,000, but the exact value depends on unpredictable thread scheduling — it's a race condition, not a fixed wrong answer, and the code compiles fine."
+  actualOutput="false (typically — the exact value varies between runs)"
+/>
+
+## See also
+
+- [Packages & Build Tools](/en/programming-languages/java/modules-packages)
+- [Classes & Interfaces](/en/programming-languages/java/oop-or-structs)

@@ -1,0 +1,141 @@
+---
+title: Functions
+description: Declaring, defining, and calling functions in C — pass-by-value semantics, output parameters via pointers, prototypes, and recursion.
+category: Programming Languages
+weight: 4
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+C functions are pass-by-value only: every argument is copied into the function's local parameters, so a function can never modify the caller's variable directly — only its own copy. This one fact shapes a lot of idiomatic C, including why "output parameters" are passed as pointers rather than returned directly, and why understanding pass-by-value is a prerequisite for understanding pointers at all.
+
+## Declaring and calling a function
+
+A function has a return type, a name, a parameter list, and a body. C also distinguishes a **prototype** (the signature alone, ending in `;`) from a **definition** (the signature plus body) — a prototype lets you call a function before the compiler has seen its full definition:
+
+```c
+#include <stdio.h>
+
+int add(int a, int b); /* prototype: tells the compiler this function exists */
+
+int main(void) {
+    int result = add(3, 4); /* can be called here even though add is defined below */
+    printf("3 + 4 = %d\n", result);
+    return 0;
+}
+
+int add(int a, int b) { /* definition */
+    return a + b;
+}
+```
+
+Without the prototype, calling `add` before its definition appears in the file would be a compile error in modern C — the compiler needs to know a function's signature before it can generate code that calls it correctly.
+
+## Pass-by-value and why it matters
+
+```c
+#include <stdio.h>
+
+void tryToDouble(int n) {
+    n = n * 2; /* only modifies the local copy */
+}
+
+void doubleViaPointer(int *n) {
+    *n = *n * 2; /* dereferences the pointer to modify the caller's variable */
+}
+
+int main(void) {
+    int x = 5;
+
+    tryToDouble(x);
+    printf("after tryToDouble: %d\n", x); /* still 5 */
+
+    doubleViaPointer(&x); /* pass the address of x */
+    printf("after doubleViaPointer: %d\n", x); /* now 10 */
+
+    return 0;
+}
+```
+
+`tryToDouble` receives a copy of `x`'s value and can't affect the original. `doubleViaPointer` instead receives `x`'s *address*, and dereferences it with `*n` to reach into the caller's memory directly — this is how C simulates "pass by reference," and it's the reason functions like `scanf` require `&variable` for every value they need to write back.
+
+## Recursion
+
+A function calling itself works exactly as it would with iteration, provided there's a base case that stops the recursion:
+
+```c
+#include <stdio.h>
+
+long factorial(int n) {
+    if (n <= 1) {
+        return 1; /* base case */
+    }
+    return n * factorial(n - 1); /* recursive case */
+}
+
+int main(void) {
+    for (int i = 1; i <= 6; i++) {
+        printf("%d! = %ld\n", i, factorial(i));
+    }
+    return 0;
+}
+```
+
+Each call to `factorial` gets its own stack frame with its own copy of `n` — recursion in C consumes real stack memory per call, and a missing or unreachable base case causes a stack overflow rather than an infinite loop that merely hangs.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble a function with a prototype"
+  prompt="Drag these lines into the order that declares a prototype, calls the function from main, and defines it afterward."
+  items={[
+    { id: "proto", label: "int square(int n);", explanation: "The prototype must come before main so the compiler knows square's signature when main calls it." },
+    { id: "mainopen", label: "int main(void) {" },
+    { id: "call", label: "    printf(\"%d\\n\", square(5));" },
+    { id: "mainclose", label: "    return 0;\n}" },
+    { id: "def", label: "int square(int n) {\n    return n * n;\n}" },
+  ]}
+  correctOrder={["proto", "mainopen", "call", "mainclose", "def"]}
+/>
+
+<OrderingExercise
+  title="Order a pointer-based swap"
+  prompt="Drag these lines into the order that swaps two integers in main using a helper function that takes pointers."
+  items={[
+    { id: "protoswap", label: "void swap(int *a, int *b);" },
+    { id: "mainopen", label: "int main(void) {" },
+    { id: "vars", label: "    int x = 1, y = 2;" },
+    { id: "call", label: "    swap(&x, &y);", explanation: "swap needs the addresses of x and y to modify the caller's variables, not their values." },
+    { id: "print", label: "    printf(\"%d %d\\n\", x, y);" },
+    { id: "mainclose", label: "    return 0;\n}" },
+    { id: "def", label: "void swap(int *a, int *b) {\n    int temp = *a;\n    *a = *b;\n    *b = temp;\n}" },
+  ]}
+  correctOrder={["protoswap", "mainopen", "vars", "call", "print", "mainclose", "def"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`#include <stdio.h>
+
+void increment(int n) {
+    n = n + 1;
+}
+
+int main(void) {
+    int count = 10;
+    increment(count);
+    increment(count);
+    printf("%d\\n", count);
+    return 0;
+}`}
+  options={["10", "11", "12", "Compile error"]}
+  correctIndex={0}
+  explanation="increment receives a copy of count each time it's called, so modifying n inside the function has no effect on count in main — it stays 10 no matter how many times increment is called. To actually change count, increment would need to take an int * and dereference it."
+  actualOutput="10"
+/>
+
+## See also
+
+- **[Control Flow](/en/programming-languages/c/control-flow)** — the loops and conditionals functions are built from.
+- **[Pointers & Memory](/en/programming-languages/c/advanced)** — a deeper look at the pointers used here to work around pass-by-value.

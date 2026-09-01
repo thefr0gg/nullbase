@@ -1,0 +1,158 @@
+---
+title: Async & Tasks
+description: C#'s async/await model, Task and Task<T>, and how asynchronous code composes with await and Task.WhenAll.
+category: Programming Languages
+weight: 9
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+C#'s signature concurrency feature is `async`/`await` built on top of
+`Task` and `Task<T>` — asynchronous operations that represent "a value that
+will be available later" (much like a JavaScript `Promise`, though `Task`
+predates widespread use of that pattern and is backed by the .NET thread
+pool rather than a single-threaded event loop).
+
+## Task and Task\<T\>
+
+A `Task` represents an ongoing operation with no result; `Task<T>` represents
+one that will eventually produce a value of type `T`:
+
+```csharp
+using System.Threading;
+using System.Threading.Tasks;
+
+Task<int> task = Task.Run(() =>
+{
+    Thread.Sleep(1000); // simulate slow work
+    return 42;
+});
+
+Console.WriteLine("Started, doing other work...");
+int result = task.Result; // blocks until the task completes
+Console.WriteLine(result); // 42
+```
+
+Blocking on `.Result` defeats much of the point of asynchrony — real async
+code uses `await` instead, which suspends the current method without
+blocking the underlying thread.
+
+## async / await
+
+Marking a method `async` lets it use `await` to suspend until a `Task`
+completes, without blocking the calling thread. An `async` method itself
+returns a `Task` (or `Task<T>`), so callers can `await` it in turn:
+
+```csharp
+using System.Net.Http;
+using System.Threading.Tasks;
+
+async Task<string> FetchGreetingAsync()
+{
+    await Task.Delay(500); // simulates an I/O-bound wait, non-blocking
+    return "Hello from the async world";
+}
+
+async Task RunAsync()
+{
+    Console.WriteLine("Before await");
+    string greeting = await FetchGreetingAsync();
+    Console.WriteLine(greeting);
+    Console.WriteLine("After await");
+}
+
+await RunAsync();
+```
+
+The method doesn't block a thread while waiting on `Task.Delay` — control
+returns to the caller, and the rest of `FetchGreetingAsync` resumes on a
+thread-pool thread once the delay finishes. This is why `async`/`await` is
+the idiom of choice for I/O-bound work (network calls, file access, database
+queries): threads aren't wasted sitting idle waiting on I/O.
+
+## Running tasks concurrently
+
+Awaiting tasks one at a time runs them sequentially. `Task.WhenAll` starts
+several tasks and awaits all of them together, running the independent work
+concurrently:
+
+```csharp
+async Task<int> FetchLengthAsync(string url)
+{
+    await Task.Delay(300); // stands in for an HTTP call
+    return url.Length;
+}
+
+async Task RunAllAsync()
+{
+    Task<int> t1 = FetchLengthAsync("https://a.example");
+    Task<int> t2 = FetchLengthAsync("https://b.example");
+    Task<int> t3 = FetchLengthAsync("https://c.example");
+
+    int[] lengths = await Task.WhenAll(t1, t2, t3);
+    Console.WriteLine(string.Join(", ", lengths));
+}
+
+await RunAllAsync();
+```
+
+Because `t1`, `t2`, and `t3` are all started before any `await`, their
+`Task.Delay(300)` calls overlap — the whole method takes roughly 300ms total,
+not 900ms, unlike awaiting each one immediately after starting it.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build an async method that awaits a delay and returns a value."
+  items={[
+    { id: "l1", label: "async Task<int> GetNumberAsync()" },
+    { id: "l2", label: "{" },
+    { id: "l3", label: "    await Task.Delay(100);" },
+    { id: "l4", label: "    return 7;" },
+    { id: "l5", label: "}" },
+  ]}
+  correctOrder={["l1", "l2", "l3", "l4", "l5"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Put these lines in order to start two tasks concurrently and await them together with Task.WhenAll."
+  items={[
+    { id: "m1", label: "Task<int> t1 = DoWorkAsync(1);" },
+    { id: "m2", label: "Task<int> t2 = DoWorkAsync(2);" , explanation: "Both tasks must be started (assigned) before either is awaited, otherwise they run one after another instead of overlapping."},
+    { id: "m3", label: "int[] results = await Task.WhenAll(t1, t2);" },
+    { id: "m4", label: "Console.WriteLine(results.Sum());" },
+  ]}
+  correctOrder={["m1", "m2", "m3", "m4"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`async Task<string> SlowGreetingAsync()
+{
+    await Task.Delay(200);
+    return "done";
+}
+
+async Task RunAsync()
+{
+    Console.WriteLine("1");
+    var task = SlowGreetingAsync();
+    Console.WriteLine("2");
+    string result = await task;
+    Console.WriteLine(result);
+}
+
+await RunAsync();`}
+  options={["1 2 done", "1 done 2", "done 1 2", "1 2 (hangs forever)"]}
+  correctIndex={0}
+  explanation={`Calling SlowGreetingAsync() starts the task but doesn't block, so "2" prints immediately after "1", before the delay finishes. Only the subsequent await suspends RunAsync until the task completes, after which "done" prints.`}
+  actualOutput="1 2 done"
+/>
+
+## See also
+
+- [Namespaces & NuGet](/en/programming-languages/csharp/modules-packages)
+- [C#](/en/programming-languages/csharp)

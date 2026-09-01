@@ -1,0 +1,171 @@
+---
+title: Functions & Closures
+description: Function declarations, arrow functions, default and rest parameters, and closures in JavaScript.
+category: Programming Languages
+weight: 4
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Functions in JavaScript are values: you can assign them to variables, pass
+them as arguments, store them in arrays, and return them from other
+functions. This "first-class functions" property is the foundation for
+callbacks, array methods like `map`/`filter`, and closures.
+
+## Declaring functions
+
+There are three common ways to write a function, and they differ in more
+than just syntax.
+
+```js
+// Function declaration — hoisted, can be called before its definition appears
+function add(a, b) {
+  return a + b;
+}
+
+// Function expression — not hoisted, exists only once this line runs
+const subtract = function (a, b) {
+  return a - b;
+};
+
+// Arrow function — concise syntax, no own `this` or `arguments`
+const multiply = (a, b) => a * b;
+```
+
+Function declarations are hoisted with their full body, so calling one
+before its line in the file works fine. Function expressions and arrow
+functions assigned to `const`/`let` are not — the variable exists (in a
+"temporal dead zone") but isn't callable until the assignment runs.
+
+## Arrow functions
+
+Arrow functions are more than shorthand. They don't have their own `this`,
+`arguments`, or `super` — they capture those from the enclosing scope
+instead. That makes them the right choice for callbacks where you want
+`this` to stay bound to the surrounding context, and the wrong choice for
+object methods that need their own `this`.
+
+```js
+const doubled = [1, 2, 3].map(n => n * 2);
+console.log(doubled); // [2, 4, 6]
+
+const counter = {
+  count: 0,
+  incrementBad: () => {
+    this.count++; // `this` here is NOT the counter object — arrow functions
+                  // don't get their own `this`, so this silently does nothing useful
+  },
+  incrementGood() {
+    this.count++; // a regular method — `this` correctly refers to `counter`
+  },
+};
+```
+
+## Default and rest parameters
+
+Parameters can have default values, used only when the argument is
+`undefined` (not for any other falsy value). Rest parameters collect any
+remaining arguments into a real array.
+
+```js
+function createUser(name, role = "member") {
+  return { name, role };
+}
+
+console.log(createUser("ada"));            // { name: "ada", role: "member" }
+console.log(createUser("grace", "admin")); // { name: "grace", role: "admin" }
+
+function sum(...numbers) {
+  return numbers.reduce((total, n) => total + n, 0);
+}
+
+console.log(sum(1, 2, 3, 4)); // 10
+```
+
+## Closures
+
+A closure is a function that "remembers" the variables from the scope it
+was created in, even after that outer scope has finished executing. This
+is how you get private state without classes: each call to an outer
+function creates a fresh, isolated scope that inner functions can keep
+referencing.
+
+```js
+function makeCounter() {
+  let count = 0; // private to each counter — not accessible from outside
+
+  return {
+    increment() {
+      count += 1;
+      return count;
+    },
+    reset() {
+      count = 0;
+    },
+  };
+}
+
+const counterA = makeCounter();
+const counterB = makeCounter();
+
+console.log(counterA.increment()); // 1
+console.log(counterA.increment()); // 2
+console.log(counterB.increment()); // 1 — a completely separate `count`
+```
+
+Each call to `makeCounter()` creates a new `count` variable, and the
+returned methods form a closure over that specific one — `counterA` and
+`counterB` never interfere with each other.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a function that filters and doubles an array using arrow functions."
+  items={[
+    { id: "arr", label: "const nums = [1, 2, 3, 4, 5];" },
+    { id: "evens", label: "const evens = nums.filter(n => n % 2 === 0);" },
+    { id: "doubled", label: "const doubled = evens.map(n => n * 2);", explanation: "doubled depends on evens already existing, so filtering must happen first." },
+    { id: "log", label: "console.log(doubled);" },
+  ]}
+  correctOrder={["arr", "evens", "doubled", "log"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Put these lines in order to build a closure-based bank balance with a private variable."
+  items={[
+    { id: "fnOpen", label: "function makeAccount(initial) {" },
+    { id: "balance", label: "  let balance = initial;" },
+    { id: "return", label: "  return {" },
+    { id: "deposit", label: "    deposit(amount) { balance += amount; return balance; }," },
+    { id: "getBalance", label: "    getBalance() { return balance; }," },
+    { id: "returnClose", label: "  };" },
+    { id: "fnClose", label: "}" },
+  ]}
+  correctOrder={["fnOpen", "balance", "return", "deposit", "getBalance", "returnClose", "fnClose"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`function makeMultiplier(factor) {
+  return n => n * factor;
+}
+
+const triple = makeMultiplier(3);
+const quadruple = makeMultiplier(4);
+
+console.log(triple(5));
+console.log(quadruple(5));`}
+  options={["15 then 15", "15 then 20", "20 then 15", "12 then 20"]}
+  correctIndex={1}
+  explanation="Each call to makeMultiplier creates its own closure over a distinct `factor`. triple closed over 3, so triple(5) is 15; quadruple closed over 4, so quadruple(5) is 20. The two closures don't share or overwrite each other's factor even though they came from the same function."
+  actualOutput="15
+20"
+/>
+
+## See also
+
+- [Control Flow](/en/programming-languages/javascript/control-flow)
+- [Async & Promises](/en/programming-languages/javascript/advanced)

@@ -1,0 +1,172 @@
+---
+title: Error Handling
+description: PHP exceptions with try/catch/finally, custom exception classes, and how the older error-reporting model differs.
+category: Programming Languages
+weight: 7
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Modern PHP handles failure with exceptions, much like Java or Python. But
+PHP's history means you'll still run into an older, separate mechanism —
+PHP "errors" and "warnings" — especially in legacy code or when a built-in
+function fails in a way that predates PHP's exception model. Knowing both
+matters for reading real PHP codebases.
+
+## try / catch / finally
+
+```php
+<?php
+
+function divide(int $a, int $b): float {
+    if ($b === 0) {
+        throw new InvalidArgumentException("Cannot divide by zero");
+    }
+    return $a / $b;
+}
+
+try {
+    echo divide(10, 0);
+} catch (InvalidArgumentException $e) {
+    echo "Error: " . $e->getMessage() . "\n";
+} finally {
+    echo "Division attempt finished\n";
+}
+```
+
+`finally` runs whether or not an exception was thrown or caught — useful for
+cleanup like closing a file handle or a database connection.
+
+## Catching multiple exception types
+
+A single `catch` block can list several exception types with `|`, and
+catch blocks are tried in order, so put more specific types first:
+
+```php
+<?php
+
+function parseConfig(string $json): array {
+    $data = json_decode($json, true, flags: JSON_THROW_ON_ERROR);
+    return $data;
+}
+
+try {
+    parseConfig("{not valid json");
+} catch (JsonException | TypeError $e) {
+    echo "Could not parse config: " . $e->getMessage() . "\n";
+}
+```
+
+## Custom exceptions
+
+Exceptions are ordinary classes that extend `Exception` (or a more specific
+built-in subclass like `RuntimeException`). This lets you carry structured
+data and catch a specific application-level failure by type:
+
+```php
+<?php
+
+class InsufficientFundsException extends RuntimeException {
+    public function __construct(public readonly float $shortfall) {
+        parent::__construct("Insufficient funds, short by $shortfall");
+    }
+}
+
+function withdraw(float $balance, float $amount): float {
+    if ($amount > $balance) {
+        throw new InsufficientFundsException($amount - $balance);
+    }
+    return $balance - $amount;
+}
+
+try {
+    withdraw(50.0, 75.0);
+} catch (InsufficientFundsException $e) {
+    echo "Short by: " . $e->shortfall . "\n";
+}
+```
+
+## The older error-reporting model, briefly
+
+Before exceptions were fully embraced (and still today for many built-in
+functions), PHP reported problems as **errors, warnings, and notices** —
+non-exception events that could be logged, displayed inline in output, or
+silently ignored depending on `error_reporting` settings, rather than
+unwinding the call stack the way a thrown exception does:
+
+```php
+<?php
+
+$value = @$undefinedArray["missing"]; // @ suppresses the warning
+echo $value === null ? "null, no exception thrown\n" : "found\n";
+```
+
+That `@` "error suppression" operator is a legacy pattern most modern PHP
+style guides discourage — it hides genuine bugs along with the noise. PHP 8
+converted many of these old warnings into proper `Error` exceptions (a
+sibling hierarchy to `Exception`, both implementing `Throwable`), which is
+why calling an undefined function now throws an `Error` you can `catch`,
+rather than just emitting a warning and continuing with `null`.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a try/catch/finally block around a risky operation."
+  items={[
+    { id: "k1", label: "<?php" },
+    { id: "k2", label: "try {" },
+    { id: "k3", label: '    throw new RuntimeException("boom");' },
+    { id: "k4", label: "} catch (RuntimeException $e) {", explanation: "catch must directly follow the closing brace of try, with no other statements between them." },
+    { id: "k5", label: '    echo "caught: " . $e->getMessage() . "\\n";' },
+    { id: "k6", label: "} finally {" },
+    { id: "k7", label: '    echo "cleanup\\n";' },
+    { id: "k8", label: "}" },
+  ]}
+  correctOrder={["k1", "k2", "k3", "k4", "k5", "k6", "k7", "k8"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Order these lines to define and throw a custom exception with extra data."
+  items={[
+    { id: "l1", label: "<?php" },
+    { id: "l2", label: "class OutOfStockException extends RuntimeException {" },
+    { id: "l3", label: "    public function __construct(public readonly string $sku) {", explanation: "The constructor must call parent::__construct() to set the exception's message before it's usable like any other Exception." },
+    { id: "l4", label: '        parent::__construct("Out of stock: $sku");' },
+    { id: "l5", label: "    }" },
+    { id: "l6", label: "}" },
+    { id: "l7", label: 'throw new OutOfStockException("SKU-42");' },
+  ]}
+  correctOrder={["l1", "l2", "l3", "l4", "l5", "l6", "l7"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`<?php
+
+function risky(): int {
+    try {
+        throw new Exception("fail");
+    } finally {
+        echo "finally ran\\n";
+    }
+    return 1;
+}
+
+try {
+    risky();
+} catch (Exception $e) {
+    echo "caught: " . $e->getMessage() . "\\n";
+}`}
+  options={["finally ran\\ncaught: fail\\n", "caught: fail\\nfinally ran\\n", "finally ran\\n", "caught: fail\\n"]}
+  correctIndex={0}
+  explanation="finally always runs before the exception propagates further up the call stack, even though the try block never reaches its return statement. Only after finally completes does the exception continue unwinding to the outer catch."
+  actualOutput="finally ran\ncaught: fail\n"
+/>
+
+## See also
+
+- [Classes & Traits](/en/programming-languages/php/oop-or-structs)
+- [Namespaces & Composer](/en/programming-languages/php/modules-packages)

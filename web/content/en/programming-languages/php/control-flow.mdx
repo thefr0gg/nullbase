@@ -1,0 +1,186 @@
+---
+title: Control Flow
+description: PHP's if/elseif/else, its match and switch expressions, loops, and the alternative colon syntax used in templates.
+category: Programming Languages
+weight: 3
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+PHP's control flow will look immediately familiar if you know any C-family
+language, with a couple of PHP-specific additions worth knowing: `match`
+(added in PHP 8.0) and an alternative colon syntax designed for mixing PHP
+with HTML templates.
+
+## if / elseif / else
+
+Note the spelling: `elseif` (one word), not `else if`, though PHP accepts
+both — `elseif` is the conventional style in PHP codebases.
+
+```php
+<?php
+
+function classify(int $score): string {
+    if ($score >= 90) {
+        return "A";
+    } elseif ($score >= 80) {
+        return "B";
+    } else {
+        return "F";
+    }
+}
+
+echo classify(85) . "\n"; // B
+```
+
+## Loops
+
+PHP has `while`, `do...while`, `for`, and `foreach` — foreach being the one
+you'll reach for constantly, since it works directly over arrays:
+
+```php
+<?php
+
+$fruits = ["apple", "banana", "cherry"];
+
+foreach ($fruits as $index => $fruit) {
+    echo "$index: $fruit\n";
+}
+```
+
+`for` and `while` behave exactly as in C:
+
+```php
+<?php
+
+for ($i = 0; $i < 3; $i++) {
+    echo "count: $i\n";
+}
+
+$n = 1;
+while ($n < 100) {
+    $n *= 2;
+}
+echo $n . "\n"; // 128
+```
+
+## switch
+
+`switch` in PHP uses **loose comparison** (`==`) by default and falls
+through unless you `break` — the classic C-style pitfall:
+
+```php
+<?php
+
+$role = "editor";
+
+switch ($role) {
+    case "admin":
+        echo "full access\n";
+        break;
+    case "editor":
+    case "author":
+        echo "can publish\n";
+        break;
+    default:
+        echo "read only\n";
+}
+```
+
+## match — a stricter, expression-based alternative
+
+`match` (PHP 8.0+) fixes switch's two biggest footguns: it compares with
+strict (`===`) semantics, and there's no fall-through — each arm is a single
+expression, and `match` itself evaluates to a value.
+
+```php
+<?php
+
+$role = "editor";
+
+$access = match ($role) {
+    "admin" => "full access",
+    "editor", "author" => "can publish",
+    default => "read only",
+};
+
+echo $access . "\n"; // can publish
+```
+
+Unlike `switch`, an unmatched value with no `default` arm throws an
+`UnhandledMatchError` rather than silently doing nothing — a deliberate
+safety improvement.
+
+## The alternative colon syntax
+
+Inside templates that mix PHP and HTML, PHP offers a colon-based syntax for
+`if`, `foreach`, `for`, and `while` that avoids a wall of curly braces:
+
+```php
+<?php $items = ["tea", "coffee"]; ?>
+<ul>
+<?php foreach ($items as $item): ?>
+    <li><?= $item ?></li>
+<?php endforeach; ?>
+</ul>
+```
+
+`<?= $item ?>` is shorthand for `<?php echo $item; ?>` and is common in
+template files for exactly this reason.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a foreach loop that prints each fruit with its index."
+  items={[
+    { id: "c1", label: "<?php" },
+    { id: "c2", label: '$fruits = ["fig", "kiwi"];' },
+    { id: "c3", label: "foreach ($fruits as $i => $fruit) {" },
+    { id: "c4", label: '    echo "$i: $fruit\\n";', explanation: "The loop body runs once per element, with $i and $fruit bound fresh each iteration." },
+    { id: "c5", label: "}" },
+  ]}
+  correctOrder={["c1", "c2", "c3", "c4", "c5"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Order these lines to build a match expression that categorizes an HTTP status code."
+  items={[
+    { id: "d1", label: "<?php" },
+    { id: "d2", label: "$status = 404;" },
+    { id: "d3", label: "$label = match (true) {" },
+    { id: "d4", label: "    $status < 300 => \"success\",", explanation: "match (true) evaluates each arm's condition in order and picks the first that's true, like an if/elseif chain." },
+    { id: "d5", label: "    $status < 400 => \"redirect\"," },
+    { id: "d6", label: "    default => \"error\"," },
+    { id: "d7", label: "};" },
+    { id: "d8", label: "echo $label . \"\\n\";" },
+  ]}
+  correctOrder={["d1", "d2", "d3", "d4", "d5", "d6", "d7", "d8"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`<?php
+
+$value = "1";
+
+switch ($value) {
+    case 1:
+        echo "matched int 1";
+        break;
+    case "1":
+        echo "matched string 1";
+        break;
+}`}
+  options={["matched int 1", "matched string 1", "matched int 1matched string 1", "Fatal error: type mismatch"]}
+  correctIndex={0}
+  explanation="switch compares with loose ==, so case 1 matches the string '1' via type juggling before PHP ever reaches the case '1' branch. This is exactly the kind of surprise match's strict === comparison was introduced to avoid."
+  actualOutput="matched int 1"
+/>
+
+## See also
+
+- [Syntax & Variables](/en/programming-languages/php/syntax-basics)
+- [Functions](/en/programming-languages/php/functions)

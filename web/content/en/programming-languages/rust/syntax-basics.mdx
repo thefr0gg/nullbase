@@ -1,0 +1,111 @@
+---
+title: Syntax & Variables
+description: Bindings, mutability, shadowing, and the primitive types Rust builds everything else on top of.
+category: Programming Languages
+weight: 2
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Rust bindings are declared with `let`, and every binding is **immutable by default**. This is the opposite default from most languages, and it's deliberate: the compiler wants you to opt into mutability explicitly with `mut`, because an immutable value is one less thing to track when reasoning about what a piece of code can do to it.
+
+```rust
+fn main() {
+    let x = 5;
+    // x = 6; // error: cannot assign twice to immutable variable `x`
+
+    let mut y = 5;
+    y = 6; // fine — y was declared mutable
+    println!("x = {x}, y = {y}");
+}
+```
+
+## Shadowing
+
+Rust also lets you declare a new binding with the *same name* as an earlier one — called **shadowing** — which is different from mutation. Shadowing creates an entirely new variable (which can even have a different type), while `mut` changes the value of the existing one in place.
+
+```rust
+fn main() {
+    let spaces = "   "; // a &str
+    let spaces = spaces.len(); // now a usize — a new binding, same name
+
+    println!("{spaces}"); // 3
+}
+```
+
+Trying to do this with `mut` instead (`let mut spaces = "   "; spaces = spaces.len();`) would fail to compile — a `mut` binding keeps its original type forever; only shadowing lets the type change.
+
+## Scalar types
+
+Rust's primitive types are fixed-size and known at compile time: signed/unsigned integers of several widths (`i32`, `u32`, `i64`, `u64`, `usize`, …), floating point (`f32`, `f64`), `bool`, and `char` (a 4-byte Unicode scalar value, not a byte). Integer literals default to `i32` and float literals to `f64` unless the context demands otherwise.
+
+```rust
+fn main() {
+    let age: u8 = 30;          // explicit type annotation
+    let pi = 3.14159;           // inferred as f64
+    let is_active = true;
+    let grade: char = 'A';
+
+    println!("{age} {pi} {is_active} {grade}");
+}
+```
+
+## Type inference and annotations
+
+Rust infers types in most cases, so `let x = 5;` doesn't need an annotation — the compiler works out `x: i32` on its own. Annotations become mandatory when the compiler genuinely can't tell, such as parsing a string into a number:
+
+```rust
+fn main() {
+    let guess: u32 = "42".parse().expect("not a number");
+    println!("{guess}");
+}
+```
+
+Without the `: u32` annotation here, `parse()` has no way to know which numeric type to produce, and the compiler would refuse to guess — this is one of the few places type inference needs a hint from you.
+
+## See also
+
+- **[Control Flow](/en/programming-languages/rust/control-flow)** — using these bindings inside conditionals and loops.
+- **[Ownership & Borrowing](/en/programming-languages/rust/advanced)** — why some of these bindings can be copied freely and others can't.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a program that shadows a string with its length."
+  items={[
+    { id: "fn-open", label: "fn main() {" },
+    { id: "spaces1", label: "    let spaces = \"   \";", explanation: "The original &str binding must exist before it can be shadowed." },
+    { id: "spaces2", label: "    let spaces = spaces.len();" },
+    { id: "print", label: "    println!(\"{spaces}\");" },
+    { id: "fn-close", label: "}" },
+  ]}
+  correctOrder={["fn-open", "spaces1", "spaces2", "print", "fn-close"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a program that parses a string into a u32 and prints it."
+  items={[
+    { id: "fn-open", label: "fn main() {" },
+    { id: "guess", label: "    let guess: u32 = \"42\".parse().expect(\"not a number\");", explanation: "The annotation on guess is required before parse() can be called this way." },
+    { id: "print", label: "    println!(\"{guess}\");" },
+    { id: "fn-close", label: "}" },
+  ]}
+  correctOrder={["fn-open", "guess", "print", "fn-close"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`fn main() {
+    let x = 5;
+    let x = x + 1;
+    let x = x * 2;
+    println!("{x}");
+}`}
+  options={["5", "6", "10", "12"]}
+  correctIndex={3}
+  explanation="Each let re-declares x via shadowing: it starts at 5, becomes 6 (5 + 1), then becomes 12 (6 * 2). Because these are new bindings rather than mutation, this compiles even though x was never declared mut — that's exactly the distinction shadowing makes possible."
+  actualOutput="12"
+/>

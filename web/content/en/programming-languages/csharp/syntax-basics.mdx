@@ -1,0 +1,127 @@
+---
+title: Syntax & Variables
+description: Variables, type inference with var, value vs. reference types, and nullable reference types in C#.
+category: Programming Languages
+weight: 2
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+C# is statically typed: every variable has a type known at compile time,
+whether you write it explicitly or let the compiler infer it. Statements end
+with a semicolon, blocks are delimited with `{}`, and identifiers are
+case-sensitive.
+
+## Declaring variables
+
+You can declare a variable with an explicit type or with `var`, which asks
+the compiler to infer the type from the right-hand side. Both produce exactly
+the same statically typed variable — `var` is not dynamic typing.
+
+```csharp
+int age = 30;
+double price = 19.99;
+string name = "nullbase";
+bool isActive = true;
+
+// var infers the type at compile time — it's still int, not "any"
+var count = 42;        // inferred as int
+var label = "widgets"; // inferred as string
+```
+
+Once a variable is declared with a type (explicit or inferred), that type is
+fixed — you cannot later assign a `string` to a variable that was inferred as
+`int`.
+
+## Value types vs. reference types
+
+C# distinguishes value types (`int`, `double`, `bool`, `struct`, and other
+primitives), which are copied by value, from reference types (`class`,
+`string`, arrays, and most everything else), which are copied by reference.
+
+```csharp
+int a = 5;
+int b = a;   // b gets a copy of a's value
+b = 10;
+Console.WriteLine(a); // still 5
+
+int[] arr1 = { 1, 2, 3 };
+int[] arr2 = arr1;     // arr2 refers to the same array as arr1
+arr2[0] = 99;
+Console.WriteLine(arr1[0]); // 99 — both variables point at the same array
+```
+
+`string` is technically a reference type, but it's immutable, so it behaves
+like a value in practice: no method on `string` ever mutates it in place,
+each operation returns a new string.
+
+## Constants and nullable types
+
+`const` declares a compile-time constant; `readonly` (covered with classes)
+declares a value that can only be set once, at construction time. Reference
+types are nullable by default unless you opt into nullable reference type
+checking (`#nullable enable`, or project-wide via `.csproj`), which lets the
+compiler flag places where a `null` might slip through unexpectedly.
+
+```csharp
+#nullable enable
+
+const double Pi = 3.14159;
+
+string? maybeNull = null;      // explicitly nullable
+string definitelyNotNull = "hi"; // compiler warns if this is ever assigned null
+
+int? maybeNumber = null;       // nullable value type via Nullable<T>
+if (maybeNumber.HasValue)
+{
+    Console.WriteLine(maybeNumber.Value);
+}
+```
+
+`int?` is shorthand for `Nullable<int>` — value types aren't nullable by
+default, so C# wraps them in a struct that adds a "has value" flag when you
+need a value type that can also be `null`.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to declare two variables — one explicit, one inferred — and print their sum."
+  items={[
+    { id: "l1", label: "int x = 4;" },
+    { id: "l2", label: "var y = 6;", explanation: "var can appear anywhere a type could, as long as the compiler can infer it from the initializer." },
+    { id: "l3", label: "Console.WriteLine(x + y);" },
+  ]}
+  correctOrder={["l1", "l2", "l3"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Put these lines in order to declare a nullable int, check it, and print its value safely."
+  items={[
+    { id: "m1", label: "int? maybeNumber = 7;" },
+    { id: "m2", label: "if (maybeNumber.HasValue)" },
+    { id: "m3", label: "{" },
+    { id: "m4", label: "    Console.WriteLine(maybeNumber.Value);" },
+    { id: "m5", label: "}" },
+  ]}
+  correctOrder={["m1", "m2", "m3", "m4", "m5"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`int[] original = { 1, 2, 3 };
+int[] alias = original;
+alias[0] = 100;
+Console.WriteLine(original[0]);`}
+  options={["1", "100", "0", "Compile error"]}
+  correctIndex={1}
+  explanation="Arrays are reference types in C#. alias doesn't copy the array — it's a second reference to the same array object, so mutating through alias is visible through original too."
+  actualOutput="100"
+/>
+
+## See also
+
+- [C#](/en/programming-languages/csharp)
+- [Control Flow](/en/programming-languages/csharp/control-flow)

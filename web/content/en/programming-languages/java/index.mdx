@@ -1,0 +1,123 @@
+---
+title: Java
+description: An overview of Java, the class-based, statically typed, object-oriented language built to run anywhere the JVM does.
+category: Programming Languages
+weight: 1
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Java was released by Sun Microsystems in 1995 (now maintained by Oracle)
+under the slogan "write once, run anywhere." Source code compiles to
+platform-independent **bytecode**, which runs on the Java Virtual Machine
+(JVM) rather than directly on any one operating system. The same `.class`
+file runs unmodified on Windows, Linux, or macOS as long as a compatible JVM
+is installed.
+
+Java is statically typed, garbage collected, and deeply object-oriented:
+almost everything you write lives inside a class. It has powered a huge
+share of enterprise backend systems, Android apps (via a Java-compatible
+toolchain), and large-scale distributed systems for three decades, and its
+ecosystem of mature libraries and tooling (Maven, Gradle, Spring) is one of
+the largest in the industry.
+
+## What makes Java distinctive
+
+- **The JVM.** Code compiles to bytecode, not machine code. The JVM's
+  just-in-time compiler then turns hot bytecode into native instructions at
+  run time, and the same bytecode runs unmodified on any platform with a JVM.
+- **Everything is a class (almost).** There are no free-floating functions.
+  Every method lives inside a class or interface, even a program's `main`
+  entry point.
+- **Checked exceptions.** Java distinguishes exceptions the compiler forces
+  you to handle or declare (checked) from those it doesn't (unchecked) — a
+  distinction most other mainstream languages dropped.
+- **Single inheritance, multiple interfaces.** A class extends at most one
+  superclass but can implement any number of interfaces, sidestepping the
+  diamond problem that full multiple inheritance creates.
+- **Automatic memory management.** A generational garbage collector reclaims
+  unreachable objects; there's no manual `free` or `delete`.
+- **Strong backward compatibility.** Code written for Java 1.2 in the late
+  1990s largely still compiles today — a deliberate, heavily guarded
+  language-evolution policy.
+
+Here's a minimal, complete Java program:
+
+```java
+public class Main {
+    public static void main(String[] args) {
+        System.out.println("Hello, nullbase!");
+    }
+}
+```
+
+The file must be named `Main.java` to match the public class name, and
+`main` must have exactly this signature — `public static void
+main(String[] args)` — for the JVM to recognize it as the entry point.
+
+## When you'd reach for Java
+
+Java is a strong default for large, long-lived backend systems where team
+size, tooling maturity, and long-term maintainability matter more than
+minimal startup latency: enterprise services, Android applications, and
+big data infrastructure (Hadoop, Kafka, and Spark are all written in Java or
+its JVM sibling Scala). It's less commonly reached for when you want a
+single small binary with no runtime to install, which is where compiled
+languages like Go or Rust tend to win.
+
+## What's next
+
+The following pages walk through Java from syntax to concurrency: variables
+and types, control flow, methods, the built-in collection types, classes and
+interfaces, exception handling, the package and build-tool ecosystem, and
+finally threads and `java.util.concurrent`.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a minimal, working Java program that prints a greeting."
+  items={[
+    { id: "classopen", label: "public class Main {" },
+    { id: "mainopen", label: "    public static void main(String[] args) {", explanation: "main must be declared inside the class body." },
+    { id: "body", label: "        System.out.println(\"Hello, Java\");" },
+    { id: "mainclose", label: "    }" },
+    { id: "classclose", label: "}" },
+  ]}
+  correctOrder={["classopen", "mainopen", "body", "mainclose", "classclose"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Put these lines in order to declare a class field, set it in the constructor, and print it from main."
+  items={[
+    { id: "c1", label: "public class Greeter {" },
+    { id: "c2", label: "    private String name;", explanation: "Fields are declared before the constructor uses them." },
+    { id: "c3", label: "    public Greeter(String name) { this.name = name; }" },
+    { id: "c4", label: "    public static void main(String[] args) {" },
+    { id: "c5", label: "        Greeter g = new Greeter(\"Ada\");" },
+    { id: "c6", label: "        System.out.println(g.name);" },
+    { id: "c7", label: "    }" },
+    { id: "c8", label: "}" },
+  ]}
+  correctOrder={["c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`public class Main {
+    public static void main(String[] args) {
+        System.out.println("nullbase");
+    }
+}`}
+  options={["nullbase", "\"nullbase\"", "Compile error: no return type", "Hello, nullbase!"]}
+  correctIndex={0}
+  explanation="System.out.println prints the string's contents without the surrounding quotes, followed by a newline. The quotes only delimit the literal in source code; they aren't part of the runtime value."
+  actualOutput="nullbase"
+/>
+
+## See also
+
+- [Syntax & Variables](/en/programming-languages/java/syntax-basics)
+- [Threads & Concurrency](/en/programming-languages/java/advanced)

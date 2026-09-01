@@ -1,0 +1,154 @@
+---
+title: Modules & Packages
+description: How Go organizes code into packages and dependencies into modules tracked by go.mod and go.sum.
+category: Programming Languages
+weight: 8
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Go organizes code at two levels: **packages** group related source files
+within a directory, and **modules** group packages into a versioned,
+distributable unit with its own dependency list.
+
+## Packages
+
+Every `.go` file starts with a `package` declaration. All files in the same
+directory must declare the same package name, and that name becomes the
+namespace other code imports:
+
+```go
+package geometry
+
+func Area(width, height float64) float64 {
+	return width * height
+}
+```
+
+Another file elsewhere imports it by its module path and calls the
+exported (capitalized) name:
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"example.com/myapp/geometry"
+)
+
+func main() {
+	fmt.Println(geometry.Area(3, 4)) // 12
+}
+```
+
+`import` can pull in multiple packages at once inside parentheses, as
+above. The standard library ships as ordinary packages you import the same
+way — `"fmt"`, `"strings"`, `"net/http"` — with no separate installation
+step.
+
+## go.mod and Go modules
+
+A **module** is the unit of versioning and dependency management — usually
+one Git repository. `go mod init` creates a `go.mod` file declaring the
+module's path and the Go version it targets:
+
+```bash
+go mod init example.com/myapp
+```
+
+```go
+module example.com/myapp
+
+go 1.22
+```
+
+Adding an import to a real dependency and running `go build` (or `go mod
+tidy`) fetches it and records the exact version in `go.mod`, with a
+cryptographic checksum of every dependency in `go.sum`:
+
+```go
+module example.com/myapp
+
+go 1.22
+
+require github.com/google/uuid v1.6.0
+```
+
+`go.sum` isn't meant to be hand-edited — it's a lock file Go maintains to
+guarantee reproducible builds: the same `go.mod` always resolves to
+byte-identical dependency code.
+
+## Useful module commands
+
+```bash
+go mod init example.com/myapp   # start a new module
+go mod tidy                      # add missing / remove unused dependencies
+go get github.com/some/pkg@v1.2.0  # add or upgrade one dependency
+go build ./...                    # build every package in the module
+```
+
+## Internal packages
+
+A directory named `internal` restricts what can import it: packages under
+`internal/` are only importable by code inside the module tree rooted at
+`internal`'s parent. This is Go's built-in mechanism for marking code
+"implementation detail, not part of your public API," enforced by the
+compiler rather than by convention alone.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to set up a new module and its main package."
+  items={[
+    { id: "n1", label: "go mod init example.com/hello" },
+    { id: "n2", label: "package main" },
+    { id: "n3", label: "import \"fmt\"", explanation: "The module must exist before you write source files that belong to it." },
+    { id: "n4", label: "func main() {" },
+    { id: "n5", label: "\tfmt.Println(\"hello\")" },
+    { id: "n6", label: "}" },
+  ]}
+  correctOrder={["n1", "n2", "n3", "n4", "n5", "n6"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Order these lines to import a local package and call one of its exported functions."
+  items={[
+    { id: "q1", label: "package main" },
+    { id: "q2", label: "import (" },
+    { id: "q3", label: "\t\"fmt\"" },
+    { id: "q4", label: "\t\"example.com/myapp/geometry\"", explanation: "Imports are grouped inside parentheses, standard library and local paths alike." },
+    { id: "q5", label: ")" },
+    { id: "q6", label: "func main() {" },
+    { id: "q7", label: "\tfmt.Println(geometry.Area(2, 5))" },
+    { id: "q8", label: "}" },
+  ]}
+  correctOrder={["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`package main
+
+import "fmt"
+
+func main() {
+	fmt.Println(add(2, 3))
+}
+
+func add(a, b int) int {
+	return a + b
+}`}
+  options={["Compile error: add used before declared", "5", "2 3", "Compile error: add not exported"]}
+  correctIndex={1}
+  explanation="Unlike a scripting language read top to bottom, Go compiles a whole file (and package) before running it, so declaration order inside a file doesn't matter — add can be defined after main and still be called from it. Lowercase names are usable within the same package regardless of export status."
+  actualOutput="5"
+/>
+
+## See also
+
+- [Error Handling](/en/programming-languages/go/error-handling)
+- [Goroutines & Channels](/en/programming-languages/go/advanced)

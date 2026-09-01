@@ -1,0 +1,165 @@
+---
+title: Methods
+description: Java has no free-standing functions — every reusable block of code is a method on a class, including overloaded variants.
+category: Programming Languages
+weight: 4
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Java has no free functions. Every piece of reusable, callable code is a
+**method**, declared inside a class or interface. Even a program's entry
+point, `main`, is a `static` method on some class — there's no way to write
+a function that floats outside a class body.
+
+## Declaring a method
+
+A method declaration lists (in order) an access modifier, optional
+modifiers like `static`, a return type, a name, and a parameter list:
+
+```java
+public class MathUtils {
+    public static int square(int n) {
+        return n * n;
+    }
+
+    public static void printSquare(int n) {
+        System.out.println(square(n));
+    }
+}
+```
+
+`static` methods belong to the class itself and can be called without
+creating an instance (`MathUtils.square(5)`). Instance methods (no
+`static`) operate on a particular object and are called through a reference
+to one (`someObject.someMethod()`).
+
+## void vs. returning a value
+
+A method that doesn't produce a value declares `void` as its return type
+and simply doesn't use `return` with an expression:
+
+```java
+public static void greet(String name) {
+    System.out.println("Hello, " + name);
+    return; // optional here — falling off the end of a void method also works
+}
+```
+
+A method with a real return type must return a value on every possible
+path, or the compiler rejects it:
+
+```java
+public static String describe(int n) {
+    if (n < 0) {
+        return "negative";
+    } else {
+        return "non-negative";
+    }
+    // no final return needed — every path above already returns
+}
+```
+
+## Method overloading
+
+Java allows multiple methods with the **same name** in the same class as
+long as their parameter lists differ in number or type — this is
+**overloading**, resolved entirely at compile time based on the argument
+types at the call site:
+
+```java
+public class Printer {
+    public static void print(int value) {
+        System.out.println("int: " + value);
+    }
+
+    public static void print(double value) {
+        System.out.println("double: " + value);
+    }
+
+    public static void print(String value) {
+        System.out.println("String: " + value);
+    }
+}
+```
+
+Calling `Printer.print(5)` picks the `int` overload, `Printer.print(5.0)`
+picks the `double` overload, and `Printer.print("five")` picks the `String`
+overload — the compiler chooses based on the static types of the arguments,
+not on any run-time inspection. Overloading is different from **overriding**
+(covered on the [Classes & Interfaces](/en/programming-languages/java/oop-or-structs)
+page), which replaces a method's behavior in a subclass with the *same*
+signature.
+
+## Varargs
+
+A method can accept a variable number of trailing arguments with `...`,
+which the method body sees as an array:
+
+```java
+public static int sum(int... numbers) {
+    int total = 0;
+    for (int n : numbers) {
+        total += n;
+    }
+    return total;
+}
+
+// sum(1, 2, 3) and sum() are both valid calls
+```
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a static method that doubles a number and a main that calls it."
+  items={[
+    { id: "f1", label: "public class Main {" },
+    { id: "f2", label: "    public static int doubleIt(int n) {" },
+    { id: "f3", label: "        return n * 2;", explanation: "The return statement must be inside the method body it belongs to." },
+    { id: "f4", label: "    }" },
+    { id: "f5", label: "    public static void main(String[] args) {" },
+    { id: "f6", label: "        System.out.println(doubleIt(21));" },
+    { id: "f7", label: "    }" },
+    { id: "f8", label: "}" },
+  ]}
+  correctOrder={["f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Order these lines to declare two overloaded describe methods (int and String) and call both from main."
+  items={[
+    { id: "g1", label: "public class Main {" },
+    { id: "g2", label: "    public static void describe(int n) { System.out.println(\"number \" + n); }" },
+    { id: "g3", label: "    public static void describe(String s) { System.out.println(\"text \" + s); }", explanation: "Both overloads must be declared before main calls either of them." },
+    { id: "g4", label: "    public static void main(String[] args) {" },
+    { id: "g5", label: "        describe(7);" },
+    { id: "g6", label: "        describe(\"hi\");" },
+    { id: "g7", label: "    }" },
+    { id: "g8", label: "}" },
+  ]}
+  correctOrder={["g1", "g2", "g3", "g4", "g5", "g6", "g7", "g8"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`public class Main {
+    static void show(long n) { System.out.println("long: " + n); }
+    static void show(int n) { System.out.println("int: " + n); }
+
+    public static void main(String[] args) {
+        show(5);
+    }
+}`}
+  options={["long: 5", "int: 5", "Compile error: ambiguous method call", "It prints both"]}
+  correctIndex={1}
+  explanation="Overload resolution prefers the most specific applicable match without a widening conversion. The literal 5 is already an int, so the int overload matches exactly and is chosen over long, which would require widening."
+  actualOutput="int: 5"
+/>
+
+## See also
+
+- [Control Flow](/en/programming-languages/java/control-flow)
+- [Classes & Interfaces](/en/programming-languages/java/oop-or-structs)

@@ -1,0 +1,109 @@
+---
+title: Classes & Objects
+description: Defining real classes in Python — __init__, instance attributes, inheritance with super(), and the dunder methods that make objects behave like built-in types.
+category: Programming Languages
+weight: 6
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+A Python class is defined with `class`, and almost every class starts with an `__init__` method — the constructor, called automatically when a new instance is created — which sets up instance attributes via `self`.
+
+```python
+class Dog:
+    def __init__(self, name, breed):
+        self.name = name
+        self.breed = breed
+
+    def bark(self):
+        return f"{self.name} says Woof!"
+
+rex = Dog("Rex", "Labrador")
+print(rex.bark())  # Rex says Woof!
+```
+
+`self` is the instance the method was called on — Python passes it explicitly as the first parameter of every instance method, rather than making it an implicit keyword like `this` in other languages. `rex.bark()` is really `Dog.bark(rex)` under the hood.
+
+Inheritance lets a class reuse and extend another class's behavior. A subclass calls `super().__init__(...)` to run the parent class's constructor before adding its own setup, and it can override any method, including ones the parent already defines.
+
+```python
+class Puppy(Dog):
+    def __init__(self, name, breed, age_months):
+        super().__init__(name, breed)
+        self.age_months = age_months
+
+    def bark(self):
+        return f"{self.name} says Yip!"
+
+buddy = Puppy("Buddy", "Poodle", 4)
+print(buddy.bark())  # Buddy says Yip!
+```
+
+"Dunder" (double-underscore) methods are how a class plugs into Python's built-in operators and functions instead of needing its own bespoke API. `__repr__` controls what `print()` and the REPL show for an instance; `__eq__` controls what `==` does between two instances.
+
+```python
+class Point:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def __repr__(self):
+        return f"Point({self.x}, {self.y})"
+
+    def __eq__(self, other):
+        return self.x == other.x and self.y == other.y
+
+p1 = Point(1, 2)
+p2 = Point(1, 2)
+print(p1 == p2)  # True — because __eq__ compares the coordinates
+print(p1)         # Point(1, 2) — because __repr__ formats it
+```
+
+Without `__eq__`, `==` falls back to identity comparison — whether the two names refer to the exact same object in memory — which is almost never what you want for a value-like class such as `Point`.
+
+## See also
+
+- **[Data Structures](/en/programming-languages/python/data-structures)** — the built-in types dunder methods like `__eq__` make your own classes behave like.
+- **[Error Handling](/en/programming-languages/python/error-handling)** — custom exception classes, which are themselves just classes that inherit from `Exception`.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to define a Dog class and call a method on an instance."
+  items={[
+    { id: "class", label: "class Dog:" },
+    { id: "init", label: "    def __init__(self, name, breed):", explanation: "The constructor must be defined as part of the class body, right after the class line." },
+    { id: "setname", label: "        self.name = name" },
+    { id: "setbreed", label: "        self.breed = breed" },
+    { id: "bark", label: "    def bark(self):" },
+    { id: "return", label: '        return f"{self.name} says Woof!"' },
+    { id: "instantiate", label: 'rex = Dog("Rex", "Labrador")', explanation: "The class needs to be fully defined before an instance of it can be created." },
+    { id: "call", label: "print(rex.bark())" },
+  ]}
+  correctOrder={["class", "init", "setname", "setbreed", "bark", "return", "instantiate", "call"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to define a Puppy subclass that calls the parent constructor with super()."
+  items={[
+    { id: "class", label: "class Puppy(Dog):" },
+    { id: "init", label: "    def __init__(self, name, breed, age_months):", explanation: "This overriding constructor belongs directly under the class line." },
+    { id: "super", label: "        super().__init__(name, breed)", explanation: "The parent's setup should run before this subclass adds its own attribute." },
+    { id: "setage", label: "        self.age_months = age_months" },
+    { id: "instantiate", label: 'buddy = Puppy("Buddy", "Poodle", 4)' },
+  ]}
+  correctOrder={["class", "init", "super", "setage", "instantiate"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`class Point:\n    def __init__(self, x, y):\n        self.x = x\n        self.y = y\n\np1 = Point(1, 2)\np2 = Point(1, 2)\nprint(p1 == p2)`}
+  options={["True", "False", "An error, because Point has no __eq__", "Point(1, 2) == Point(1, 2)"]}
+  correctIndex={1}
+  explanation="Without a custom __eq__ method, Python's default equality check compares object identity — whether p1 and p2 are literally the same object in memory. They're two separate Point instances that merely have equal coordinates, so == is False even though the values look identical."
+  actualOutput="False"
+/>
+

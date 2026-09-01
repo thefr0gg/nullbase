@@ -1,0 +1,115 @@
+---
+title: TypeScript
+description: A typed superset of JavaScript that adds compile-time type checking on top of the same runtime you already know.
+category: Programming Languages
+weight: 1
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+**TypeScript** is a statically typed language that compiles down to plain JavaScript. It doesn't introduce a new runtime, a new garbage collector, or new execution semantics — every valid JavaScript program is (almost) valid TypeScript, and every TypeScript program eventually becomes JavaScript that runs in the same engines JavaScript already runs in (V8, Node, browsers). What TypeScript adds is a **type checker**: a separate compile-time pass that reads your annotations and inferred types, flags mismatches, and then erases all of that type information before the code ever executes.
+
+That last part matters. Types in TypeScript have **zero runtime cost and zero runtime presence** — `interface`, `type`, and most type annotations vanish completely during compilation (`tsc`, or a transpiler like esbuild/SWC). This is why TypeScript can catch a whole category of bugs — passing a `string` where a `number` is expected, calling a method that doesn't exist on an object, forgetting to handle `null` — before you ever run the program, without changing how the program behaves once it does run.
+
+## Why add a type system to JavaScript
+
+JavaScript's dynamic typing is flexible but means many mistakes only surface at runtime, often in production. TypeScript's compiler checks the shapes of your data as you write code:
+
+```ts
+function greet(name: string) {
+  return `Hello, ${name.toUpperCase()}!`;
+}
+
+greet("Ada");
+greet(42); // Type error: Argument of type 'number' is not assignable to parameter of type 'string'
+```
+
+The second call would have thrown a runtime `TypeError` in plain JavaScript (`42.toUpperCase is not a function`) — but only once that line actually executed, maybe deep in a rarely hit code path. TypeScript catches it immediately, at the point you write it, in your editor.
+
+## Structural typing
+
+Unlike class-based languages such as Java or C#, TypeScript's type system is **structural**, not nominal: two types are compatible if they have the same shape, regardless of name or declared relationship.
+
+```ts
+interface Point {
+  x: number;
+  y: number;
+}
+
+function printPoint(p: Point) {
+  console.log(`(${p.x}, ${p.y})`);
+}
+
+const coord = { x: 3, y: 4, label: "origin-ish" };
+printPoint(coord); // OK — coord has at least x and y as numbers
+```
+
+`coord` was never declared as a `Point`, and it even has an extra `label` field, but it structurally satisfies `Point`'s shape, so the assignment is allowed. This is a deliberate design choice that mirrors how JavaScript objects actually get passed around.
+
+## How this section is organized
+
+- **[Syntax & Types](/en/programming-languages/typescript/syntax-basics)** — variable declarations, primitive types, and `type` aliases.
+- **[Control Flow](/en/programming-languages/typescript/control-flow)** — `if`/`switch` with type narrowing.
+- **[Functions](/en/programming-languages/typescript/functions)** — typed parameters, return types, optional and default parameters.
+- **[Data Structures](/en/programming-languages/typescript/data-structures)** — typed arrays, tuples, `Record`, and `Map`.
+- **[Classes & Interfaces](/en/programming-languages/typescript/oop-or-structs)** — access modifiers, `interface` vs `type`.
+- **[Error Handling](/en/programming-languages/typescript/error-handling)** — `try`/`catch` and custom `Error` subclasses.
+- **[Modules & Packages](/en/programming-languages/typescript/modules-packages)** — ES modules, npm, `tsconfig.json`, and `@types`.
+- **[Generics](/en/programming-languages/typescript/advanced)** — writing code that works across types without giving up type safety.
+
+TypeScript builds on JavaScript — see the [JavaScript](/en/programming-languages/javascript) guide for the underlying runtime behavior.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a function that greets a typed name and a call that triggers a type error."
+  items={[
+    { id: "fn-decl", label: "function greet(name: string) {" },
+    { id: "fn-body", label: "  return `Hello, ${name.toUpperCase()}!`;", explanation: "The function body must come after its signature and before the closing brace." },
+    { id: "fn-close", label: "}" },
+    { id: "good-call", label: "greet(\"Ada\");" },
+    { id: "bad-call", label: "greet(42); // Type error" },
+  ]}
+  correctOrder={["fn-decl", "fn-body", "fn-close", "good-call", "bad-call"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to declare a Point interface and a function that accepts any structurally matching object."
+  items={[
+    { id: "iface-open", label: "interface Point {" },
+    { id: "iface-x", label: "  x: number;" },
+    { id: "iface-y", label: "  y: number;", explanation: "Both fields must be declared inside the interface body before it closes." },
+    { id: "iface-close", label: "}" },
+    { id: "fn-decl", label: "function printPoint(p: Point) {" },
+    { id: "fn-body", label: "  console.log(`(${p.x}, ${p.y})`);" },
+    { id: "fn-close", label: "}" },
+  ]}
+  correctOrder={["iface-open", "iface-x", "iface-y", "iface-close", "fn-decl", "fn-body", "fn-close"]}
+/>
+
+<PredictOutput
+  title="What does the type checker say?"
+  code={`interface User {
+  id: number;
+  name: string;
+}
+
+function getId(user: User): number {
+  return user.id;
+}
+
+const raw = { id: "u-1", name: "Ada" };
+getId(raw);`}
+  options={["\"u-1\"", "Type error: Argument of type '{ id: string; name: string; }' is not assignable to parameter of type 'User'", "undefined", "0"]}
+  correctIndex={1}
+  explanation="raw.id is a string, but User.id is declared as number. TypeScript's structural check compares each property's type, not just its presence — a mismatched property type fails the check even though the shape otherwise lines up."
+  actualOutput="Type error: Argument of type '{ id: string; name: string; }' is not assignable to parameter of type 'User'"
+/>
+
+## See also
+
+- [Syntax & Types](/en/programming-languages/typescript/syntax-basics)
+- [Generics](/en/programming-languages/typescript/advanced)

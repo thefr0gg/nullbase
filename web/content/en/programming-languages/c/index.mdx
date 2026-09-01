@@ -1,0 +1,109 @@
+---
+title: C
+description: A fast, unmanaged systems language from 1972 that still underpins most operating systems, runtimes, and embedded devices in use today.
+category: Programming Languages
+weight: 1
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+**C** was created by Dennis Ritchie at Bell Labs in the early 1970s, originally to rewrite the Unix kernel in something more portable than assembly. Over fifty years later it's still the language most operating system kernels, embedded firmware, language runtimes (CPython, the JVM's core, Lua), and low-level libraries (`libc`, SQLite, zlib) are written in. C compiles directly to machine code, has no garbage collector and no runtime safety net, and gives the programmer near-total control over memory layout and CPU behavior — which is exactly why it's both extremely fast and extremely easy to shoot yourself in the foot with.
+
+Everything this site covers about C follows from one design decision: C trusts the programmer completely. There's no bounds checking on arrays, no automatic memory management, and no exceptions — just functions, pointers, and a very small standard library. Modern languages like Rust and Go exist largely as reactions to how much that trust costs in practice, but C's directness is also why it remains the lingua franca that nearly every other language's runtime is implemented in.
+
+## A minimal C program
+
+```c
+#include <stdio.h>
+
+int main(void) {
+    printf("Hello, nullbase!\n");
+    return 0;
+}
+```
+
+`#include <stdio.h>` pulls in declarations for standard I/O functions like `printf`. `main` is the entry point every C program must have; returning `0` tells the operating system the program exited successfully (a nonzero value signals an error to whatever invoked it — a shell script, a build tool, and so on).
+
+## Compiling and running it
+
+C is compiled ahead of time, not interpreted — there's no C runtime reading your source line by line. A compiler (`gcc` or `clang`) translates source into a native executable *before* it ever runs:
+
+```c
+#include <stdio.h>
+
+int square(int n) {
+    return n * n;
+}
+
+int main(void) {
+    for (int i = 1; i <= 5; i++) {
+        printf("%d squared is %d\n", i, square(i));
+    }
+    return 0;
+}
+```
+
+Saved as `squares.c`, this becomes a runnable binary with:
+
+```bash
+gcc squares.c -o squares
+./squares
+```
+
+There's no package manager step, no interpreter to invoke — `gcc` reads the `.c` file, resolves the `#include`s, and emits a standalone executable. That compile-then-run split (rather than a JIT or interpreter) is why C programs start instantly and why a bug like reading past the end of an array is a runtime crash, not a compile error the compiler could have caught for you.
+
+## What's ahead
+
+The rest of this section works through C's syntax and variables, control flow, functions, arrays and strings, structs (C's substitute for classes), error handling by return code, how multi-file programs are built, and finally pointers and manual memory management — the part of C most other languages have deliberately removed.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble a minimal program"
+  prompt="Drag these lines into the order that produces a valid C program printing a greeting."
+  items={[
+    { id: "include", label: "#include <stdio.h>", explanation: "The compiler needs to see printf's declaration before it's called, so the #include must come first." },
+    { id: "main-open", label: "int main(void) {" },
+    { id: "printf", label: "    printf(\"Hello, nullbase!\\n\");" },
+    { id: "return", label: "    return 0;" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["include", "main-open", "printf", "return", "main-close"]}
+/>
+
+<OrderingExercise
+  title="Order the build steps"
+  prompt="Put these steps in the order you'd actually perform them to go from source code to a running program."
+  items={[
+    { id: "write", label: "Write squares.c in a text editor" },
+    { id: "compile", label: "Run: gcc squares.c -o squares", explanation: "Compiling has to happen after the source exists, and before you can run the binary it produces." },
+    { id: "run", label: "Run: ./squares" },
+  ]}
+  correctOrder={["write", "compile", "run"]}
+/>
+
+<PredictOutput
+  title="What does the loop print?"
+  code={`#include <stdio.h>
+
+int square(int n) {
+    return n * n;
+}
+
+int main(void) {
+    for (int i = 1; i <= 3; i++) {
+        printf("%d squared is %d\\n", i, square(i));
+    }
+    return 0;
+}`}
+  options={["1 squared is 1\\n2 squared is 4\\n3 squared is 9", "0 squared is 0\\n1 squared is 1\\n2 squared is 4", "1 squared is 1\\n2 squared is 2\\n3 squared is 3", "Compile error"]}
+  correctIndex={0}
+  explanation="The loop runs i = 1, 2, 3 (stopping once i <= 3 is false), and square(i) returns n * n each time, so it prints 1, 4, and 9 — not i itself, which is the tempting wrong answer if you skim past the function call."
+  actualOutput="1 squared is 1\n2 squared is 4\n3 squared is 9"
+/>
+
+## See also
+
+- **[Syntax & Variables](/en/programming-languages/c/syntax-basics)** — types, operators, and declarations in more depth.
+- **[Pointers & Memory](/en/programming-languages/c/advanced)** — the part of C that most distinguishes it from higher-level languages.

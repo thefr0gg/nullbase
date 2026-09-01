@@ -1,0 +1,120 @@
+---
+title: Functions
+description: Declaring functions, returning values without a return statement, and Rust's closures.
+category: Programming Languages
+weight: 4
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Functions in Rust are declared with `fn`, and every parameter needs an explicit type annotation — unlike `let` bindings, Rust does not infer parameter or return types from how a function is called, because that would make a function's signature depend on its call sites instead of being a fixed contract.
+
+```rust
+fn add(a: i32, b: i32) -> i32 {
+    a + b // no semicolon: this is the returned expression
+}
+
+fn main() {
+    let sum = add(3, 4);
+    println!("{sum}");
+}
+```
+
+## Expressions vs. statements as return values
+
+The last expression in a function body is automatically its return value, *as long as it has no trailing semicolon*. Add a semicolon and it becomes a statement that evaluates to `()`, silently changing what the function returns:
+
+```rust
+fn add_broken(a: i32, b: i32) -> i32 {
+    a + b; // semicolon turns this into a statement, not a return value
+} // error: mismatched types — expected i32, found ()
+```
+
+You can still use an explicit `return` keyword — it's necessary for returning early from the middle of a function — but relying on the trailing expression for the "normal" exit path is the idiomatic style.
+
+```rust
+fn classify(n: i32) -> &'static str {
+    if n < 0 {
+        return "negative"; // early return, semicolon required after return
+    }
+    if n == 0 {
+        "zero"
+    } else {
+        "positive"
+    } // trailing expression: the normal-path return value
+}
+```
+
+## Closures
+
+A **closure** is an anonymous function that can capture variables from the scope it's defined in — written with pipes around its parameters (`|x| ...`) instead of `fn name(x: T)`. Closures are used heavily with iterator methods like `map` and `filter`.
+
+```rust
+fn main() {
+    let threshold = 10;
+    let numbers = vec![4, 12, 7, 15, 3];
+
+    // the closure captures `threshold` from the surrounding scope
+    let above: Vec<i32> = numbers.into_iter().filter(|n| *n > threshold).collect();
+
+    println!("{above:?}"); // [12, 15]
+}
+```
+
+Unlike a plain `fn`, this closure can see `threshold` without it being passed in explicitly — closures borrow or move the variables they reference from their environment, which is exactly what lets `filter`'s closure compare against a value defined outside it.
+
+## See also
+
+- **[Control Flow](/en/programming-languages/rust/control-flow)** — the expressions (`if`, `match`, `loop`) that most often end up as a function's trailing return value.
+- **[Error Handling](/en/programming-languages/rust/error-handling)** — functions that can fail typically return `Result<T, E>` instead of throwing.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a function that adds two numbers and a call site that prints the result."
+  items={[
+    { id: "fn-sig", label: "fn add(a: i32, b: i32) -> i32 {" },
+    { id: "fn-body", label: "    a + b" },
+    { id: "fn-close", label: "}" },
+    { id: "main-open", label: "fn main() {" },
+    { id: "sum", label: "    let sum = add(3, 4);", explanation: "add must be defined before main calls it in the file's reading order, and sum must exist before it's printed." },
+    { id: "print", label: "    println!(\"{sum}\");" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["fn-sig", "fn-body", "fn-close", "main-open", "sum", "print", "main-close"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a function that classifies a number, using an early return for the negative case."
+  items={[
+    { id: "sig", label: "fn classify(n: i32) -> &'static str {" },
+    { id: "neg-if", label: "    if n < 0 {" },
+    { id: "return", label: "        return \"negative\";", explanation: "The early return must happen before the trailing if/else that handles the remaining cases." },
+    { id: "neg-close", label: "    }" },
+    { id: "zero-if", label: "    if n == 0 {" },
+    { id: "zero", label: "        \"zero\"" },
+    { id: "else", label: "    } else {" },
+    { id: "pos", label: "        \"positive\"" },
+    { id: "zero-close", label: "    }" },
+    { id: "close", label: "}" },
+  ]}
+  correctOrder={["sig", "neg-if", "return", "neg-close", "zero-if", "zero", "else", "pos", "zero-close", "close"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`fn add(a: i32, b: i32) -> i32 {
+    a + b;
+}
+
+fn main() {
+    println!("{}", add(3, 4));
+}`}
+  options={["7", "0", "()", "Compile error"]}
+  correctIndex={3}
+  explanation="The semicolon after a + b turns it into a statement, so the function body's last expression becomes the implicit unit value () — but the signature promises i32. Rust rejects this at compile time with a mismatched types error rather than silently returning 0 or unit."
+  actualOutput="error[E0308]: mismatched types — expected `i32`, found `()`"
+/>

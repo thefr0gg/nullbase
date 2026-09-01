@@ -1,0 +1,176 @@
+---
+title: Functions
+description: Declaring PHP functions, default arguments, variadic functions, type hints, and closures.
+category: Programming Languages
+weight: 4
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Functions in PHP are declared with the `function` keyword and can appear at
+top level (PHP has no requirement that code live inside a class). Since PHP
+7, parameters and return values can carry type hints, which the engine
+enforces at runtime.
+
+## Basic declaration
+
+```php
+<?php
+
+function greet(string $name): string {
+    return "Hello, $name!";
+}
+
+echo greet("Ada") . "\n";
+```
+
+## Default arguments
+
+Any parameter can have a default value, which lets callers omit it. Default
+parameters must come after parameters without defaults:
+
+```php
+<?php
+
+function makeGreeting(string $name, string $greeting = "Hello"): string {
+    return "$greeting, $name!";
+}
+
+echo makeGreeting("Grace") . "\n";              // Hello, Grace!
+echo makeGreeting("Grace", "Welcome") . "\n";    // Welcome, Grace!
+```
+
+## Named arguments
+
+PHP 8.0 added named arguments, which let a caller skip earlier defaults
+without repeating them positionally:
+
+```php
+<?php
+
+function connect(string $host, int $port = 5432, bool $ssl = false): string {
+    return ($ssl ? "ssl://" : "") . "$host:$port";
+}
+
+echo connect("db.internal", ssl: true) . "\n"; // ssl://db.internal:5432
+```
+
+## Variadic functions
+
+Prefixing the last parameter with `...` collects any number of trailing
+arguments into an array — PHP's equivalent of `*args`:
+
+```php
+<?php
+
+function sum(int ...$numbers): int {
+    $total = 0;
+    foreach ($numbers as $n) {
+        $total += $n;
+    }
+    return $total;
+}
+
+echo sum(1, 2, 3, 4) . "\n"; // 10
+echo sum() . "\n";            // 0
+```
+
+The `...` spread operator does the reverse when calling a function: it
+unpacks an array into positional arguments.
+
+```php
+<?php
+
+$values = [3, 6, 9];
+echo sum(...$values) . "\n"; // 18
+```
+
+## Passing by reference
+
+By default, arguments are passed by value — a function gets a copy. Adding
+`&` before a parameter passes it by reference instead, letting the function
+mutate the caller's variable:
+
+```php
+<?php
+
+function increment(int &$n): void {
+    $n++;
+}
+
+$counter = 10;
+increment($counter);
+echo $counter . "\n"; // 11
+```
+
+## Anonymous functions and arrow functions
+
+PHP supports closures via `function` (with an explicit `use` clause to
+capture outer variables) and the more concise `fn` arrow-function syntax,
+which captures automatically by value:
+
+```php
+<?php
+
+$multiplier = 3;
+
+$classic = function (int $n) use ($multiplier): int {
+    return $n * $multiplier;
+};
+
+$arrow = fn(int $n): int => $n * $multiplier;
+
+echo $classic(5) . " " . $arrow(5) . "\n"; // 15 15
+```
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a function with a default argument and call it."
+  items={[
+    { id: "e1", label: "<?php" },
+    { id: "e2", label: "function power(int $base, int $exp = 2): int {" },
+    { id: "e3", label: "    return $base ** $exp;", explanation: "The exponent's default value only applies if the caller omits the second argument." },
+    { id: "e4", label: "}" },
+    { id: "e5", label: 'echo power(5) . "\\n";' },
+  ]}
+  correctOrder={["e1", "e2", "e3", "e4", "e5"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Order these lines to build a variadic function that joins its arguments with a comma."
+  items={[
+    { id: "f1", label: "<?php" },
+    { id: "f2", label: "function joinAll(string ...$parts): string {" },
+    { id: "f3", label: "    return implode(\", \", $parts);", explanation: "$parts is an ordinary array inside the function body once the variadic parameters are collected." },
+    { id: "f4", label: "}" },
+    { id: "f5", label: 'echo joinAll("a", "b", "c") . "\\n";' },
+  ]}
+  correctOrder={["f1", "f2", "f3", "f4", "f5"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`<?php
+
+function addOne(int $n): int {
+    $n = $n + 1;
+    return $n;
+}
+
+$value = 10;
+addOne($value);
+echo $value;`}
+  options={["10", "11", "Fatal error: undefined variable", "10.0"]}
+  correctIndex={0}
+  explanation="Without a & in the parameter list, PHP passes $n by value. addOne mutates its own local copy; $value in the caller's scope is untouched, so it still prints 10."
+  actualOutput="10"
+/>
+
+## See also
+
+- [Control Flow](/en/programming-languages/php/control-flow)
+- [Arrays](/en/programming-languages/php/data-structures)

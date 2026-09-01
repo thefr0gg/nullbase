@@ -1,0 +1,156 @@
+---
+title: Error Handling
+description: C has no exceptions — errors are reported through return codes, the global errno, and process exit status.
+category: Programming Languages
+weight: 7
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+C has no `try`/`catch`, no `throw`, and no concept of an exception unwinding the call stack. Every function that can fail signals it through its **return value**, and standard library functions that interact with the operating system additionally set a global variable called `errno` describing *why* they failed. There's no language-level mechanism forcing a caller to check either one — ignoring a return value or `errno` compiles fine and is a common source of real bugs.
+
+## Return-code conventions
+
+The dominant C convention is: return a special value (often `-1`, `NULL`, or a nonzero status code) to signal failure, and a normal value to signal success. `main` itself follows this — returning `0` means success, nonzero means failure, and the calling shell or process can check it:
+
+```c
+#include <stdio.h>
+
+int divide(int a, int b, int *result) {
+    if (b == 0) {
+        return -1; /* failure: division by zero */
+    }
+    *result = a / b;
+    return 0; /* success */
+}
+
+int main(void) {
+    int result;
+
+    if (divide(10, 2, &result) == 0) {
+        printf("10 / 2 = %d\n", result);
+    } else {
+        printf("error: division by zero\n");
+    }
+
+    if (divide(10, 0, &result) != 0) {
+        printf("error: division by zero\n");
+    }
+
+    return 0;
+}
+```
+
+Notice the actual answer is delivered through an output parameter (`int *result`), because the return value itself is reserved for the success/failure status — a pattern that shows up constantly once a function's "real" result and its error status need to be communicated separately.
+
+## errno and system calls
+
+Standard library and OS-facing functions (like `fopen`, `malloc`-adjacent calls, and POSIX system calls) often return a sentinel value like `NULL` on failure and set the global `errno` to a code identifying the specific problem. `strerror` converts that code into a human-readable message:
+
+```c
+#include <stdio.h>
+#include <errno.h>
+#include <string.h>
+
+int main(void) {
+    FILE *file = fopen("does_not_exist.txt", "r");
+
+    if (file == NULL) {
+        printf("failed to open file: %s\n", strerror(errno));
+        return 1; /* nonzero exit code signals failure to the OS */
+    }
+
+    fclose(file);
+    return 0;
+}
+```
+
+`errno` is only meaningful immediately after a call that failed — it isn't reset to 0 on success, so checking it *before* checking the function's own return value (or checking it after a different, unrelated call) reads a stale error from something else entirely.
+
+## No exceptions, but setjmp/longjmp exists
+
+C's standard library does include `setjmp.h`, which allows a kind of non-local jump that can unwind several stack frames at once — the closest thing C has to exception-style control flow, though it's rare in ordinary code because it bypasses normal cleanup (no destructors exist to run automatically, since C has none):
+
+```c
+#include <stdio.h>
+#include <setjmp.h>
+
+jmp_buf recoveryPoint;
+
+void riskyOperation(int fail) {
+    if (fail) {
+        longjmp(recoveryPoint, 1); /* jumps back to setjmp, as if it returned 1 */
+    }
+    printf("risky operation succeeded\n");
+}
+
+int main(void) {
+    if (setjmp(recoveryPoint) == 0) {
+        riskyOperation(1); /* this call never returns normally */
+    } else {
+        printf("recovered from failure\n");
+    }
+    return 0;
+}
+```
+
+Most C code sticks to plain return codes and `errno` — `setjmp`/`longjmp` shows up mainly in specialized contexts like implementing a scripting language's error handling or recovering from a signal handler, not everyday error checking.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble a return-code error check"
+  prompt="Drag these lines into the order that safely divides two numbers using an error-code return and an output parameter."
+  items={[
+    { id: "func", label: "int divide(int a, int b, int *out) {" },
+    { id: "check", label: "    if (b == 0) return -1;", explanation: "The failure case must be checked before the division happens, or it would divide by zero first." },
+    { id: "assign", label: "    *out = a / b;" },
+    { id: "success", label: "    return 0;\n}" },
+    { id: "call", label: "int result;\nif (divide(10, 0, &result) != 0) {" },
+    { id: "print", label: "    printf(\"error\\n\");\n}" },
+  ]}
+  correctOrder={["func", "check", "assign", "success", "call", "print"]}
+/>
+
+<OrderingExercise
+  title="Order an errno-based file check"
+  prompt="Drag these lines into the order that opens a file and reports the specific OS error if it fails."
+  items={[
+    { id: "includes", label: "#include <stdio.h>\n#include <errno.h>\n#include <string.h>" },
+    { id: "open", label: "FILE *file = fopen(\"missing.txt\", \"r\");" },
+    { id: "check", label: "if (file == NULL) {", explanation: "errno is only meaningful right after the failing call, so it must be read immediately inside this check." },
+    { id: "print", label: "    printf(\"%s\\n\", strerror(errno));" },
+    { id: "close", label: "}" },
+  ]}
+  correctOrder={["includes", "open", "check", "print", "close"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`#include <stdio.h>
+
+int safeDivide(int a, int b, int *out) {
+    if (b == 0) {
+        return -1;
+    }
+    *out = a / b;
+    return 0;
+}
+
+int main(void) {
+    int result = 999;
+    int status = safeDivide(10, 0, &result);
+    printf("%d %d\\n", status, result);
+    return 0;
+}`}
+  options={["-1 999", "-1 0", "0 999", "Compile error"]}
+  correctIndex={0}
+  explanation="Because b is 0, safeDivide returns -1 immediately without ever touching *out, so result keeps its original value of 999 — it's never zeroed out or reset just because the function failed. status correctly reports -1. Assuming result gets some 'default' failure value like 0 is the tempting mistake here."
+  actualOutput="-1 999"
+/>
+
+## See also
+
+- **[Functions](/en/programming-languages/c/functions)** — output parameters via pointers, used throughout this page's return-code pattern.
+- **[Modules & Packages](/en/programming-languages/c/modules-packages)** — errno, setjmp, and friends all come from standard headers you #include.

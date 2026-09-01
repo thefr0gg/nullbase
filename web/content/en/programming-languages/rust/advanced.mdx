@@ -1,0 +1,176 @@
+---
+title: Ownership & Borrowing
+description: The rule set — ownership, borrowing, and lifetimes — that lets Rust guarantee memory safety at compile time with no garbage collector.
+category: Programming Languages
+weight: 9
+interactive: true
+interactiveType: ["OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Ownership is the idea Rust is built around, and everything else in the language — how `String` behaves differently from `i32`, why some function calls "consume" their argument and others don't, why the compiler sometimes rejects code that looks obviously fine — traces back to three rules:
+
+1. Every value has exactly one **owner** at a time.
+2. When the owner goes out of scope, the value is dropped (its memory freed).
+3. Ownership can be transferred (**moved**) or temporarily lent out (**borrowed**), but never duplicated for free.
+
+No garbage collector scans memory at runtime looking for what's no longer reachable — the compiler works out at compile time exactly when every value's owner goes out of scope, and inserts the cleanup code there. This is why Rust has predictable, GC-pause-free performance: memory management is a compile-time fact, not a runtime process.
+
+## Moves
+
+Some types (`i32`, `bool`, `char`, and other fixed-size, stack-only types) implement `Copy`, meaning assignment duplicates the value cheaply — exactly like C. Types that own heap memory, like `String` and `Vec<T>`, don't implement `Copy`; assigning one to another variable **moves** ownership instead, and the original binding becomes invalid.
+
+```rust
+fn main() {
+    let s1 = String::from("hello");
+    let s2 = s1; // ownership of the heap data moves from s1 to s2
+
+    println!("{s2}, world!"); // fine — s2 owns the data now
+    // println!("{s1}"); // would fail — s1 no longer owns anything
+}
+```
+
+The reason isn't arbitrary pedantry: if both `s1` and `s2` were allowed to independently free the same heap allocation when they go out of scope, that's a double free — a real memory-corruption bug in languages without this rule. Moving ownership instead of copying it means only one variable is ever responsible for freeing that memory.
+
+This is exactly the error from a real compile:
+
+```rust
+fn takes_ownership(s: String) {
+    println!("{s}");
+} // s goes out of scope here — its heap memory is freed
+
+fn main() {
+    let s1 = String::from("hello");
+    takes_ownership(s1); // s1 is moved into the function
+    println!("{s1}"); // error: use of moved value
+}
+```
+
+```text
+error[E0382]: borrow of moved value: `s1`
+ --> src/main.rs:8:20
+  |
+6 |     let s1 = String::from("hello");
+  |         -- move occurs because `s1` has type `String`, which does not implement the `Copy` trait
+7 |     takes_ownership(s1); // s1 is moved into the function
+  |                     -- value moved here
+8 |     println!("{s1}"); // error: use of moved value
+  |                ^^ value borrowed here after move
+```
+
+Passing `s1` by value moves it into `takes_ownership`, which drops it when the function returns — by the time `main` tries to print `s1` again, that memory has already been freed, and the compiler refuses to let the program run with a reference to it.
+
+## Borrowing: references without taking ownership
+
+Moving ownership into every function that needs to read a value would make simple code unworkable — you'd have to pass the value back out again just to keep using it. **Borrowing** solves this: a reference (`&T`) lets a function use a value without taking ownership of it.
+
+```rust
+fn calculate_length(s: &String) -> usize {
+    s.len()
+} // s goes out of scope, but it doesn't own the data, so nothing is dropped
+
+fn main() {
+    let s1 = String::from("hello");
+    let len = calculate_length(&s1); // borrow, don't move
+
+    println!("The length of '{s1}' is {len}"); // s1 is still valid here
+}
+```
+
+Borrowing comes with its own rule, enforced by the borrow checker: at any point, you can have either **any number of immutable references** (`&T`) or **exactly one mutable reference** (`&mut T`) to a value — never both kinds at once. This is what rules out data races at compile time: two immutable readers can never conflict, and a single writer can never be observed mid-write by anyone else.
+
+```rust
+fn main() {
+    let mut s = String::from("hello");
+
+    let r1 = &s;
+    let r2 = &s;
+    println!("{r1} and {r2}"); // fine: multiple immutable borrows
+
+    let r3 = &mut s;
+    r3.push_str(", world");
+    println!("{r3}"); // fine, but only because r1/r2 are no longer used after this point
+}
+```
+
+## Lifetimes
+
+A **lifetime** is the compiler's way of tracking how long a reference is valid, so it can catch a reference that would outlive the data it points to (a dangling reference). Most of the time lifetimes are inferred silently, but a function that returns a reference derived from more than one input sometimes needs an explicit lifetime annotation to tell the compiler how the inputs and output relate.
+
+```rust
+// 'a says: the returned reference lives at most as long as
+// the shorter-lived of x and y.
+fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {
+    if x.len() > y.len() { x } else { y }
+}
+
+fn main() {
+    let s1 = String::from("hello");
+    let result;
+    {
+        let s2 = String::from("world!");
+        result = longest(s1.as_str(), s2.as_str());
+        println!("longest: {result}"); // fine, s2 still alive here
+    }
+    // println!("{result}"); // would fail — s2 (and what result might point to) is gone
+}
+```
+
+Without the `'a` annotation, the compiler has no way to know whether the returned reference's validity is tied to `x`, to `y`, or to neither — `longest` wouldn't compile at all, since the borrow checker refuses to guess. The annotation doesn't change how long anything actually lives; it just makes an already-true relationship visible to the compiler so it can check callers against it.
+
+## See also
+
+- **[Data Structures](/en/programming-languages/rust/data-structures)** — where borrowing shows up constantly, e.g. `vec.iter()` borrowing rather than consuming a `Vec`.
+- **[Rust overview](/en/programming-languages/rust)** — the use-after-move example that introduces ownership from the very first page of this section.
+
+## Exercises
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a function that borrows a String to compute its length, then prints both the original and the length."
+  items={[
+    { id: "fn-open", label: "fn calculate_length(s: &String) -> usize {" },
+    { id: "fn-body", label: "    s.len()" },
+    { id: "fn-close", label: "}" },
+    { id: "main-open", label: "fn main() {" },
+    { id: "s1", label: "    let s1 = String::from(\"hello\");" },
+    { id: "len", label: "    let len = calculate_length(&s1);", explanation: "s1 must exist before it can be borrowed, and it's still valid afterward since it was only borrowed, not moved." },
+    { id: "print", label: "    println!(\"The length of '{s1}' is {len}\");" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["fn-open", "fn-body", "fn-close", "main-open", "s1", "len", "print", "main-close"]}
+/>
+
+<OrderingExercise
+  title="Assemble the code"
+  prompt="Drag the lines into the correct order to build a longest function with an explicit lifetime and a call site that uses it while both inputs are still in scope."
+  items={[
+    { id: "sig", label: "fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {" },
+    { id: "body", label: "    if x.len() > y.len() { x } else { y }" },
+    { id: "close", label: "}" },
+    { id: "main-open", label: "fn main() {" },
+    { id: "s1", label: "    let s1 = String::from(\"hello\");" },
+    { id: "s2", label: "    let s2 = String::from(\"world!\");", explanation: "Both s1 and s2 must be created before longest can borrow from both of them." },
+    { id: "result", label: "    let result = longest(s1.as_str(), s2.as_str());" },
+    { id: "print", label: "    println!(\"longest: {result}\");" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["sig", "body", "close", "main-open", "s1", "s2", "result", "print", "main-close"]}
+/>
+
+<PredictOutput
+  title="What does this print?"
+  code={`fn takes_ownership(s: String) {
+    println!("{s}");
+}
+
+fn main() {
+    let s1 = String::from("hello");
+    takes_ownership(s1);
+    println!("{s1}");
+}`}
+  options={["hello, twice", "hello, then an empty line", "hello, then a runtime panic", "Compile error"]}
+  correctIndex={3}
+  explanation="Passing s1 by value moves ownership into takes_ownership, which drops it when the function returns. The second println! tries to use s1 after it's been moved, which the borrow checker rejects at compile time — it never gets the chance to print an empty string or a stale value, because the program never compiles."
+  actualOutput={`error[E0382]: borrow of moved value: \`s1\``}
+/>
