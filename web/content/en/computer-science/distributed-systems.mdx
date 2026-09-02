@@ -1,0 +1,30 @@
+---
+title: Distributed Systems
+description: What changes once parallel work moves onto separate machines with no shared memory and a network in between — the CAP theorem, consensus, and why partial failure is the default assumption instead of the exception.
+category: Computer Science
+weight: 10
+---
+
+A **distributed system** is a set of independent machines that have to work together and present something like a single coherent system to whoever's using it, coordinating only by sending messages over a network — there's no shared memory to fall back on the way there is between threads on one machine (see [Concurrency](/en/computer-science/concurrency)). That one constraint changes almost everything, because a network is slower, less reliable, and harder to reason about than memory ever is.
+
+## Partial failure is the default
+
+On a single machine, a crash takes the whole program down at once — there's no state where "some of it" is still running and reachable. On a distributed system, **partial failure** is the normal case: one node can crash, or become unreachable, or run correctly but far more slowly than usual, while the rest of the system keeps going — and worse, from any given node's point of view, "the other node crashed" and "the network to it is just slow right now" are often indistinguishable. Most of distributed systems design is building software that stays correct (or fails predictably) despite that ambiguity, rather than pretending it doesn't exist.
+
+## The CAP theorem
+
+The **CAP theorem** states that when a network partition happens — some nodes can't communicate with others — a distributed data store has to choose between **Consistency** (every read sees the most recent write, or an error) and **Availability** (every request gets a response, even if it might be stale). You cannot have both during a partition: a node cut off from the rest of the system can either refuse to answer (protecting consistency) or answer with what it has, which might already be out of date (protecting availability). Different systems make this tradeoff deliberately and differently — a bank's ledger typically favors consistency, a shopping cart or social media feed typically favors availability — and it's a big part of why "just use a database" stops being a complete answer once that database has to run across more than one machine.
+
+## Consensus
+
+Even outside a partition, getting multiple independent nodes to agree on a single value — who the current leader is, what the next entry in a shared log should be — is a genuinely hard problem once any node might crash or messages might be delayed or lost, and it's the subject of dedicated **consensus algorithms** like Paxos and Raft. These underpin things like leader election in a database cluster and the coordination behind distributed locks; reimplementing consensus from scratch for a specific system is a well-known way to reintroduce every subtle bug the existing algorithms were built specifically to rule out, which is why most real systems use a battle-tested implementation (etcd, ZooKeeper) rather than a bespoke one.
+
+## Where this connects to the rest of the site
+
+Distributed systems theory is the reasoning underneath several patterns covered elsewhere from a more practical angle: [Microservices](/en/software-architecture/microservices) are a distributed system by definition, and inherit partial failure and network unreliability as real, everyday concerns rather than theoretical ones; [Event-Driven Architecture](/en/software-architecture/event-driven-architecture) is one common way of structuring communication between nodes that can't share memory; and load balancing and replication in [Networking](/en/networking) and [Databases](/en/databases) are both direct applications of trading consistency for availability, or vice versa, in a specific product's favor.
+
+## See also
+
+- **[Parallelism](/en/computer-science/parallelism)** — the single-machine version of "more than one thing running at once," without a network or partial failure to contend with.
+- **[Microservices](/en/software-architecture/microservices)** — a distributed system as an architectural pattern, from a practical rather than theoretical angle.
+- **[Networking](/en/networking)** — the actual transport this page's messages travel over, and where its own reliability limits come from.

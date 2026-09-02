@@ -1,0 +1,33 @@
+---
+title: Compilers
+description: How source code becomes machine code before a program ever runs — lexing, parsing, the intermediate representations a compiler optimizes, and what "compiled language" actually means.
+category: Computer Science
+weight: 6
+---
+
+A **compiler** translates source code written in one language into another form — usually machine code the CPU can execute directly — entirely before the program runs. That "entirely before" is the key distinction from an [interpreter](/en/computer-science/interpreters), which does the equivalent work while the program is running instead.
+
+## The pipeline
+
+A compiler is usually organized as a pipeline of distinct stages, each consuming the previous stage's output:
+
+- **Lexing (tokenizing)** — the raw source text is split into a stream of **tokens**: keywords, identifiers, literals, operators. At this stage `x=x+1` and `x = x + 1` produce identical tokens; whitespace has already stopped mattering.
+- **Parsing** — the token stream is assembled into an **abstract syntax tree (AST)**, a [tree](/en/computer-science/data-structures) representing the code's grammatical structure — which subexpressions belong to which statement, what's nested inside what.
+- **Semantic analysis** — the AST is checked against the language's rules that parsing alone can't enforce: are the types compatible, is this variable declared before use, does this function call match a known signature. This is where most compile errors actually get raised — parsing only fails on grammatically malformed code.
+- **Intermediate representation (IR)** — the AST is lowered into a simpler, more uniform representation that's easier to analyze and optimize than the original syntax tree, and not tied to either the source language or the final target machine. LLVM IR is a widely used example, shared across many different frontend languages and backend architectures.
+- **Optimization** — the IR is transformed to be faster or smaller without changing what the program computes: dead code elimination, constant folding (computing `2 + 2` once at compile time instead of every run), inlining small functions at their call sites.
+- **Code generation** — the optimized IR is finally translated into actual machine code (or another target, like bytecode) for a specific architecture.
+
+## Why "compiled language" is a little imprecise
+
+Calling a language "compiled" or "interpreted" is really describing how a particular implementation typically runs it, not an inherent property of the language — the same language can have both kinds of implementations. C and Rust are compiled ahead of time straight to native machine code. Java compiles to an intermediate **bytecode** that a virtual machine then interprets (or further compiles, see below) at runtime. Python's reference implementation compiles to bytecode too, but that bytecode is then interpreted rather than compiled to native code, which is most of why Python code runs slower than an equivalent compiled C program for the same CPU-bound work.
+
+## JIT compilation
+
+Some runtimes blur the line deliberately with **just-in-time (JIT) compilation**: code starts out interpreted (or running as unoptimized bytecode), but the runtime watches which parts actually run often enough to be worth the cost, and compiles *those* hot paths to native machine code while the program keeps running — combining an interpreter's fast startup with a compiler's steady-state speed for the code that matters. The JVM (Java), V8 (JavaScript, in every Chromium browser and Node.js), and modern Python implementations like PyPy all work this way.
+
+## See also
+
+- **[Interpreters](/en/computer-science/interpreters)** — the alternative to ahead-of-time compilation, and where JIT sits between the two.
+- **[Data Structures](/en/computer-science/data-structures)** — the AST a parser produces is a tree, walked and transformed at nearly every later stage.
+- **[Programming Languages](/en/programming-languages)** — the practical, per-language side of what these pipelines actually produce.

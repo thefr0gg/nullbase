@@ -1,0 +1,39 @@
+---
+title: CPU
+description: The fetch-decode-execute cycle every instruction goes through, how pipelining and multiple cores overlap that cycle for speed, and why clock speed alone stopped being the whole performance story.
+category: Computer Science
+weight: 4
+---
+
+The **CPU** (central processing unit) is the chip that actually executes a program's instructions, one at a time, millions to billions of times per second. Almost everything else on this site describes software running *on top of* what this page covers.
+
+## The fetch-decode-execute cycle
+
+Every instruction a CPU runs goes through the same basic cycle:
+
+1. **Fetch** — read the next instruction from memory, at the address the **program counter** currently points to.
+2. **Decode** — figure out what operation the instruction encodes and which registers or memory addresses it needs.
+3. **Execute** — actually perform the operation (an arithmetic op in the ALU, a memory read/write, a jump that changes the program counter).
+4. **Write back** — store the result somewhere the next instruction can see it, usually a [register](/en/computer-science/memory).
+
+The **clock speed** (measured in GHz) is how many of these cycles the chip can run per second — but a higher number stopped being the whole story once chips got fast enough to be limited by heat and power draw rather than by how fast a transistor can switch, which is why performance gains over the last two decades have come mostly from the techniques below instead of from raw clock speed climbing further.
+
+## Pipelining
+
+A CPU doesn't wait for one instruction to finish the whole cycle before starting the next — it **pipelines**: while instruction 2 is being decoded, instruction 1 is already executing, and instruction 3 is already being fetched. This doesn't make any single instruction faster, but it dramatically increases **throughput** — the rate of instructions completing per second — the same way a car wash processes more cars per hour by working on several at once at different stages, rather than by washing any one car faster.
+
+Pipelining has a failure mode: a **branch** (an `if`, a loop condition) means the CPU doesn't know which instruction comes next until the branch actually resolves. Modern CPUs guess ahead of time with **branch prediction**, speculatively executing down the predicted path — and when the guess is wrong, everything speculatively done has to be thrown away, a **pipeline flush** that costs far more than if the CPU had just waited.
+
+## Multiple cores
+
+A **multi-core** CPU is, from the software's point of view, several independent CPUs on one chip, each able to fetch-decode-execute its own instruction stream at the same time — true [parallelism](/en/computer-science/parallelism), not just the overlap pipelining provides. This is why "how many cores" became as relevant a spec as clock speed: a program written to use only one core gets no benefit from the others sitting idle next to it, which is exactly the gap [concurrency](/en/computer-science/concurrency) and parallel programming techniques exist to close.
+
+## Instruction sets: CISC vs. RISC
+
+The specific vocabulary of instructions a CPU understands is its **instruction set architecture (ISA)**. **x86** (Intel/AMD desktops and servers) is a **CISC** (complex instruction set) design with many specialized, variable-length instructions; **ARM** (most phones, and increasingly laptops and servers) is a **RISC** (reduced instruction set) design favoring many simple, fixed-length instructions that are individually cheaper to decode and pipeline — part of why ARM chips have historically had a power-efficiency edge. Neither is strictly "better"; they're different bets about where to spend transistor budget, and software has to be compiled separately for each.
+
+## See also
+
+- **[GPU](/en/computer-science/gpu)** — a different kind of processor, built around massive parallelism instead of executing one fast instruction stream.
+- **[Memory](/en/computer-science/memory)** — the register and cache hierarchy this page's fetch-decode-execute cycle reads and writes to.
+- **[Concurrency](/en/computer-science/concurrency)** and **[Parallelism](/en/computer-science/parallelism)** — the software techniques for actually putting multiple cores to work.

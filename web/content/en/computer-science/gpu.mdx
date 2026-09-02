@@ -1,0 +1,28 @@
+---
+title: GPU
+description: Why a graphics processing unit is a different machine from a CPU rather than just a faster one — thousands of simple cores built for data-parallel work, and why that shape ended up fitting deep learning as well as it fits rendering.
+category: Computer Science
+weight: 5
+---
+
+A **GPU** (graphics processing unit) is a chip built around a different bet than a [CPU](/en/computer-science/cpu): instead of a handful of powerful cores each optimized to run one instruction stream as fast as possible, a GPU has thousands of much simpler cores, all optimized to do the *same* operation on *different* data at the same time. It's not a faster CPU — it's a different shape of machine, good at a narrower class of problems and much better at those problems than a CPU is.
+
+## SIMD and data parallelism
+
+The core idea is **SIMD** — Single Instruction, Multiple Data: one instruction (say, "multiply these two numbers") is issued once and applied simultaneously across a large batch of data lanes. This maps directly onto **data-parallel** problems, where the same computation runs independently over many independent pieces of data — exactly the shape of rendering a frame, where the same shading calculation runs once per pixel (millions of them, all independent of each other) rather than in some sequential order that depends on earlier pixels.
+
+A CPU core, by contrast, is built for **task parallelism** and low-latency single-thread performance — branch prediction, deep pipelines, large caches, all spent on making *one* instruction stream finish as fast as possible, including instruction streams full of unpredictable branches and dependent steps. Handing a GPU a workload full of branches and sequential dependencies wastes almost all of its advantage, since its cores are only fast when they're all doing the same thing.
+
+## Why this shape fits deep learning
+
+The reason GPUs became central to machine learning has nothing to do with graphics specifically: training and running a neural network is overwhelmingly **matrix multiplication** — the same multiply-and-add operation repeated over huge, independent grids of numbers, which is precisely the data-parallel shape a GPU is built for. A calculation that would take a CPU minutes, doing the multiplications largely one at a time (or in small SIMD batches), can complete on a GPU in a fraction of the time by spreading it across thousands of cores at once. This is also why GPUs are now often described by memory bandwidth and core count rather than clock speed — for this workload, how much data can move in and out and how many lanes can work on it at once matters more than how fast any single lane is.
+
+## GPU compute vs. graphics
+
+Modern GPUs are used two ways: the traditional **graphics pipeline** (vertices, rasterization, shading — driven by APIs like Vulkan, Metal, or DirectX) and **general-purpose GPU compute (GPGPU)** — using the same parallel hardware for non-graphics work like ML training, scientific simulation, or cryptocurrency mining, through frameworks like CUDA (NVIDIA-specific) or the more portable OpenCL. Both paths are exercising the same underlying hardware; the difference is just what's issuing the instructions and what the data represents.
+
+## See also
+
+- **[CPU](/en/computer-science/cpu)** — the task-parallel, low-latency counterpart this page contrasts against.
+- **[Parallelism](/en/computer-science/parallelism)** — the general concept of doing more than one thing at the exact same instant, of which a GPU is the most extreme hardware example.
+- **[Memory](/en/computer-science/memory)** — GPUs have their own separate high-bandwidth memory, distinct from a CPU's RAM, precisely because feeding thousands of cores at once needs far more bandwidth than a CPU workload does.

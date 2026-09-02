@@ -1,0 +1,30 @@
+---
+title: Computer Science
+description: The theory underneath everything else on this site — how to reason about an algorithm's cost, what a computer's hardware is actually doing with a program's memory and instructions, and how source code becomes a running, possibly-distributed system.
+category: Computer Science
+weight: 15
+---
+
+Every other section on this site is about a specific technology — a language, a protocol, a kind of server. This section is about the ideas underneath all of them: how to judge whether one approach to a problem is actually better than another, what a CPU and a GPU are each built to do well, how a compiler or interpreter turns text into behavior, and what changes once a system has more than one thing happening at once. Pages here link out to the practical sections that build on them rather than repeating that ground.
+
+## Correctness and cost
+
+- **[Algorithms](/en/computer-science/algorithms)** — how to describe what a piece of code costs, independent of the machine running it.
+- **[Data Structures](/en/computer-science/data-structures)** — the handful of ways to arrange data in memory, and the access patterns each one is built for.
+
+## The hardware underneath the code
+
+- **[Memory](/en/computer-science/memory)** — the storage hierarchy a program's data actually moves through, from registers to disk.
+- **[CPU](/en/computer-science/cpu)** — the fetch-decode-execute cycle, pipelining, and why clock speed alone stopped being the story.
+- **[GPU](/en/computer-science/gpu)** — why a chip built for thousands of simple, simultaneous operations is a different machine from a CPU, not just a faster one.
+
+## From source code to running program
+
+- **[Compilers](/en/computer-science/compilers)** — how source text becomes machine code before the program ever runs.
+- **[Interpreters](/en/computer-science/interpreters)** — how source text (or bytecode) is executed directly, a step at a time, instead.
+
+## Doing more than one thing at once
+
+- **[Concurrency](/en/computer-science/concurrency)** — structuring a program to deal with more than one thing in progress at a time.
+- **[Parallelism](/en/computer-science/parallelism)** — actually running more than one thing at the exact same instant.
+- **[Distributed Systems](/en/computer-science/distributed-systems)** — what changes once "more than one thing at once" means separate machines with no shared memory and a network in between.

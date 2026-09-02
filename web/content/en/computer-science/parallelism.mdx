@@ -1,0 +1,27 @@
+---
+title: Parallelism
+description: Actually running more than one thing at the exact same instant — why that needs multiple cores, the difference between data and task parallelism, and Amdahl's Law on why more cores don't always mean proportionally more speed.
+category: Computer Science
+weight: 9
+---
+
+**Parallelism** means more than one unit of work is physically executing at the exact same instant, on separate hardware — separate [CPU](/en/computer-science/cpu) cores, separate machines, or the thousands of lanes on a [GPU](/en/computer-science/gpu). This is the piece [concurrency](/en/computer-science/concurrency) doesn't require: a concurrent program interleaves work and *may* run in parallel if the hardware allows it, but a single-core machine cannot make two things parallel no matter how the software is structured — there's only one place instructions can actually execute.
+
+## Data parallelism vs. task parallelism
+
+- **Data parallelism** applies the same operation to many independent pieces of data at once — resizing every image in a folder, or the matrix multiplications behind [GPU](/en/computer-science/gpu) compute. Because each piece is independent, splitting the work across cores (or GPU lanes) is close to mechanical.
+- **Task parallelism** runs genuinely *different* operations at the same time — one core rendering a UI while another handles a network request while a third runs a background computation. The work isn't identical across units, so splitting it up takes more deliberate program structure than data parallelism does.
+
+## Amdahl's Law
+
+Adding cores doesn't make a program proportionally faster unless the *entire* program can be parallelized, and **Amdahl's Law** quantifies exactly how much that "unless" costs: if a fraction `p` of a program's runtime can be parallelized and the rest, `1 − p`, is strictly sequential, the maximum possible speedup from any number of cores is `1 / (1 − p)`. A program that's 90% parallelizable tops out at a 10x speedup no matter how many cores you throw at it, because that remaining 10% still has to run on one core alone, in order, no matter what else is available. This is the theoretical reason "just add more cores" has diminishing returns, and why identifying and shrinking a program's sequential bottleneck usually matters more than raw core count once you're past a handful of cores.
+
+## Where the difficulty actually lives
+
+Splitting independent work across cores is the easy half of parallel programming; the hard half is everything [concurrency](/en/computer-science/concurrency) already covers — shared state, races, locking — except now genuinely simultaneous rather than merely interleaved, which removes the option of reasoning "only one of these is actually running at a time" as a simplifying assumption. A race condition that only showed up occasionally under interleaved concurrency can become the common case once the two threads involved are truly running at once on separate cores.
+
+## See also
+
+- **[Concurrency](/en/computer-science/concurrency)** — the program-structure half of "more than one thing at once," distinct from actually executing them simultaneously.
+- **[CPU](/en/computer-science/cpu)** and **[GPU](/en/computer-science/gpu)** — the two hardware shapes parallel work actually runs on, built for task parallelism and data parallelism respectively.
+- **[Distributed Systems](/en/computer-science/distributed-systems)** — parallelism taken past a single machine's cores, onto separate machines connected by a network.

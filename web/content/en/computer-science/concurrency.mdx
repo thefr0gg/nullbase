@@ -1,0 +1,30 @@
+---
+title: Concurrency
+description: Structuring a program to deal with more than one thing in progress at a time — threads, locks, race conditions, and why concurrency is a program-structure problem distinct from parallelism.
+category: Computer Science
+weight: 8
+---
+
+**Concurrency** is about *structure*: a program that can have more than one logically independent unit of work in progress at the same time, making progress on each by interleaving them, without necessarily executing any two of them at the exact same instant. That last clause is what separates it from [parallelism](/en/computer-science/parallelism) — a single-core machine can run a concurrent program perfectly well by rapidly switching between tasks, the same way a single [CPU](/en/computer-science/cpu) core switches between processes.
+
+## Threads and shared memory
+
+A **thread** is the most direct unit of concurrency: a sequence of instructions that can be scheduled independently, but which shares its parent process's memory with every other thread in that process — see [Threads](/en/operating-systems/threads) for the OS-level mechanics. Sharing memory is what makes threads cheap (no copying, no message-passing overhead to communicate), and also exactly what makes concurrent programming hard: two threads reading and writing the same variable without coordination produce a **race condition** — the outcome depends on the unpredictable order the scheduler happens to interleave their instructions in, so the same code can behave correctly a thousand times in testing and then corrupt data in production the one time the timing lines up differently.
+
+## Locks and the cost of coordination
+
+A **mutex** (mutual exclusion lock) is the standard fix: a thread must acquire the lock before touching a piece of shared data, and any other thread that wants it has to wait until it's released. This eliminates the race condition, but introduces its own failure modes — a **deadlock**, where two threads each hold a lock the other needs and neither will ever release, and simple lock contention, where threads spend so much time waiting on each other that adding more threads stops helping or actively makes things slower. Higher-level primitives — semaphores, condition variables, read-write locks — are all variations on the same underlying tradeoff: serialize access to shared state just enough to stay correct, without serializing so much that concurrency stops buying anything.
+
+## Alternatives to locking
+
+Because manual locking is easy to get subtly wrong, several models exist specifically to avoid it:
+
+- **Message passing** — instead of sharing memory, independent units of work (often called actors, or goroutines communicating over channels) send each other messages; nothing is mutated by more than one thread, so there's nothing to race over. Go's channels and Erlang's actor model are built around this directly.
+- **Immutability** — if data is never mutated after creation, there's no race condition possible regardless of how many threads read it concurrently; several functional languages lean on this as their primary concurrency safety story.
+- **The event loop** — a single thread repeatedly picks the next ready callback off a queue and runs it to completion before picking the next one, so application code never runs concurrently with itself even though I/O can be in flight for many operations at once. This is the model behind Node.js and most JavaScript runtimes — see [Application Servers](/en/backend/application-servers) for how it holds up against a thread-per-request model in practice.
+
+## See also
+
+- **[Threads](/en/operating-systems/threads)** — the OS mechanism most concurrent programming models are ultimately built on top of.
+- **[Parallelism](/en/computer-science/parallelism)** — actually running concurrent work at the same instant, which needs more than one core to be physically possible.
+- **[Application Servers](/en/backend/application-servers)** — thread-per-request vs. event-loop, a direct practical application of this page's tradeoffs.

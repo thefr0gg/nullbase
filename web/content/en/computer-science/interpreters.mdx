@@ -1,0 +1,33 @@
+---
+title: Interpreters
+description: How source code (or bytecode) is executed directly, a step at a time, while the program runs — tree-walking vs. bytecode interpreters, and the tradeoffs against ahead-of-time compilation.
+category: Computer Science
+weight: 7
+---
+
+An **interpreter** executes a program's logic directly, one step at a time, at the moment the program runs — rather than translating the whole thing into machine code beforehand the way a [compiler](/en/computer-science/compilers) does. The same lexing and parsing stages a compiler uses still happen (source text still has to become an [AST](/en/computer-science/compilers) or similar structure before anything can execute it), but the last step differs: instead of generating machine code from that structure, an interpreter walks it and *performs* the operations it describes right then.
+
+## Tree-walking interpreters
+
+The simplest design directly walks the AST a parser produced: an "add" node causes the interpreter to evaluate its two children and add the results, right there, recursively, for the whole tree. This is straightforward to build and easy to reason about, but slow — every single execution re-walks the tree structure and re-dispatches on node type, work a compiler would have done exactly once and baked into the output machine code.
+
+## Bytecode interpreters
+
+Most real interpreted-language runtimes take a middle path: compile the AST once into a compact, flat **bytecode** — a sequence of simple instructions for a hypothetical virtual machine, not the AST's original tree shape — and then interpret *that* instead of the tree. Bytecode instructions are simpler and more uniform to dispatch than arbitrary tree nodes, so this is noticeably faster than tree-walking even without ever touching real machine code. CPython (the reference Python implementation), the JVM, and Ruby's YARV all work this way: a compile step still happens, but its output is bytecode for their own virtual machine rather than native instructions for a real CPU.
+
+## Why interpret at all
+
+Given that compiled code runs faster, interpretation earns its keep on other axes:
+
+- **Startup time** — there's no separate build step standing between editing a file and running it, which is most of why scripting languages (Python, Ruby, JavaScript in a browser) default to this model — nobody wants to compile a one-line script.
+- **Portability** — the same bytecode (or source) runs anywhere a compatible interpreter exists, without recompiling per target architecture — "write once, run anywhere" is really "write once, interpret everywhere."
+- **Dynamic behavior** — features like `eval`, runtime code generation, or types that aren't fully known until the program is already running fit naturally into a model that's still actively executing rather than one that finished translating everything up front.
+
+## Where JIT compilation fits in
+
+The performance gap between interpretation and ahead-of-time compilation is exactly what **JIT (just-in-time) compilation** exists to close, as covered on the [Compilers](/en/computer-science/compilers) page: a runtime starts by interpreting bytecode, profiles which code paths actually run often, and compiles just those hot paths to native machine code mid-execution. V8 (JavaScript), the JVM, and PyPy all layer this on top of an interpreter rather than choosing one model exclusively — getting an interpreter's fast startup and a compiler's steady-state speed for the parts of the program that are actually worth it.
+
+## See also
+
+- **[Compilers](/en/computer-science/compilers)** — the ahead-of-time alternative, and the shared front-end (lexing, parsing) both approaches use.
+- **[Programming Languages](/en/programming-languages)** — per-language pages covering which of these models each language's mainstream runtime actually uses.

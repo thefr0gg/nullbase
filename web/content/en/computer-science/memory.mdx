@@ -1,0 +1,35 @@
+---
+title: Memory
+description: The storage hierarchy a running program's data actually moves through — registers, cache, RAM, and disk — and why that hierarchy, not raw clock speed, is what most performance work is actually fighting.
+category: Computer Science
+weight: 3
+---
+
+"Memory" isn't one thing a computer has — it's a **hierarchy** of several kinds of storage, each faster and smaller than the one below it, and most performance-sensitive code is really about keeping data as high in that hierarchy as possible for as long as possible.
+
+## The hierarchy
+
+From fastest/smallest to slowest/largest:
+
+- **Registers** — a handful of storage slots built directly into the [CPU](/en/computer-science/cpu) itself, holding the values an instruction is operating on right now. Access is effectively instantaneous, but there are only a few dozen of them.
+- **Cache (L1/L2/L3)** — small pools of very fast memory sitting between the CPU and RAM, holding recently- and likely-to-be-used data. L1 is smallest and fastest (per-core, often under 100KB), L3 is largest and slowest of the three (shared across cores, several MB). A **cache hit** costs a few CPU cycles; a **cache miss** that has to fall through to RAM can cost hundreds.
+- **RAM (main memory)** — gigabytes of general-purpose working memory, orders of magnitude slower than cache but still far faster than disk. This is where a process's [virtual memory](/en/operating-systems/virtual-memory) address space is actually backed, mapped in by the OS.
+- **Disk (SSD/HDD)** — persistent storage, another couple of orders of magnitude slower than RAM (an SSD read is thousands of times slower than a RAM access; a spinning HDD, further still). Used for anything that has to survive a reboot, and as the overflow when RAM runs out ([swap](/en/operating-systems/virtual-memory)).
+
+Each level exists because the faster tier below it is too small and too expensive to hold everything, so the system keeps betting on what you'll need next.
+
+## Locality is why caching works at all
+
+Caching only helps because real programs exhibit **locality of reference**: **temporal locality** (a value accessed once is likely to be accessed again soon — a loop counter, a hot function's local variables) and **spatial locality** (accessing one memory address makes nearby addresses likely to be accessed soon too — the rest of an array you're iterating over). Hardware caches are built around spatial locality specifically: a cache miss doesn't fetch a single byte from RAM, it fetches an entire **cache line** (typically 64 bytes) surrounding it, betting that the next few accesses will land inside that line for free.
+
+This is also the practical reason [array](/en/computer-science/data-structures)-based iteration tends to outperform linked-list iteration of the same size in real measurements even though both are O(n): the array's elements are contiguous, so a handful of cache-line fetches covers the whole scan, while the linked list's nodes can be scattered anywhere in memory, turning nearly every step into a fresh cache miss.
+
+## Stack vs. heap
+
+Within a single process, memory used at runtime splits into two regions with very different lifetimes. The **stack** holds each function call's local variables and return address, growing and shrinking automatically as functions are entered and exited — allocation and deallocation are both just moving a pointer, so it's extremely fast, but a value can't outlive the function call that created it. The **heap** holds data whose lifetime isn't tied to a single function call — allocated explicitly (`malloc`/`new`, or implicitly by a managed-language runtime) and freed either explicitly or by a **garbage collector** that identifies and reclaims memory nothing still references. Heap allocation is slower and its memory can fragment over time, but it's the only option for data that needs to outlive the call that created it or whose size isn't known until runtime.
+
+## See also
+
+- **[CPU](/en/computer-science/cpu)** — the registers and caches above sit directly on the chip this page's hierarchy starts from.
+- **[Virtual Memory](/en/operating-systems/virtual-memory)** — how the OS gives every process its own private view of RAM (and disk-backed swap) on top of this hierarchy.
+- **[Data Structures](/en/computer-science/data-structures)** — why a structure's memory layout, not just its Big O, determines its real-world speed.

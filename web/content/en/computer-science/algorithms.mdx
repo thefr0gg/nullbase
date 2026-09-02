@@ -1,0 +1,38 @@
+---
+title: Algorithms
+description: How to describe what a piece of code costs using Big O notation, the common growth rates you'll actually see, and why the same problem can have wildly different-performing solutions.
+category: Computer Science
+weight: 1
+---
+
+An **algorithm** is just a finite, well-defined sequence of steps for solving a problem — but the same problem usually has several algorithms that solve it correctly, and picking the wrong one is how a feature that works fine in testing falls over in production the moment the input gets large. The tool for reasoning about that ahead of time, without running the code, is **asymptotic complexity**.
+
+## Big O notation
+
+**Big O** describes how an algorithm's running time (or memory use) grows as the input size `n` grows, ignoring constant factors and lower-order terms — it answers "what happens as this gets big," not "how many milliseconds does this take on my laptop." A few growth rates come up constantly, from best to worst:
+
+- **O(1)** — constant. Array index lookup by position; the cost doesn't depend on how much data there is.
+- **O(log n)** — logarithmic. Binary search on a sorted array: each step throws away half the remaining candidates.
+- **O(n)** — linear. Scanning every element once, e.g. finding the max of an unsorted list.
+- **O(n log n)** — the cost of any comparison-based sort at its best (merge sort, heapsort) — provably the best a general comparison sort can do.
+- **O(n²)** — quadratic. A nested loop comparing every pair of elements — naive duplicate detection, bubble sort.
+- **O(2ⁿ)** — exponential. Brute-forcing every subset of a set; only tractable for very small `n`.
+
+The gap between these isn't academic: an O(n²) algorithm over a million rows is roughly a trillion operations — seconds to minutes become hours, and the code that "worked in the demo with 50 rows" is exactly where this bites.
+
+## Same problem, different algorithms
+
+Sorting is the clearest example of algorithm choice mattering: bubble sort and insertion sort are both O(n²) and easy to write from memory, but merge sort and quicksort are O(n log n) on average and are what every standard library sort actually uses once a dataset stops being tiny. Searching shows the same pattern — a linear scan is O(n) on any list, but binary search is O(log n) *if the data is already sorted*, which is why databases build [indexes](/en/databases) in the first place: paying a one-time sorting/structuring cost up front to make every future lookup dramatically cheaper.
+
+## Where this shows up in practice
+
+Complexity analysis isn't just interview trivia — it's the reasoning behind:
+
+- Why a database query without an index becomes a full table scan (O(n)) instead of an index lookup (O(log n) or better).
+- Why the right [data structure](/en/computer-science/data-structures) for a job (hash map vs. array vs. tree) changes an algorithm's complexity without changing what it computes.
+- Why "premature optimization" is a real trap in the other direction too — an O(n) algorithm is already fast enough for `n` in the hundreds, and rewriting it to shave constants is wasted effort next to fixing an accidentally-quadratic one.
+
+## See also
+
+- **[Data Structures](/en/computer-science/data-structures)** — the structures whose access patterns determine what complexity is even reachable for a given operation.
+- **[Databases](/en/databases)** — indexing is Big O reasoning applied directly to query performance.

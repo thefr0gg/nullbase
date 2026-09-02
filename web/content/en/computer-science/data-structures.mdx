@@ -1,0 +1,34 @@
+---
+title: Data Structures
+description: The handful of ways to arrange data in memory — arrays, linked lists, hash maps, trees, and graphs — and the access patterns and tradeoffs each one is actually built for.
+category: Computer Science
+weight: 2
+---
+
+A **data structure** is a way of organizing data so that specific operations — lookup, insertion, deletion, iteration in order — are cheap. There's no single best structure; each one trades one operation's speed for another's, and picking between them is [algorithm](/en/computer-science/algorithms) design applied to storage rather than computation.
+
+## Arrays and linked lists
+
+An **array** stores elements contiguously in memory, so indexing by position is O(1) — the address of element `i` is just the base address plus `i` times the element size. Insertion or deletion in the middle is O(n), though, since everything after it has to shift. A **linked list** stores elements as separate nodes, each pointing to the next; insertion and deletion at a known position are O(1) since only pointers change, but indexing by position is O(n) since there's no shortcut but to walk the chain. Arrays win when you mostly read by index; linked lists win when you mostly insert and delete at known points and rarely need arbitrary access.
+
+## Hash maps
+
+A **hash map** (or hash table) stores key-value pairs by running each key through a hash function to pick a "bucket," giving average-case O(1) lookup, insertion, and deletion regardless of how many entries exist. The cost is that entries have no inherent order, and a bad hash function or too many entries in one bucket (a **collision**) degrades toward O(n) in the worst case. This is the structure behind object/dictionary types in nearly every language, and behind database index types built for exact-match lookups.
+
+## Trees
+
+A **tree** organizes data hierarchically — each node has a parent and some number of children, with one root and no cycles. A **binary search tree** keeps every left descendant smaller and every right descendant larger than its parent, giving O(log n) search, insert, and delete — *if* the tree stays roughly balanced; an unlucky insertion order can degrade a naive BST into a linked list (O(n)). Self-balancing variants (red-black trees, AVL trees) enforce balance on every insert/delete to guarantee O(log n) stays true, which is why they're what real database indexes (B-trees, a wide, disk-friendly relative) and language-standard-library ordered maps use underneath.
+
+## Graphs
+
+A **graph** is nodes connected by edges, with no restriction to a single parent the way a tree has — it's the right structure whenever relationships aren't strictly hierarchical: a social network, a road map, a dependency graph between packages or build targets. Graphs are usually represented as an **adjacency list** (each node keeps a list of its neighbors — compact for sparse graphs) or an **adjacency matrix** (an n×n table of which pairs are connected — O(1) edge lookup, but O(n²) space even when most pairs aren't connected).
+
+## Choosing one
+
+The question is always "what operation happens most, and what can I afford to make slow instead": a cache wants O(1) lookup by key (hash map), a priority queue wants fast access to the current minimum/maximum (a heap, a specialized tree), an ordered dataset that changes often wants O(log n) insert while staying sorted (a balanced tree) rather than an array that would need an O(n) shift on every insert.
+
+## See also
+
+- **[Algorithms](/en/computer-science/algorithms)** — the complexity notation used throughout this page.
+- **[Databases](/en/databases)** — B-tree indexes and hash indexes are these structures applied directly to query performance.
+- **[Memory](/en/computer-science/memory)** — why contiguous (array) layout is often faster in practice than its Big O alone would suggest, thanks to CPU caching.
