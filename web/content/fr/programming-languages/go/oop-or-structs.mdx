@@ -1,0 +1,199 @@
+---
+title: Structs et interfaces
+description: Comment Go modélise les objets sans classes ni héritage, avec les structs, les méthodes à receveur, et les interfaces implicites.
+category: Programming Languages
+weight: 6
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Go n'a ni classes ni héritage. Il a à la place deux éléments plus simples
+qui, combinés, couvrent la majeure partie de ce pour quoi les langages
+orientés objet utilisent les classes : les types `struct` pour les données,
+et les types `interface` pour les contrats de comportement. Une fois qu'on
+s'y habitue, cela finit par être plus simple qu'une hiérarchie de classes —
+il n'y a pas d'appels à `super`, pas de problèmes d'héritage en diamant, pas
+d'ambiguïté sur quelle méthode parente s'exécute.
+
+## Structs
+
+Une `struct` regroupe des champs nommés en un seul type :
+
+```go
+type Point struct {
+	X int
+	Y int
+}
+
+func main() {
+	p := Point{X: 3, Y: 4}
+	fmt.Println(p.X, p.Y) // 3 4
+}
+```
+
+Les champs commençant par une majuscule sont exportés (visibles en dehors
+du package) ; les champs en minuscule sont privés au package. C'est
+l'intégralité du système de visibilité de Go — il n'y a pas de mot-clé
+`public`/`private`.
+
+## Méthodes à receveur
+
+Go ne place pas les méthodes à l'intérieur de la définition de la struct.
+À la place, vous déclarez une fonction ordinaire avec un **receveur** — un
+paramètre supplémentaire avant le nom de la fonction qui la lie à un
+type :
+
+```go
+type Rectangle struct {
+	Width, Height float64
+}
+
+func (r Rectangle) Area() float64 {
+	return r.Width * r.Height
+}
+
+func main() {
+	rect := Rectangle{Width: 3, Height: 4}
+	fmt.Println(rect.Area()) // 12
+}
+```
+
+Un receveur peut être une valeur (`r Rectangle`) ou un pointeur
+(`r *Rectangle`). Les receveurs par valeur reçoivent une copie de la
+struct ; les receveurs par pointeur peuvent modifier l'original et éviter
+de copier de grandes structs :
+
+```go
+func (r *Rectangle) Scale(factor float64) {
+	r.Width *= factor
+	r.Height *= factor
+}
+
+func main() {
+	rect := Rectangle{Width: 3, Height: 4}
+	rect.Scale(2)
+	fmt.Println(rect) // {6 8}
+}
+```
+
+## Composition plutôt qu'héritage
+
+Go n'a pas de `extends`. Pour réutiliser des champs et des méthodes, vous
+**embarquez** une struct dans une autre. La struct englobante promeut les
+champs et méthodes du type embarqué comme s'ils étaient les siens :
+
+```go
+type Animal struct {
+	Name string
+}
+
+func (a Animal) Describe() string {
+	return a.Name + " makes a sound"
+}
+
+type Dog struct {
+	Animal // embarqué — pas un champ nommé
+	Breed  string
+}
+
+func main() {
+	d := Dog{Animal: Animal{Name: "Rex"}, Breed: "Labrador"}
+	fmt.Println(d.Describe()) // Rex makes a sound — promu depuis Animal
+	fmt.Println(d.Name)        // Rex — également promu
+}
+```
+
+## Les interfaces sont implicites
+
+Une interface liste un ensemble de méthodes. Un type la satisfait
+automatiquement du simple fait d'implémenter ces méthodes — il n'y a pas de
+mot-clé `implements` ni de relation déclarée :
+
+```go
+type Shape interface {
+	Area() float64
+}
+
+func printArea(s Shape) {
+	fmt.Println(s.Area())
+}
+
+func main() {
+	rect := Rectangle{Width: 3, Height: 4}
+	printArea(rect) // Rectangle satisfait Shape simplement en ayant une méthode Area()
+}
+```
+
+Cela signifie que vous pouvez définir une interface après coup, dans un
+package complètement différent, et des types existants la satisferont déjà
+si leur ensemble de méthodes correspond. Cela découple « ce qu'un type
+fait » de « ce qu'un type déclare faire ».
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour définir une struct avec une méthode à receveur par valeur et l'appeler."
+  items={[
+    { id: "o1", label: "type Circle struct {" },
+    { id: "o2", label: "\tRadius float64" },
+    { id: "o3", label: "}" },
+    { id: "o4", label: "func (c Circle) Area() float64 {", explanation: "La déclaration de la méthode vient après que la struct sur laquelle elle opère est entièrement définie." },
+    { id: "o5", label: "\treturn 3.14 * c.Radius * c.Radius" },
+    { id: "o6", label: "}" },
+  ]}
+  correctOrder={["o1", "o2", "o3", "o4", "o5", "o6"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Ordonnez ces lignes pour embarquer une struct dans une autre et accéder à un champ promu."
+  items={[
+    { id: "p1", label: "type Engine struct { Horsepower int }" },
+    { id: "p2", label: "type Car struct {" },
+    { id: "p3", label: "\tEngine", explanation: "Le type embarqué est listé seulement par son nom, sans nom de champ qui lui soit propre." },
+    { id: "p4", label: "\tModel string" },
+    { id: "p5", label: "}" },
+    { id: "p6", label: "c := Car{Engine: Engine{Horsepower: 300}, Model: \"GT\"}" },
+    { id: "p7", label: "fmt.Println(c.Horsepower)" },
+  ]}
+  correctOrder={["p1", "p2", "p3", "p4", "p5", "p6", "p7"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que ce code affiche ?"
+  code={`package main
+
+import "fmt"
+
+type Counter struct {
+	Count int
+}
+
+func (c Counter) IncrementByValue() {
+	c.Count++
+}
+
+func (c *Counter) IncrementByPointer() {
+	c.Count++
+}
+
+func main() {
+	c := Counter{}
+	c.IncrementByValue()
+	c.IncrementByPointer()
+	fmt.Println(c.Count)
+}`}
+  options={["0", "1", "2", "Erreur de compilation : receveurs incompatibles"]}
+  correctIndex={1}
+  explanation="IncrementByValue a un receveur par valeur, donc il modifie une copie de c et le changement est perdu. IncrementByPointer a un receveur par pointeur, donc il modifie le vrai c. Un seul incrément survit, donnant 1."
+  actualOutput="1"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Structures de données](/fr/programming-languages/go/data-structures)
+- [Gestion des erreurs](/fr/programming-languages/go/error-handling)

@@ -1,0 +1,164 @@
+---
+title: التحكم بمسار التنفيذ
+description: الشروط والحلقات في C — if/else، وswitch، وwhile، وfor، وعبارات break/continue/goto التي تعيد توجيهها.
+category: Programming Languages
+weight: 3
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+سيبدو التحكم بمسار التنفيذ في C مألوفاً لأي شخص استخدم لغة من عائلة C (JavaScript، Java، C#، Go) — وهذا ليس صدفة، إذ استعارت جميعها بنية `if` و`for` و`while` مباشرة من C. ما يميّز C فعلاً هو غياب الضمانات: تقبل الشروط أي عدد صحيح (وليس فقط `bool`)، وينزلق `switch` عبر الحالات بشكل افتراضي ما لم تستخدم `break`، ولا تزال `goto` كلمة مفتاحية فعلية وعاملة.
+
+## if / else والقيم المنطقية الضمنية
+
+أي تعبير يُقيَّم إلى قيمة غير صفرية يُعامَل كـ"صحيح" في شرط — لا يوجد اشتراط لنوع منطقي مخصص:
+
+```c
+#include <stdio.h>
+
+int main(void) {
+    int age = 20;
+
+    if (age < 13) {
+        printf("child\n");
+    } else if (age < 20) {
+        printf("teenager\n");
+    } else {
+        printf("adult\n");
+    }
+
+    int flag = 5; /* nonzero, so this branch runs even though 5 isn't 1 */
+    if (flag) {
+        printf("flag is truthy: %d\n", flag);
+    }
+
+    return 0;
+}
+```
+
+تلك الكتلة الأخيرة مصدر شائع للأخطاء: `if (flag)` صحيحة لأي عدد صحيح، لذا فإن خطأ كتابي مثل `if (result = 0)` (إسناد، لا مقارنة) يُترجَم بصمت ويُقيَّم دائماً إلى خطأ، لأن `0` نفسها خاطئة — تحذّر معظم المترجمات من هذا مع `-Wall`، لكنه ليس خطأً.
+
+## switch والانزلاق عبر الحالات
+
+يقفز `switch` إلى تسمية `case` المطابقة ثم **يستمر في تنفيذ كل عبارة بعدها** حتى يصل إلى `break` أو نهاية الكتلة — لا يوجد break ضمني كما في بعض اللغات الأخرى:
+
+```c
+#include <stdio.h>
+
+int main(void) {
+    int day = 3;
+
+    switch (day) {
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+            printf("weekday\n");
+            break;
+        case 6:
+        case 7:
+            printf("weekend\n");
+            break;
+        default:
+            printf("invalid day\n");
+    }
+
+    return 0;
+}
+```
+
+تكديس `case 1:` حتى `case 5:` دون أي عبارات بينها انزلاق مقصود، مُستخدَم هنا لتجميع عدة قيم تحت إجراء واحد. نسيان `break` حيث لم *تقصد* الانزلاق أحد أكثر أخطاء C شيوعاً.
+
+## الحلقات: while وdo-while وfor
+
+```c
+#include <stdio.h>
+
+int main(void) {
+    int i = 0;
+    while (i < 3) {          /* checks condition before each iteration */
+        printf("while: %d\n", i);
+        i++;
+    }
+
+    int j = 0;
+    do {                       /* always runs at least once */
+        printf("do-while: %d\n", j);
+        j++;
+    } while (j < 3);
+
+    for (int k = 0; k < 5; k++) {
+        if (k == 2) continue;  /* skip the rest of this iteration */
+        if (k == 4) break;     /* exit the loop entirely */
+        printf("for: %d\n", k);
+    }
+
+    return 0;
+}
+```
+
+`do-while` هي الحلقة الوحيدة المضمونة أن تنفذ جسمها مرة واحدة على الأقل، لأن الشرط يُفحَص *بعد* المرور الأول — وهذا مفيد لأمور مثل "اطلب من المستخدم إدخالاً، ثم أعد الطلب طالما الإدخال غير صالح."
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="اجمع سلسلة if/else لتقدير الدرجات"
+  prompt="اسحب هذه الأسطر إلى الترتيب الذي يصنّف الدرجة بشكل صحيح إلى تقدير حرفي."
+  items={[
+    { id: "if90", label: "if (score >= 90) {", explanation: "يجب فحص أعلى عتبة أولاً — لو جاءت عتبة أدنى مثل >= 70 أولاً، لطابقتها درجة 95 بشكل خاطئ." },
+    { id: "a", label: "    printf(\"A\\n\");" },
+    { id: "elif70", label: "} else if (score >= 70) {" },
+    { id: "b", label: "    printf(\"B\\n\");" },
+    { id: "else", label: "} else {" },
+    { id: "f", label: "    printf(\"F\\n\");" },
+    { id: "close", label: "}" },
+  ]}
+  correctOrder={["if90", "a", "elif70", "b", "else", "f", "close"]}
+/>
+
+<OrderingExercise
+  title="رتّب حلقة for تجمع الأرقام من 1 إلى 5"
+  prompt="اسحب هذه الأسطر إلى الترتيب الذي يحسب مجموع الأرقام من 1 إلى 5 ويطبعه."
+  items={[
+    { id: "decl", label: "int sum = 0;" },
+    { id: "for", label: "for (int i = 1; i <= 5; i++) {" },
+    { id: "add", label: "    sum += i;", explanation: "يجب أن تضيف كل دورة إلى sum قبل انتقال الحلقة إلى i التالية." },
+    { id: "close", label: "}" },
+    { id: "print", label: "printf(\"%d\\n\", sum);" },
+  ]}
+  correctOrder={["decl", "for", "add", "close", "print"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا الـ switch؟"
+  code={`#include <stdio.h>
+
+int main(void) {
+    int n = 2;
+    switch (n) {
+        case 1:
+            printf("one\\n");
+        case 2:
+            printf("two\\n");
+        case 3:
+            printf("three\\n");
+            break;
+        default:
+            printf("other\\n");
+    }
+    return 0;
+}`}
+  options={["two", "two\\nthree", "one\\ntwo\\nthree", "خطأ ترجمة"]}
+  correctIndex={1}
+  explanation="لا يوجد break بعد case 2، لذا ينزلق التنفيذ إلى printf الخاصة بـ case 3 قبل أن يصل أخيراً إلى break — فيطبع كلاً من 'two' و'three'. من المُغري افتراض أن switch يتوقف بعد الحالة المطابقة، كما في بعض اللغات الأخرى، لكن C تتطلب break صريحة للحصول على ذلك السلوك."
+  actualOutput="two\nthree"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- **[بنية اللغة والمتغيرات](/ar/programming-languages/c/syntax-basics)** — العوامل والأنواع التي بُنيت منها هذه الشروط والحلقات.
+- **[الدوال](/ar/programming-languages/c/functions)** — تنظيم مسار التنفيذ المتكرر في كتل قابلة لإعادة الاستخدام.

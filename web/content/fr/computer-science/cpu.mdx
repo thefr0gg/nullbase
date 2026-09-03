@@ -1,0 +1,39 @@
+---
+title: CPU
+description: Le cycle chercher-décoder-exécuter que traverse chaque instruction, comment le pipelining et les cœurs multiples chevauchent ce cycle pour gagner en vitesse, et pourquoi la vitesse d'horloge seule a cessé d'être toute l'histoire de la performance.
+category: Computer Science
+weight: 4
+---
+
+Le **CPU** (unité centrale de traitement) est la puce qui exécute réellement les instructions d'un programme, une à la fois, des millions à des milliards de fois par seconde. Presque tout le reste de ce site décrit du logiciel qui s'exécute *par-dessus* ce que couvre cette page.
+
+## Le cycle chercher-décoder-exécuter
+
+Chaque instruction qu'exécute un CPU traverse le même cycle de base :
+
+1. **Chercher (fetch)** — lire la prochaine instruction en mémoire, à l'adresse que pointe actuellement le **compteur de programme**.
+2. **Décoder (decode)** — déterminer quelle opération encode l'instruction et de quels registres ou adresses mémoire elle a besoin.
+3. **Exécuter (execute)** — effectuer réellement l'opération (une opération arithmétique dans l'ALU, une lecture/écriture mémoire, un saut qui change le compteur de programme).
+4. **Écrire le résultat (write back)** — stocker le résultat quelque part où l'instruction suivante pourra le voir, généralement un [registre](/fr/computer-science/memory).
+
+La **vitesse d'horloge** (mesurée en GHz) indique combien de ces cycles la puce peut exécuter par seconde — mais un nombre plus élevé a cessé d'être toute l'histoire dès que les puces sont devenues assez rapides pour être limitées par la chaleur et la consommation électrique plutôt que par la vitesse à laquelle un transistor peut commuter, ce qui explique pourquoi les gains de performance des deux dernières décennies viennent surtout des techniques ci-dessous plutôt que de la vitesse d'horloge brute continuant à grimper.
+
+## Le pipelining
+
+Un CPU n'attend pas qu'une instruction termine tout le cycle avant de commencer la suivante — il fonctionne en **pipeline** : pendant que l'instruction 2 est en cours de décodage, l'instruction 1 est déjà en train de s'exécuter, et l'instruction 3 est déjà en train d'être cherchée. Cela ne rend aucune instruction individuelle plus rapide, mais cela augmente considérablement le **débit** (throughput) — le taux d'instructions complétées par seconde — de la même façon qu'une station de lavage de voitures traite plus de voitures par heure en travaillant sur plusieurs d'entre elles à la fois, à différentes étapes, plutôt qu'en lavant une seule voiture plus vite.
+
+Le pipelining a un mode d'échec : une **branche** (un `if`, une condition de boucle) signifie que le CPU ne sait pas quelle instruction vient ensuite avant que la branche ne se résolve réellement. Les CPU modernes devinent à l'avance grâce à la **prédiction de branchement**, exécutant de façon spéculative le chemin prédit — et quand la supposition est fausse, tout ce qui a été fait spéculativement doit être jeté, une **purge de pipeline** qui coûte bien plus cher que si le CPU avait simplement attendu.
+
+## Cœurs multiples
+
+Un CPU **multi-cœur** est, du point de vue du logiciel, plusieurs CPU indépendants sur une seule puce, chacun capable de chercher-décoder-exécuter son propre flux d'instructions en même temps — un véritable [parallélisme](/fr/computer-science/parallelism), pas seulement le chevauchement offert par le pipelining. C'est pourquoi « combien de cœurs » est devenu une caractéristique aussi pertinente que la vitesse d'horloge : un programme écrit pour n'utiliser qu'un seul cœur ne tire aucun bénéfice des autres restant inactifs à côté de lui, ce qui est exactement l'écart que les techniques de [concurrence](/fr/computer-science/concurrency) et de programmation parallèle existent pour combler.
+
+## Jeux d'instructions : CISC vs RISC
+
+Le vocabulaire précis d'instructions qu'un CPU comprend est son **architecture de jeu d'instructions (ISA)**. **x86** (postes de travail et serveurs Intel/AMD) est une conception **CISC** (jeu d'instructions complexe) avec de nombreuses instructions spécialisées de longueur variable ; **ARM** (la plupart des téléphones, et de plus en plus les ordinateurs portables et les serveurs) est une conception **RISC** (jeu d'instructions réduit) privilégiant de nombreuses instructions simples de longueur fixe, individuellement moins coûteuses à décoder et à mettre en pipeline — ce qui explique en partie pourquoi les puces ARM ont historiquement un avantage en efficacité énergétique. Aucune des deux n'est strictement « meilleure » ; ce sont des paris différents sur où dépenser le budget de transistors, et le logiciel doit être compilé séparément pour chacune.
+
+## Voir aussi
+
+- **[GPU](/fr/computer-science/gpu)** — un type de processeur différent, construit autour d'un parallélisme massif plutôt que de l'exécution d'un seul flux d'instructions rapide.
+- **[Mémoire](/fr/computer-science/memory)** — la hiérarchie de registres et de cache dans laquelle lit et écrit le cycle chercher-décoder-exécuter de cette page.
+- **[Concurrence](/fr/computer-science/concurrency)** et **[Parallélisme](/fr/computer-science/parallelism)** — les techniques logicielles pour réellement mettre plusieurs cœurs au travail.

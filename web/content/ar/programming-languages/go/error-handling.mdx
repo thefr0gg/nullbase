@@ -1,0 +1,161 @@
+---
+title: معالجة الأخطاء
+description: اصطلاح Go بإعادة الأخطاء كقيم بدلاً من رمي استثناءات، وكيفية بناء الأخطاء والتحقق منها.
+category: Programming Languages
+weight: 7
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+لا تملك Go استثناءات ولا `try`/`catch`. الأخطاء قيم عادية، تُعاد إلى جانب
+نتيجة الدالة العادية، ويُتحقَّق منها بعبارة `if` بسيطة. هذا خيار تصميمي
+متعمَّد: يفرض أن تكون مسارات الأخطاء مرئية في الكود بدلاً من إخفائها في
+قفزة تحكم يمكن التقاطها في أي مكان أعلى مكدس الاستدعاء.
+
+## نوع `error` وعبارة `if err != nil`
+
+`error` واجهة مدمجة بتابع واحد، `Error() string`. أي نوع ينفّذها يمكن
+استخدامه كخطأ. بالعُرف، تُعيد الدالة القابلة للفشل نتيجتها إلى جانب
+`error` كآخر قيمة إرجاع، وتعني `nil` "لا يوجد خطأ":
+
+```go
+func divide(a, b float64) (float64, error) {
+	if b == 0 {
+		return 0, errors.New("cannot divide by zero")
+	}
+	return a / b, nil
+}
+
+func main() {
+	result, err := divide(10, 0)
+	if err != nil {
+		fmt.Println("error:", err)
+		return
+	}
+	fmt.Println("result:", result)
+}
+```
+
+`if err != nil` فور الاستدعاء هو الاصطلاح الأكثر شيوعاً في كود Go. يبدو
+متكرراً قادماً من لغة تعتمد try/catch، لكنه يعني أن لكل استدعاء قابل
+للفشل نقطة قرار صريحة ومرئية بالضبط في مكان حدوثه — لا شيء ينتشر بشكل خفي.
+
+## بناء الأخطاء
+
+تُنشئ `errors.New` خطأً بسيطاً من سلسلة نصية. تفعل `fmt.Errorf` الشيء نفسه
+لكنها تدعم التنسيق، وتُغلِّف `%w` خطأً موجوداً حتى يمكن فك تغليفه لاحقاً:
+
+```go
+import (
+	"errors"
+	"fmt"
+)
+
+var ErrNotFound = errors.New("item not found")
+
+func find(id int) error {
+	if id != 1 {
+		return fmt.Errorf("looking up id %d: %w", id, ErrNotFound)
+	}
+	return nil
+}
+
+func main() {
+	err := find(99)
+	if errors.Is(err, ErrNotFound) {
+		fmt.Println("not found, as expected")
+	}
+}
+```
+
+تتحقق `errors.Is` مما إذا كان خطأ (أو أي شيء يغلّفه) يطابق خطأ حارساً
+(sentinel) معروفاً مثل `ErrNotFound` — هكذا تتيح لك Go التحقق من شروط خطأ
+محدَّدة دون استثناءات أو تسلسلات هرمية للأنواع.
+
+## أنواع أخطاء مخصَّصة
+
+أي نوع بتابع `Error() string` يستوفي واجهة `error`، لذا يمكنك إرفاق بيانات
+مُهيكَلة بأخطائك:
+
+```go
+type ValidationError struct {
+	Field string
+}
+
+func (e *ValidationError) Error() string {
+	return "invalid field: " + e.Field
+}
+
+func validate(age int) error {
+	if age < 0 {
+		return &ValidationError{Field: "age"}
+	}
+	return nil
+}
+```
+
+## panic وrecover موجودان، لكن ليسا للأخطاء العادية
+
+تملك Go فعلاً `panic` و`recover`، لكنهما محجوزان لحالات لا يمكن استرجاعها
+حقاً (خلل برمجي مثل فهرس خارج الحدود)، وليس لمعالجة الأخطاء اليومية. كود
+Go الاصطلاحي لا يُصدر panic عمداً تقريباً أبداً لأمر قد يريد المستدعي
+معالجته بشكل معقول — ذلك مكانه في `error` مُعاد.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء دالة تُعيد خطأ والتحقق منه باصطلاح if err != nil."
+  items={[
+    { id: "e1", label: "func parseAge(s string) (int, error) {" },
+    { id: "e2", label: "\tif s == \"\" {" },
+    { id: "e3", label: "\t\treturn 0, errors.New(\"empty input\")", explanation: "حالة الخطأ تُعيد القيمة الصفرية إلى جانب الخطأ، وليس قبل التحقق من الشرط." },
+    { id: "e4", label: "\t}" },
+    { id: "e5", label: "\treturn 42, nil" },
+    { id: "e6", label: "}" },
+  ]}
+  correctOrder={["e1", "e2", "e3", "e4", "e5", "e6"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="رتّب هذه الأسطر لاستدعاء دالة قابلة للفشل ومعالجة خطئها قبل استخدام النتيجة."
+  items={[
+    { id: "h1", label: "age, err := parseAge(\"\")" },
+    { id: "h2", label: "if err != nil {", explanation: "تحقق من err فور الاستدعاء، قبل لمس age." },
+    { id: "h3", label: "\tfmt.Println(\"error:\", err)" },
+    { id: "h4", label: "\treturn" },
+    { id: "h5", label: "}" },
+    { id: "h6", label: "fmt.Println(\"age:\", age)" },
+  ]}
+  correctOrder={["h1", "h2", "h3", "h4", "h5", "h6"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا الكود؟"
+  code={`package main
+
+import (
+	"errors"
+	"fmt"
+)
+
+func main() {
+	var err error
+	fmt.Println(err == nil)
+	err = errors.New("boom")
+	fmt.Println(err == nil)
+}`}
+  options={["false true", "true false", "true true", "خطأ تصريف: لا قيمة صفرية لـerror"]}
+  correctIndex={1}
+  explanation={`error واجهة، وقيمتها الصفرية هي nil، لذا متغير error غير مُسنَد يساوي nil عند المقارنة. بعد إسناد errors.New("boom")، يحمل قيمة خطأ غير nil، فتكون المقارنة الثانية false.`}
+  actualOutput="true false"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [البُنى والواجهات](/ar/programming-languages/go/oop-or-structs)
+- [الوحدات والحزم](/ar/programming-languages/go/modules-packages)

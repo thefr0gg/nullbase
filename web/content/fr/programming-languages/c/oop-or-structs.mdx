@@ -1,0 +1,167 @@
+---
+title: Structures et méthodes
+description: C n'a pas de classes — les structs regroupent les données, les pointeurs de fonction tiennent lieu de méthodes, et la composition (pas l'héritage) construit le comportement.
+category: Programming Languages
+weight: 6
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+C précède la programmation orientée objet en tant qu'idée grand public, et il n'a ni `class`, ni héritage, ni syntaxe de méthode intégrée. Ce qu'il a, c'est `struct` pour regrouper des données liées, et le fait que les fonctions soient des valeurs adressables signifie que vous pouvez stocker un pointeur vers une fonction à l'intérieur d'un struct — c'est ainsi que les bases de code en C simulent des « objets avec méthodes » quand elles en ont besoin. C'est un substitut délibéré et fabriqué à la main, pas une fonctionnalité cachée qui ferait de C un langage secrètement orienté objet depuis le début.
+
+## struct : regrouper des données liées
+
+Un `struct` regroupe des champs nommés de types potentiellement différents en un seul type :
+
+```c
+#include <stdio.h>
+
+struct Point {
+    double x;
+    double y;
+};
+
+double distanceFromOrigin(struct Point p) {
+    /* passed by value: this receives a copy of the whole struct */
+    double dx = p.x;
+    double dy = p.y;
+    return dx * dx + dy * dy; /* squared distance, skipping sqrt for brevity */
+}
+
+int main(void) {
+    struct Point origin = {0.0, 0.0};
+    struct Point p1 = {3.0, 4.0};
+
+    printf("p1 = (%.1f, %.1f)\n", p1.x, p1.y);
+    printf("squared distance: %.1f\n", distanceFromOrigin(p1));
+
+    return 0;
+}
+```
+
+Comme toute autre valeur, un `struct` est copié lors d'une affectation et passé par valeur dans les fonctions, sauf si vous lui passez explicitement un pointeur — pour un gros struct, passer `struct Point *p` et utiliser `p->x` évite de tout copier à chaque appel.
+
+## typedef et pointeurs de fonction comme « méthodes »
+
+`typedef` donne à un struct un alias plus court, et un champ pointeur de fonction permet à un struct de porter du comportement en plus de ses données — ce qui se rapproche le plus d'une méthode en C :
+
+```c
+#include <stdio.h>
+
+typedef struct Account {
+    double balance;
+    void (*deposit)(struct Account *self, double amount);
+} Account;
+
+void depositImpl(Account *self, double amount) {
+    self->balance += amount;
+}
+
+int main(void) {
+    Account acc = {0.0, depositImpl};
+
+    acc.deposit(&acc, 100.0); /* looks like a method call, but it's just a function pointer */
+    acc.deposit(&acc, 50.0);
+
+    printf("balance: %.2f\n", acc.balance);
+
+    return 0;
+}
+```
+
+`acc.deposit(&acc, 100.0)` se lit presque comme le ferait `acc.deposit(100.0)` dans un langage orienté objet, sauf que C exige que l'objet (`&acc`) soit passé explicitement comme premier argument — il n'y a pas de `this` implicite. De vraies bases de code C utilisent exactement ce motif (un struct de pointeurs de fonction agissant comme une « vtable ») pour implémenter des interfaces et du polymorphisme — le struct `file_operations` du noyau Linux en est un exemple bien connu.
+
+## La composition plutôt que l'héritage
+
+C n'a aucun moyen de dire « ce struct étend cet autre struct ». Au lieu de cela, un struct en intègre un autre comme champ nommé, et le comportement partagé s'exprime en écrivant des fonctions qui opèrent sur la pièce intégrée :
+
+```c
+#include <stdio.h>
+
+typedef struct {
+    double x;
+    double y;
+} Point;
+
+typedef struct {
+    Point position; /* composition: a Circle "has a" Point, not "is a" Point */
+    double radius;
+} Circle;
+
+void printPoint(Point p) {
+    printf("(%.1f, %.1f)", p.x, p.y);
+}
+
+int main(void) {
+    Circle c = {{1.0, 2.0}, 5.0};
+
+    printf("circle at ");
+    printPoint(c.position); /* reuse the function written for Point */
+    printf(" with radius %.1f\n", c.radius);
+
+    return 0;
+}
+```
+
+Comme il n'y a pas d'héritage, la réutilisation de code en C vient de la composition de structs plus petits et de l'écriture de fonctions qui opèrent sur ces pièces, plutôt que de la construction d'une hiérarchie de classes — une contrainte qui a poussé les styles ultérieurs de « POO sans classes » (comme l'embedding de Go) vers la même idée.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez un struct et son utilisation"
+  prompt="Faites glisser ces lignes dans l'ordre qui définit un struct Point, en crée un, et affiche ses champs."
+  items={[
+    { id: "struct", label: "struct Point {\n    double x;\n    double y;\n};", explanation: "La définition du struct doit apparaître avant que quoi que ce soit ne tente de déclarer une variable de ce type." },
+    { id: "main", label: "int main(void) {" },
+    { id: "decl", label: "    struct Point p = {1.0, 2.0};" },
+    { id: "print", label: "    printf(\"(%.1f, %.1f)\\n\", p.x, p.y);" },
+    { id: "close", label: "    return 0;\n}" },
+  ]}
+  correctOrder={["struct", "main", "decl", "print", "close"]}
+/>
+
+<OrderingExercise
+  title="Ordonnez un appel de « méthode » par pointeur de fonction"
+  prompt="Faites glisser ces lignes dans l'ordre qui définit un struct avec un champ pointeur de fonction et l'appelle comme une méthode."
+  items={[
+    { id: "typedef", label: "typedef struct {\n    int count;\n    void (*increment)(void *self);\n} Counter;" },
+    { id: "impl", label: "void incrementImpl(void *self) {\n    ((Counter *)self)->count++;\n}", explanation: "La fonction d'implémentation doit exister avant d'être assignée dans une instance de Counter." },
+    { id: "decl", label: "Counter c = {0, incrementImpl};" },
+    { id: "call", label: "c.increment(&c);" },
+    { id: "print", label: "printf(\"%d\\n\", c.count);" },
+  ]}
+  correctOrder={["typedef", "impl", "decl", "call", "print"]}
+/>
+
+<PredictOutput
+  title="Qu'affiche ceci ?"
+  code={`#include <stdio.h>
+
+struct Point {
+    double x;
+    double y;
+};
+
+void movePoint(struct Point p) {
+    p.x += 10; /* p is a copy, passed by value */
+}
+
+int main(void) {
+    struct Point p1 = {1.0, 1.0};
+    movePoint(p1);
+    printf("%.1f\\n", p1.x);
+    return 0;
+}`}
+  options={["1.0", "11.0", "10.0", "Compile error"]}
+  correctIndex={0}
+  explanation="Les structs sont passés par valeur exactement comme tout autre type en C, donc movePoint reçoit une copie entièrement séparée de p1 — modifier p.x à l'intérieur de la fonction n'a aucun effet sur le p1 de l'appelant. Le modifier nécessiterait de passer un struct Point * à la place."
+  actualOutput="1.0"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- **[Structures de données](/fr/programming-languages/c/data-structures)** — les tableaux et pointeurs, l'autre moitié de la construction de structs en structures plus grandes.
+- **[Modules et paquets](/fr/programming-languages/c/modules-packages)** — partager la définition d'un struct à travers plusieurs fichiers .c via un en-tête.

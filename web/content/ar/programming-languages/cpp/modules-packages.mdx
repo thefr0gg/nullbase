@@ -1,0 +1,124 @@
+---
+title: الوحدات والحزم
+description: كيف تتلاءم #include ورؤوس الملفات ووحدات الترجمة مع بعضها، وكيف يتعامل CMake مع vcpkg أو Conan مع التبعيات في مشاريع C++ الحديثة.
+category: Programming Languages
+weight: 8
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تسبق C++ فكرة نظام وحدات أو حزم مدمج في اللغة نفسها (لم يصل نظام وحدات فعلي على طراز `import` إلا مع C++20، ولا يزال دعمه غير متساوٍ). بالنسبة لمعظم الكود الموجود، لا تزال مشاركة التصريحات عبر الملفات تعتمد على المعالجة المسبقة، وتعتمد مشاركة كود الأطراف الثالثة على أدوات بناء خارجية بدلاً من مدير حزم على مستوى اللغة.
+
+## الرؤوس مقابل وحدات الترجمة
+
+```cpp
+// math_utils.h — a header, declares what's available without defining it
+#ifndef MATH_UTILS_H
+#define MATH_UTILS_H
+
+int square(int n);
+int cube(int n);
+
+#endif
+```
+
+```cpp
+// math_utils.cpp — a translation unit, provides the actual definitions
+#include "math_utils.h"
+
+int square(int n) {
+    return n * n;
+}
+
+int cube(int n) {
+    return n * n * n;
+}
+```
+
+```cpp
+// main.cpp — another translation unit, uses the declarations from the header
+#include <iostream>
+#include "math_utils.h"
+
+int main() {
+    std::cout << square(4) << " " << cube(2) << "\n";
+    return 0;
+}
+```
+
+يلصق `#include "math_utils.h"` محتوى الرأس حرفياً في أي ملف يُدرجه، نصياً، قبل بدء الترجمة الفعلية أصلاً — إنه ليس استيراداً بالمعنى المُقصود بالوحدات، بل مجرد استبدال نصي في المعالجة المسبقة. هذا سبب وجوب أن يحتوي الرأس على *تصريحات* فقط (ما هو توقيع دالة) لا *تعريفات* (ما تفعله فعلياً): لو كان جسم `square` في الرأس وأدرجه ملفا `.cpp` كلاهما، سيرى الرابط تعريفَين لنفس الدالة ويفشل. تشكّل كل ملف `.cpp`، مع كل ما تسحبه `#include` الخاصة به، **وحدة ترجمة** واحدة تُترجَم بشكل مستقل إلى ملف كائن خاص بها؛ تصبح `main.cpp` و`math_utils.cpp` هما `main.o` و`math_utils.o`، اللتان يجمعهما الرابط بعد ذلك. كتلة `#ifndef`/`#define`/`#endif` في الرأس هي **حارس إدراج (include guard)** — يمنع لصق الرأس نفسه مرتين إذا أُدرِج (مباشرة أو بشكل غير مباشر) أكثر من مرة في وحدة الترجمة نفسها، الأمر الذي قد يسبب أخطاء تصريح مكرر. `#pragma once` بديل مدعوم على نطاق واسع وأقل إسهاباً لنمط الحارس نفسه.
+
+## CMake وإدارة الحزم
+
+```cmake
+cmake_minimum_required(VERSION 3.20)
+project(MyApp)
+
+find_package(fmt REQUIRED)
+
+add_executable(my_app main.cpp math_utils.cpp)
+target_link_libraries(my_app PRIVATE fmt::fmt)
+```
+
+لا تملك C++ أداة بناء رسمية واحدة كما تملك لغات أخرى `npm` أو `cargo`؛ أصبح **CMake** المعيار الفعلي لوصف كيفية ترجمة مصادر مشروع وربطها، إذ يُولّد ملفات البناء الفعلية (Makefiles، أو ملفات Ninja، أو مشاريع Visual Studio) لأياً كانت المنصة التي تعمل عليها بدلاً من الترجمة مباشرة بنفسه. تبحث `find_package(fmt REQUIRED)` عن تبعية تُدعى `fmt` مثبَّتة بالفعل في مكان يستطيع CMake إيجاده — وهنا يأتي دور مدير الحزم.
+
+**vcpkg** (من مايكروسوفت) و**Conan** هما مديرا الحزم المهيمنان لـ C++: يجلب كلاهما كود مصدر مكتبة (أو ثنائياً جاهزاً)، ويبنيانه لمنصتك ومترجمك المستهدفَين، ويربطان النتيجة بـ CMake عبر `find_package` بحيث يستطيع مشروعك الربط بها دون تنزيل تلك التبعية وتهيئتها وترجمتها يدوياً. مقارنةً بمديري الحزم في لغات أحدث، يتطلب كلاهما إعداداً يدوياً أكثر — لأن C++ لا تملك واجهة ثنائية تطبيقية (ABI) ثابتة واحدة عبر المترجمات، غالباً ما تحتاج تبعية إلى أن تُبنى (لا أن تُنزَّل فقط) خصيصاً لمترجمك وإعداداتك، وهذا السبب الأساسي وراء شعور إدارة تبعيات C++ بالثقل مقارنة بـ `pip install` أو `npm install`.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="اجمع الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء ملف رأس بحارس إدراج صحيح حول تصريح دالة واحدة."
+  items={[
+    { id: "ifndef", label: "#ifndef GREETER_H" },
+    { id: "define", label: "#define GREETER_H", explanation: "يجب تعريف ماكرو الحارس مباشرة بعد فحص #ifndef، قبل أي تصريحات." },
+    { id: "declare", label: "void greet(const std::string& name);" },
+    { id: "endif", label: "#endif" },
+  ]}
+  correctOrder={["ifndef", "define", "declare", "endif"]}
+/>
+
+<OrderingExercise
+  title="اجمع الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء CMakeLists.txt أدنى يترجم ملفَي مصدر إلى ملف تنفيذي واحد."
+  items={[
+    { id: "cmake-min", label: "cmake_minimum_required(VERSION 3.20)" },
+    { id: "project", label: "project(MyApp)", explanation: "يجب أن يأتي استدعاء project() قبل أن يُعرِّف add_executable() أي أهداف بناء." },
+    { id: "add-exe", label: "add_executable(my_app main.cpp math_utils.cpp)" },
+  ]}
+  correctOrder={["cmake-min", "project", "add-exe"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا؟"
+  code={`#ifndef SHAPE_H
+#define SHAPE_H
+inline int perimeter(int side) {
+    return side * 4;
+}
+#endif
+#ifndef SHAPE_H
+#define SHAPE_H
+inline int perimeter(int side) {
+    return side * 4;
+}
+#endif
+
+#include <iostream>
+int main() {
+    std::cout << perimeter(3) << std::endl;
+    return 0;
+}`}
+  options={["12", "خطأ ترجمة: إعادة تعريف perimeter", "0", "انهيار وقت التشغيل"]}
+  correctIndex={0}
+  explanation="كلتا الكتلتين محميتان بنفس ماكرو SHAPE_H. تجد #ifndef الأولى أن SHAPE_H غير معرَّف، فتُعرّف الماكرو وتلصق تعريف perimeter. ثم تجد #ifndef الثانية أن SHAPE_H معرَّف بالفعل، فتتخطى محتواها كلياً، لذا لا تُعرَّف perimeter إلا مرة واحدة فقط — هذا بالضبط السيناريو الذي وُجدت حراس الإدراج لمنعه عندما يُسحب الرأس نفسه أكثر من مرة."
+  actualOutput="12"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [الدوال](/ar/programming-languages/cpp/functions) — التصريحات التي تعيش عادة في رأس.
+- [المؤشرات والذاكرة](/ar/programming-languages/cpp/advanced) — اهتمامات الذاكرة التي تظهر بمجرد امتداد الكود عبر ملفات ومكتبات متعددة.

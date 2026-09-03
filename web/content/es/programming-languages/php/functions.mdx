@@ -1,0 +1,179 @@
+---
+title: Funciones
+description: Declarar funciones en PHP, argumentos por defecto, funciones variádicas, type hints, y closures.
+category: Programming Languages
+weight: 4
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Las funciones en PHP se declaran con la palabra clave `function` y pueden
+aparecer a nivel superior (PHP no exige que el código viva dentro de una
+clase). Desde PHP 7, los parámetros y valores de retorno pueden llevar type
+hints, que el motor aplica en tiempo de ejecución.
+
+## Declaración básica
+
+```php
+<?php
+
+function greet(string $name): string {
+    return "Hello, $name!";
+}
+
+echo greet("Ada") . "\n";
+```
+
+## Argumentos por defecto
+
+Cualquier parámetro puede tener un valor por defecto, lo que permite a
+quien llama omitirlo. Los parámetros con valor por defecto deben ir después
+de los parámetros sin valores por defecto:
+
+```php
+<?php
+
+function makeGreeting(string $name, string $greeting = "Hello"): string {
+    return "$greeting, $name!";
+}
+
+echo makeGreeting("Grace") . "\n";              // Hello, Grace!
+echo makeGreeting("Grace", "Welcome") . "\n";    // Welcome, Grace!
+```
+
+## Argumentos con nombre
+
+PHP 8.0 añadió los argumentos con nombre, que permiten a quien llama saltar
+valores por defecto anteriores sin repetirlos posicionalmente:
+
+```php
+<?php
+
+function connect(string $host, int $port = 5432, bool $ssl = false): string {
+    return ($ssl ? "ssl://" : "") . "$host:$port";
+}
+
+echo connect("db.internal", ssl: true) . "\n"; // ssl://db.internal:5432
+```
+
+## Funciones variádicas
+
+Prefijar el último parámetro con `...` recolecta cualquier número de
+argumentos finales en un array — el equivalente en PHP de `*args`:
+
+```php
+<?php
+
+function sum(int ...$numbers): int {
+    $total = 0;
+    foreach ($numbers as $n) {
+        $total += $n;
+    }
+    return $total;
+}
+
+echo sum(1, 2, 3, 4) . "\n"; // 10
+echo sum() . "\n";            // 0
+```
+
+El operador de propagación `...` hace lo contrario al llamar a una función:
+desempaqueta un array en argumentos posicionales.
+
+```php
+<?php
+
+$values = [3, 6, 9];
+echo sum(...$values) . "\n"; // 18
+```
+
+## Paso por referencia
+
+Por defecto, los argumentos se pasan por valor — una función recibe una
+copia. Añadir `&` antes de un parámetro lo pasa por referencia en su lugar,
+permitiendo que la función mute la variable de quien llama:
+
+```php
+<?php
+
+function increment(int &$n): void {
+    $n++;
+}
+
+$counter = 10;
+increment($counter);
+echo $counter . "\n"; // 11
+```
+
+## Funciones anónimas y funciones flecha
+
+PHP soporta closures mediante `function` (con una cláusula `use` explícita
+para capturar variables externas) y la sintaxis más concisa de función
+flecha `fn`, que captura automáticamente por valor:
+
+```php
+<?php
+
+$multiplier = 3;
+
+$classic = function (int $n) use ($multiplier): int {
+    return $n * $multiplier;
+};
+
+$arrow = fn(int $n): int => $n * $multiplier;
+
+echo $classic(5) . " " . $arrow(5) . "\n"; // 15 15
+```
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir una función con un argumento por defecto y llamarla."
+  items={[
+    { id: "e1", label: "<?php" },
+    { id: "e2", label: "function power(int $base, int $exp = 2): int {" },
+    { id: "e3", label: "    return $base ** $exp;", explanation: "El valor por defecto del exponente solo se aplica si quien llama omite el segundo argumento." },
+    { id: "e4", label: "}" },
+    { id: "e5", label: 'echo power(5) . "\\n";' },
+  ]}
+  correctOrder={["e1", "e2", "e3", "e4", "e5"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Ordena estas líneas para construir una función variádica que una sus argumentos con una coma."
+  items={[
+    { id: "f1", label: "<?php" },
+    { id: "f2", label: "function joinAll(string ...$parts): string {" },
+    { id: "f3", label: "    return implode(\", \", $parts);", explanation: "$parts es un array ordinario dentro del cuerpo de la función una vez que los parámetros variádicos se han recolectado." },
+    { id: "f4", label: "}" },
+    { id: "f5", label: 'echo joinAll("a", "b", "c") . "\\n";' },
+  ]}
+  correctOrder={["f1", "f2", "f3", "f4", "f5"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`<?php
+
+function addOne(int $n): int {
+    $n = $n + 1;
+    return $n;
+}
+
+$value = 10;
+addOne($value);
+echo $value;`}
+  options={["10", "11", "Fatal error: undefined variable", "10.0"]}
+  correctIndex={0}
+  explanation="Sin un & en la lista de parámetros, PHP pasa $n por valor. addOne muta su propia copia local; $value en el ámbito de quien llama no se toca, así que sigue imprimiendo 10."
+  actualOutput="10"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Flujo de Control](/es/programming-languages/php/control-flow)
+- [Arrays](/es/programming-languages/php/data-structures)

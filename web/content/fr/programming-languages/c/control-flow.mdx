@@ -1,0 +1,164 @@
+---
+title: Flux de contrôle
+description: Les conditions et boucles de C — if/else, switch, while, for, et les instructions break/continue/goto qui les redirigent.
+category: Programming Languages
+weight: 3
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Le flux de contrôle de C paraîtra familier à quiconque a déjà utilisé un langage de la famille C (JavaScript, Java, C#, Go) — ce n'est pas une coïncidence, puisque tous ont emprunté leur syntaxe `if`, `for` et `while` directement à C. Ce qui est spécifiquement C, c'est l'absence de garde-fous : les conditions acceptent n'importe quel entier (pas seulement un `bool`), `switch` continue par défaut à travers les cas suivants sauf si vous utilisez `break`, et `goto` est encore un mot-clé réel et fonctionnel.
+
+## if / else et la véracité
+
+Toute expression qui s'évalue à une valeur non nulle compte comme « vraie » dans une condition — il n'y a pas d'exigence booléenne dédiée :
+
+```c
+#include <stdio.h>
+
+int main(void) {
+    int age = 20;
+
+    if (age < 13) {
+        printf("child\n");
+    } else if (age < 20) {
+        printf("teenager\n");
+    } else {
+        printf("adult\n");
+    }
+
+    int flag = 5; /* nonzero, so this branch runs even though 5 isn't 1 */
+    if (flag) {
+        printf("flag is truthy: %d\n", flag);
+    }
+
+    return 0;
+}
+```
+
+Ce dernier bloc est une source courante de bugs : `if (flag)` est légal pour n'importe quel entier, donc une faute de frappe comme `if (result = 0)` (une affectation, pas une comparaison) compile silencieusement et s'évalue toujours à faux, puisque `0` lui-même est faux — la plupart des compilateurs avertissent de cela avec `-Wall`, mais ce n'est pas une erreur.
+
+## switch et le fallthrough
+
+`switch` saute au `case` correspondant puis **continue d'exécuter chaque instruction qui suit** jusqu'à ce qu'il rencontre un `break` ou la fin du bloc — il n'y a pas de break implicite comme dans certains autres langages :
+
+```c
+#include <stdio.h>
+
+int main(void) {
+    int day = 3;
+
+    switch (day) {
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+            printf("weekday\n");
+            break;
+        case 6:
+        case 7:
+            printf("weekend\n");
+            break;
+        default:
+            printf("invalid day\n");
+    }
+
+    return 0;
+}
+```
+
+Empiler `case 1:` à `case 5:` sans instructions entre eux est un fallthrough intentionnel, utilisé ici pour regrouper plusieurs valeurs sous une même action. Oublier un `break` là où vous *ne vouliez pas* de fallthrough est l'un des bugs les plus courants de C.
+
+## Boucles : while, do-while, for
+
+```c
+#include <stdio.h>
+
+int main(void) {
+    int i = 0;
+    while (i < 3) {          /* checks condition before each iteration */
+        printf("while: %d\n", i);
+        i++;
+    }
+
+    int j = 0;
+    do {                       /* always runs at least once */
+        printf("do-while: %d\n", j);
+        j++;
+    } while (j < 3);
+
+    for (int k = 0; k < 5; k++) {
+        if (k == 2) continue;  /* skip the rest of this iteration */
+        if (k == 4) break;     /* exit the loop entirely */
+        printf("for: %d\n", k);
+    }
+
+    return 0;
+}
+```
+
+`do-while` est la seule boucle garantie d'exécuter son corps au moins une fois, puisque la condition est vérifiée *après* le premier passage — utile pour des choses comme « demander à l'utilisateur, puis redemander tant que la saisie est invalide ».
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez une chaîne if/else de notation"
+  prompt="Faites glisser ces lignes dans l'ordre qui classe correctement un score en note alphabétique."
+  items={[
+    { id: "if90", label: "if (score >= 90) {", explanation: "Le seuil le plus élevé doit être vérifié en premier — si un seuil plus bas comme >= 70 venait en premier, un score de 95 le satisferait à tort." },
+    { id: "a", label: "    printf(\"A\\n\");" },
+    { id: "elif70", label: "} else if (score >= 70) {" },
+    { id: "b", label: "    printf(\"B\\n\");" },
+    { id: "else", label: "} else {" },
+    { id: "f", label: "    printf(\"F\\n\");" },
+    { id: "close", label: "}" },
+  ]}
+  correctOrder={["if90", "a", "elif70", "b", "else", "f", "close"]}
+/>
+
+<OrderingExercise
+  title="Ordonnez une boucle for qui somme 1 à 5"
+  prompt="Faites glisser ces lignes dans l'ordre qui calcule et affiche la somme de 1 à 5."
+  items={[
+    { id: "decl", label: "int sum = 0;" },
+    { id: "for", label: "for (int i = 1; i <= 5; i++) {" },
+    { id: "add", label: "    sum += i;", explanation: "Chaque itération doit ajouter à sum avant que la boucle ne passe au i suivant." },
+    { id: "close", label: "}" },
+    { id: "print", label: "printf(\"%d\\n\", sum);" },
+  ]}
+  correctOrder={["decl", "for", "add", "close", "print"]}
+/>
+
+<PredictOutput
+  title="Qu'affiche ce switch ?"
+  code={`#include <stdio.h>
+
+int main(void) {
+    int n = 2;
+    switch (n) {
+        case 1:
+            printf("one\\n");
+        case 2:
+            printf("two\\n");
+        case 3:
+            printf("three\\n");
+            break;
+        default:
+            printf("other\\n");
+    }
+    return 0;
+}`}
+  options={["two", "two\\nthree", "one\\ntwo\\nthree", "Compile error"]}
+  correctIndex={1}
+  explanation="Il n'y a pas de break après case 2, donc l'exécution tombe dans le printf de case 3 avant de finalement rencontrer break — affichant à la fois « two » et « three ». Il est tentant de supposer que switch s'arrête après le cas correspondant, comme ce serait le cas dans certains autres langages, mais C exige un break explicite pour obtenir ce comportement."
+  actualOutput="two\nthree"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- **[Syntaxe et variables](/fr/programming-languages/c/syntax-basics)** — les opérateurs et types à partir desquels ces conditions et boucles sont construits.
+- **[Fonctions](/fr/programming-languages/c/functions)** — organiser le flux de contrôle répété en blocs réutilisables.

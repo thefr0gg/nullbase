@@ -1,0 +1,165 @@
+---
+title: Modules et npm
+description: La syntaxe import/export des modules ES, package.json, et comment npm gère les dépendances JavaScript.
+category: Programming Languages
+weight: 8
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Avant ES6, JavaScript n'avait pas de système de modules intégré — le code
+était réparti entre des balises `<script>` ou empaqueté avec des outils
+tiers comme CommonJS (le `require`/`module.exports` de Node). Les modules
+ES, utilisant `import` et `export`, sont maintenant le standard et
+fonctionnent de la même façon dans les navigateurs (avec
+`<script type="module">`) et dans Node.js.
+
+## Exports nommés et par défaut
+
+Un module peut exporter plusieurs valeurs nommées, et optionnellement un
+export par défaut.
+
+```js
+// math.js
+export function add(a, b) {
+  return a + b;
+}
+
+export function subtract(a, b) {
+  return a - b;
+}
+
+export const PI = 3.14159;
+
+export default function multiply(a, b) {
+  return a * b;
+}
+```
+
+```js
+// main.js
+import multiply, { add, subtract, PI } from "./math.js";
+
+console.log(add(2, 3));      // 5
+console.log(multiply(2, 3));  // 6
+console.log(PI);              // 3.14159
+```
+
+Les imports nommés doivent correspondre exactement aux noms exportés (ou
+être renommés avec `as`), et il ne peut y avoir qu'un seul export par
+défaut par module, ce qui explique pourquoi il est importé sans accolades.
+
+```js
+import multiply, { subtract as minus } from "./math.js";
+
+console.log(minus(10, 4)); // 6
+```
+
+## Imports d'espace de noms et ré-exports
+
+Vous pouvez importer tous les exports nommés d'un module comme un seul
+objet, et les modules peuvent ré-exporter des éléments d'autres modules —
+utile pour construire un point d'entrée unique en « barrel » pour un
+dossier de fichiers liés.
+
+```js
+import * as MathUtils from "./math.js";
+console.log(MathUtils.add(1, 1)); // 2
+
+// utils/index.js — ré-exportation depuis plusieurs fichiers
+export { add, subtract } from "./math.js";
+export { formatDate } from "./dates.js";
+```
+
+## package.json et npm
+
+Chaque projet Node.js (et la plupart des projets frontend) est décrit par
+un fichier `package.json` : le nom du projet, sa version, ses
+dépendances, et les scripts que vous lancez avec `npm run`.
+
+```json
+{
+  "name": "my-app",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "express": "^4.19.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0"
+  }
+}
+```
+
+`"type": "module"` dit à Node de traiter les fichiers `.js` comme des
+modules ES plutôt que l'ancien format CommonJS — sans lui, `import`/`export`
+lèvent une erreur de syntaxe et vous auriez besoin de
+`require`/`module.exports` à la place. `npm install` lit `dependencies`
+et `devDependencies` et télécharge tout (plus leurs propres dépendances,
+récursivement) dans `node_modules`, en enregistrant les versions exactes
+résolues dans `package-lock.json` pour que les installations soient
+reproductibles d'une machine à l'autre. Le `^` dans `"^4.19.0"` signifie
+« toute version compatible à partir de 4.19.0, jusqu'à mais sans inclure
+5.0.0 » — la convention de npm pour les plages de versionnage sémantique.
+
+`dependencies` sont livrées avec votre application en production ;
+`devDependencies` (linters, lanceurs de tests, bundlers) ne sont
+nécessaires que pendant le développement et sont ignorées par
+`npm install --omit=dev` dans les installations de production.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour définir des exports nommés dans un fichier et les importer dans un autre."
+  items={[
+    { id: "export1", label: "export function square(n) { return n * n; }" },
+    { id: "export2", label: "export const ORIGIN = { x: 0, y: 0 };" },
+    { id: "importLine", label: "import { square, ORIGIN } from \"./geometry.js\";", explanation: "L'import doit venir après que les exports existent dans le module source, même s'il s'agit d'un fichier séparé chargé en premier à l'exécution." },
+    { id: "use", label: "console.log(square(4), ORIGIN);" },
+  ]}
+  correctOrder={["export1", "export2", "importLine", "use"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Mettez ces lignes dans l'ordre pour construire un package.json avec un script de lancement et une dépendance."
+  items={[
+    { id: "open", label: "{" },
+    { id: "name", label: "  \"name\": \"weather-cli\"," },
+    { id: "version", label: "  \"version\": \"1.0.0\"," },
+    { id: "scriptsOpen", label: "  \"scripts\": { \"start\": \"node index.js\" }," },
+    { id: "depsOpen", label: "  \"dependencies\": { \"chalk\": \"^5.3.0\" }" },
+    { id: "close", label: "}" },
+  ]}
+  correctOrder={["open", "name", "version", "scriptsOpen", "depsOpen", "close"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que ce code affiche ?"
+  code={`// shapes.js
+export default function circleArea(r) {
+  return Math.PI * r * r;
+}
+export const shapeCount = 1;
+
+// main.js
+import area, { shapeCount } from "./shapes.js";
+console.log(typeof area, shapeCount);`}
+  options={["\"function\" 1", "\"object\" 1", "\"undefined\" undefined", "SyntaxError"]}
+  correctIndex={0}
+  explanation={`area se lie à l'export par défaut, qui est la fonction circleArea, donc typeof area vaut "function". shapeCount est un export nommé importé par son nom exact entre accolades, donc il arrive sous forme du nombre 1. Mélanger un import par défaut et des imports nommés dans une seule instruction, comme fait ici, est une syntaxe de module ES valide.`}
+  actualOutput="function 1"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Asynchrone et Promises](/fr/programming-languages/javascript/advanced)
+- [Gestion des erreurs](/fr/programming-languages/javascript/error-handling)

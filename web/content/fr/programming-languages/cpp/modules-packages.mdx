@@ -1,0 +1,124 @@
+---
+title: Modules et paquets
+description: Comment les en-têtes, #include et les unités de traduction s'articulent, et comment CMake associé à vcpkg ou Conan gère les dépendances dans les projets C++ modernes.
+category: Programming Languages
+weight: 8
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+C++ précède l'idée d'un système de modules ou de paquets intégré au langage lui-même (un véritable système de modules de type `import` n'est arrivé qu'avec C++20 et reste inégalement supporté). Pour la plupart du code existant, partager des déclarations entre fichiers repose encore sur le préprocesseur, et partager du code tiers repose sur des outils de build externes plutôt que sur un gestionnaire de paquets au niveau du langage.
+
+## En-têtes vs. unités de traduction
+
+```cpp
+// math_utils.h — a header, declares what's available without defining it
+#ifndef MATH_UTILS_H
+#define MATH_UTILS_H
+
+int square(int n);
+int cube(int n);
+
+#endif
+```
+
+```cpp
+// math_utils.cpp — a translation unit, provides the actual definitions
+#include "math_utils.h"
+
+int square(int n) {
+    return n * n;
+}
+
+int cube(int n) {
+    return n * n * n;
+}
+```
+
+```cpp
+// main.cpp — another translation unit, uses the declarations from the header
+#include <iostream>
+#include "math_utils.h"
+
+int main() {
+    std::cout << square(4) << " " << cube(2) << "\n";
+    return 0;
+}
+```
+
+`#include "math_utils.h"` colle littéralement le contenu de l'en-tête dans le fichier qui l'inclut, textuellement, avant même que la compilation ne commence — ce n'est pas un import au sens des modules, juste une substitution de texte par le préprocesseur. C'est pourquoi un en-tête ne devrait contenir que des *déclarations* (quelle est la signature d'une fonction) et non des *définitions* (ce qu'elle fait réellement) : si le corps de `square` se trouvait dans l'en-tête et que deux fichiers `.cpp` l'incluaient tous les deux, le linker verrait deux définitions de la même fonction et échouerait. Chaque fichier `.cpp`, avec tout ce que ses `#include` importent, forme une **unité de traduction** compilée indépendamment en son propre fichier objet ; `main.cpp` et `math_utils.cpp` deviennent `main.o` et `math_utils.o`, que le linker combine ensuite. Le bloc `#ifndef`/`#define`/`#endif` dans l'en-tête est une **garde d'inclusion (include guard)** — elle empêche le même en-tête d'être collé deux fois s'il est (directement ou indirectement) inclus plus d'une fois dans la même unité de traduction, ce qui provoquerait sinon des erreurs de déclaration en double. `#pragma once` est une alternative largement supportée et moins verbeuse au même motif de garde.
+
+## CMake et la gestion des paquets
+
+```cmake
+cmake_minimum_required(VERSION 3.20)
+project(MyApp)
+
+find_package(fmt REQUIRED)
+
+add_executable(my_app main.cpp math_utils.cpp)
+target_link_libraries(my_app PRIVATE fmt::fmt)
+```
+
+C++ n'a pas d'outil de build officiel unique comme d'autres langages ont `npm` ou `cargo` ; **CMake** est devenu le standard de facto pour décrire comment les sources d'un projet doivent être compilées et liées, générant les fichiers de build réels (Makefiles, fichiers Ninja, projets Visual Studio) pour quelle que soit la plateforme sur laquelle vous êtes, plutôt que de compiler directement lui-même. `find_package(fmt REQUIRED)` recherche une dépendance nommée `fmt` déjà installée quelque part où CMake peut la trouver — c'est là qu'intervient un gestionnaire de paquets.
+
+**vcpkg** (de Microsoft) et **Conan** sont les deux gestionnaires de paquets C++ dominants : les deux récupèrent le code source d'une bibliothèque (ou un binaire précompilé), le compilent pour votre plateforme et compilateur cible, et connectent le résultat à CMake via `find_package` pour que votre projet puisse s'y lier sans avoir à télécharger, configurer et compiler cette dépendance manuellement. Comparés aux gestionnaires de paquets de langages plus récents, les deux impliquent encore plus de configuration manuelle — parce que C++ n'a pas d'ABI stable unique entre compilateurs, une dépendance doit souvent être compilée (pas juste téléchargée) spécifiquement pour votre compilateur et votre configuration, ce qui est la raison sous-jacente pour laquelle la gestion des dépendances en C++ paraît encore plus lourde qu'un `pip install` ou `npm install`.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Faites glisser les lignes dans le bon ordre pour construire un fichier d'en-tête avec une garde d'inclusion correcte autour d'une déclaration de fonction."
+  items={[
+    { id: "ifndef", label: "#ifndef GREETER_H" },
+    { id: "define", label: "#define GREETER_H", explanation: "La macro de garde doit être définie immédiatement après la vérification #ifndef, avant toute déclaration." },
+    { id: "declare", label: "void greet(const std::string& name);" },
+    { id: "endif", label: "#endif" },
+  ]}
+  correctOrder={["ifndef", "define", "declare", "endif"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Faites glisser les lignes dans le bon ordre pour construire un CMakeLists.txt minimal qui compile deux fichiers source en un seul exécutable."
+  items={[
+    { id: "cmake-min", label: "cmake_minimum_required(VERSION 3.20)" },
+    { id: "project", label: "project(MyApp)", explanation: "L'appel à project() doit venir avant que add_executable() ne définisse une quelconque cible de build." },
+    { id: "add-exe", label: "add_executable(my_app main.cpp math_utils.cpp)" },
+  ]}
+  correctOrder={["cmake-min", "project", "add-exe"]}
+/>
+
+<PredictOutput
+  title="Qu'affiche ceci ?"
+  code={`#ifndef SHAPE_H
+#define SHAPE_H
+inline int perimeter(int side) {
+    return side * 4;
+}
+#endif
+#ifndef SHAPE_H
+#define SHAPE_H
+inline int perimeter(int side) {
+    return side * 4;
+}
+#endif
+
+#include <iostream>
+int main() {
+    std::cout << perimeter(3) << std::endl;
+    return 0;
+}`}
+  options={["12", "Compile error: perimeter redefined", "0", "Runtime crash"]}
+  correctIndex={0}
+  explanation="Les deux blocs sont protégés par la même macro SHAPE_H. Le premier #ifndef voit SHAPE_H non défini, donc il définit la macro et colle la définition de perimeter. Le second #ifndef trouve ensuite SHAPE_H déjà défini et ignore entièrement son contenu, donc perimeter n'est jamais défini qu'une seule fois — c'est exactement le scénario que les gardes d'inclusion existent pour empêcher quand le même en-tête est importé plus d'une fois."
+  actualOutput="12"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Fonctions](/fr/programming-languages/cpp/functions) — les déclarations qui vivent typiquement dans un en-tête.
+- [Pointeurs et mémoire](/fr/programming-languages/cpp/advanced) — les préoccupations mémoire qui surgissent dès qu'un code s'étend sur plusieurs fichiers et bibliothèques.

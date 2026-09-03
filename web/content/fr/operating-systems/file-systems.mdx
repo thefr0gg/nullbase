@@ -1,0 +1,38 @@
+---
+title: Systèmes de fichiers
+description: Comment l'OS transforme un périphérique bloc brut en fichiers et répertoires nommés, ce qu'un inode stocke réellement, et comment la journalisation empêche un crash en pleine écriture de corrompre tout le volume.
+category: Operating Systems
+weight: 4
+---
+
+Un **système de fichiers** est le schéma que le système d'exploitation utilise pour organiser les octets bruts et indifférenciés d'un périphérique bloc — un disque dur, un SSD, une partition — en fichiers et répertoires nommés que tout programme, y compris le shell dans lequel vous tapez, tient pour totalement acquis. Un disque, à lui seul, ne connaît rien aux « fichiers » : c'est simplement un immense tableau de blocs de taille fixe qui peuvent être lus ou écrits par numéro. Tout ce qui fait que `/home/user/notes.txt` est une chose distincte, nommée, redimensionnable, protégée par des permissions, est une structure que le système de fichiers impose par-dessus ce tableau de blocs brut — et différents systèmes de fichiers (ext4, NTFS, APFS) imposent cette structure différemment, ce qui explique pourquoi un disque formaté pour l'un ne peut généralement pas simplement être lu par un autre.
+
+## Les inodes : des métadonnées séparées du nom
+
+L'idée la plus importante sous un système de fichiers de type Unix est que le **nom** d'un fichier et les **métadonnées** d'un fichier sont stockés dans deux endroits complètement séparés. Chaque fichier sur disque a un **inode** — une structure de données contenant tout ce qui concerne le fichier *sauf* son nom : sa taille, ses permissions, son propriétaire, ses horodatages et, surtout, la liste réelle des blocs de disque qui contiennent son contenu. Un répertoire, à son tour, n'est en réalité qu'une simple table faisant correspondre des noms lisibles par un humain à des numéros d'inode — rien de plus qu'une liste de paires `(nom, numéro d'inode)`.
+
+Cette séparation explique exactement pourquoi un fichier peut avoir plus d'un nom à la fois. Un **lien physique** (hard link) est simplement une seconde entrée de répertoire pointant vers le *même* numéro d'inode qu'une entrée existante — pas une copie, pas un raccourci, mais un second nom pour le fichier sous-jacent identique. Les deux noms sont également « réels » ; le contenu et les métadonnées réels du fichier ne disparaissent que lorsque le compteur de liens de l'inode tombe à zéro, ce qui signifie qu'aucune entrée de répertoire nulle part ne pointe plus vers lui. Cela explique aussi pourquoi renommer un fichier au sein du même système de fichiers est instantané quelle que soit sa taille — un renommage ne fait que réécrire une paire `(nom, numéro d'inode)` dans un répertoire, et ne touche jamais aux blocs de données réels du fichier.
+
+## L'arborescence de répertoires est un graphe de noms vers des inodes
+
+Ce qui ressemble à une seule hiérarchie propre — `/`, puis `/home`, puis `/home/user` — n'est en réalité que des répertoires (eux-mêmes des fichiers, contenant des correspondances nom→inode) pointant vers les inodes d'autres répertoires, formant un arbre uniquement parce que les conventions du système de fichiers (et le fait que les liens physiques vers des répertoires soient normalement interdits) l'empêchent de devenir un graphe général avec des cycles. Enlevez cette convention et ce qui existe réellement est un graphe : n'importe quel inode peut, en principe, être atteignable par plus d'un chemin, ce qu'un lien physique démontre précisément — le même fichier sous-jacent atteignable par deux chaînes de noms différentes à travers la structure de répertoires.
+
+## La journalisation
+
+Écrire un fichier sur disque est rarement une seule opération atomique — mettre à jour le contenu d'un fichier, les métadonnées de son inode, et la comptabilité d'allocation des blocs qui suit quels blocs sont libres sont autant d'écritures séparées, et une coupure de courant ou un crash survenant entre elles peut laisser le système de fichiers dans un état incohérent : des blocs marqués utilisés vers lesquels aucun fichier ne pointe, un inode référençant des données à moitié écrites, une entrée de répertoire pointant vers un inode partiellement mis à jour. La **journalisation** est la solution — avant d'effectuer un ensemble de changements liés sur les structures réelles du système de fichiers, ce dernier écrit d'abord une description des changements prévus dans un journal dédié. Si un crash survient en pleine écriture, le système de fichiers n'a pas à scanner tout le volume pour déterminer ce qui pourrait être cassé ; au prochain montage, il rejoue le journal, terminant ou annulant proprement toute opération interrompue, et le volume redevient cohérent en une fraction du temps que prendrait une vérification complète du système de fichiers. C'est la même idée de journal d'écriture anticipée qu'utilise le journal de transactions d'une base de données pour survivre à un crash en pleine écriture, appliquée un niveau plus bas, au système de fichiers sur lequel vivent les propres fichiers de la base de données.
+
+## Systèmes de fichiers courants, brièvement
+
+La plupart des systèmes d'exploitation sont livrés avec (ou par défaut) un système de fichiers particulier, et les différences se résument surtout à la façon dont chacun implémente les idées ci-dessus, plus des fonctionnalités spécifiques à la plateforme superposées par-dessus :
+
+- **ext4** — le défaut sur la plupart des distributions Linux ; journalisé, basé sur les inodes au sens classique d'Unix décrit ci-dessus.
+- **NTFS** — le système par défaut de Windows depuis Windows NT ; également journalisé, avec sa propre structure de métadonnées (la Master File Table) jouant un rôle globalement analogue à une table d'inodes.
+- **APFS** — le système de fichiers d'Apple depuis 2017, construit autour de la copie sur écriture pour les instantanés et le clonage économe en espace plutôt que la journalisation en place de type traditionnel.
+
+Aucun de ces systèmes n'est compatible tel quel avec les autres au niveau des octets — monter un disque écrit par l'un sous un OS qui en attend un autre nécessite généralement un pilote explicite ou une couche de compatibilité, précisément parce que « système de fichiers » signifie « un schéma spécifique, mutuellement compris », pas une norme universelle.
+
+## Voir aussi
+
+- **[Mémoire virtuelle](/fr/operating-systems/virtual-memory)** — l'espace de swap, l'une des régions disque spécifiques que lit et écrit un mécanisme adjacent au système de fichiers.
+- **[Appels système](/fr/operating-systems/system-calls)** — `open`, `read` et `write` sont la frontière réelle qu'un programme franchit pour toucher un fichier du tout.
+- **[Linux](/fr/devops/linux)** — les outils en ligne de commande (`ls`, `df`, `mount`) utilisés pour interagir au quotidien avec un vrai système de fichiers.

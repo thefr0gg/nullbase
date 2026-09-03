@@ -1,0 +1,129 @@
+---
+title: بنية اللغة والمتغيرات
+description: المتغيرات، واستدلال الأنواع بـvar، وأنواع القيمة مقابل أنواع المرجع، وأنواع المراجع القابلة للإفراغ في C#.
+category: Programming Languages
+weight: 2
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تتمتع C# بنوعية ثابتة: لكل متغير نوع معروف في وقت الترجمة،
+سواء كتبته صراحة أو تركت المترجم يستنتجه. تنتهي العبارات
+بفاصلة منقوطة، وتُحدَّد الكتل بـ`{}`، والمعرِّفات حساسة لحالة الأحرف.
+
+## التصريح عن المتغيرات
+
+يمكنك التصريح عن متغير بنوع صريح أو بـ`var`، الذي يطلب من
+المترجم استنتاج النوع من الجانب الأيمن. ينتج كلاهما بالضبط
+نفس المتغير ثابت النوع — `var` ليست نوعية ديناميكية.
+
+```csharp
+int age = 30;
+double price = 19.99;
+string name = "nullbase";
+bool isActive = true;
+
+// var infers the type at compile time — it's still int, not "any"
+var count = 42;        // inferred as int
+var label = "widgets"; // inferred as string
+```
+
+بمجرد التصريح عن متغير بنوع (صريح أو مُستنتَج)، يصبح ذلك النوع
+ثابتاً — لا يمكنك لاحقاً إسناد `string` إلى متغير استُنتِج كـ
+`int`.
+
+## أنواع القيمة مقابل أنواع المرجع
+
+تُميّز C# بين أنواع القيمة (`int`، و`double`، و`bool`، و`struct`،
+وغيرها من الأنواع الأساسية)، التي تُنسَخ بالقيمة، وأنواع المرجع
+(`class`، و`string`، والمصفوفات، ومعظم ما تبقى)، التي تُنسَخ بالمرجع.
+
+```csharp
+int a = 5;
+int b = a;   // b gets a copy of a's value
+b = 10;
+Console.WriteLine(a); // still 5
+
+int[] arr1 = { 1, 2, 3 };
+int[] arr2 = arr1;     // arr2 refers to the same array as arr1
+arr2[0] = 99;
+Console.WriteLine(arr1[0]); // 99 — both variables point at the same array
+```
+
+`string` نوع مرجع تقنياً، لكنه غير قابل للتغيير، لذا يتصرف
+كقيمة عملياً: لا يُعدِّل أي تابع على `string` قيمتها في مكانها،
+كل عملية تُرجع سلسلة نصية جديدة.
+
+## الثوابت والأنواع القابلة للإفراغ
+
+تُصرّح `const` عن ثابت وقت ترجمة؛ وتُصرّح `readonly` (المشمولة مع
+الأصناف) عن قيمة يمكن ضبطها مرة واحدة فقط، عند الإنشاء. أنواع
+المرجع قابلة للإفراغ افتراضياً ما لم تختر فحص أنواع المراجع القابلة
+للإفراغ (`#nullable enable`، أو على مستوى المشروع عبر `.csproj`)،
+الذي يتيح للمترجم الإشارة إلى الأماكن التي قد تتسرب فيها `null` دون
+توقع:
+
+```csharp
+#nullable enable
+
+const double Pi = 3.14159;
+
+string? maybeNull = null;      // explicitly nullable
+string definitelyNotNull = "hi"; // compiler warns if this is ever assigned null
+
+int? maybeNumber = null;       // nullable value type via Nullable<T>
+if (maybeNumber.HasValue)
+{
+    Console.WriteLine(maybeNumber.Value);
+}
+```
+
+`int?` اختصار لـ`Nullable<int>` — أنواع القيمة ليست قابلة للإفراغ
+افتراضياً، لذا تلفّها C# في بُنية تضيف علامة "لديه قيمة" عندما تحتاج
+نوع قيمة يمكن أن يكون `null` أيضاً.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="اجمع الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح للتصريح عن متغيرين — واحد صريح وآخر مُستنتَج — وطباعة مجموعهما."
+  items={[
+    { id: "l1", label: "int x = 4;" },
+    { id: "l2", label: "var y = 6;", explanation: "يمكن أن تظهر var في أي مكان قد يظهر فيه نوع، طالما استطاع المترجم استنتاجه من القيمة الابتدائية." },
+    { id: "l3", label: "Console.WriteLine(x + y);" },
+  ]}
+  correctOrder={["l1", "l2", "l3"]}
+/>
+
+<OrderingExercise
+  title="اجمع الكود"
+  prompt="ضع هذه الأسطر بالترتيب للتصريح عن int قابل للإفراغ، وفحصه، وطباعة قيمته بأمان."
+  items={[
+    { id: "m1", label: "int? maybeNumber = 7;" },
+    { id: "m2", label: "if (maybeNumber.HasValue)" },
+    { id: "m3", label: "{" },
+    { id: "m4", label: "    Console.WriteLine(maybeNumber.Value);" },
+    { id: "m5", label: "}" },
+  ]}
+  correctOrder={["m1", "m2", "m3", "m4", "m5"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا؟"
+  code={`int[] original = { 1, 2, 3 };
+int[] alias = original;
+alias[0] = 100;
+Console.WriteLine(original[0]);`}
+  options={["1", "100", "0", "خطأ ترجمة"]}
+  correctIndex={1}
+  explanation="المصفوفات أنواع مرجع في C#. لا تنسخ alias المصفوفة — إنها مرجع ثانٍ للكائن نفسه، لذا فإن التعديل عبر alias مرئي عبر original أيضاً."
+  actualOutput="100"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [C#](/ar/programming-languages/csharp)
+- [التحكم بمسار التنفيذ](/ar/programming-languages/csharp/control-flow)

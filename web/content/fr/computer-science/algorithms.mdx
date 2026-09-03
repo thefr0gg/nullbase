@@ -1,0 +1,38 @@
+---
+title: Algorithmes
+description: Comment décrire ce que coûte un morceau de code avec la notation Big O, les taux de croissance courants que vous rencontrerez réellement, et pourquoi le même problème peut avoir des solutions aux performances radicalement différentes.
+category: Computer Science
+weight: 1
+---
+
+Un **algorithme** est simplement une séquence finie et bien définie d'étapes pour résoudre un problème — mais le même problème a généralement plusieurs algorithmes qui le résolvent correctement, et choisir le mauvais est exactement comment une fonctionnalité qui marche bien en test s'effondre en production dès que l'entrée devient grande. L'outil pour raisonner sur cela à l'avance, sans exécuter le code, est la **complexité asymptotique**.
+
+## La notation Big O
+
+**Big O** décrit comment le temps d'exécution d'un algorithme (ou son utilisation de mémoire) croît quand la taille de l'entrée `n` augmente, en ignorant les facteurs constants et les termes d'ordre inférieur — elle répond à « que se passe-t-il quand ça devient grand », pas à « combien de millisecondes ça prend sur mon ordinateur portable ». Quelques taux de croissance reviennent constamment, du meilleur au pire :
+
+- **O(1)** — constant. Une recherche par index dans un tableau ; le coût ne dépend pas de la quantité de données.
+- **O(log n)** — logarithmique. Une recherche binaire dans un tableau trié : chaque étape élimine la moitié des candidats restants.
+- **O(n)** — linéaire. Parcourir chaque élément une fois, par exemple trouver le maximum d'une liste non triée.
+- **O(n log n)** — le coût de n'importe quel tri par comparaison dans le meilleur des cas (tri fusion, tri par tas) — c'est prouvablement le mieux qu'un tri par comparaison général puisse faire.
+- **O(n²)** — quadratique. Une boucle imbriquée comparant chaque paire d'éléments — détection naïve de doublons, tri à bulles.
+- **O(2ⁿ)** — exponentiel. Tester par force brute chaque sous-ensemble d'un ensemble ; seulement praticable pour de très petits `n`.
+
+L'écart entre ces catégories n'est pas académique : un algorithme O(n²) sur un million de lignes représente environ mille milliards d'opérations — des secondes ou minutes deviennent des heures, et le code qui « marchait dans la démo avec 50 lignes » est exactement l'endroit où cela mord.
+
+## Même problème, algorithmes différents
+
+Le tri est l'exemple le plus clair de l'importance du choix d'algorithme : le tri à bulles et le tri par insertion sont tous deux O(n²) et faciles à écrire de mémoire, mais le tri fusion et le tri rapide sont O(n log n) en moyenne et c'est ce qu'utilise réellement tout tri de bibliothèque standard dès qu'un jeu de données cesse d'être minuscule. La recherche montre le même schéma — un balayage linéaire est O(n) sur n'importe quelle liste, mais une recherche binaire est O(log n) *si les données sont déjà triées*, ce qui explique pourquoi les bases de données construisent des [index](/fr/databases) en premier lieu : payer un coût de tri/structuration ponctuel en amont pour rendre chaque future recherche radicalement moins chère.
+
+## Où cela se manifeste en pratique
+
+L'analyse de complexité n'est pas qu'une trivia d'entretien d'embauche — c'est le raisonnement derrière :
+
+- Pourquoi une requête de base de données sans index devient un balayage complet de table (O(n)) au lieu d'une recherche par index (O(log n) ou mieux).
+- Pourquoi la bonne [structure de données](/fr/computer-science/data-structures) pour une tâche (table de hachage vs tableau vs arbre) change la complexité d'un algorithme sans changer ce qu'il calcule.
+- Pourquoi « l'optimisation prématurée » est un piège bien réel dans l'autre sens aussi — un algorithme O(n) est déjà assez rapide pour un `n` de l'ordre de la centaine, et le réécrire pour gratter des constantes est un effort gaspillé comparé à corriger un algorithme accidentellement quadratique.
+
+## Voir aussi
+
+- **[Structures de données](/fr/computer-science/data-structures)** — les structures dont les schémas d'accès déterminent quelle complexité est même atteignable pour une opération donnée.
+- **[Bases de données](/fr/databases)** — l'indexation est le raisonnement Big O appliqué directement à la performance des requêtes.

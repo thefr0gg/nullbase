@@ -1,0 +1,53 @@
+---
+title: Hilos
+description: Cómo el sistema operativo planifica los hilos dentro de un proceso, las compensaciones entre el threading a nivel de kernel y a nivel de usuario, los tres modelos clásicos de threading, y por qué la memoria compartida exige sincronización.
+category: Operating Systems
+weight: 2
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+Un **hilo** es la unidad de ejecución que realmente despacha el planificador; un proceso es en realidad solo un contenedor — un espacio de direcciones, un conjunto de archivos abiertos, un contexto de seguridad — dentro del cual se ejecutan uno o más hilos. Todo proceso tiene al menos un hilo; un proceso *multihilo* tiene varios hilos compartiendo ese mismo espacio de direcciones, que es lo que hace a los hilos mucho más baratos de crear y de cambiar entre ellos que a procesos completos: no hay una nueva tabla de páginas que construir, ninguna tabla de descriptores de archivo nueva que copiar, solo una pila nueva y un nuevo conjunto de registros guardados. [Procesos](/es/devops/processes) ya cubre la compensación de memoria compartida entre procesos e hilos a nivel práctico, y [Servidores de Aplicación](/es/backend/application-servers) cubre cómo los servidores reales eligen un modelo de concurrencia construido sobre hilos (o los evitan deliberadamente). Esta página trata sobre la mecánica del sistema operativo debajo de ambos: quién realmente planifica un hilo, y por qué que los hilos compartan memoria es un arma de doble filo.
+
+## Hilos de kernel frente a hilos de usuario
+
+La pregunta crítica para cualquier hilo es: **¿quién sabe que existe?**
+
+- Los **hilos a nivel de kernel** son visibles directamente para el planificador del sistema operativo — el kernel tiene una estructura tipo PCB (a menudo llamada bloque de control de hilo, o TCB) para cada uno, y decide qué hilo del kernel se ejecuta en qué núcleo de CPU exactamente de la misma forma en que decide entre procesos. Esto es lo que permite que los hilos de un proceso realmente se ejecuten en paralelo a través de múltiples núcleos, y es lo que permite al kernel apropiarse de un hilo atascado en una llamada al sistema bloqueante sin detener a los otros hilos del mismo proceso.
+- Los **hilos a nivel de usuario** son gestionados enteramente por una biblioteca o runtime *dentro* del proceso, con el kernel viendo solo una única entidad planificable. Cambiar entre hilos de usuario es extremadamente barato (sin ningún viaje al modo kernel), pero viene con un problema serio: si un hilo de usuario hace una llamada al sistema bloqueante, el kernel no tiene idea de que el proceso tiene otros hilos ejecutables — simplemente bloquea todo el proceso, arrastrando consigo a cada hilo de usuario.
+
+## Los tres modelos de threading
+
+Cómo mapea un runtime sus hilos visibles al usuario sobre los hilos planificables del kernel determina cuál de esas compensaciones realmente obtienes:
+
+<ItemExplorer
+  title="Modelos de Threading"
+  layout="table"
+  tableColumns={[{ key: "mapping", label: "Mapeo" }, { key: "tradeoff", label: "Compensación" }]}
+  items={[
+    { id: "many-to-one", label: "Muchos a uno", color: "blue", columns: { mapping: "Muchos hilos de usuario se ejecutan en un único hilo de kernel", tradeoff: "Cambiar de hilo es muy barato y no necesita involucrar al kernel, pero una llamada bloqueante o un solo núcleo es todo lo que el proceso obtendrá jamás — sin paralelismo real." } },
+    { id: "one-to-one", label: "Uno a uno", color: "green", columns: { mapping: "Cada hilo de usuario mapea directamente a su propio hilo de kernel", tradeoff: "Paralelismo real entre núcleos y sin bloqueo de todo el proceso, pero crear y cambiar hilos cuesta una transición real al modo kernel cada vez. Esto es lo que usan realmente la mayoría de las APIs de hilos de sistemas operativos modernos (pthreads, hilos de Windows)." } },
+    { id: "many-to-many", label: "Muchos a muchos", color: "purple", columns: { mapping: "Muchos hilos de usuario se multiplexan a través de un conjunto más pequeño (o igual) de hilos de kernel", tradeoff: "Intenta obtener a la vez el cambio barato de hilo de usuario y el paralelismo real, a costa de un planificador genuinamente más complejo que tiene que gestionar ambos niveles." } },
+  ]}
+/>
+
+## Estados de los hilos
+
+Un hilo pasa esencialmente por los mismos estados que un proceso — nuevo, listo, ejecutando, y terminado, además de un estado bloqueado/esperando cada vez que está atascado en E/S o sincronización — la diferencia es el alcance: el planificador está eligiendo entre *hilos*, no procesos completos, y varios hilos que pertenecen al mismo proceso pueden estar en estados distintos simultáneamente (uno ejecutando, uno bloqueado en una lectura de socket, uno listo y esperando a que se libere un núcleo).
+
+## Por qué la memoria compartida necesita sincronización
+
+Lo que hace baratos a los hilos — un espacio de direcciones compartido — es exactamente lo que los hace peligrosos. Dos hilos leyendo y escribiendo la misma variable sin coordinación pueden intercalar sus instrucciones de formas que el programador nunca pretendió, produciendo una **condición de carrera**: el resultado final depende del timing impredecible de qué instrucción de qué hilo se ejecuta primero, y puede diferir de una ejecución a otra incluso con la misma entrada. Un ejemplo clásico son dos hilos ejecutando ambos "leer saldo, sumar 10, escribir saldo" sobre la misma cuenta — si ambos leen el valor original antes de que ninguno escriba de vuelta, una de las dos sumas se pierde silenciosamente.
+
+Esta es la razón entera por la que existen las **primitivas de sincronización**, a nivel conceptual:
+
+- Un **mutex** (lock de exclusión mutua) permite que solo un hilo a la vez entre en una sección marcada de código — cualquier otro hilo que intente entrar primero tiene que esperar hasta que se libere el lock, garantizando que la secuencia "leer, modificar, escribir" de arriba ocurra atómicamente desde el punto de vista de cualquier otro hilo.
+- Un **semáforo** generaliza esa idea a un contador en lugar de un lock estricto de uno a la vez — permite hasta *N* hilos en un recurso simultáneamente, lo cual es útil para algo como un pool de conexiones de tamaño fijo donde un puñado de usuarios concurrentes está bien pero la concurrencia ilimitada no lo está.
+
+Ninguna primitiva hace más rápidos a los hilos; ambas existen puramente para intercambiar algo de esa concurrencia por corrección, exactamente en los puntos donde dos hilos tocando la misma memoria producirían de otro modo un resultado indefinido.
+
+## Ver también
+
+- **[Procesos](/es/operating-systems/processes)** — los estados, el PCB, y el ciclo de vida por el que pasa el proceso contenedor de un hilo.
+- **[Servidores de Aplicación](/es/backend/application-servers)** — cómo se eligen los pools de hilos, los bucles de eventos, y los workers multiproceso en el diseño real de servidores.
+- **[Procesos](/es/devops/processes)** — la comparación práctica de memoria entre proceso e hilo sobre la que se construye esta página.

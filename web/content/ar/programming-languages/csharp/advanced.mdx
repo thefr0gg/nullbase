@@ -1,0 +1,162 @@
+---
+title: البرمجة غير المتزامنة والمهام
+description: نموذج async/await في C#، وTask وTask<T>، وكيف يتركّب الكود غير المتزامن باستخدام await وTask.WhenAll.
+category: Programming Languages
+weight: 9
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+ميزة التزامن المميِّزة لـC# هي `async`/`await` المبنية فوق
+`Task` و`Task<T>` — عمليات غير متزامنة تمثل "قيمة ستكون متاحة
+لاحقاً" (أشبه بـ`Promise` في JavaScript، رغم أن `Task` سبقت
+الاستخدام الواسع لذلك النمط وهي مدعومة بمجمع خيوط .NET بدلاً من
+حلقة أحداث أحادية الخيط).
+
+## Task وTask\<T\>
+
+تمثل `Task` عملية جارية بلا نتيجة؛ وتمثل `Task<T>` عملية ستنتج
+في النهاية قيمة من النوع `T`:
+
+```csharp
+using System.Threading;
+using System.Threading.Tasks;
+
+Task<int> task = Task.Run(() =>
+{
+    Thread.Sleep(1000); // simulate slow work
+    return 42;
+});
+
+Console.WriteLine("Started, doing other work...");
+int result = task.Result; // blocks until the task completes
+Console.WriteLine(result); // 42
+```
+
+التعطيل على `.Result` يهزم معظم الغاية من عدم التزامن — يستخدم
+الكود غير المتزامن الحقيقي `await` بدلاً من ذلك، الذي يُعلِّق
+التابع الحالي دون تعطيل الخيط الأساسي.
+
+## async / await
+
+وضع علامة `async` على تابع يتيح له استخدام `await` للتعليق حتى
+تكتمل `Task`، دون تعطيل الخيط المستدعي. تُرجع تابع `async` نفسه
+`Task` (أو `Task<T>`)، بحيث يستطيع المستدعون انتظارها (`await`)
+بدورهم:
+
+```csharp
+using System.Net.Http;
+using System.Threading.Tasks;
+
+async Task<string> FetchGreetingAsync()
+{
+    await Task.Delay(500); // simulates an I/O-bound wait, non-blocking
+    return "Hello from the async world";
+}
+
+async Task RunAsync()
+{
+    Console.WriteLine("Before await");
+    string greeting = await FetchGreetingAsync();
+    Console.WriteLine(greeting);
+    Console.WriteLine("After await");
+}
+
+await RunAsync();
+```
+
+لا يعطّل التابع خيطاً أثناء الانتظار على `Task.Delay` — يعود
+التحكم إلى المستدعي، ويستأنف باقي `FetchGreetingAsync` على خيط من
+مجمع الخيوط بمجرد انتهاء التأخير. هذا سبب كون `async`/`await`
+اصطلاح الاختيار للعمل المرتبط بالإدخال/الإخراج (استدعاءات
+الشبكة، والوصول للملفات، واستعلامات قواعد البيانات): لا تُهدَر
+الخيوط بالجلوس عاطلة في انتظار الإدخال/الإخراج.
+
+## تشغيل المهام بتزامن
+
+انتظار المهام واحدة تلو الأخرى يشغّلها بالتسلسل. تبدأ
+`Task.WhenAll` عدة مهام وتنتظرها جميعاً معاً، مُشغِّلة العمل
+المستقل بتزامن:
+
+```csharp
+async Task<int> FetchLengthAsync(string url)
+{
+    await Task.Delay(300); // stands in for an HTTP call
+    return url.Length;
+}
+
+async Task RunAllAsync()
+{
+    Task<int> t1 = FetchLengthAsync("https://a.example");
+    Task<int> t2 = FetchLengthAsync("https://b.example");
+    Task<int> t3 = FetchLengthAsync("https://c.example");
+
+    int[] lengths = await Task.WhenAll(t1, t2, t3);
+    Console.WriteLine(string.Join(", ", lengths));
+}
+
+await RunAllAsync();
+```
+
+بما أن `t1` و`t2` و`t3` جميعها تبدأ قبل أي `await`، تتداخل
+استدعاءاتها لـ`Task.Delay(300)` — يستغرق التابع بأكمله نحو
+300 مللي ثانية إجمالاً، لا 900، بخلاف انتظار كل واحدة فور بدئها.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="اجمع الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء تابع غير متزامن ينتظر تأخيراً ويُرجع قيمة."
+  items={[
+    { id: "l1", label: "async Task<int> GetNumberAsync()" },
+    { id: "l2", label: "{" },
+    { id: "l3", label: "    await Task.Delay(100);" },
+    { id: "l4", label: "    return 7;" },
+    { id: "l5", label: "}" },
+  ]}
+  correctOrder={["l1", "l2", "l3", "l4", "l5"]}
+/>
+
+<OrderingExercise
+  title="اجمع الكود"
+  prompt="ضع هذه الأسطر بالترتيب لبدء مهمتين بتزامن وانتظارهما معاً باستخدام Task.WhenAll."
+  items={[
+    { id: "m1", label: "Task<int> t1 = DoWorkAsync(1);" },
+    { id: "m2", label: "Task<int> t2 = DoWorkAsync(2);" , explanation: "يجب بدء كلتا المهمتَين (إسنادهما) قبل انتظار أي منهما، وإلا فستعمل واحدة تلو الأخرى بدلاً من التداخل."},
+    { id: "m3", label: "int[] results = await Task.WhenAll(t1, t2);" },
+    { id: "m4", label: "Console.WriteLine(results.Sum());" },
+  ]}
+  correctOrder={["m1", "m2", "m3", "m4"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا؟"
+  code={`async Task<string> SlowGreetingAsync()
+{
+    await Task.Delay(200);
+    return "done";
+}
+
+async Task RunAsync()
+{
+    Console.WriteLine("1");
+    var task = SlowGreetingAsync();
+    Console.WriteLine("2");
+    string result = await task;
+    Console.WriteLine(result);
+}
+
+await RunAsync();`}
+  options={["1 2 done", "1 done 2", "done 1 2", "1 2 (يعلق للأبد)"]}
+  correctIndex={0}
+  explanation={`استدعاء SlowGreetingAsync() يبدأ المهمة لكنه لا يعطّل، لذا تُطبع "2" فوراً بعد "1"، قبل انتهاء التأخير. فقط await اللاحقة تُعلِّق RunAsync حتى تكتمل المهمة، وبعدها تُطبع "done".`}
+  actualOutput="1 2 done"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [المساحات الاسمية وNuGet](/ar/programming-languages/csharp/modules-packages)
+- [C#](/ar/programming-languages/csharp)

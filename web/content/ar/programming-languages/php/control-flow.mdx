@@ -1,0 +1,176 @@
+---
+title: التحكم بمسار التنفيذ
+description: جمل if/elseif/else في PHP، وتعبيرا match وswitch، والحلقات، وبنية النقطتين البديلة المستخدمة في القوالب.
+category: Programming Languages
+weight: 3
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+سيبدو التحكم بمسار التنفيذ في PHP مألوفاً فوراً إن كنت تعرف أي لغة من عائلة C، مع بضع إضافات خاصة بـ PHP تستحق المعرفة: `match` (أُضيفت في PHP 8.0) وبنية نقطتين بديلة مصمَّمة لخلط PHP بقوالب HTML.
+
+## if / elseif / else
+
+لاحظ الإملاء: `elseif` (كلمة واحدة)، وليس `else if`، رغم أن PHP تقبل كليهما — `elseif` هو الأسلوب المتعارف عليه في مشاريع PHP.
+
+```php
+<?php
+
+function classify(int $score): string {
+    if ($score >= 90) {
+        return "A";
+    } elseif ($score >= 80) {
+        return "B";
+    } else {
+        return "F";
+    }
+}
+
+echo classify(85) . "\n"; // B
+```
+
+## الحلقات
+
+تملك PHP `while`، و`do...while`، و`for`، و`foreach` — وforeach هي التي ستلجأ إليها باستمرار، لأنها تعمل مباشرة على المصفوفات:
+
+```php
+<?php
+
+$fruits = ["apple", "banana", "cherry"];
+
+foreach ($fruits as $index => $fruit) {
+    echo "$index: $fruit\n";
+}
+```
+
+تتصرف `for` و`while` تماماً كما في C:
+
+```php
+<?php
+
+for ($i = 0; $i < 3; $i++) {
+    echo "count: $i\n";
+}
+
+$n = 1;
+while ($n < 100) {
+    $n *= 2;
+}
+echo $n . "\n"; // 128
+```
+
+## switch
+
+تستخدم `switch` في PHP **مقارنة فضفاضة** (`==`) افتراضياً وتستمر بالتنفيذ (تسقط للأسفل) ما لم تستخدم `break` — الفخ الكلاسيكي بأسلوب C:
+
+```php
+<?php
+
+$role = "editor";
+
+switch ($role) {
+    case "admin":
+        echo "full access\n";
+        break;
+    case "editor":
+    case "author":
+        echo "can publish\n";
+        break;
+    default:
+        echo "read only\n";
+}
+```
+
+## match — بديل أكثر صرامة قائم على التعبيرات
+
+تصلح `match` (PHP 8.0+) أكبر خطأين شائعين في switch: فهي تقارن بدلالة صارمة (`===`)، ولا يوجد فيها سقوط للأسفل — كل ذراع تعبير واحد، و`match` نفسها تُقيَّم إلى قيمة.
+
+```php
+<?php
+
+$role = "editor";
+
+$access = match ($role) {
+    "admin" => "full access",
+    "editor", "author" => "can publish",
+    default => "read only",
+};
+
+echo $access . "\n"; // can publish
+```
+
+بخلاف `switch`، فإن قيمة غير مطابَقة بلا ذراع `default` تطلق `UnhandledMatchError` بدلاً من عدم فعل شيء بصمت — تحسين أمان متعمَّد.
+
+## بنية النقطتين البديلة
+
+داخل القوالب التي تخلط PHP وHTML، توفّر PHP بنية قائمة على النقطتين لـ `if`، و`foreach`، و`for`، و`while` تتجنب جداراً من الأقواس المعقوفة:
+
+```php
+<?php $items = ["tea", "coffee"]; ?>
+<ul>
+<?php foreach ($items as $item): ?>
+    <li><?= $item ?></li>
+<?php endforeach; ?>
+</ul>
+```
+
+`<?= $item ?>` هو اختصار لـ `<?php echo $item; ?>` وشائع في ملفات القوالب لهذا السبب بالضبط.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء حلقة foreach تطبع كل فاكهة مع فهرسها."
+  items={[
+    { id: "c1", label: "<?php" },
+    { id: "c2", label: '$fruits = ["fig", "kiwi"];' },
+    { id: "c3", label: "foreach ($fruits as $i => $fruit) {" },
+    { id: "c4", label: '    echo "$i: $fruit\\n";', explanation: "يُنفَّذ جسم الحلقة مرة واحدة لكل عنصر، مع ربط $i و$fruit من جديد في كل دورة." },
+    { id: "c5", label: "}" },
+  ]}
+  correctOrder={["c1", "c2", "c3", "c4", "c5"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="رتّب هذه الأسطر لبناء تعبير match يصنّف رمز حالة HTTP."
+  items={[
+    { id: "d1", label: "<?php" },
+    { id: "d2", label: "$status = 404;" },
+    { id: "d3", label: "$label = match (true) {" },
+    { id: "d4", label: "    $status < 300 => \"success\",", explanation: "تقيّم match (true) شرط كل ذراع بالترتيب وتختار أول شرط صادق، مثل سلسلة if/elseif." },
+    { id: "d5", label: "    $status < 400 => \"redirect\"," },
+    { id: "d6", label: "    default => \"error\"," },
+    { id: "d7", label: "};" },
+    { id: "d8", label: "echo $label . \"\\n\";" },
+  ]}
+  correctOrder={["d1", "d2", "d3", "d4", "d5", "d6", "d7", "d8"]}
+/>
+
+<PredictOutput
+  title="ماذا تطبع هذه الشيفرة؟"
+  code={`<?php
+
+$value = "1";
+
+switch ($value) {
+    case 1:
+        echo "matched int 1";
+        break;
+    case "1":
+        echo "matched string 1";
+        break;
+}`}
+  options={["matched int 1", "matched string 1", "matched int 1matched string 1", "Fatal error: type mismatch"]}
+  correctIndex={0}
+  explanation="تقارن switch بمقارنة فضفاضة ==، لذا يطابق case 1 السلسلة النصية '1' عبر خلط الأنواع قبل أن تصل PHP إلى فرع case '1' أصلاً. هذه بالضبط نوعية المفاجآت التي أُدخلت مقارنة === الصارمة في match لتجنبها."
+  actualOutput="matched int 1"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [بنية اللغة والمتغيرات](/ar/programming-languages/php/syntax-basics)
+- [الدوال](/ar/programming-languages/php/functions)

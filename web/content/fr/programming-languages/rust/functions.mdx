@@ -1,0 +1,140 @@
+---
+title: Fonctions
+description: Déclarer des fonctions, renvoyer des valeurs sans instruction return, et les closures de Rust.
+category: Programming Languages
+weight: 4
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Les fonctions en Rust sont déclarées avec `fn`, et chaque paramètre a besoin
+d'une annotation de type explicite — contrairement aux liaisons `let`, Rust
+n'infère pas les types de paramètres ou de retour à partir de la façon dont
+une fonction est appelée, parce que cela ferait dépendre la signature d'une
+fonction de ses sites d'appel au lieu d'être un contrat fixe.
+
+```rust
+fn add(a: i32, b: i32) -> i32 {
+    a + b // no semicolon: this is the returned expression
+}
+
+fn main() {
+    let sum = add(3, 4);
+    println!("{sum}");
+}
+```
+
+## Expressions vs. instructions comme valeurs de retour
+
+La dernière expression dans le corps d'une fonction est automatiquement sa
+valeur de retour, *tant qu'elle n'a pas de point-virgule final*. Ajoutez un
+point-virgule et cela devient une instruction qui s'évalue en `()`,
+changeant silencieusement ce que la fonction renvoie :
+
+```rust
+fn add_broken(a: i32, b: i32) -> i32 {
+    a + b; // semicolon turns this into a statement, not a return value
+} // error: mismatched types — expected i32, found ()
+```
+
+Vous pouvez toujours utiliser un mot-clé `return` explicite — c'est
+nécessaire pour renvoyer tôt depuis le milieu d'une fonction — mais compter
+sur l'expression finale pour le chemin de sortie « normal » est le style
+idiomatique.
+
+```rust
+fn classify(n: i32) -> &'static str {
+    if n < 0 {
+        return "negative"; // early return, semicolon required after return
+    }
+    if n == 0 {
+        "zero"
+    } else {
+        "positive"
+    } // trailing expression: the normal-path return value
+}
+```
+
+## Closures
+
+Une **closure** est une fonction anonyme qui peut capturer des variables de
+la portée dans laquelle elle est définie — écrite avec des barres verticales
+autour de ses paramètres (`|x| ...`) au lieu de `fn name(x: T)`. Les
+closures sont beaucoup utilisées avec des méthodes d'itérateur comme `map`
+et `filter`.
+
+```rust
+fn main() {
+    let threshold = 10;
+    let numbers = vec![4, 12, 7, 15, 3];
+
+    // the closure captures `threshold` from the surrounding scope
+    let above: Vec<i32> = numbers.into_iter().filter(|n| *n > threshold).collect();
+
+    println!("{above:?}"); // [12, 15]
+}
+```
+
+Contrairement à un `fn` ordinaire, cette closure peut voir `threshold` sans
+qu'il soit passé explicitement — les closures empruntent ou déplacent les
+variables auxquelles elles font référence depuis leur environnement, ce qui
+est exactement ce qui permet à la closure de `filter` de comparer par
+rapport à une valeur définie en dehors d'elle.
+
+## Voir aussi
+
+- **[Flux de contrôle](/fr/programming-languages/rust/control-flow)** — les expressions (`if`, `match`, `loop`) qui finissent le plus souvent comme valeur de retour finale d'une fonction.
+- **[Gestion des erreurs](/fr/programming-languages/rust/error-handling)** — les fonctions qui peuvent échouer renvoient typiquement `Result<T, E>` plutôt que de lever une exception.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire une fonction qui additionne deux nombres et un site d'appel qui affiche le résultat."
+  items={[
+    { id: "fn-sig", label: "fn add(a: i32, b: i32) -> i32 {" },
+    { id: "fn-body", label: "    a + b" },
+    { id: "fn-close", label: "}" },
+    { id: "main-open", label: "fn main() {" },
+    { id: "sum", label: "    let sum = add(3, 4);", explanation: "add doit être défini avant que main ne l'appelle dans l'ordre de lecture du fichier, et sum doit exister avant d'être affiché." },
+    { id: "print", label: "    println!(\"{sum}\");" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["fn-sig", "fn-body", "fn-close", "main-open", "sum", "print", "main-close"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire une fonction qui classifie un nombre, en utilisant un retour anticipé pour le cas négatif."
+  items={[
+    { id: "sig", label: "fn classify(n: i32) -> &'static str {" },
+    { id: "neg-if", label: "    if n < 0 {" },
+    { id: "return", label: "        return \"negative\";", explanation: "Le retour anticipé doit se produire avant le if/else final qui gère les cas restants." },
+    { id: "neg-close", label: "    }" },
+    { id: "zero-if", label: "    if n == 0 {" },
+    { id: "zero", label: "        \"zero\"" },
+    { id: "else", label: "    } else {" },
+    { id: "pos", label: "        \"positive\"" },
+    { id: "zero-close", label: "    }" },
+    { id: "close", label: "}" },
+  ]}
+  correctOrder={["sig", "neg-if", "return", "neg-close", "zero-if", "zero", "else", "pos", "zero-close", "close"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que ceci affiche ?"
+  code={`fn add(a: i32, b: i32) -> i32 {
+    a + b;
+}
+
+fn main() {
+    println!("{}", add(3, 4));
+}`}
+  options={["7", "0", "()", "Compile error"]}
+  correctIndex={3}
+  explanation="Le point-virgule après a + b le transforme en une instruction, donc la dernière expression du corps de la fonction devient la valeur unit implicite () — mais la signature promet i32. Rust rejette cela à la compilation avec une erreur de types incompatibles plutôt que de renvoyer silencieusement 0 ou unit."
+  actualOutput="error[E0308]: mismatched types — expected `i32`, found `()`"
+/>
+</ExerciseTabs>

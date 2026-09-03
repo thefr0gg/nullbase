@@ -1,0 +1,143 @@
+---
+title: Fonctions
+description: Déclarer, définir et appeler des fonctions en C — sémantique du passage par valeur, paramètres de sortie via des pointeurs, prototypes et récursivité.
+category: Programming Languages
+weight: 4
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Les fonctions C sont uniquement passées par valeur : chaque argument est copié dans les paramètres locaux de la fonction, donc une fonction ne peut jamais modifier directement la variable de l'appelant — seulement sa propre copie. Ce seul fait façonne une grande partie du C idiomatique, y compris la raison pour laquelle les « paramètres de sortie » sont passés en tant que pointeurs plutôt que retournés directement, et pourquoi comprendre le passage par valeur est un prérequis pour comprendre les pointeurs.
+
+## Déclarer et appeler une fonction
+
+Une fonction a un type de retour, un nom, une liste de paramètres et un corps. C distingue aussi un **prototype** (la signature seule, terminée par `;`) d'une **définition** (la signature plus le corps) — un prototype vous permet d'appeler une fonction avant que le compilateur n'ait vu sa définition complète :
+
+```c
+#include <stdio.h>
+
+int add(int a, int b); /* prototype: tells the compiler this function exists */
+
+int main(void) {
+    int result = add(3, 4); /* can be called here even though add is defined below */
+    printf("3 + 4 = %d\n", result);
+    return 0;
+}
+
+int add(int a, int b) { /* definition */
+    return a + b;
+}
+```
+
+Sans le prototype, appeler `add` avant que sa définition n'apparaisse dans le fichier serait une erreur de compilation en C moderne — le compilateur doit connaître la signature d'une fonction avant de pouvoir générer du code qui l'appelle correctement.
+
+## Passage par valeur et pourquoi c'est important
+
+```c
+#include <stdio.h>
+
+void tryToDouble(int n) {
+    n = n * 2; /* only modifies the local copy */
+}
+
+void doubleViaPointer(int *n) {
+    *n = *n * 2; /* dereferences the pointer to modify the caller's variable */
+}
+
+int main(void) {
+    int x = 5;
+
+    tryToDouble(x);
+    printf("after tryToDouble: %d\n", x); /* still 5 */
+
+    doubleViaPointer(&x); /* pass the address of x */
+    printf("after doubleViaPointer: %d\n", x); /* now 10 */
+
+    return 0;
+}
+```
+
+`tryToDouble` reçoit une copie de la valeur de `x` et ne peut pas affecter l'original. `doubleViaPointer` reçoit à la place l'*adresse* de `x`, et la déréférence avec `*n` pour atteindre directement la mémoire de l'appelant — c'est ainsi que C simule le « passage par référence », et c'est la raison pour laquelle des fonctions comme `scanf` exigent `&variable` pour chaque valeur qu'elles doivent réécrire.
+
+## Récursivité
+
+Une fonction qui s'appelle elle-même fonctionne exactement comme le ferait l'itération, à condition qu'il existe un cas de base qui arrête la récursion :
+
+```c
+#include <stdio.h>
+
+long factorial(int n) {
+    if (n <= 1) {
+        return 1; /* base case */
+    }
+    return n * factorial(n - 1); /* recursive case */
+}
+
+int main(void) {
+    for (int i = 1; i <= 6; i++) {
+        printf("%d! = %ld\n", i, factorial(i));
+    }
+    return 0;
+}
+```
+
+Chaque appel à `factorial` obtient sa propre trame de pile avec sa propre copie de `n` — la récursivité en C consomme de la mémoire de pile réelle à chaque appel, et un cas de base manquant ou inatteignable provoque un débordement de pile plutôt qu'une simple boucle infinie qui se contente de se bloquer.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez une fonction avec un prototype"
+  prompt="Faites glisser ces lignes dans l'ordre qui déclare un prototype, appelle la fonction depuis main, puis la définit ensuite."
+  items={[
+    { id: "proto", label: "int square(int n);", explanation: "Le prototype doit venir avant main pour que le compilateur connaisse la signature de square quand main l'appelle." },
+    { id: "mainopen", label: "int main(void) {" },
+    { id: "call", label: "    printf(\"%d\\n\", square(5));" },
+    { id: "mainclose", label: "    return 0;\n}" },
+    { id: "def", label: "int square(int n) {\n    return n * n;\n}" },
+  ]}
+  correctOrder={["proto", "mainopen", "call", "mainclose", "def"]}
+/>
+
+<OrderingExercise
+  title="Ordonnez un échange basé sur des pointeurs"
+  prompt="Faites glisser ces lignes dans l'ordre qui échange deux entiers dans main à l'aide d'une fonction auxiliaire prenant des pointeurs."
+  items={[
+    { id: "protoswap", label: "void swap(int *a, int *b);" },
+    { id: "mainopen", label: "int main(void) {" },
+    { id: "vars", label: "    int x = 1, y = 2;" },
+    { id: "call", label: "    swap(&x, &y);", explanation: "swap a besoin des adresses de x et y pour modifier les variables de l'appelant, pas leurs valeurs." },
+    { id: "print", label: "    printf(\"%d %d\\n\", x, y);" },
+    { id: "mainclose", label: "    return 0;\n}" },
+    { id: "def", label: "void swap(int *a, int *b) {\n    int temp = *a;\n    *a = *b;\n    *b = temp;\n}" },
+  ]}
+  correctOrder={["protoswap", "mainopen", "vars", "call", "print", "mainclose", "def"]}
+/>
+
+<PredictOutput
+  title="Qu'affiche ceci ?"
+  code={`#include <stdio.h>
+
+void increment(int n) {
+    n = n + 1;
+}
+
+int main(void) {
+    int count = 10;
+    increment(count);
+    increment(count);
+    printf("%d\\n", count);
+    return 0;
+}`}
+  options={["10", "11", "12", "Compile error"]}
+  correctIndex={0}
+  explanation="increment reçoit une copie de count à chaque appel, donc modifier n à l'intérieur de la fonction n'a aucun effet sur count dans main — il reste à 10 quel que soit le nombre de fois où increment est appelée. Pour vraiment modifier count, increment devrait prendre un int * et le déréférencer."
+  actualOutput="10"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- **[Flux de contrôle](/fr/programming-languages/c/control-flow)** — les boucles et conditions à partir desquelles les fonctions sont construites.
+- **[Pointeurs et mémoire](/fr/programming-languages/c/advanced)** — un regard plus approfondi sur les pointeurs utilisés ici pour contourner le passage par valeur.

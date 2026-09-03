@@ -1,0 +1,128 @@
+---
+title: PHP
+description: Un aperçu de PHP, le langage de script côté serveur qui fait tourner une grande partie du web, de ses origines à ce qui le distingue aujourd'hui.
+category: Programming Languages
+weight: 1
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+PHP a débuté en 1994 comme un petit ensemble de scripts Perl que Rasmus
+Lerdorf a écrits pour suivre les visites sur son CV en ligne — « Personal
+Home Page Tools ». Il a grandi, un peu par accident, pour devenir l'un des
+langages côté serveur les plus déployés sur Internet. WordPress, de grandes
+parties de la base de code originale de Facebook, Wikipedia, et une large
+part des systèmes de gestion de contenu du web sont construits sur PHP.
+
+Contrairement à Go ou Rust, PHP n'a jamais été conçu de façon descendante
+comme un langage cohérent. Il a grandi fonctionnalité par fonctionnalité pour
+résoudre des problèmes réels que rencontraient les gens en construisant des
+sites web, et cette histoire se voit : PHP a des coins véritablement
+maladroits (des noms de fonctions de bibliothèque standard incohérents, des
+comparaisons de types historiquement laxistes) aux côtés de fonctionnalités
+modernes et bien conçues ajoutées dans PHP 7 et 8 (déclarations de types
+scalaires, compilation JIT, enums, propriétés readonly). Le PHP moderne — le
+PHP que vous écririez aujourd'hui avec Composer, les standards PSR, et un
+framework comme Laravel ou Symfony — ressemble beaucoup au PHP du début des
+années 2000, même si les deux restent compatibles au niveau du code source
+sur la plupart des aspects.
+
+## Ce qui rend PHP distinctif
+
+- **Construit pour le cycle requête/réponse.** Un script PHP s'exécute une
+  fois par requête HTTP puis tout l'état de son processus disparaît — il n'y
+  a pas de serveur d'application à durée de vie longue conservant des objets
+  en mémoire entre les requêtes comme dans Node.js ou une app JVM, à moins de
+  se tourner vers quelque chose comme Swoole ou FrankenPHP.
+- **S'intègre directement dans le HTML.** PHP était à l'origine un langage
+  de templating : on plonge dans des balises `<?php ?>` à l'intérieur d'un
+  fichier HTML par ailleurs ordinaire, et tout ce qui est en dehors de ces
+  balises est émis tel quel.
+- **Chaque variable commence par `$`.** Il n'y a aucune ambiguïté entre un
+  mot nu (un nom de fonction, une constante) et une variable — le sigil
+  tranche la question d'un coup d'œil.
+- **Les tableaux font double emploi.** Un unique type `array` en PHP sert à
+  la fois de liste et de table de hachage, ce qui est pratique mais a sa
+  propre courbe d'apprentissage (plus de détails dans
+  [Tableaux](/fr/programming-languages/php/data-structures)).
+- **Une bibliothèque standard immense et inégale.** PHP est livré avec des
+  centaines de fonctions intégrées couvrant les chaînes, les tableaux, les
+  dates, et plus — mais le nommage et l'ordre des arguments sont incohérents
+  entre elles (`strpos($haystack, $needle)` contre
+  `array_search($needle, $haystack)`), un défaut bien connu issu de la
+  croissance organique de PHP.
+
+Voici un script PHP minimal et complet :
+
+```php
+<?php
+
+echo "Hello, nullbase!\n";
+```
+
+Enregistrez cela sous `hello.php` et exécutez-le avec `php hello.php`, ou
+déposez-le sur un serveur avec un runtime PHP et demandez-le par HTTP — les
+deux fonctionnent avec exactement le même fichier.
+
+## Quand se tourner vers PHP
+
+PHP reste un excellent choix pour les sites rendus côté serveur, la gestion
+de contenu, et tout ce où « une requête arrive, la base de données est
+interrogée, du HTML ressort » est la boucle centrale. Son modèle qui ne
+partage rien entre les requêtes le rend aussi tolérant aux fuites mémoire
+dans le code applicatif — chaque requête part d'une table rase. Il est moins
+naturel pour les processus d'arrière-plan de longue durée ou les charges de
+travail véritablement concurrentes, bien que des extensions et des runtimes
+alternatifs aient grignoté cette limitation au fil des années.
+
+## Ce qui suit
+
+Les pages suivantes parcourent PHP de la syntaxe à ses coins plus avancés :
+variables et balises, flux de contrôle, fonctions, tableaux, classes et
+traits, gestion des erreurs, espaces de noms et Composer, et enfin les
+générateurs et où réside réellement l'histoire de l'asynchrone en PHP.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire un script PHP minimal et fonctionnel qui affiche une salutation."
+  items={[
+    { id: "open", label: "<?php" },
+    { id: "blank", label: "" },
+    { id: "echo", label: 'echo "Hello, PHP!\\n";', explanation: "La balise d'ouverture doit venir en premier — le code PHP en dehors de <?php ?> est traité comme une sortie littérale." },
+  ]}
+  correctOrder={["open", "blank", "echo"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Mettez ces lignes dans l'ordre pour déclarer une variable et l'afficher avec l'interpolation de chaîne."
+  items={[
+    { id: "open2", label: "<?php" },
+    { id: "var2", label: '$name = "nullbase";' },
+    { id: "echo2", label: 'echo "Hello, $name!\\n";', explanation: "La variable doit être assignée avant d'être interpolée dans la chaîne." },
+  ]}
+  correctOrder={["open2", "var2", "echo2"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que ceci affiche ?"
+  code={`<?php
+
+$site = "nullbase";
+echo "Welcome to $site\\n";
+echo 'Welcome to $site\\n';`}
+  options={["Welcome to nullbase\\nWelcome to nullbase\\n", "Welcome to nullbase\\nWelcome to $site\\n", "Welcome to $site\\nWelcome to $site\\n", "Parse error: undefined variable"]}
+  correctIndex={1}
+  explanation="Les chaînes entre guillemets doubles interpolent les variables ; les chaînes entre apostrophes ne le font jamais, donc $site est affiché littéralement (et \\n reste deux caractères plutôt qu'un saut de ligne) dans le second echo."
+  actualOutput="Welcome to nullbase\nWelcome to $site\\n"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Syntaxe et variables](/fr/programming-languages/php/syntax-basics)
+- [Générateurs et motifs asynchrones](/fr/programming-languages/php/advanced)

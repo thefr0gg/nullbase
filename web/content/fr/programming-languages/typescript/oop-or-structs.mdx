@@ -1,0 +1,181 @@
+---
+title: Classes et interfaces
+description: Les classes avec modificateurs d'accès, et comment interface et type diffèrent pour décrire des formes d'objet.
+category: Programming Languages
+weight: 6
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Les classes JavaScript supportent `class`, `constructor`, et les méthodes
+depuis ES2015, mais elles n'ont aucune notion de champ privé ou public —
+chaque propriété est accessible depuis l'extérieur de l'instance.
+TypeScript ajoute des **modificateurs d'accès** que le compilateur impose,
+plus `interface`, une forme de déclaration dédiée à décrire des formes que
+le JavaScript ordinaire n'a aucun équivalent pour.
+
+## Classes avec modificateurs d'accès
+
+```ts
+class BankAccount {
+  public owner: string;
+  private balance: number;
+  readonly accountId: string;
+
+  constructor(owner: string, accountId: string, startingBalance: number) {
+    this.owner = owner;
+    this.accountId = accountId;
+    this.balance = startingBalance;
+  }
+
+  deposit(amount: number): void {
+    this.balance += amount;
+  }
+
+  getBalance(): number {
+    return this.balance;
+  }
+}
+
+const acct = new BankAccount("Ada", "acc-1", 100);
+acct.deposit(50); // OK — public method
+console.log(acct.balance); // Type error: Property 'balance' is private and only accessible within class 'BankAccount'
+acct.accountId = "acc-2"; // Type error: Cannot assign to 'accountId' because it is a read-only property
+```
+
+- `public` (le défaut) — accessible depuis n'importe où.
+- `private` — accessible seulement à l'intérieur du corps de la classe
+  lui-même, pas depuis les instances ou les sous-classes.
+- `readonly` — assignable une seule fois, dans le constructeur.
+
+Ces vérifications disparaissent entièrement de la sortie JavaScript compilée
+— `private` et `readonly` sont des garanties uniquement à la compilation.
+(TypeScript supporte aussi de vrais champs privés à l'exécution via la
+syntaxe `#field`, que JavaScript lui-même définit et impose à l'exécution,
+contrairement à `private`.)
+
+## Propriétés de constructeur en raccourci
+
+Écrire un champ, puis le réassigner depuis un paramètre de constructeur du
+même nom, est assez courant pour que TypeScript vous permette de
+compresser les deux en une seule déclaration en ajoutant un modificateur
+d'accès directement sur un paramètre de constructeur :
+
+```ts
+class Point {
+  constructor(
+    public x: number,
+    public y: number,
+  ) {}
+}
+
+const p = new Point(3, 4);
+console.log(p.x, p.y); // 3 4
+```
+
+Ceci déclare `x` et `y` comme des champs publics sur la classe *et* les
+assigne à partir des arguments du constructeur, sans avoir besoin de
+déclarations de champ séparées ni de lignes `this.x = x`.
+
+## interface vs type
+
+`interface` et `type` peuvent tous deux décrire la forme d'un objet, et
+pour des formes d'objet simples ils sont souvent interchangeables :
+
+```ts
+interface UserI {
+  id: number;
+  name: string;
+}
+
+type UserT = {
+  id: number;
+  name: string;
+};
+```
+
+Les différences qui comptent en pratique :
+
+- **Fusion de déclarations** : deux déclarations `interface` avec le même
+  nom fusionnent en une seule ; deux alias `type` avec le même nom sont une
+  erreur à la compilation (identifiant en double).
+- **Ce qu'ils peuvent décrire** : `type` peut aliaser n'importe quoi —
+  unions, tuples, primitives (`type Id = string | number`) — tandis que
+  `interface` ne peut décrire que des formes d'objet/de classe.
+- **Extension** : `interface` étend une autre avec `extends` ; `type`
+  combine des formes avec une intersection (`&`).
+
+```ts
+interface Animal {
+  name: string;
+}
+interface Dog extends Animal {
+  breed: string;
+}
+
+type Vehicle = { wheels: number };
+type Car = Vehicle & { brand: string };
+```
+
+Une classe peut `implements` l'une ou l'autre forme, tant que la forme est
+un type objet — `class Labrador implements Dog { ... }` fonctionne de la
+même façon que `class Labrador implements Car { ... }` le ferait,
+structurellement.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire une classe BankAccount avec un champ balance privé et une méthode deposit."
+  items={[
+    { id: "class-open", label: "class BankAccount {" },
+    { id: "field-private", label: "  private balance: number;" },
+    { id: "ctor", label: "  constructor(startingBalance: number) {", explanation: "Le constructeur doit venir après la déclaration de champ qu'il initialise." },
+    { id: "ctor-body", label: "    this.balance = startingBalance;" },
+    { id: "ctor-close", label: "  }" },
+    { id: "deposit", label: "  deposit(amount: number): void {" },
+    { id: "deposit-body", label: "    this.balance += amount;" },
+    { id: "deposit-close", label: "  }" },
+    { id: "class-close", label: "}" },
+  ]}
+  correctOrder={["class-open", "field-private", "ctor", "ctor-body", "ctor-close", "deposit", "deposit-body", "deposit-close", "class-close"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour étendre une interface dans une autre."
+  items={[
+    { id: "animal-open", label: "interface Animal {" },
+    { id: "animal-name", label: "  name: string;" },
+    { id: "animal-close", label: "}" },
+    { id: "dog-open", label: "interface Dog extends Animal {", explanation: "Dog doit faire référence à Animal après qu'Animal a déjà été déclaré." },
+    { id: "dog-breed", label: "  breed: string;" },
+    { id: "dog-close", label: "}" },
+  ]}
+  correctOrder={["animal-open", "animal-name", "animal-close", "dog-open", "dog-breed", "dog-close"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que le vérificateur de type dit ?"
+  code={`class Point {
+  constructor(
+    public readonly x: number,
+    public readonly y: number,
+  ) {}
+}
+
+const p = new Point(3, 4);
+p.x = 10;`}
+  options={["p.x becomes 10", "10", "Type error: Cannot assign to 'x' because it is a read-only property", "undefined"]}
+  correctIndex={2}
+  explanation="x est déclaré readonly via le raccourci de paramètre de constructeur, donc il ne peut être défini qu'une seule fois, lors de la construction. L'assigner ensuite — même à une valeur du bon type, number — est rejeté à la compilation avant même que le code ne s'exécute."
+  actualOutput="Type error: Cannot assign to 'x' because it is a read-only property"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Structures de données](/fr/programming-languages/typescript/data-structures)
+- [Gestion des erreurs](/fr/programming-languages/typescript/error-handling)

@@ -1,0 +1,196 @@
+---
+title: Structs e Interfaces
+description: Cómo Go modela objetos sin clases ni herencia, usando structs, métodos con receptores, e interfaces implícitas.
+category: Programming Languages
+weight: 6
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Go no tiene clases ni herencia. En su lugar tiene dos piezas más simples que
+se combinan para cubrir la mayor parte de lo que los lenguajes orientados a
+objetos usan las clases para: tipos `struct` para los datos, y tipos
+`interface` para los contratos de comportamiento. Una vez que te
+acostumbras, esto termina siendo más simple que una jerarquía de clases — no
+hay llamadas a `super`, no hay problemas de herencia en diamante, no hay
+ambigüedad sobre qué método del padre se ejecuta.
+
+## Structs
+
+Un `struct` agrupa campos con nombre en un único tipo:
+
+```go
+type Point struct {
+	X int
+	Y int
+}
+
+func main() {
+	p := Point{X: 3, Y: 4}
+	fmt.Println(p.X, p.Y) // 3 4
+}
+```
+
+Los campos que empiezan con mayúscula están exportados (visibles fuera del
+paquete); los campos en minúscula son privados al paquete. Este es todo el
+sistema de visibilidad de Go — no hay palabra clave `public`/`private`.
+
+## Métodos con receptores
+
+Go no pone los métodos dentro de la definición del struct. En su lugar,
+declaras una función normal con un **receptor** — un parámetro adicional
+antes del nombre de la función que la vincula a un tipo:
+
+```go
+type Rectangle struct {
+	Width, Height float64
+}
+
+func (r Rectangle) Area() float64 {
+	return r.Width * r.Height
+}
+
+func main() {
+	rect := Rectangle{Width: 3, Height: 4}
+	fmt.Println(rect.Area()) // 12
+}
+```
+
+Un receptor puede ser un valor (`r Rectangle`) o un puntero (`r *Rectangle`).
+Los receptores por valor obtienen una copia del struct; los receptores por
+puntero pueden mutar el original y evitar copiar structs grandes:
+
+```go
+func (r *Rectangle) Scale(factor float64) {
+	r.Width *= factor
+	r.Height *= factor
+}
+
+func main() {
+	rect := Rectangle{Width: 3, Height: 4}
+	rect.Scale(2)
+	fmt.Println(rect) // {6 8}
+}
+```
+
+## Composición en vez de herencia
+
+Go no tiene `extends`. Para reutilizar campos y métodos, **incrustas**
+(`embed`) un struct dentro de otro. El struct exterior promueve los campos y
+métodos del tipo incrustado como si fueran los suyos propios:
+
+```go
+type Animal struct {
+	Name string
+}
+
+func (a Animal) Describe() string {
+	return a.Name + " makes a sound"
+}
+
+type Dog struct {
+	Animal // incrustado — no es un campo con nombre
+	Breed  string
+}
+
+func main() {
+	d := Dog{Animal: Animal{Name: "Rex"}, Breed: "Labrador"}
+	fmt.Println(d.Describe()) // Rex makes a sound — promovido desde Animal
+	fmt.Println(d.Name)        // Rex — también promovido
+}
+```
+
+## Las interfaces son implícitas
+
+Una interfaz lista un conjunto de métodos. Un tipo la satisface
+automáticamente con solo implementar esos métodos — no hay palabra clave
+`implements` ni relación declarada:
+
+```go
+type Shape interface {
+	Area() float64
+}
+
+func printArea(s Shape) {
+	fmt.Println(s.Area())
+}
+
+func main() {
+	rect := Rectangle{Width: 3, Height: 4}
+	printArea(rect) // Rectangle satisface Shape simplemente por tener un método Area()
+}
+```
+
+Esto significa que puedes definir una interfaz a posteriori, en un paquete
+completamente distinto, y los tipos existentes ya la satisfarán si su
+conjunto de métodos coincide. Desacopla "lo que un tipo hace" de "lo que un
+tipo declara que hace".
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para definir un struct con un método de receptor por valor y llamarlo."
+  items={[
+    { id: "o1", label: "type Circle struct {" },
+    { id: "o2", label: "\tRadius float64" },
+    { id: "o3", label: "}" },
+    { id: "o4", label: "func (c Circle) Area() float64 {", explanation: "La declaración del método viene después de que el struct sobre el que opera esté completamente definido." },
+    { id: "o5", label: "\treturn 3.14 * c.Radius * c.Radius" },
+    { id: "o6", label: "}" },
+  ]}
+  correctOrder={["o1", "o2", "o3", "o4", "o5", "o6"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Ordena estas líneas para incrustar un struct dentro de otro y acceder a un campo promovido."
+  items={[
+    { id: "p1", label: "type Engine struct { Horsepower int }" },
+    { id: "p2", label: "type Car struct {" },
+    { id: "p3", label: "\tEngine", explanation: "El tipo incrustado se lista solo por su nombre, sin un nombre de campo propio." },
+    { id: "p4", label: "\tModel string" },
+    { id: "p5", label: "}" },
+    { id: "p6", label: "c := Car{Engine: Engine{Horsepower: 300}, Model: \"GT\"}" },
+    { id: "p7", label: "fmt.Println(c.Horsepower)" },
+  ]}
+  correctOrder={["p1", "p2", "p3", "p4", "p5", "p6", "p7"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`package main
+
+import "fmt"
+
+type Counter struct {
+	Count int
+}
+
+func (c Counter) IncrementByValue() {
+	c.Count++
+}
+
+func (c *Counter) IncrementByPointer() {
+	c.Count++
+}
+
+func main() {
+	c := Counter{}
+	c.IncrementByValue()
+	c.IncrementByPointer()
+	fmt.Println(c.Count)
+}`}
+  options={["0", "1", "2", "Compile error: mismatched receivers"]}
+  correctIndex={1}
+  explanation="IncrementByValue tiene un receptor por valor, así que muta una copia de c y el cambio se descarta. IncrementByPointer tiene un receptor por puntero, así que muta la c real. Solo un incremento sobrevive, dando 1."
+  actualOutput="1"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Estructuras de Datos](/es/programming-languages/go/data-structures)
+- [Manejo de Errores](/es/programming-languages/go/error-handling)

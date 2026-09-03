@@ -1,0 +1,39 @@
+---
+title: Architecture sans serveur
+description: Des fonctions et des services backend managés qui descendent à zéro et facturent par exécution — aucun serveur à provisionner, et un ensemble différent de compromis en échange.
+category: Software Architecture
+weight: 4
+---
+
+L'**architecture sans serveur** (serverless) exécute le code applicatif comme des fonctions de courte durée (ou s'appuie sur des services backend entièrement managés) sans que l'équipe ne provisionne, ne patche, ni ne mette elle-même à l'échelle aucun serveur. Le nom est un peu trompeur — des serveurs existent évidemment quelque part — mais l'intérêt du terme est qu'ils sont entièrement le problème du fournisseur cloud. Vous téléversez une fonction ; la plateforme décide combien d'instances exécuter, où, et quand, y compris en exécuter zéro quand rien ne se passe.
+
+## Functions-as-a-service et services managés
+
+Le serverless se manifeste généralement sous deux formes liées. Les **functions-as-a-service (FaaS)** — AWS Lambda, Google Cloud Functions, Cloudflare Workers étant des exemples bien connus — exécutent une seule fonction en réponse à un déclencheur (une requête HTTP, un message de file, une minuterie planifiée) et l'arrêtent une fois terminée. Aux côtés du FaaS se trouvent les **services backend managés** — une base de données, un stockage d'objets, un fournisseur d'authentification — consommés comme une API plutôt qu'exécutés comme un processus que vous gérez ; ensemble, « fonction FaaS + services managés » peut s'assembler en un backend complet sans un seul serveur toujours actif nulle part dans la pile. Ce site lui-même est un exemple réel de cette forme : son worker API et le contenu de référence que vous lisez sont tous deux déployés comme des [Cloudflare Workers](/fr/cloudflare/workers) — voir la [section Cloudflare](/fr/cloudflare) pour les briques spécifiques (KV, D1, R2, Durable Objects) qui remplacent les bases de données et magasins qu'un backend traditionnel exploiterait lui-même.
+
+## Mise à l'échelle à zéro et paiement à l'exécution
+
+Les deux propriétés qui définissent le modèle, et que la plupart des autres architectures ne peuvent pas offrir, sont :
+
+- **La mise à l'échelle à zéro.** Une fonction qui n'est pas invoquée ne tourne pas du tout — aucun processus inactif consommant mémoire ou CPU, aucun coût mensuel fixe pour une capacité que personne n'utilise. Les pics de trafic font apparaître automatiquement plus d'instances ; le trafic retombant à rien fait de même pour l'empreinte en cours d'exécution.
+- **Le paiement à l'exécution.** La facturation est typiquement basée sur les invocations réelles et le temps de calcul qu'elles consomment (souvent jusqu'à la milliseconde), pas un tarif horaire fixe pour un serveur qui reste là qu'il fasse quelque chose ou non. Pour des charges de travail au trafic réellement pointu ou imprévisible, cela peut être nettement moins cher que de provisionner pour la charge de pointe et de la payer en continu.
+
+## Les vrais compromis
+
+La mise à l'échelle à zéro a un coût direct : une fonction qui n'a pas tourné récemment n'a pas d'instance chaude en attente, donc la toute première requête doit attendre qu'une se démarre — un **cold start**. La latence de démarrage à froid varie beaucoup selon la plateforme et le runtime (un isolate léger démarre bien plus vite qu'un conteneur complet démarrant un runtime de langage), mais c'est une véritable taxe visible par l'utilisateur qu'un serveur chaud toujours actif ne paie tout simplement pas.
+
+Quelques autres contraintes découlent du modèle :
+
+- **Des limites de temps d'exécution.** La plupart des plateformes FaaS plafonnent la durée pendant laquelle une seule invocation est autorisée à tourner, ce qui exclut les connexions de longue durée ou les très longues tâches par lots vivant à l'intérieur de la fonction elle-même — ce genre de travail doit être découpé ou déplacé vers un modèle d'exécution différent.
+- **Le verrouillage fournisseur (vendor lock-in).** Les plateformes serverless diffèrent sensiblement dans leurs formats de déclencheurs, leur outillage de déploiement, et les services managés vers lesquels elles vous poussent, et une fonction écrite étroitement autour des spécificités d'un fournisseur représente un vrai travail à porter vers un autre.
+- **Des tests et un débogage locaux plus difficiles.** Une fonction conçue pour tourner à l'intérieur du runtime spécifique d'un fournisseur, câblée aux déclencheurs et services managés de ce fournisseur, est plus difficile à répliquer entièrement en local que « faire tourner le serveur sur mon ordinateur portable » — la plupart des plateformes livrent un émulateur local, mais c'est une approximation, pas le véritable environnement, et quelque chose finira par se comporter différemment en production qu'en local.
+
+## Quand ça convient
+
+Le serverless convient le mieux aux charges de travail naturellement en forme de requête ou d'événement et soit en rafales soit intermittentes — un gestionnaire de webhook, un endpoint d'API sollicité de façon imprévisible, une tâche par lots planifiée qui tourne deux minutes une fois par heure. Il convient moins bien aux charges de travail qui doivent conserver un état de longue durée en mémoire entre les requêtes, doivent tourner en continu quelle que soit la charge, ou sont sensibles à la latence d'une façon qui ne peut pas tolérer un cold start occasionnel.
+
+## Voir aussi
+
+- **[Edge Computing](/fr/devops/edge-computing)** — exécuter ce même modèle fonction-par-requête physiquement près de l'utilisateur.
+- **[Cloudflare Workers](/fr/cloudflare/workers)** — une plateforme FaaS concrète, et ce sur quoi tourne ce site lui-même.
+- **[Microservices](/fr/software-architecture/microservices)** — une autre façon d'obtenir une mise à l'échelle indépendante, avec un processus serveur au lieu d'une fonction à mise à l'échelle vers zéro.

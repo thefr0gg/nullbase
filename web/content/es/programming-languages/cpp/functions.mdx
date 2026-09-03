@@ -1,0 +1,154 @@
+---
+title: Funciones
+description: Declarar funciones en C++, elegir entre paso por valor y paso por referencia, argumentos por defecto, y sobrecarga.
+category: Programming Languages
+weight: 4
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Una función en C++ tiene un tipo de retorno explícito, un nombre, y una lista de parámetros fija — el compilador verifica cada punto de llamada contra esa firma, así que llamar a una función con el número o tipo incorrecto de argumentos es un error de compilación, no algo descubierto en tiempo de ejecución.
+
+```cpp
+#include <iostream>
+
+int add(int a, int b) {
+    return a + b;
+}
+
+double average(int a, int b, int c) {
+    return (a + b + c) / 3.0;
+}
+
+int main() {
+    std::cout << add(4, 5) << "\n";
+    std::cout << average(2, 4, 9) << "\n";
+    return 0;
+}
+```
+
+## Paso por valor vs. paso por referencia
+
+```cpp
+#include <iostream>
+
+void incrementByValue(int n) {
+    n = n + 1; // only modifies the local copy
+}
+
+void incrementByReference(int& n) {
+    n = n + 1; // modifies the caller's variable
+}
+
+int main() {
+    int x = 10;
+    incrementByValue(x);
+    std::cout << "After by-value: " << x << "\n"; // still 10
+
+    incrementByReference(x);
+    std::cout << "After by-reference: " << x << "\n"; // now 11
+    return 0;
+}
+```
+
+Por defecto, C++ pasa los argumentos **por valor** — la función recibe una copia, así que los cambios hechos dentro de ella nunca afectan a la variable del llamador. Agregar `&` al tipo de un parámetro lo convierte en un parámetro de **referencia**: `n` se convierte en otro nombre para la variable real del llamador, así que las modificaciones dentro de la función son visibles fuera de ella. Así es también como C++ evita copiar objetos grandes: un parámetro `const std::string&`, por ejemplo, permite que una función lea una cadena sin copiarla y sin permitir que se modifique.
+
+## Argumentos por defecto y sobrecarga
+
+```cpp
+#include <iostream>
+#include <string>
+
+void greet(const std::string& name, const std::string& greeting = "Hello") {
+    std::cout << greeting << ", " << name << "!\n";
+}
+
+int multiply(int a, int b) {
+    return a * b;
+}
+
+double multiply(double a, double b) {
+    return a * b;
+}
+
+int main() {
+    greet("Ada");                 // uses the default greeting
+    greet("Grace", "Welcome");    // overrides it
+
+    std::cout << multiply(3, 4) << "\n";       // calls the int version
+    std::cout << multiply(2.5, 4.0) << "\n";   // calls the double version
+    return 0;
+}
+```
+
+El valor por defecto de `greeting` significa que los llamadores pueden omitirlo por completo; un argumento por defecto debe venir después de todos los parámetros que no tienen uno. La **sobrecarga** permite que varias funciones compartan un nombre siempre que sus listas de parámetros difieran — el compilador elige la versión que coincide según los tipos de los argumentos en cada punto de llamada, resuelto completamente en tiempo de compilación.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir una función que intercambia dos enteros por referencia y un main que la llama."
+  items={[
+    { id: "include", label: "#include <iostream>" },
+    { id: "swap-sig", label: "void swap(int& a, int& b) {" },
+    { id: "temp", label: "    int temp = a;", explanation: "El valor original de a debe guardarse antes de que a sea sobrescrito." },
+    { id: "assign-a", label: "    a = b;" },
+    { id: "assign-b", label: "    b = temp;" },
+    { id: "swap-close", label: "}" },
+    { id: "main-open", label: "int main() {" },
+    { id: "vars", label: "    int x = 1, y = 2;" },
+    { id: "call", label: "    swap(x, y);" },
+    { id: "return", label: "    return 0;" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["include", "swap-sig", "temp", "assign-a", "assign-b", "swap-close", "main-open", "vars", "call", "return", "main-close"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir una función sobrecargada describe() y un main que llame a ambas versiones."
+  items={[
+    { id: "include", label: "#include <iostream>" },
+    { id: "int-version", label: "void describe(int n) { std::cout << \"int: \" << n << \"\\n\"; }" },
+    { id: "double-version", label: "void describe(double n) { std::cout << \"double: \" << n << \"\\n\"; }", explanation: "Ambas sobrecargas deben declararse antes de que main() las llame." },
+    { id: "main-open", label: "int main() {" },
+    { id: "call-int", label: "    describe(5);" },
+    { id: "call-double", label: "    describe(5.5);" },
+    { id: "return", label: "    return 0;" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["include", "int-version", "double-version", "main-open", "call-int", "call-double", "return", "main-close"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`#include <iostream>
+
+void addOne(int n) {
+    n += 1;
+}
+
+void addOneRef(int& n) {
+    n += 1;
+}
+
+int main() {
+    int value = 5;
+    addOne(value);
+    addOneRef(value);
+    std::cout << value << std::endl;
+    return 0;
+}`}
+  options={["5", "6", "7", "Compile error"]}
+  correctIndex={1}
+  explanation="addOne(value) pasa por valor, así que solo modifica una copia local y value permanece en 5. addOneRef(value) pasa por referencia, así que modifica value directamente, llevándolo a 6. La llamada por valor no tiene ningún efecto duradero."
+  actualOutput="6"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Flujo de Control](/es/programming-languages/cpp/control-flow) — los bucles y condicionales que típicamente se usan dentro del cuerpo de una función.
+- [Estructuras de Datos](/es/programming-languages/cpp/data-structures) — pasar contenedores como std::vector a funciones de forma eficiente.

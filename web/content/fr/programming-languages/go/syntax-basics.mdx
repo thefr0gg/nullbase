@@ -1,0 +1,150 @@
+---
+title: Syntaxe et variables
+description: Les déclarations de variables en Go, les types de base, les valeurs zéro, et le raccourci :=.
+category: Programming Languages
+weight: 2
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Go est statiquement typé : chaque variable a un type fixe connu à la
+compilation. À la différence du C cependant, Go vous laisse généralement
+omettre le type — le compilateur l'infère à partir de la valeur que vous
+assignez.
+
+## Déclarer des variables
+
+La forme verbeuse utilise `var` :
+
+```go
+var name string = "Ada"
+var age int = 36
+var isAdmin bool = false
+```
+
+Vous pouvez omettre le type quand la valeur le rend évident :
+
+```go
+var name = "Ada"
+var age = 36
+```
+
+Mais à l'intérieur d'un corps de fonction, la forme idiomatique est `:=`, la
+déclaration courte de variable. Elle déclare et initialise en une seule
+étape, et ne fonctionne que pour de nouvelles variables à l'intérieur d'une
+fonction (pas au niveau du package) :
+
+```go
+func main() {
+	name := "Ada"
+	age := 36
+	isAdmin := false
+	fmt.Println(name, age, isAdmin)
+}
+```
+
+`var` et `:=` ne sont pas interchangeables dans tous les contextes : `var`
+peut apparaître au niveau du package et permet de déclarer une variable sans
+valeur initiale, tandis que `:=` exige au moins une nouvelle variable sur le
+côté gauche et ne peut apparaître qu'à l'intérieur d'une fonction.
+
+## Valeurs zéro
+
+Go n'a pas de notion de variable non initialisée. Chaque type a une
+**valeur zéro** qu'une variable reçoit automatiquement si elle est déclarée
+sans initialiseur :
+
+```go
+var count int     // 0
+var price float64 // 0.0
+var label string  // "" (chaîne vide)
+var ready bool    // false
+var list []int    // nil (un slice nil, sûr à lire)
+```
+
+Cela élimine toute une classe de bugs de « variable non initialisée » qui
+existent dans des langages comme le C.
+
+## Types de base
+
+Les types intégrés de Go incluent :
+
+| Catégorie | Types |
+|---|---|
+| Entiers | `int`, `int8`, `int16`, `int32`, `int64`, et les variantes non signées `uint*` |
+| Nombres à virgule flottante | `float32`, `float64` |
+| Texte | `string`, `rune` (un point de code Unicode), `byte` (un alias pour `uint8`) |
+| Autres | `bool`, `complex64`, `complex128` |
+
+`int` est le type entier généraliste et fait 64 bits sur pratiquement toute
+plate-forme moderne ; ne réservez un type dimensionné comme `int32` que
+lorsque vous avez besoin d'une largeur spécifique (formats binaires,
+interopérabilité).
+
+## Constantes
+
+`const` déclare une constante de compilation. Les constantes ne peuvent pas
+utiliser `:=` et doivent avoir une valeur connue à la compilation :
+
+```go
+const MaxRetries = 3
+const Pi = 3.14159
+
+func main() {
+	fmt.Println("Retrying up to", MaxRetries, "times")
+}
+```
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour déclarer deux variables avec := et afficher leur somme."
+  items={[
+    { id: "s1", label: "func main() {" },
+    { id: "s2", label: "\ta := 4" },
+    { id: "s3", label: "\tb := 7", explanation: "Les deux déclarations courtes doivent venir avant d'être utilisées." },
+    { id: "s4", label: "\tfmt.Println(a + b)" },
+    { id: "s5", label: "}" },
+  ]}
+  correctOrder={["s1", "s2", "s3", "s4", "s5"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Ordonnez ces lignes pour déclarer une constante au niveau du package avec var, en lui donnant un type explicite, puis l'afficher."
+  items={[
+    { id: "t1", label: "package main" },
+    { id: "t2", label: "import \"fmt\"" },
+    { id: "t3", label: "var Threshold int = 100", explanation: "Les déclarations var au niveau du package se situent en dehors de toute fonction." },
+    { id: "t4", label: "func main() {" },
+    { id: "t5", label: "\tfmt.Println(Threshold)" },
+    { id: "t6", label: "}" },
+  ]}
+  correctOrder={["t1", "t2", "t3", "t4", "t5", "t6"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que ce code affiche ?"
+  code={`package main
+
+import "fmt"
+
+func main() {
+	var count int
+	var label string
+	fmt.Println(count, label == "")
+}`}
+  options={["0 true", "nil false", "Erreur de compilation : variable non initialisée", "0 false"]}
+  correctIndex={0}
+  explanation={`Déclarer une variable sans initialiseur lui donne la valeur zéro de son type : 0 pour int, une chaîne vide pour string. Comparer une chaîne vide à "" donne true, pas une erreur ni nil.`}
+  actualOutput="0 true"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Go](/fr/programming-languages/go)
+- [Flux de contrôle](/fr/programming-languages/go/control-flow)

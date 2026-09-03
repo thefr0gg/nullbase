@@ -1,0 +1,194 @@
+---
+title: الحزم وأدوات البناء
+description: تنظيم كود Java بـpackage وimport، وبناء المشاريع بـMaven وGradle.
+category: Programming Languages
+weight: 8
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تنظّم Java الكود في **حزم (packages)** — آلية تسمية أسماء تُطابِق أيضاً
+نظام الملفات مباشرة — وتعتمد على أدوات بناء خارجية (Maven، Gradle) بدلاً
+من مدير حزم مدمج لجلب الاعتماديات وتنسيق التصريف.
+
+## package وimport
+
+يُصرِّح السطر الأول غير التعليقي في ملف `.java.` (إن وُجد) عن الحزمة التي
+ينتمي إليها. يجب أن يطابق اسم الحزمة مسار مجلد الملف نسبةً إلى جذر مصدر
+المشروع:
+
+```java
+// src/main/java/com/example/billing/Invoice.java
+package com.example.billing;
+
+public class Invoice {
+    public double total() {
+        return 42.0;
+    }
+}
+```
+
+يُدخِل كود في حزمة أخرى صنفاً إلى النطاق بـ`import`:
+
+```java
+package com.example.app;
+
+import com.example.billing.Invoice;
+
+public class Main {
+    public static void main(String[] args) {
+        Invoice invoice = new Invoice();
+        System.out.println(invoice.total());
+    }
+}
+```
+
+دون `import`، لا يزال بإمكانك الإشارة إلى الصنف باسمه **المؤهَّل بالكامل**
+(`com.example.billing.Invoice`) — `import` مجرد راحة لاستخدام الاسم
+القصير. الأصناف في نفس الحزمة لا تحتاج أبداً استيراداً لرؤية بعضها بعضاً،
+وكل ما في `java.lang` (`String`، `Object`، `System`، وهكذا) مُستورَد
+ضمنياً في كل ملف.
+
+## مُعدِّلات الوصول والحزم
+
+عضوية الحزمة ليست مجرد تسمية — إنها أيضاً حد رؤية. عضو بلا أي مُعدِّل
+وصول (**حزمة-خاصة**) مرئي فقط لأصناف أخرى في نفس الحزمة:
+
+```java
+package com.example.billing;
+
+class InternalHelper { // حزمة-خاصة: بلا `public`
+    static void log(String message) {
+        System.out.println("[billing] " + message);
+    }
+}
+```
+
+يجعل `public` صنفاً أو عضواً مرئياً في كل مكان؛ يقيّده `private` إلى
+الصنف المُعلِن؛ يسمح `protected` بالوصول من نفس الحزمة بالإضافة إلى
+الأصناف الفرعية في أي حزمة.
+
+## Maven
+
+يصف Maven اعتماديات المشروع، وإضافاته، وخطوات البناء في ملف XML، `pom.xml`،
+ويُنزِّل الاعتماديات من مستودع مشترك (Maven Central افتراضياً):
+
+```xml
+<project>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.example</groupId>
+    <artifactId>billing-app</artifactId>
+    <version>1.0.0</version>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.10.0</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>
+```
+
+أوامر شائعة: `mvn compile` يبني المشروع، `mvn test` يُشغِّل الاختبارات،
+و`mvn package` يُنتِج JAR قابلاً للتوزيع. يفرض Maven تخطيط مجلدات
+"الاصطلاح فوق التهيئة" (`src/main/java`، `src/test/java`) لذا غالباً ما
+يكفي `pom.xml` بسيط للبدء.
+
+## Gradle
+
+يحل Gradle نفس المشكلة — حل الاعتماديات وتنسيق البناء — بتهيئة أكثر
+مرونة قائمة على السكربتات (Groovy أو Kotlin DSL) بدلاً من مخطط XML الثابت
+في Maven:
+
+```kotlin
+// build.gradle.kts
+plugins {
+    java
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
+}
+```
+
+يُصرِّف `./gradlew build` ويختبر ويحزم المشروع في خطوة واحدة. يميل مخطط
+البناء التزايدي لـGradle إلى جعله أسرع من Maven على المشاريع الكبيرة
+متعددة الوحدات، وهو جزء من سبب كونه أداة البناء الافتراضية لتطوير
+Android؛ يبقى نموذج Maven الأبسط والأكثر صرامة شائعاً في شركات Java
+المؤسسية التي تُقدِّر إمكانية التنبؤ على المرونة.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لتصريح صنف في حزمة واستيراده من ملف آخر."
+  items={[
+    { id: "j1", label: "package com.example.billing;" },
+    { id: "j2", label: "public class Invoice {" },
+    { id: "j3", label: "    public double total() { return 42.0; }" },
+    { id: "j4", label: "}" },
+    { id: "j5", label: "package com.example.app;", explanation: "تصريح الحزمة الخاص بكل ملف يجب أن يكون سطره الأول، قبل استيرادات ذلك الملف." },
+    { id: "j6", label: "import com.example.billing.Invoice;" },
+    { id: "j7", label: "public class Main {" },
+    { id: "j8", label: "    public static void main(String[] args) { System.out.println(new Invoice().total()); }" },
+    { id: "j9", label: "}" },
+  ]}
+  correctOrder={["j1", "j2", "j3", "j4", "j5", "j6", "j7", "j8", "j9"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="رتّب هذه الأسطر لبناء pom.xml بسيط يُعلن إحداثيات مشروع واعتمادية واحدة."
+  items={[
+    { id: "k1", label: "<project>" },
+    { id: "k2", label: "    <modelVersion>4.0.0</modelVersion>" },
+    { id: "k3", label: "    <groupId>com.example</groupId>" },
+    { id: "k4", label: "    <artifactId>billing-app</artifactId>", explanation: "إحداثيات المشروع تأتي قبل قسم الاعتماديات." },
+    { id: "k5", label: "    <version>1.0.0</version>" },
+    { id: "k6", label: "    <dependencies>" },
+    { id: "k7", label: "        <dependency>" },
+    { id: "k8", label: "            <groupId>org.junit.jupiter</groupId>" },
+    { id: "k9", label: "            <artifactId>junit-jupiter</artifactId>" },
+    { id: "k10", label: "        </dependency>" },
+    { id: "k11", label: "    </dependencies>" },
+    { id: "k12", label: "</project>" },
+  ]}
+  correctOrder={["k1", "k2", "k3", "k4", "k5", "k6", "k7", "k8", "k9", "k10", "k11", "k12"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا الكود؟"
+  code={`// File A: src/main/java/com/example/a/Helper.java
+package com.example.a;
+
+class Helper {
+    static String greet() { return "hi from Helper"; }
+}
+
+// File B: src/main/java/com/example/b/Main.java
+package com.example.b;
+
+public class Main {
+    public static void main(String[] args) {
+        System.out.println(Helper.greet());
+    }
+}`}
+  options={["hi from Helper", "خطأ تصريف: لا يمكن حل Helper إلى نوع", "خطأ تصريف: Helper بوصول خاص", "null"]}
+  correctIndex={1}
+  explanation="Helper بلا مُعدِّل وصول، لذا هي حزمة-خاصة — مرئية فقط داخل com.example.a. تعيش Main في com.example.b ولا تستورد Helper (ولا يمكنها ذلك بنجاح، بما أنها ليست public)، لذا لا يستطيع المصرّف حل الاسم إطلاقاً."
+  actualOutput="error: cannot find symbol: class Helper"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [معالجة الأخطاء](/ar/programming-languages/java/error-handling)
+- [الخيوط والتزامن](/ar/programming-languages/java/advanced)

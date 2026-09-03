@@ -1,0 +1,160 @@
+---
+title: Flujo de Control
+description: Condicionales, bucles, sentencias switch, y evaluación de cortocircuito en JavaScript.
+category: Programming Languages
+weight: 3
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Las construcciones de flujo de control de JavaScript te resultarán
+familiares si has usado cualquier lenguaje de la familia C, con algunas
+conveniencias propias de JavaScript añadidas encima: encadenamiento
+opcional, fusión de nulos, y un puñado de variantes de bucle pensadas para
+iterar colecciones en vez de rangos de índices puros.
+
+## Condicionales
+
+`if`/`else if`/`else` funciona como se espera. JavaScript también tiene un
+operador ternario para expresiones condicionales compactas, y dos
+operadores que vale la pena conocer bien: `??` (fusión de nulos) y `?.`
+(encadenamiento opcional).
+
+```js
+function describe(temp) {
+  if (temp < 0) {
+    return "freezing";
+  } else if (temp < 20) {
+    return "cool";
+  } else {
+    return "warm";
+  }
+}
+
+console.log(describe(-5)); // "freezing"
+
+const label = temp => (temp < 20 ? "cool" : "warm"); // ternario, no hacen falta llaves
+```
+
+`??` devuelve su lado derecho solo cuando el izquierdo es `null` o
+`undefined` — a diferencia de `||`, que también cae al lado derecho con `0`,
+`""`, y `false`. `?.` corta en cortocircuito a `undefined` en vez de lanzar
+una excepción cuando un acceso a propiedad topa con `null`/`undefined` a
+mitad de una cadena.
+
+```js
+const config = { retries: 0 };
+
+console.log(config.retries || 3);  // 3  — 0 es falsy, así que || lo sobrescribe (¡normalmente un bug!)
+console.log(config.retries ?? 3);  // 0  — 0 no es nullish, así que ?? lo conserva (normalmente lo que quieres)
+
+console.log(config.server?.host ?? "localhost"); // "localhost", sin crash por el server faltante
+```
+
+## Bucles
+
+`for`, `while`, y `do...while` existen todos con su semántica habitual. Dos
+formas de bucle adicionales iteran colecciones directamente: `for...of`
+(valores de un iterable — arrays, cadenas, `Map`s, `Set`s) y `for...in`
+(*claves* de propiedades enumerables de un objeto, generalmente reservado
+para objetos en vez de arrays).
+
+```js
+const scores = [88, 92, 79];
+
+for (const score of scores) {
+  console.log(score);
+}
+// 88
+// 92
+// 79
+
+for (let i = 0; i < scores.length; i++) {
+  console.log(`index ${i}: ${scores[i]}`);
+}
+
+const user = { name: "ada", role: "admin" };
+for (const key in user) {
+  console.log(key, user[key]);
+}
+```
+
+`break` sale de un bucle por completo; `continue` salta a la siguiente
+iteración. Ambos pueden apuntar a un bucle exterior etiquetado cuando
+necesitas escapar de bucles anidados desde dentro.
+
+## switch
+
+`switch` compara con `===` contra cada `case`. Olvidar `break` es uno de
+los bugs más comunes de JavaScript — la ejecución cae al siguiente caso a
+menos que la detengas explícitamente.
+
+```js
+function trafficAction(color) {
+  switch (color) {
+    case "red":
+      return "stop";
+    case "yellow":
+      return "slow down";
+    case "green":
+      return "go";
+    default:
+      return "unknown signal";
+  }
+}
+
+console.log(trafficAction("yellow")); // "slow down"
+```
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir un bucle for...of que sume un array de números."
+  items={[
+    { id: "arr", label: "const nums = [1, 2, 3];" },
+    { id: "total", label: "let total = 0;" },
+    { id: "loopOpen", label: "for (const n of nums) {" },
+    { id: "add", label: "  total += n;" },
+    { id: "loopClose", label: "}" },
+    { id: "log", label: "console.log(total);" },
+  ]}
+  correctOrder={["arr", "total", "loopOpen", "add", "loopClose", "log"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Ordena estas líneas para construir una sentencia switch que devuelva un tipo de día, incluyendo el break que evita la caída al siguiente caso."
+  items={[
+    { id: "fnOpen", label: "function dayType(day) {" },
+    { id: "switchOpen", label: "  switch (day) {" },
+    { id: "case1", label: "    case \"Sat\":" },
+    { id: "case2", label: "    case \"Sun\":" },
+    { id: "return1", label: "      return \"weekend\";", explanation: "Dos etiquetas case apiladas sin break entre ellas comparten este return — eso es una caída intencional al siguiente caso." },
+    { id: "default", label: "    default:" },
+    { id: "return2", label: "      return \"weekday\";" },
+    { id: "switchClose", label: "  }" },
+    { id: "fnClose", label: "}" },
+  ]}
+  correctOrder={["fnOpen", "switchOpen", "case1", "case2", "return1", "default", "return2", "switchClose", "fnClose"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`const settings = { volume: 0 };
+console.log(settings.volume || 10);
+console.log(settings.volume ?? 10);`}
+  options={["0 then 0", "10 then 10", "0 then 10", "10 then 0"]}
+  correctIndex={3}
+  explanation="volume es 0, que es falsy, así que || lo trata como ausente y cae a 10. ?? solo cae al lado derecho con null o undefined, y 0 no es ninguno de los dos, así que conserva el valor real, 0. Esta distinción importa constantemente para configuraciones numéricas que legítimamente pueden ser cero."
+  actualOutput="10
+0"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Sintaxis y Variables](/es/programming-languages/javascript/syntax-basics)
+- [Funciones y Closures](/es/programming-languages/javascript/functions)

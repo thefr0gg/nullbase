@@ -1,0 +1,134 @@
+---
+title: Syntaxe et variables
+description: Liaisons, mutabilité, shadowing, et les types primitifs sur lesquels Rust construit tout le reste.
+category: Programming Languages
+weight: 2
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Les liaisons Rust sont déclarées avec `let`, et chaque liaison est
+**immuable par défaut**. C'est le défaut opposé de la plupart des langages,
+et c'est délibéré : le compilateur veut que vous choisissiez explicitement
+la mutabilité avec `mut`, parce qu'une valeur immuable est une chose de
+moins à suivre en raisonnant sur ce qu'un morceau de code peut lui faire.
+
+```rust
+fn main() {
+    let x = 5;
+    // x = 6; // error: cannot assign twice to immutable variable `x`
+
+    let mut y = 5;
+    y = 6; // fine — y was declared mutable
+    println!("x = {x}, y = {y}");
+}
+```
+
+## Shadowing
+
+Rust vous permet aussi de déclarer une nouvelle liaison avec le *même nom*
+qu'une précédente — appelé **shadowing** (masquage) — ce qui est différent
+de la mutation. Le shadowing crée une toute nouvelle variable (qui peut même
+avoir un type différent), tandis que `mut` change la valeur de la variable
+existante sur place.
+
+```rust
+fn main() {
+    let spaces = "   "; // a &str
+    let spaces = spaces.len(); // now a usize — a new binding, same name
+
+    println!("{spaces}"); // 3
+}
+```
+
+Essayer de faire cela avec `mut` à la place (`let mut spaces = "   "; spaces = spaces.len();`)
+échouerait à la compilation — une liaison `mut` garde son type original
+pour toujours ; seul le shadowing permet au type de changer.
+
+## Types scalaires
+
+Les types primitifs de Rust ont une taille fixe et sont connus à la
+compilation : des entiers signés/non signés de plusieurs largeurs (`i32`,
+`u32`, `i64`, `u64`, `usize`, …), des flottants (`f32`, `f64`), `bool`, et
+`char` (une valeur scalaire Unicode de 4 octets, pas un octet). Les
+littéraux entiers ont par défaut le type `i32` et les littéraux flottants le
+type `f64`, sauf si le contexte l'exige autrement.
+
+```rust
+fn main() {
+    let age: u8 = 30;          // explicit type annotation
+    let pi = 3.14159;           // inferred as f64
+    let is_active = true;
+    let grade: char = 'A';
+
+    println!("{age} {pi} {is_active} {grade}");
+}
+```
+
+## Inférence de type et annotations
+
+Rust infère les types dans la plupart des cas, donc `let x = 5;` n'a pas
+besoin d'annotation — le compilateur déduit `x: i32` tout seul. Les
+annotations deviennent obligatoires quand le compilateur ne peut vraiment
+pas savoir, comme analyser une chaîne pour en faire un nombre :
+
+```rust
+fn main() {
+    let guess: u32 = "42".parse().expect("not a number");
+    println!("{guess}");
+}
+```
+
+Sans l'annotation `: u32` ici, `parse()` n'a aucun moyen de savoir quel type
+numérique produire, et le compilateur refuserait de deviner — c'est l'un
+des rares endroits où l'inférence de type a besoin d'un indice de votre
+part.
+
+## Voir aussi
+
+- **[Flux de contrôle](/fr/programming-languages/rust/control-flow)** — utiliser ces liaisons à l'intérieur de conditionnelles et de boucles.
+- **[Possession et emprunt](/fr/programming-languages/rust/advanced)** — pourquoi certaines de ces liaisons peuvent être copiées librement et d'autres non.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire un programme qui masque une chaîne avec sa longueur."
+  items={[
+    { id: "fn-open", label: "fn main() {" },
+    { id: "spaces1", label: "    let spaces = \"   \";", explanation: "La liaison &str originale doit exister avant de pouvoir être masquée." },
+    { id: "spaces2", label: "    let spaces = spaces.len();" },
+    { id: "print", label: "    println!(\"{spaces}\");" },
+    { id: "fn-close", label: "}" },
+  ]}
+  correctOrder={["fn-open", "spaces1", "spaces2", "print", "fn-close"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire un programme qui analyse une chaîne en u32 et l'affiche."
+  items={[
+    { id: "fn-open", label: "fn main() {" },
+    { id: "guess", label: "    let guess: u32 = \"42\".parse().expect(\"not a number\");", explanation: "L'annotation sur guess est requise avant que parse() puisse être appelé de cette façon." },
+    { id: "print", label: "    println!(\"{guess}\");" },
+    { id: "fn-close", label: "}" },
+  ]}
+  correctOrder={["fn-open", "guess", "print", "fn-close"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que ceci affiche ?"
+  code={`fn main() {
+    let x = 5;
+    let x = x + 1;
+    let x = x * 2;
+    println!("{x}");
+}`}
+  options={["5", "6", "10", "12"]}
+  correctIndex={3}
+  explanation="Chaque let redéclare x via le shadowing : il commence à 5, devient 6 (5 + 1), puis devient 12 (6 * 2). Comme ce sont de nouvelles liaisons plutôt qu'une mutation, cela compile même si x n'a jamais été déclaré mut — c'est exactement la distinction que le shadowing rend possible."
+  actualOutput="12"
+/>
+</ExerciseTabs>

@@ -1,0 +1,45 @@
+---
+title: Clean Architecture
+description: La règle de dépendance de Robert C. Martin — la logique métier au centre, les frameworks et l'infrastructure comme des détails remplaçables pointant vers l'intérieur, vers elle.
+category: Software Architecture
+weight: 8
+interactive: true
+interactiveType: ["MermaidDiagram"]
+---
+
+**Clean Architecture** est le nom que Robert C. Martin donne à un style architectural entièrement organisé autour d'une règle : les dépendances du code source doivent toujours pointer vers l'intérieur, vers la logique métier, et jamais vers l'extérieur, vers les frameworks, les bases de données, ou l'UI. Martin l'a dessinée comme des cercles concentriques — entités et cas d'usage au centre, infrastructure (frameworks web, bases de données, services externes) à l'extérieur — mais les cercles ne sont en réalité qu'une visualisation d'une seule contrainte, la **règle de dépendance**, de laquelle découle tout le reste.
+
+## La règle de dépendance
+
+Rien dans un cercle intérieur n'est autorisé à savoir quoi que ce soit sur un cercle extérieur. Les règles métier au cœur n'importent pas un framework web, n'importent pas un driver de base de données, et ne savent même pas si elles sont appelées depuis un gestionnaire HTTP, une commande CLI, ou un lanceur de tests. Les couches extérieures dépendent des couches intérieures, jamais l'inverse — un contrôleur peut appeler dans la logique de cas d'usage, mais la logique de cas d'usage ne peut pas appeler dans un contrôleur.
+
+<MermaidDiagram title="Les dépendances pointent vers l'intérieur" chart={`graph TD
+    UI[UI / Web framework] --> Controllers[Controllers / Presenters]
+    DB[Database driver] --> Gateways[Repository implementations]
+    Controllers --> UseCases[Use cases]
+    Gateways -.implements.-> Ports[Repository interfaces / ports]
+    UseCases --> Ports
+    UseCases --> Entities[Entities / core business rules]
+`} />
+
+L'astuce qui fait fonctionner cela quand une couche intérieure a réellement besoin de quelque chose d'une couche extérieure — la couche de cas d'usage a besoin de sauvegarder des données quelque part, ce qui donne l'impression d'avoir besoin de la base de données — est l'inversion de dépendance : la couche intérieure définit une interface (un « port ») décrivant ce dont elle a besoin, et la couche extérieure fournit une implémentation concrète (un « adaptateur ») qui la satisfait. Le cas d'usage ne dépend que de l'interface qu'il a définie ; le code de base de données dépend aussi de cette même interface, mais depuis l'extérieur, en l'implémentant. La flèche du contrôle (le code de base de données est appelé) et la flèche de dépendance du code source (qui importe l'interface de qui) pointent dans des directions opposées, et c'est la direction de dépendance dont se soucie Clean Architecture.
+
+## Ce que ça apporte
+
+Le bénéfice principal est que les règles métier du cœur — la vraie raison d'être du logiciel — n'ont aucune dépendance envers un framework, une base de données, ou un mécanisme de livraison spécifique. Remplacer Express par un autre framework web, remplacer Postgres par SQLite, ajouter une CLI aux côtés de l'API web : rien de tout cela ne touche les cas d'usage ou les entités, parce qu'ils n'ont jamais dépendu de ces choix au départ. Les tests suivent la même logique : le cœur peut être exercé avec de simples tests unitaires et de fausses implémentations de ses ports, sans serveur HTTP ni vraie base de données requis.
+
+C'est aussi, à noter, la même idée de « port de base de données » qu'utilise la propre couche API de nullbase — `services/` et `repositories/` sont écrits une fois contre une interface `Database`, et l'implémentation concrète D1 ou SQLite est un détail branchable câblé en périphérie, pas quelque chose que la logique métier importe directement. C'est l'inversion de dépendance de Clean Architecture en miniature, appliquée à une seule frontière plutôt qu'à toute la base de code.
+
+## Clean Architecture vs architecture en couches classique
+
+Les deux se ressemblent sur un diagramme — toutes deux dessinent des boîtes empilées ou imbriquées — mais elles s'organisent selon des axes différents. L'[Architecture en couches](/fr/software-architecture/layered-architecture) s'organise par **préoccupation technique** : le code de présentation vit ici, la logique métier là, l'accès aux données là-bas, et la dépendance s'écoule généralement de haut en bas à travers la pile, la logique métier dépendant elle-même de la couche de données en dessous d'elle. Clean Architecture s'organise **uniquement par direction de dépendance** : la logique métier n'a le droit de dépendre de l'accès aux données dans aucune direction — la couche de données dépend d'une interface que possède la logique métier. Une architecture en couches peut être construite où la couche de service importe directement une classe de dépôt ; une Clean Architecture ne le peut pas, parce que ce serait une couche intérieure dépendant vers l'extérieur. La différence est subtile sur un diagramme et significative en pratique : c'est la différence entre « la base de données est pénible à remplacer » et « la base de données peut être remplacée sans ouvrir les fichiers de logique métier du tout ».
+
+## Le coût réel
+
+Ce n'est pas une amélioration gratuite par rapport à un système de couches plus simple. Définir des ports pour chaque dépendance externe, écrire des adaptateurs pour les satisfaire, et maintenir la discipline qu'aucun fichier de couche intérieure n'importe jamais une préoccupation de couche extérieure, est une réelle surcharge continue — plus de fichiers, plus d'indirection, plus d'endroits à regarder avant de trouver où vit réellement une règle. Pour une petite application CRUD avec une base de données, une surface d'API, et des règles métier assez minces pour tenir dans un seul fichier de service, cette structure est proche du coût pur : les ports et adaptateurs supplémentaires existent pour permettre une flexibilité (remplacer le framework, remplacer la base de données, tester sans l'un ou l'autre) dont un petit projet a peu de chances d'avoir jamais besoin. Clean Architecture rentabilise sa surcharge sur des systèmes à la logique métier réellement complexe, une longue durée de vie attendue, ou une infrastructure réellement susceptible de changer sous l'application — pas sur chaque projet par défaut.
+
+## Voir aussi
+
+- **[Architecture en couches](/fr/software-architecture/layered-architecture)** — la cousine plus simple, basée sur la préoccupation technique, que celle-ci affine.
+- **[Conception pilotée par le domaine](/fr/software-architecture/domain-driven-design)** — souvent associée à Clean Architecture, puisque toutes deux placent le domaine métier (plutôt que l'infrastructure) au centre de la conception.
+- **[Architecture REST](/fr/software-architecture/rest-architecture)** — un exemple de frontière (la couche API) que Clean Architecture traiterait comme un détail extérieur et remplaçable plutôt que le centre du système.

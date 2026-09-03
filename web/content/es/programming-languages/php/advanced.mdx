@@ -1,0 +1,202 @@
+---
+title: Generadores y Patrones Async
+description: Los generadores y yield de PHP para iteración perezosa, y una mirada honesta a por qué el async real en PHP requiere algo fuera del lenguaje base.
+category: Programming Languages
+weight: 9
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Vale la pena ser directos sobre esto desde el principio: **PHP es
+fundamentalmente síncrono y bloqueante, por solicitud.** Un script PHP
+estándar (ejecutándose bajo PHP-FPM, mod_php de Apache, o el servidor de
+desarrollo integrado) empieza cuando llega una solicitud, se ejecuta de
+arriba abajo, y sale — no hay un bucle de eventos ejecutándose por debajo
+como sí lo hay en Node.js, y no existen las palabras clave `async`/`await`
+en el lenguaje. Esto no es tanto una carencia como una consecuencia
+deliberada del modelo de no compartir nada entre solicitudes de PHP, y es
+una diferencia genuina respecto a lenguajes que tratan la concurrencia como
+algo central.
+
+Lo que PHP *sí* tiene de forma nativa — y a lo que la gente a menudo se
+refiere de manera imprecisa cuando dice "PHP async" — son los
+**generadores**, que te dan iteración perezosa y eficiente en memoria. Esa
+es una característica real y de primera clase del lenguaje. La E/S no
+bloqueante y la concurrencia verdaderas, en cambio, necesitan algo extra
+superpuesto a PHP, lo cual esta página cubre honestamente en vez de
+exagerarlo.
+
+## Generadores y yield
+
+Una función que contiene `yield` se convierte en un generador: en vez de
+calcular y devolver todo un array por adelantado, produce valores uno a la
+vez, bajo demanda, pausando su ejecución entre cada uno.
+
+```php
+<?php
+
+function countUpTo(int $max) {
+    for ($i = 1; $i <= $max; $i++) {
+        yield $i;
+    }
+}
+
+foreach (countUpTo(5) as $n) {
+    echo $n . " ";
+}
+echo "\n"; // 1 2 3 4 5
+```
+
+El beneficio clave es la memoria: un generador que produce un millón de
+valores nunca mantiene el millón en memoria a la vez, a diferencia de
+construir y devolver un array. Esto hace que los generadores sean ideales
+para leer archivos grandes línea por línea, o producir una secuencia
+infinita (o simplemente muy larga):
+
+```php
+<?php
+
+function readLines(string $path) {
+    $handle = fopen($path, "r");
+    while (($line = fgets($handle)) !== false) {
+        yield rtrim($line, "\n");
+    }
+    fclose($handle);
+}
+
+foreach (readLines("access.log") as $line) {
+    if (str_contains($line, "ERROR")) {
+        echo $line . "\n";
+    }
+}
+```
+
+## yield con claves, y yield como expresión
+
+`yield` puede producir pares clave-valor, igual que un array asociativo, y
+también puede usarse como una expresión que recibe un valor enviado de
+vuelta al generador mediante `send()` — esto es lo que hace a los
+generadores lo suficientemente potentes como para modelar un flujo de
+control tipo corrutina, no solo una iteración simple:
+
+```php
+<?php
+
+function keyValuePairs() {
+    yield "name" => "Ada";
+    yield "role" => "admin";
+}
+
+foreach (keyValuePairs() as $key => $value) {
+    echo "$key: $value\n";
+}
+
+function echoBack() {
+    while (true) {
+        $received = yield;
+        echo "got: $received\n";
+    }
+}
+
+$gen = echoBack();
+$gen->current();     // primes the generator to its first yield
+$gen->send("hello"); // got: hello
+```
+
+## Dónde el async real necesita ayuda
+
+Los generadores por sí solos no te dan concurrencia — `countUpTo(5)` de
+arriba sigue ejecutándose enteramente dentro de la solicitud actual, de un
+solo hilo. Para realmente hacer trabajo de forma concurrente (manejar
+muchas conexiones simultáneas, ejecutar E/S sin bloquear todo el proceso),
+el PHP estándar necesita un runtime o biblioteca construida encima del
+lenguaje, no una característica del núcleo:
+
+- **ReactPHP** y **Amp** son bibliotecas de espacio de usuario que
+  construyen un bucle de eventos y abstracciones al estilo de promesas en
+  el propio PHP, usando generadores internamente para dejarte escribir
+  código basado en `yield` que se lee de forma parecida a `async`/`await`.
+- **Swoole** y **OpenSwoole** son extensiones de PHP (escritas en C) que
+  reemplazan el modelo tradicional de un proceso por solicitud por un
+  proceso servidor de bucle de eventos de larga duración, dándole a PHP
+  corrutinas genuinas y E/S no bloqueante a nivel de runtime.
+- **FrankenPHP** es un servidor de aplicación más nuevo que también
+  habilita procesos PHP de larga duración, al estilo worker, como
+  alternativa al modelo clásico de PHP-FPM por solicitud.
+
+Ninguno de estos forma parte del núcleo de PHP, y recurrir a ellos es
+atípico para una aplicación web PHP estándar — la mayoría del código PHP
+(una solicitud típica de Laravel o WordPress) es deliberadamente síncrono, y
+eso es un valor por defecto razonable, no una limitación que sortear. El PHP
+async es un patrón real, usado en producción en nichos específicos
+(workers de larga duración, servidores WebSocket, microservicios de alto
+rendimiento), pero es la excepción, no la forma en que se escribe la
+mayoría del PHP.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir un generador que produzca los cuadrados del 1 al 4."
+  items={[
+    { id: "o1", label: "<?php" },
+    { id: "o2", label: "function squares(int $max) {" },
+    { id: "o3", label: "    for ($i = 1; $i <= $max; $i++) {", explanation: "El bucle determina qué valores se producen, uno a la vez." },
+    { id: "o4", label: "        yield $i ** 2;" },
+    { id: "o5", label: "    }" },
+    { id: "o6", label: "}" },
+    { id: "o7", label: "foreach (squares(4) as $sq) {" },
+    { id: "o8", label: '    echo $sq . " ";' },
+    { id: "o9", label: "}" },
+  ]}
+  correctOrder={["o1", "o2", "o3", "o4", "o5", "o6", "o7", "o8", "o9"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Ordena estas líneas para construir un generador que produzca pares clave => valor leídos de un array."
+  items={[
+    { id: "p1", label: "<?php" },
+    { id: "p2", label: "function pairs(array $data) {" },
+    { id: "p3", label: "    foreach ($data as $key => $value) {", explanation: "El propio foreach del generador recorre el array de origen; cada iteración produce un valor una vez." },
+    { id: "p4", label: "        yield $key => strtoupper($value);" },
+    { id: "p5", label: "    }" },
+    { id: "p6", label: "}" },
+    { id: "p7", label: 'foreach (pairs(["a" => "x", "b" => "y"]) as $k => $v) {' },
+    { id: "p8", label: '    echo "$k=$v ";' },
+    { id: "p9", label: "}" },
+  ]}
+  correctOrder={["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`<?php
+
+function firstThree() {
+    echo "start\\n";
+    yield 1;
+    echo "middle\\n";
+    yield 2;
+    echo "end\\n";
+    yield 3;
+}
+
+$gen = firstThree();
+echo "generator created\\n";
+foreach ($gen as $value) {
+    echo "got $value\\n";
+}`}
+  options={["start\\nmiddle\\nend\\ngenerator created\\ngot 1\\ngot 2\\ngot 3\\n", "generator created\\nstart\\ngot 1\\nmiddle\\ngot 2\\nend\\ngot 3\\n", "generator created\\ngot 1\\ngot 2\\ngot 3\\n", "start\\ngenerator created\\ngot 1\\ngot 2\\ngot 3\\n"]}
+  correctIndex={1}
+  explanation="Llamar a firstThree() todavía no ejecuta nada de su código — el cuerpo de una función generadora solo se ejecuta perezosamente, a medida que el generador se itera. Por eso 'generator created' se imprime antes que 'start'; cada paso posterior del foreach reanuda la función justo después de su último yield hasta el siguiente."
+  actualOutput="generator created\nstart\ngot 1\nmiddle\ngot 2\nend\ngot 3\n"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Namespaces y Composer](/es/programming-languages/php/modules-packages)
+- [PHP](/es/programming-languages/php)

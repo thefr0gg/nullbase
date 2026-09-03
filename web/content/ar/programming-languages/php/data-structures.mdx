@@ -1,0 +1,149 @@
+---
+title: المصفوفات
+description: نوع المصفوفة الواحد في PHP يقوم بدور مزدوج كقائمة مفهرسة وكخريطة هاش ترابطية، بالإضافة إلى دوال المصفوفات الشائعة.
+category: Programming Languages
+weight: 5
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تملك PHP هيكل بيانات مركّباً مدمجاً واحداً بالضبط: `array`. حيث تمنحك لغات كثيرة نوع قائمة منفصلاً ونوع خريطة/قاموس منفصلاً، تكون مصفوفة PHP كلا الأمرين معاً، مدعومة داخلياً بخريطة هاش مرتّبة. هذا واحد من أكثر الأشياء الخاصة بـ PHP التي يجب التآلف معها، لأنه يعني أن "المصفوفة" في PHP مفهوم أوسع بكثير من "المصفوفة" في C، أو Java، أو Rust.
+
+## المصفوفات المفهرسة
+
+بدون مفاتيح صريحة، تسند PHP مفاتيح عددية صحيحة متسلسلة بدءاً من 0 — هذه حالة استخدام "القائمة":
+
+```php
+<?php
+
+$colors = ["red", "green", "blue"];
+
+echo $colors[0] . "\n";   // red
+echo count($colors) . "\n"; // 3
+
+$colors[] = "yellow"; // append
+foreach ($colors as $color) {
+    echo $color . "\n";
+}
+```
+
+## المصفوفات الترابطية
+
+نفس نوع `array` بالضبط يقبل مفاتيح عشوائية — سلاسل نصية، في هذه الحالة — ما يجعله خريطة هاش:
+
+```php
+<?php
+
+$user = [
+    "name" => "Ada",
+    "role" => "admin",
+    "age"  => 36,
+];
+
+echo $user["name"] . "\n"; // Ada
+
+foreach ($user as $key => $value) {
+    echo "$key: $value\n";
+}
+```
+
+## الغرابة: إنهما نفس النوع، ويمكنك مزجهما
+
+بما أن المصفوفات المفهرسة والترابطية هي نفس البنية الأساسية، لا شيء يمنعك من مزج مفاتيح عددية صحيحة ونصية في مصفوفة واحدة — وترتيب مفاتيح PHP هو **ترتيب الإدراج**، وليس مرتباً، وهذا يفاجئ القادمين من لغات تملك نوع خريطة هاش منفصلاً:
+
+```php
+<?php
+
+$mixed = [
+    "name" => "Grace",
+    0      => "first positional",
+    "role" => "engineer",
+    1      => "second positional",
+];
+
+foreach ($mixed as $key => $value) {
+    echo "$key => $value\n";
+}
+// Prints in insertion order: name, 0, role, 1 — not sorted by key type or value
+```
+
+هذا يعني أيضاً أن "القائمة" في PHP هي في الحقيقة مجرد اصطلاح (مفاتيح عددية صحيحة متسلسلة من 0)، وليست ضماناً — `array_filter()` على مصفوفة مفهرسة تحافظ على المفاتيح الأصلية ويمكن أن تترك فجوات، وهذا مصدر شائع جداً للأخطاء عندما يفترض الكود بقاء الفهارس متتالية:
+
+```php
+<?php
+
+$numbers = [10, 20, 30, 40];
+$evens = array_filter($numbers, fn($n) => $n % 2 === 0);
+
+print_r($evens);
+// [1 => 20, 3 => 40]  — original keys kept, index 0 and 2 are gone
+echo array_values($evens)[0] . "\n"; // array_values() re-indexes from 0
+```
+
+## دوال المصفوفات الشائعة
+
+تملك المكتبة القياسية لـ PHP أكثر من مئة دالة `array_*`. بعضها يظهر باستمرار:
+
+```php
+<?php
+
+$nums = [5, 3, 8, 1];
+
+sort($nums);                          // [1, 3, 5, 8], sorts in place
+echo implode(", ", $nums) . "\n";      // "1, 3, 5, 8"
+
+$doubled = array_map(fn($n) => $n * 2, $nums);
+$total = array_reduce($nums, fn($carry, $n) => $carry + $n, 0);
+
+echo implode(", ", $doubled) . "\n"; // 2, 6, 10, 16
+echo $total . "\n";                   // 17
+```
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء مصفوفة مفهرسة، والإضافة إليها، وطباعة عدد عناصرها."
+  items={[
+    { id: "g1", label: "<?php" },
+    { id: "g2", label: '$tags = ["php", "web"];' },
+    { id: "g3", label: '$tags[] = "arrays";', explanation: "تضيف [] عنصراً جديداً بالمفتاح العددي الصحيح التالي في التسلسل." },
+    { id: "g4", label: "echo count($tags) . \"\\n\";" },
+  ]}
+  correctOrder={["g1", "g2", "g3", "g4"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="رتّب هذه الأسطر لبناء مصفوفة ترابطية وقراءة إحدى قيمها."
+  items={[
+    { id: "h1", label: "<?php" },
+    { id: "h2", label: "$config = [" },
+    { id: "h3", label: '    "debug" => false,' },
+    { id: "h4", label: '    "env"   => "production",', explanation: "كل زوج مفتاح => قيمة هو مُدخل واحد في المصفوفة، مفصول بفاصلة كأي حرفية مصفوفة." },
+    { id: "h5", label: "];" },
+    { id: "h6", label: 'echo $config["env"] . "\\n";' },
+  ]}
+  correctOrder={["h1", "h2", "h3", "h4", "h5", "h6"]}
+/>
+
+<PredictOutput
+  title="ماذا تطبع هذه الشيفرة؟"
+  code={`<?php
+
+var_dump("10" == "1e1");
+var_dump(0 == "abc");
+var_dump("abc" == 0);`}
+  options={["true / true / true", "true / false / false", "false / false / false", "true / false / true"]}
+  correctIndex={1}
+  explanation="'10' == '1e1' صحيحة: كلاهما سلسلتان رقميتان، لذا تقارنهما PHP كأرقام (10 == 10.0). لكن منذ PHP 8، لم تعد سلسلة غير رقمية مثل 'abc' مقارنة برقم تُحوَّل إلى 0 — بل يُحوَّل الرقم إلى سلسلة نصية بدلاً من ذلك، لذا تقارن 0 == 'abc' بين '0' و'abc' وتكون false. هذا انعكس عن PHP 7، حيث كان كلا السطرين سيكونان true — مفاجأة خلط أنواع شهيرة في PHP."
+  actualOutput="bool(true)\nbool(false)\nbool(false)"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [الدوال](/ar/programming-languages/php/functions)
+- [الفئات والسمات](/ar/programming-languages/php/oop-or-structs)

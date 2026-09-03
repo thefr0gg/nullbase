@@ -1,0 +1,26 @@
+---
+title: Sistemas Operativos
+description: Qué está haciendo realmente el kernel por debajo de un proceso, un archivo, o un programa en ejecución — la teoría detrás de conceptos que este sitio cubre por lo demás desde un ángulo práctico y cotidiano.
+category: Operating Systems
+weight: 14
+---
+
+Varias secciones de este sitio ya tocan conceptos de sistemas operativos desde un ángulo práctico — [Procesos](/es/devops/processes) y [Linux](/es/devops/linux) en DevOps, los modelos de concurrencia en [Servidores de Aplicación](/es/backend/application-servers). Esta sección va un nivel por debajo de esos: los mecanismos reales del kernel — estados de proceso, paginación de memoria, la frontera de las llamadas al sistema — que hacen que la versión práctica y cotidiana de esos conceptos funcione en absoluto. Cada página aquí enlaza de vuelta a su contraparte práctica en lugar de repetirla.
+
+## Ejecutar código
+
+- **[Procesos](/es/operating-systems/processes)** — la máquina de estados por la que pasa cada proceso, y qué le hacen fork/exec/wait/exit.
+- **[Hilos](/es/operating-systems/threads)** — una unidad de planificación más barata que comparte la memoria de un proceso.
+- **[Planificación](/es/operating-systems/scheduling)** — cómo decide el kernel qué se ejecuta a continuación cuando hay más trabajo ejecutable que núcleos de CPU.
+
+## Memoria y almacenamiento
+
+- **[Memoria Virtual](/es/operating-systems/virtual-memory)** — por qué cada proceso cree que tiene su propio espacio de direcciones privado.
+- **[Sistemas de Archivos](/es/operating-systems/file-systems)** — cómo organiza el sistema operativo los bloques crudos de disco en archivos y directorios con nombre.
+
+## La frontera entre los programas y el kernel
+
+- **[Llamadas al Sistema](/es/operating-systems/system-calls)** — la frontera entre modo usuario y modo kernel que tiene que cruzar cada operación privilegiada.
+- **[Permisos](/es/operating-systems/permissions)** — cómo decide el kernel si a un proceso dado se le permite hacer algo.
+- **[Señales](/es/operating-systems/signals)** — cómo un proceso interrumpe asíncronamente el flujo de control normal de otro.
+- **[Comunicación entre Procesos](/es/operating-systems/inter-process-communication)** — cómo procesos aislados en memoria comparten datos de todas formas, intencionalmente.

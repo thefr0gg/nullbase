@@ -1,0 +1,277 @@
+---
+title: Clases e Interfaces
+description: Clases, campos, constructores, herencia, interfaces, y polimorfismo — el modelo de objetos de Java en profundidad.
+category: Programming Languages
+weight: 6
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Java es un lenguaje profundamente orientado a objetos: las clases son la
+unidad fundamental de organización, y casi todo programa no trivial es una
+red de objetos enviándose mensajes (llamando a métodos) entre sí. Esta
+página cubre el modelo de objetos central — clases, herencia, interfaces, y
+polimorfismo — con más profundidad que las demás páginas, ya que es donde
+vive la mayor parte de la filosofía de diseño de Java.
+
+## Clases, campos, y constructores
+
+Una clase agrupa estado (**campos**) con comportamiento (**métodos**). Un
+**constructor** inicializa una nueva instancia:
+
+```java
+public class Point {
+    private final double x;
+    private final double y;
+
+    public Point(double x, double y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    public double distanceFromOrigin() {
+        return Math.sqrt(x * x + y * y);
+    }
+
+    @Override
+    public String toString() {
+        return "Point(" + x + ", " + y + ")";
+    }
+}
+```
+
+```java
+Point p = new Point(3.0, 4.0);
+System.out.println(p.distanceFromOrigin()); // 5.0
+System.out.println(p);                      // Point(3.0, 4.0) — toString se llama implícitamente
+```
+
+Los campos `private` son accesibles solo dentro de la clase misma — el
+idioma estándar de Java es mantener los campos privados y exponer
+comportamiento (o métodos getter/setter) en vez de dejar que código externo
+alcance directamente el estado de un objeto. `this` se refiere a la
+instancia actual y desambigua un campo de un parámetro del constructor con
+el mismo nombre.
+
+## Herencia con extends
+
+Una clase puede `extend` (extender) exactamente una superclase, heredando
+sus campos y métodos y opcionalmente sobreescribiendo comportamiento:
+
+```java
+public class Shape {
+    protected String name;
+
+    public Shape(String name) {
+        this.name = name;
+    }
+
+    public double area() {
+        return 0.0;
+    }
+
+    public String describe() {
+        return name + " has area " + area();
+    }
+}
+
+public class Circle extends Shape {
+    private final double radius;
+
+    public Circle(double radius) {
+        super("Circle"); // debe llamar primero al constructor de la superclase
+        this.radius = radius;
+    }
+
+    @Override
+    public double area() {
+        return Math.PI * radius * radius;
+    }
+}
+```
+
+```java
+Shape s = new Circle(2.0);
+System.out.println(s.describe()); // Circle has area 12.566370614359172
+```
+
+`super(...)` llama al constructor de la superclase y debe ser la primera
+sentencia en un constructor de subclase si se usa explícitamente; si se
+omite, Java inserta una llamada implícita a `super()` sin argumentos.
+`@Override` es opcional pero muy recomendable — le dice al compilador "esto
+debe coincidir con un método de la superclase", detectando errores
+tipográficos (un nombre de método mal escrito se convierte silenciosamente
+en un método nuevo en vez de una sobreescritura sin ella) en tiempo de
+compilación.
+
+Java admite deliberadamente solo **herencia simple** de clases — una clase
+extiende como máximo una superclase. Esto evita el "problema del diamante"
+que surge cuando una clase heredaría implementaciones conflictivas del mismo
+método de dos padres mediante herencia múltiple completa.
+
+## Polimorfismo
+
+Una variable declarada con un supertipo puede referirse a cualquier
+instancia de un subtipo, y llamar a un método sobreescrito despacha a la
+implementación del tipo real en tiempo de ejecución — no al tipo declarado
+(en tiempo de compilación):
+
+```java
+Shape[] shapes = { new Circle(1.0), new Circle(2.0) };
+for (Shape shape : shapes) {
+    System.out.println(shape.describe()); // siempre llama al area() de Circle
+}
+```
+
+Esto es **despacho dinámico**: aunque el tipo de elemento declarado del
+array sea `Shape`, cada llamada a `area()` se resuelve a `Circle.area()` en
+tiempo de ejecución, porque ese es el tipo real del objeto almacenado ahí.
+
+## Interfaces
+
+Una interfaz declara un contrato — firmas de métodos sin implementación (más,
+desde Java 8, métodos `default` opcionales con cuerpo) — que cualquier
+número de clases no relacionadas puede implementar:
+
+```java
+public interface Movable {
+    void move(double dx, double dy);
+
+    default void stop() {
+        System.out.println("Stopped.");
+    }
+}
+
+public class Robot implements Movable {
+    private double x = 0;
+    private double y = 0;
+
+    @Override
+    public void move(double dx, double dy) {
+        x += dx;
+        y += dy;
+        System.out.println("Now at (" + x + ", " + y + ")");
+    }
+}
+```
+
+A diferencia de `extends`, una clase puede `implements` (implementar)
+cualquier número de interfaces — así es como Java obtiene la mayor parte del
+beneficio práctico de la herencia múltiple sin sus inconvenientes, ya que
+las interfaces (en su mayoría) no cargan estado de campo conflictivo. Una
+clase que implementa una interfaz es asignable a una variable de ese tipo de
+interfaz, exactamente como lo sería para una superclase:
+
+```java
+Movable m = new Robot();
+m.move(1.0, 2.0); // Now at (1.0, 2.0)
+m.stop();         // Stopped. (usa la implementación por defecto de la interfaz)
+```
+
+## Clases abstract
+
+Una clase `abstract` puede mezclar métodos implementados con métodos
+`abstract` no implementados, y — a diferencia de una interfaz — puede
+contener campos no `static` y no `final` compartidos mediante herencia. No
+puede instanciarse directamente; solo puede hacerlo una subclase concreta
+que implemente todos los métodos `abstract`:
+
+```java
+public abstract class Animal {
+    protected final String name;
+
+    public Animal(String name) {
+        this.name = name;
+    }
+
+    public abstract String sound();
+
+    public void speak() {
+        System.out.println(name + " says " + sound());
+    }
+}
+
+public class Dog extends Animal {
+    public Dog(String name) {
+        super(name);
+    }
+
+    @Override
+    public String sound() {
+        return "Woof";
+    }
+}
+```
+
+Elegir entre una clase `abstract` y una interfaz es sobre todo cuestión de
+si los subtipos comparten estado real y si un tipo necesita heredar de más
+de una fuente: recurre a una interfaz por defecto, y a una clase `abstract`
+cuando varias subclases relacionadas realmente comparten campos y lógica de
+constructor.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para definir una clase Point con un constructor y un método, y luego usarla."
+  items={[
+    { id: "p1", label: "public class Point {" },
+    { id: "p2", label: "    private final double x, y;" },
+    { id: "p3", label: "    public Point(double x, double y) { this.x = x; this.y = y; }", explanation: "Los campos deben declararse antes del constructor que los inicializa." },
+    { id: "p4", label: "    public double sum() { return x + y; }" },
+    { id: "p5", label: "}" },
+    { id: "p6", label: "Point p = new Point(2.0, 3.0);" },
+    { id: "p7", label: "System.out.println(p.sum());" },
+  ]}
+  correctOrder={["p1", "p2", "p3", "p4", "p5", "p6", "p7"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Ordena estas líneas para construir una subclase Circle que extiende Shape, sobreescribiendo area(), e imprimir una llamada polimórfica."
+  items={[
+    { id: "q1", label: "public class Shape {" },
+    { id: "q2", label: "    public double area() { return 0.0; }" },
+    { id: "q3", label: "}" },
+    { id: "q4", label: "public class Circle extends Shape {", explanation: "La declaración de Circle debe venir después de Shape, la clase que extiende, esté completamente definida." },
+    { id: "q5", label: "    private final double radius;" },
+    { id: "q6", label: "    public Circle(double radius) { this.radius = radius; }" },
+    { id: "q7", label: "    @Override" },
+    { id: "q8", label: "    public double area() { return Math.PI * radius * radius; }" },
+    { id: "q9", label: "}" },
+    { id: "q10", label: "Shape s = new Circle(2.0);" },
+    { id: "q11", label: "System.out.println(s.area());" },
+  ]}
+  correctOrder={["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`public class Shape {
+    public String kind() { return "Shape"; }
+}
+
+public class Square extends Shape {
+    @Override
+    public String kind() { return "Square"; }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        Shape s = new Square();
+        System.out.println(s.kind());
+    }
+}`}
+  options={["Shape", "Square", "Compile error: incompatible types", "It depends on the declared type, so it prints nothing determinable"]}
+  correctIndex={1}
+  explanation="Las llamadas a métodos en Java usan despacho dinámico: la JVM mira el tipo real en tiempo de ejecución del objeto (Square), no el tipo declarado en tiempo de compilación de la variable (Shape), para decidir qué implementación de kind() ejecutar. Esto es lo que hace útil al polimorfismo."
+  actualOutput="Square"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Estructuras de Datos](/es/programming-languages/java/data-structures)
+- [Manejo de Errores](/es/programming-languages/java/error-handling)

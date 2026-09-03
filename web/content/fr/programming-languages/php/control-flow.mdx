@@ -1,0 +1,192 @@
+---
+title: Flux de contrôle
+description: Le if/elseif/else de PHP, ses expressions match et switch, les boucles, et la syntaxe alternative à deux-points utilisée dans les templates.
+category: Programming Languages
+weight: 3
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Le flux de contrôle de PHP paraîtra immédiatement familier si vous connaissez
+un langage de la famille C, avec quelques ajouts spécifiques à PHP qui
+valent la peine d'être connus : `match` (ajouté dans PHP 8.0) et une syntaxe
+alternative à deux-points conçue pour mélanger PHP avec des templates HTML.
+
+## if / elseif / else
+
+Notez l'orthographe : `elseif` (un seul mot), pas `else if`, bien que PHP
+accepte les deux — `elseif` est le style conventionnel dans les bases de code
+PHP.
+
+```php
+<?php
+
+function classify(int $score): string {
+    if ($score >= 90) {
+        return "A";
+    } elseif ($score >= 80) {
+        return "B";
+    } else {
+        return "F";
+    }
+}
+
+echo classify(85) . "\n"; // B
+```
+
+## Boucles
+
+PHP a `while`, `do...while`, `for`, et `foreach` — foreach étant celle vers
+laquelle vous vous tournerez constamment, puisqu'elle fonctionne directement
+sur les tableaux :
+
+```php
+<?php
+
+$fruits = ["apple", "banana", "cherry"];
+
+foreach ($fruits as $index => $fruit) {
+    echo "$index: $fruit\n";
+}
+```
+
+`for` et `while` se comportent exactement comme en C :
+
+```php
+<?php
+
+for ($i = 0; $i < 3; $i++) {
+    echo "count: $i\n";
+}
+
+$n = 1;
+while ($n < 100) {
+    $n *= 2;
+}
+echo $n . "\n"; // 128
+```
+
+## switch
+
+`switch` en PHP utilise la **comparaison laxiste** (`==`) par défaut et
+tombe à travers les cas à moins de `break` — le piège classique de style C :
+
+```php
+<?php
+
+$role = "editor";
+
+switch ($role) {
+    case "admin":
+        echo "full access\n";
+        break;
+    case "editor":
+    case "author":
+        echo "can publish\n";
+        break;
+    default:
+        echo "read only\n";
+}
+```
+
+## match — une alternative plus stricte, basée sur des expressions
+
+`match` (PHP 8.0+) corrige les deux plus gros pièges de switch : il compare
+avec une sémantique stricte (`===`), et il n'y a pas de chute à travers les
+cas — chaque branche est une seule expression, et `match` lui-même s'évalue
+en une valeur.
+
+```php
+<?php
+
+$role = "editor";
+
+$access = match ($role) {
+    "admin" => "full access",
+    "editor", "author" => "can publish",
+    default => "read only",
+};
+
+echo $access . "\n"; // can publish
+```
+
+Contrairement à `switch`, une valeur non trouvée sans branche `default` lève
+une `UnhandledMatchError` plutôt que de ne rien faire silencieusement — une
+amélioration de sécurité délibérée.
+
+## La syntaxe alternative à deux-points
+
+À l'intérieur de templates qui mélangent PHP et HTML, PHP propose une
+syntaxe basée sur les deux-points pour `if`, `foreach`, `for`, et `while` qui
+évite un mur d'accolades :
+
+```php
+<?php $items = ["tea", "coffee"]; ?>
+<ul>
+<?php foreach ($items as $item): ?>
+    <li><?= $item ?></li>
+<?php endforeach; ?>
+</ul>
+```
+
+`<?= $item ?>` est un raccourci pour `<?php echo $item; ?>` et est courant
+dans les fichiers de template exactement pour cette raison.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire une boucle foreach qui affiche chaque fruit avec son index."
+  items={[
+    { id: "c1", label: "<?php" },
+    { id: "c2", label: '$fruits = ["fig", "kiwi"];' },
+    { id: "c3", label: "foreach ($fruits as $i => $fruit) {" },
+    { id: "c4", label: '    echo "$i: $fruit\\n";', explanation: "Le corps de la boucle s'exécute une fois par élément, avec $i et $fruit liés fraîchement à chaque itération." },
+    { id: "c5", label: "}" },
+  ]}
+  correctOrder={["c1", "c2", "c3", "c4", "c5"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Ordonnez ces lignes pour construire une expression match qui catégorise un code de statut HTTP."
+  items={[
+    { id: "d1", label: "<?php" },
+    { id: "d2", label: "$status = 404;" },
+    { id: "d3", label: "$label = match (true) {" },
+    { id: "d4", label: "    $status < 300 => \"success\",", explanation: "match (true) évalue chaque condition de branche dans l'ordre et prend la première qui est vraie, comme une chaîne if/elseif." },
+    { id: "d5", label: "    $status < 400 => \"redirect\"," },
+    { id: "d6", label: "    default => \"error\"," },
+    { id: "d7", label: "};" },
+    { id: "d8", label: "echo $label . \"\\n\";" },
+  ]}
+  correctOrder={["d1", "d2", "d3", "d4", "d5", "d6", "d7", "d8"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que ceci affiche ?"
+  code={`<?php
+
+$value = "1";
+
+switch ($value) {
+    case 1:
+        echo "matched int 1";
+        break;
+    case "1":
+        echo "matched string 1";
+        break;
+}`}
+  options={["matched int 1", "matched string 1", "matched int 1matched string 1", "Fatal error: type mismatch"]}
+  correctIndex={0}
+  explanation="switch compare avec == laxiste, donc case 1 correspond à la chaîne '1' via le jonglage de types avant que PHP n'atteigne jamais la branche case '1'. C'est exactement le genre de surprise que la comparaison stricte === de match a été introduite pour éviter."
+  actualOutput="matched int 1"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Syntaxe et variables](/fr/programming-languages/php/syntax-basics)
+- [Fonctions](/fr/programming-languages/php/functions)

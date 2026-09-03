@@ -1,0 +1,133 @@
+---
+title: Flujo de Control
+description: Cómo las instrucciones if/switch estrechan tipos unión, y el giro de verificación de tipos que TypeScript añade al flujo de control plano de JavaScript.
+category: Programming Languages
+weight: 3
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+`if`, `else`, `switch`, `for`, y `while` se comportan exactamente igual que en JavaScript en tiempo de ejecución — TypeScript no cambia la semántica del flujo de control. Lo que cambia es lo que el compilador *sabe* sobre los tipos de tus variables a medida que la ejecución avanza por cada rama. Esto se llama **estrechamiento de tipos** (type narrowing), y es una de las características más distintivamente TypeScript de esta página.
+
+## Tipos unión y estrechamiento
+
+Una variable puede declararse para contener uno de varios tipos con un **tipo unión** (`A | B`):
+
+```ts
+function formatId(id: string | number): string {
+  if (typeof id === "string") {
+    return id.toUpperCase(); // id is narrowed to string here
+  }
+  return id.toFixed(2); // id is narrowed to number here
+}
+```
+
+Dentro de la rama `if (typeof id === "string")`, el compilador estrecha el tipo de `id` de `string | number` a solo `string`, así que `.toUpperCase()` se permite. En la rama `else` (la caída implícita aquí), lo estrecha a `number`, así que `.toFixed(2)` se permite. Intenta llamar a `id.toUpperCase()` en la segunda rama y el compilador lo rechaza — `toUpperCase` no existe en `number`.
+
+## Estrechamiento con switch
+
+`switch` estrecha de la misma manera, rama por rama, lo cual lo hace un ajuste natural para las **uniones discriminadas** — tipos que comparten un campo literal común usado para distinguirlos:
+
+```ts
+type Shape =
+  | { kind: "circle"; radius: number }
+  | { kind: "square"; side: number };
+
+function area(shape: Shape): number {
+  switch (shape.kind) {
+    case "circle":
+      return Math.PI * shape.radius ** 2; // shape is narrowed to the circle branch
+    case "square":
+      return shape.side ** 2; // shape is narrowed to the square branch
+  }
+}
+```
+
+Cada `case` estrecha `shape` según el valor literal de `kind`, así que `shape.radius` solo es accesible en el caso `"circle"` y `shape.side` solo en el caso `"square"` — acceder a `shape.side` dentro del caso `"circle"` sería un error de tipo, porque el compilador sabe que el `shape` de esa rama no puede tener una propiedad `side`.
+
+## El giro específico de TS: verificación de exhaustividad
+
+El `switch` de JavaScript plano no tiene idea de si has manejado todos los casos. TypeScript puede exigirlo, asignando el "sobrante imposible" a una variable tipada `never`:
+
+```ts
+type Shape =
+  | { kind: "circle"; radius: number }
+  | { kind: "square"; side: number }
+  | { kind: "triangle"; base: number; height: number };
+
+function area(shape: Shape): number {
+  switch (shape.kind) {
+    case "circle":
+      return Math.PI * shape.radius ** 2;
+    case "square":
+      return shape.side ** 2;
+    default: {
+      const exhaustiveCheck: never = shape; // Type error if a case was missed
+      throw new Error(`Unhandled shape: ${exhaustiveCheck}`);
+    }
+  }
+}
+```
+
+Después de añadir `"triangle"` a `Shape` sin añadir un `case` correspondiente, `shape` en la rama `default` ya no se estrecha a nada — sigue siendo `{ kind: "triangle"; ... }`, que no es asignable a `never`. El compilador señala esa asignación como un error justo en el lugar donde olvidaste manejar un caso, detectando un `switch` incompleto antes del tiempo de ejecución en vez de caer silenciosamente.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir una función que estreche una unión string | number con typeof."
+  items={[
+    { id: "fn-decl", label: "function formatId(id: string | number): string {" },
+    { id: "if-open", label: "  if (typeof id === \"string\") {" },
+    { id: "if-body", label: "    return id.toUpperCase();", explanation: "id solo se sabe que es string dentro de esta rama, después de la comprobación typeof." },
+    { id: "if-close", label: "  }" },
+    { id: "else-body", label: "  return id.toFixed(2);" },
+    { id: "fn-close", label: "}" },
+  ]}
+  correctOrder={["fn-decl", "if-open", "if-body", "if-close", "else-body", "fn-close"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir una función area de unión discriminada usando switch."
+  items={[
+    { id: "fn-decl", label: "function area(shape: Shape): number {" },
+    { id: "switch-open", label: "  switch (shape.kind) {" },
+    { id: "case-circle", label: "    case \"circle\":" },
+    { id: "return-circle", label: "      return Math.PI * shape.radius ** 2;", explanation: "shape.radius solo existe una vez que el switch ha estrechado shape al caso circle." },
+    { id: "case-square", label: "    case \"square\":" },
+    { id: "return-square", label: "      return shape.side ** 2;" },
+    { id: "switch-close", label: "  }" },
+    { id: "fn-close", label: "}" },
+  ]}
+  correctOrder={["fn-decl", "switch-open", "case-circle", "return-circle", "case-square", "return-square", "switch-close", "fn-close"]}
+/>
+
+<PredictOutput
+  title="¿Qué dice el verificador de tipos?"
+  code={`type Shape =
+  | { kind: "circle"; radius: number }
+  | { kind: "square"; side: number };
+
+function describe(shape: Shape): string {
+  if (shape.kind === "circle") {
+    return \`circle r=\${shape.radius}\`;
+  }
+  return \`square s=\${shape.side}\`;
+}
+
+const s: Shape = { kind: "circle", radius: 2 };
+describe(s);`}
+  options={["\"circle r=2\"", "\"square s=undefined\"", "Type error: Property 'radius' does not exist on type 'Shape'", "undefined"]}
+  correctIndex={0}
+  explanation={`La comprobación if (shape.kind === "circle") estrecha shape a la rama circle de la unión, así que shape.radius es válido ahí y shape.side es válido en el else implícito. Llamar a describe con un valor con forma de circle simplemente ejecuta esa rama y produce "circle r=2".`}
+  actualOutput={`"circle r=2"`}
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Sintaxis y Tipos](/es/programming-languages/typescript/syntax-basics)
+- [Funciones](/es/programming-languages/typescript/functions)

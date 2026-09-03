@@ -1,0 +1,155 @@
+---
+title: Structures de données
+description: Les tableaux et chaînes intégrés de C, et comment ils sont combinés avec des structs et des pointeurs pour construire des structures de données plus grandes comme les listes chaînées.
+category: Programming Languages
+weight: 5
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+La bibliothèque standard de C ne fournit pratiquement aucune structure de données — pas de liste, de map, ou de tableau dynamique intégrés comme le `list` de Python ou l'`Array` de JavaScript. Ce qu'elle vous donne à la place, ce sont des tableaux de taille fixe et de la mémoire brute, et tout ce qui est plus riche (tableaux dynamiques, listes chaînées, tables de hachage) est quelque chose que vous construisez vous-même à partir de tableaux, de structs et de pointeurs, ou que vous récupérez d'une bibliothèque tierce.
+
+## Tableaux
+
+Un tableau en C est un bloc de mémoire contigu et de taille fixe contenant des éléments d'un seul type — sa taille doit être connue à la compilation (ou fournie lors d'une allocation dynamique) et ne grandit jamais :
+
+```c
+#include <stdio.h>
+
+int main(void) {
+    int scores[5] = {90, 85, 77, 92, 88};
+
+    int total = 0;
+    for (int i = 0; i < 5; i++) {
+        total += scores[i];
+    }
+
+    printf("average: %.1f\n", total / 5.0);
+
+    int grid[2][3] = {{1, 2, 3}, {4, 5, 6}}; /* a 2D array is an array of arrays */
+    printf("grid[1][2] = %d\n", grid[1][2]);
+
+    return 0;
+}
+```
+
+Fait crucial, C n'effectue **aucune vérification des limites** : `scores[10]` compile parfaitement et lit la mémoire qui se trouve juste après la fin du tableau, ce qui est un comportement indéfini — cela peut planter, lire silencieusement des données aberrantes, ou sembler fonctionner jusqu'au jour où ce n'est plus le cas.
+
+## Les chaînes ne sont que des tableaux de char
+
+C n'a pas de type de chaîne dédié. Une « chaîne » est un tableau de `char` terminé par un octet nul `'\0'`, et les fonctions de chaînes de la bibliothèque standard (dans `<string.h>`) reposent toutes sur la recherche de ce terminateur :
+
+```c
+#include <stdio.h>
+#include <string.h>
+
+int main(void) {
+    char name[20] = "Ada"; /* the compiler adds the '\0' terminator automatically */
+
+    printf("length: %zu\n", strlen(name)); /* 3, not counting the '\0' */
+
+    strcat(name, " Lovelace"); /* appends onto the existing buffer */
+    printf("name: %s\n", name);
+
+    if (strcmp(name, "Ada Lovelace") == 0) { /* strcmp, not == */
+        printf("matched\n");
+    }
+
+    return 0;
+}
+```
+
+`==` sur deux valeurs `char*` compare des *pointeurs* (des adresses mémoire), pas le contenu des chaînes — un bug classique de débutant — c'est pourquoi comparer le contenu de chaînes exige toujours `strcmp`. `strcat` et les fonctions similaires ne vérifient pas non plus que le buffer de destination est assez grand, donc écrire plus de caractères que ce qu'un buffer peut contenir corrompt silencieusement la mémoire adjacente (un **débordement de buffer**).
+
+## Construire une liste chaînée avec des structs et des pointeurs
+
+Au-delà des tableaux, les structures de données en C sont construites en combinant `struct` (regroupant des champs liés) avec des pointeurs (reliant les nœuds entre eux) :
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+struct Node {
+    int value;
+    struct Node *next; /* a struct can point to another instance of itself */
+};
+
+int main(void) {
+    struct Node *head = malloc(sizeof(struct Node));
+    head->value = 10;
+    head->next = malloc(sizeof(struct Node));
+    head->next->value = 20;
+    head->next->next = NULL; /* marks the end of the list */
+
+    for (struct Node *cur = head; cur != NULL; cur = cur->next) {
+        printf("%d -> ", cur->value);
+    }
+    printf("NULL\n");
+
+    /* every malloc needs a matching free, walked node by node */
+    struct Node *cur = head;
+    while (cur != NULL) {
+        struct Node *next = cur->next;
+        free(cur);
+        cur = next;
+    }
+
+    return 0;
+}
+```
+
+`head->value` est un raccourci pour `(*head).value` — déréférencer le pointeur, puis accéder au champ. Ce motif de liste chaînée (un struct contenant un pointeur vers le struct suivant du même type) est la base de presque toute structure de données C construite à la main : les listes chaînées, les arbres et les graphes suivent tous ce principe. La page [Structures et méthodes](/fr/programming-languages/c/oop-or-structs) couvre `struct` lui-même plus en profondeur.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez une somme de tableau"
+  prompt="Faites glisser ces lignes dans l'ordre qui déclare un tableau, somme ses éléments, et affiche le résultat."
+  items={[
+    { id: "decl", label: "int nums[4] = {2, 4, 6, 8};" },
+    { id: "total", label: "int total = 0;", explanation: "L'accumulateur doit être initialisé à 0 avant que la boucle n'y ajoute quoi que ce soit." },
+    { id: "for", label: "for (int i = 0; i < 4; i++) {" },
+    { id: "add", label: "    total += nums[i];" },
+    { id: "close", label: "}" },
+    { id: "print", label: "printf(\"%d\\n\", total);" },
+  ]}
+  correctOrder={["decl", "total", "for", "add", "close", "print"]}
+/>
+
+<OrderingExercise
+  title="Ordonnez une comparaison de chaînes correcte"
+  prompt="Faites glisser ces lignes dans l'ordre qui vérifie de manière sûre si deux chaînes contiennent le même texte."
+  items={[
+    { id: "include", label: "#include <string.h>" },
+    { id: "decl", label: "char a[] = \"cat\", b[] = \"cat\";" },
+    { id: "if", label: "if (strcmp(a, b) == 0) {", explanation: "strcmp compare les caractères, retournant 0 pour des chaînes égales — utiliser == ici comparerait plutôt les adresses des tableaux, ce qui est presque toujours faux." },
+    { id: "print", label: "    printf(\"equal\\n\");" },
+    { id: "close", label: "}" },
+  ]}
+  correctOrder={["include", "decl", "if", "print", "close"]}
+/>
+
+<PredictOutput
+  title="Qu'affiche ceci ?"
+  code={`#include <stdio.h>
+#include <string.h>
+
+int main(void) {
+    char a[] = "cat";
+    char b[] = "cat";
+    printf("%d %d\\n", a == b, strcmp(a, b) == 0);
+    return 0;
+}`}
+  options={["1 1", "0 1", "1 0", "0 0"]}
+  correctIndex={1}
+  explanation="a et b sont deux tableaux distincts vivant à des adresses mémoire différentes, donc a == b compare ces adresses et vaut faux (0) même si les caractères qu'ils contiennent sont identiques. strcmp inspecte réellement le contenu et rapporte correctement qu'ils sont égaux, retournant 0, donc strcmp(a, b) == 0 vaut vrai (1)."
+  actualOutput="0 1"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- **[Structures et méthodes](/fr/programming-languages/c/oop-or-structs)** — un regard plus approfondi sur struct lui-même, utilisé ici pour construire la liste chaînée.
+- **[Pointeurs et mémoire](/fr/programming-languages/c/advanced)** — malloc, free, et la mécanique des pointeurs sur laquelle cette page s'appuie.

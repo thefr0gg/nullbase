@@ -1,0 +1,135 @@
+---
+title: الوحدات والحزم
+description: "كيف تنظّم C الكود عبر الملفات باستخدام #include وملفات الرأس، وتربط عدة ملفات .c في برنامج واحد، وتدير التبعيات دون مدير حزم رسمي."
+category: Programming Languages
+weight: 8
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تسبق C فكرة نظام وحدات على مستوى اللغة بعقود. لا توجد عبارة `import` تفهم الحزم — بدلاً من ذلك، تلصق **المعالجة المسبقة** محتوى ملف رأس نصياً في الكود المصدري قبل الترجمة، ولا تصبح ملفات `.c` المنفصلة برنامجاً واحداً إلا في خطوة **الربط**، بعد أن تُترجَم كل واحدة منها بشكل مستقل. تُدار التبعيات بالكامل خارج اللغة، بواسطة مدير حزم نظام التشغيل، أو نظام بناء، أو أداة مثل vcpkg.
+
+## #include وملفات الرأس
+
+`#include` توجيه معالجة مسبقة ينسخ محتوى ملف في مكانه، قبل أن يعمل المترجم أصلاً. يحمل ملف رأس `.h` عادة تصريحات (نماذج أولية للدوال، وتعريفات بُنى، وماكروهات) — لا تنفيذات — بحيث يمكن لعدة ملفات `.c` مشاركة التصريحات نفسها دون تكرار الكود:
+
+```c
+/* math_utils.h */
+#ifndef MATH_UTILS_H
+#define MATH_UTILS_H
+
+int add(int a, int b);
+int multiply(int a, int b);
+
+#endif
+```
+
+```c
+/* math_utils.c */
+#include "math_utils.h"
+
+int add(int a, int b) {
+    return a + b;
+}
+
+int multiply(int a, int b) {
+    return a * b;
+}
+```
+
+```c
+/* main.c */
+#include <stdio.h>
+#include "math_utils.h"
+
+int main(void) {
+    printf("%d\n", add(2, 3));
+    printf("%d\n", multiply(2, 3));
+    return 0;
+}
+```
+
+يبحث `#include <stdio.h>` (بأقواس زاوية) في مجلدات النظام القياسية للمترجم؛ ويبحث `#include "math_utils.h"` (بعلامتَي اقتباس) نسبةً إلى الملف الحالي أولاً. نمط `#ifndef` / `#define` / `#endif` هو **حارس رأس (header guard)** — يمنع لصق الرأس نفسه مرتين إذا أدرجه ملفان مختلفان كلاهما (مباشرة أو بشكل غير مباشر)، الأمر الذي قد يسبب أخطاء "إعادة تعريف" في الترجمة.
+
+## ترجمة عدة ملفات وربطها
+
+تُترجَم كل ملف `.c` بشكل مستقل إلى **ملف كائن** (`.o`)؛ ثم يجمع **الرابط (linker)** ملفات الكائنات في ملف تنفيذي واحد، محلاً استدعاءات مثل استدعاء `main.c` لـ `add` مقابل تعريفها في `math_utils.o`:
+
+```bash
+gcc -c math_utils.c -o math_utils.o   # compile only
+gcc -c main.c -o main.o                # compile only
+gcc math_utils.o main.o -o program     # link into one executable
+./program
+```
+
+عملياً، تتجاوز معظم مشاريع C كتابة هذا يدوياً وتستخدم **Makefile** أو نظام بناء مثل CMake لوصف كيفية اعتماد الملفات على بعضها، بحيث تعيد `make` (أو `cmake --build .`) ترجمة ما تغيّر فقط وتعيد الربط تلقائياً:
+
+```makefile
+program: main.o math_utils.o
+	gcc main.o math_utils.o -o program
+
+main.o: main.c math_utils.h
+	gcc -c main.c -o main.o
+
+math_utils.o: math_utils.c math_utils.h
+	gcc -c math_utils.c -o math_utils.o
+```
+
+## إدارة الحزم: لا إجابة واحدة
+
+بخلاف Python (`pip`)، أو JavaScript (`npm`)، أو Rust (`cargo`)، لا تملك C مدير حزم رسمياً على مستوى اللغة — لا يوجد سجل مركزي يسحب منه كل مشروع C. بدلاً من ذلك، تُدار التبعيات بواسطة أياً كانت طبقة الأدوات التي اختارها المشروع:
+
+- **مدير حزم نظام التشغيل** (`apt`، `dnf`، `brew`) يثبّت مكتبات على مستوى النظام بأكمله — `sudo apt install libcurl4-openssl-dev` يضع رؤوس وملفات curl المُترجَمة حيث يمكن للمترجم والرابط إيجادها.
+- **vcpkg** (من مايكروسوفت) و**Conan** مديرا حزم مخصصان لـ C/C++ يثبّتان المكتبات لكل مشروع بدلاً من مستوى النظام، أقرب لما يبدو عليه `npm` أو `cargo`.
+- **CMake**، وهو بشكل صارم نظام بناء لا مدير حزم، يُستخدَم غالباً جنباً إلى جنب مع أحد ما سبق — تحدد `find_package()` موقع مكتبة مثبَّتة مسبقاً، ويمكن لـ `FetchContent` تنزيل كود مصدر تبعية وبناءه مباشرة كجزء من بنائك الخاص.
+
+قد يستخدم مشروع C حديث نموذجي CMake لوصف *كيفية* البناء، وvcpkg (أو مدير حزم النظام) لتوفير *ما* يجب الربط به — لا يوجد مكافئ لتشغيل أمر واحد "يُثبّت كل شيء فحسب" مما يسرده `Cargo.toml` أو `package.json`، لأنه لا يوجد تنسيق بيان واحد كهذا شائع في C.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="اجمع حارس رأس"
+  prompt="اسحب هذه الأسطر إلى الترتيب الذي يصرّح بأمان عن add() في ملف رأس، محمياً من الإدراج المزدوج."
+  items={[
+    { id: "ifndef", label: "#ifndef MATH_UTILS_H", explanation: "يجب أن يأتي #ifndef الخاص بالحارس قبل #define والتصريحات التي يحميها." },
+    { id: "define", label: "#define MATH_UTILS_H" },
+    { id: "decl", label: "int add(int a, int b);" },
+    { id: "endif", label: "#endif" },
+  ]}
+  correctOrder={["ifndef", "define", "decl", "endif"]}
+/>
+
+<OrderingExercise
+  title="رتّب خطوات الترجمة والربط"
+  prompt="اسحب هذه الأوامر إلى الترتيب الذي يبني برنامجاً من ملفَي .c منفصلَين."
+  items={[
+    { id: "compile-a", label: "gcc -c math_utils.c -o math_utils.o" },
+    { id: "compile-b", label: "gcc -c main.c -o main.o" },
+    { id: "link", label: "gcc math_utils.o main.o -o program", explanation: "يجب أن يأتي الربط بعد ترجمة كلا الملفين إلى ملفات كائنات — إنها الخطوة التي تحل الاستدعاءات بينهما في ملف تنفيذي واحد." },
+    { id: "run", label: "./program" },
+  ]}
+  correctOrder={["compile-a", "compile-b", "link", "run"]}
+/>
+
+<PredictOutput
+  title="ماذا يحدث بدون حارس رأس؟"
+  code={`/* shape.h, included by both a.c and b.c, WITHOUT a header guard */
+struct Shape {
+    int sides;
+};
+
+/* both a.c and b.c do: #include "shape.h" */
+/* both are compiled together into one program */`}
+  options={["يُترجَم البرنامج ويعمل بلا مشاكل", "خطأ ترجمة: إعادة تعريف struct Shape", "انهيار وقت التشغيل", "تُتجاهَل عملية الإدراج الثانية بصمت"]}
+  correctIndex={1}
+  explanation="بدون حارس رأس، إذا انتهى الأمر بلصق shape.h في وحدة الترجمة نفسها مرتين (مباشرة أو عبر سلسلة من عمليات الإدراج)، يرى المترجم struct Shape معرَّفة مرتين ويُبلغ عن خطأ إعادة تعريف. توجد حراس الرأس (#ifndef/#define/#endif) خصيصاً لجعل اللصقة الثانية بلا أثر بدلاً من ذلك."
+  actualOutput="error: redefinition of 'struct Shape'"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- **[البُنى والدوال](/ar/programming-languages/c/oop-or-structs)** — تعريفات البُنى هي بالضبط ما يُشارَك عادة عبر رأس مثل مثال هذه الصفحة.
+- **[معالجة الأخطاء](/ar/programming-languages/c/error-handling)** — تأتي errno وsetjmp وأمثالهما من ملفات رأس قياسية تُدرَج بالطريقة نفسها.

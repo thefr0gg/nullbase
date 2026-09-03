@@ -1,0 +1,54 @@
+---
+title: Appels système
+description: La frontière mode utilisateur/mode noyau que tout programme doit franchir pour toucher le matériel, et comment un appel système fait mécaniquement basculer le CPU à travers elle puis en revenir.
+category: Operating Systems
+weight: 5
+interactive: true
+interactiveType: ["MermaidDiagram"]
+---
+
+Un **appel système** est le seul moyen qu'un programme ordinaire ait jamais le droit de toucher le matériel, un autre processus, ou toute autre chose que le noyau considère comme privilégiée — lire un fichier, envoyer un paquet réseau, allouer de la mémoire, même demander l'heure qu'il est. Un programme en cours d'exécution ne peut pas simplement tendre la main et manipuler directement un contrôleur de disque ou la mémoire d'un autre processus ; il doit demander au noyau de le faire pour son compte, à travers une interface étroite et bien définie. Comprendre pourquoi cette frontière existe, et ce qui se passe réellement quand du code la franchit, explique beaucoup pourquoi les systèmes d'exploitation sont dignes de confiance malgré l'exécution côte à côte de programmes utilisateur arbitraires, parfois bogués ou malveillants.
+
+## Mode utilisateur et mode noyau
+
+Les CPU exécutant des systèmes d'exploitation généralistes prennent en charge au moins deux niveaux de privilège, communément appelés **mode utilisateur** et **mode noyau**. Le code s'exécutant en mode utilisateur est délibérément restreint : il ne peut pas exécuter certaines instructions (comme celles qui reconfigurent l'unité de gestion mémoire ou parlent directement à un contrôleur de disque), et il ne peut toucher que la mémoire dans laquelle son propre processus a été mappé. Le code s'exécutant en mode noyau n'a aucune restriction de ce genre — il peut exécuter n'importe quelle instruction et toucher n'importe quelle adresse mémoire physique.
+
+Presque tout ce qu'un programme normal fait s'exécute en mode utilisateur, pour une raison simple : si chaque processus s'exécutait pleinement privilégié, un seul programme bogué ou malveillant pourrait écraser la mémoire d'un autre processus, corrompre directement le disque, ou désactiver les protections pour tout le monde sur la machine. Confiner le code ordinaire au mode utilisateur est ce qui rend l'isolation des processus ([couverte sur la page Processus](/fr/operating-systems/processes)) réellement applicable plutôt qu'une simple convention de politesse.
+
+## Ce que fait mécaniquement un appel système
+
+Puisqu'un processus en mode utilisateur ne peut pas simplement sauter dans le code noyau et commencer à exécuter des instructions privilégiées — cela irait à l'encontre de tout l'intérêt d'avoir deux niveaux de privilège — un appel système fonctionne via un mécanisme contrôlé et pris en charge par le matériel : un **trap** (aussi appelé interruption logicielle). Le processus exécute une instruction spéciale que le CPU reconnaît, ce qui bascule le processeur en mode noyau et transfère le contrôle à un unique point d'entrée fixe à l'intérieur du noyau — jamais à une adresse que le processus utilisateur peut choisir. À partir de là :
+
+<MermaidDiagram title="Un appel système franchissant la frontière utilisateur/noyau" chart={`sequenceDiagram
+    participant U as User-mode process
+    participant K as Kernel
+    U->>U: calls a library wrapper (e.g. read())
+    U->>K: trap instruction — CPU switches to kernel mode
+    K->>K: kernel handler validates args, does privileged work
+    K->>U: return — CPU switches back to user mode
+    U->>U: library wrapper returns a value to the caller
+`} />
+
+1. Le processus place le numéro d'appel système et ses arguments là où la convention l'attend (des registres spécifiques, typiquement), puis exécute l'instruction de trap.
+2. Le CPU bascule en mode noyau et saute au gestionnaire de trap unique du noyau, utilisant le numéro d'appel système pour déterminer quelle routine noyau réelle exécuter.
+3. La routine noyau effectue le travail privilégié demandé — lire des blocs de disque, délivrer un signal, mettre à jour une table des pages — avec un accès complet au matériel et aux structures de données du noyau.
+4. Le noyau place une valeur de retour (ou un code d'erreur) là où la convention d'appel l'attend, puis exécute une instruction qui bascule le CPU de retour en mode utilisateur et reprend le processus original exactement là où il en était.
+
+Tout l'échange est un transfert contrôlé : le processus utilisateur n'exécute jamais lui-même d'instructions privilégiées, et le noyau n'exécute jamais que du code qu'il a écrit à un point d'entrée qu'il a choisi, quoi que le processus utilisateur ait demandé.
+
+## Quelques appels système concrets
+
+- **`open`** — demande au noyau de localiser un fichier (via les propres structures d'inodes du système de fichiers, voir [Systèmes de fichiers](/fr/operating-systems/file-systems)) et de renvoyer un descripteur de fichier le référençant.
+- **`read`** / **`write`** — demande au noyau de copier des octets entre un descripteur de fichier et un tampon dans la propre mémoire du processus.
+- **`fork`** — demande au noyau de dupliquer le processus appelant, comme couvert sur la page [Processus](/fr/operating-systems/processes).
+- **`execve`** — demande au noyau de remplacer l'image mémoire du processus appelant par un nouveau programme.
+
+## Pourquoi `printf` et `fopen` sont des enveloppes, pas des appels système eux-mêmes
+
+Presque personne n'émet réellement une instruction de trap brute à la main — la bibliothèque standard C (et ses équivalents dans le runtime de chaque autre langage) fournit des fonctions ordinaires comme `printf`, `fopen` et `malloc` qui ressemblent à des appels de fonction normaux mais sont, en dessous, de fines enveloppes qui finissent par appeler `write`, `open`, ou `brk`/`mmap`. La couche bibliothèque existe pour la commodité et la portabilité : `printf` fait la mise en tampon et l'analyse des chaînes de format entièrement en mode utilisateur, n'appelant le véritable appel système `write` qu'occasionnellement pour vider un tampon plein, et `fopen` enveloppe `open` avec une abstraction `FILE*` mise en tampon par-dessus. Le travail privilégié réel — la partie qui pourrait toucher un disque, allouer de la vraie mémoire, ou affecter un autre processus — finit toujours par un véritable trap dans le noyau ; tout ce qui se trouve au-dessus dans une bibliothèque standard n'est que de la comptabilité.
+
+## Voir aussi
+
+- **[Processus](/fr/operating-systems/processes)** — `fork`, `exec`, `wait` et `exit` sont eux-mêmes des appels système dont cette page décrit les effets côté noyau.
+- **[Mémoire virtuelle](/fr/operating-systems/virtual-memory)** — les défauts de page sont gérés par le même mécanisme de trap, même si aucun programme ne les demande explicitement.
+- **[Systèmes de fichiers](/fr/operating-systems/file-systems)** — ce que `open`, `read` et `write` manipulent réellement à l'intérieur du noyau.

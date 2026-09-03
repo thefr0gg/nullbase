@@ -1,0 +1,184 @@
+---
+title: Flux de contrôle
+description: Comment if/else, loop, while, for, et match dirigent l'exécution en Rust — et pourquoi la plupart sont des expressions, pas des instructions.
+category: Programming Languages
+weight: 3
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Les constructions de flux de contrôle de Rust paraîtront familières venant
+des langages de la famille C, mais avec une torsion récurrente : `if`,
+`loop`, et `match` sont des **expressions** — elles produisent une valeur —
+plutôt que de simples instructions. Cette valeur peut être assignée
+directement à une variable, ce qui supprime toute une catégorie de code
+répétitif « déclarer la variable, puis l'assigner conditionnellement dans
+chaque branche ».
+
+## `if`/`else` comme expression
+
+```rust
+fn main() {
+    let temperature = 15;
+
+    let description = if temperature > 25 {
+        "hot"
+    } else if temperature > 10 {
+        "mild"
+    } else {
+        "cold"
+    };
+
+    println!("It's {description} today");
+}
+```
+
+Chaque branche doit produire le même type (ici, `&str`), et il n'y a pas de
+point-virgule final sur les expressions de branche — un point-virgule
+transformerait `"mild"` en une instruction qui s'évalue en `()` (unit), ce
+qui ne correspondrait pas au type des autres branches et échouerait à la
+compilation.
+
+## Boucles : `loop`, `while`, `for`
+
+`loop` s'exécute pour toujours jusqu'à un `break` explicite, et — comme
+`if` — un `loop` peut aussi produire une valeur, en la passant à `break` :
+
+```rust
+fn main() {
+    let mut attempts = 0;
+
+    let result = loop {
+        attempts += 1;
+        if attempts == 3 {
+            break attempts * 10; // loop evaluates to this value
+        }
+    };
+
+    println!("Succeeded on attempt {attempts}, result = {result}");
+}
+```
+
+`while` est la boucle conditionnelle attendue de n'importe quel langage de
+la famille C, et `for` est la façon préférée de Rust d'itérer — presque
+toujours sur une plage ou un itérateur, plutôt que sur un index géré
+manuellement :
+
+```rust
+fn main() {
+    let numbers = [10, 20, 30, 40];
+
+    // while: keep going as long as a condition holds
+    let mut i = 0;
+    while i < numbers.len() {
+        println!("index {i}: {}", numbers[i]);
+        i += 1;
+    }
+
+    // for: iterate directly over the collection, no index bookkeeping
+    for n in numbers.iter() {
+        println!("value: {n}");
+    }
+}
+```
+
+La version `for` est du Rust idiomatique — elle ne peut pas sortir des
+limites parce qu'il n'y a pas d'index à se tromper, et elle se lit comme
+« pour chaque valeur dans cette collection » plutôt que « compter jusqu'à
+cette longueur et indexer dedans ».
+
+## `match`
+
+`match` compare une valeur à une série de motifs et exécute le code du
+premier qui correspond. Contrairement à `switch` dans les langages de la
+famille C, `match` en Rust est **exhaustif** — le compilateur rejette un
+`match` qui ne couvre pas toutes les valeurs possibles, à moins d'ajouter
+une branche fourre-tout `_`.
+
+```rust
+fn describe(n: i32) -> &'static str {
+    match n {
+        0 => "zero",
+        1 | 2 | 3 => "small",
+        4..=9 => "medium",
+        n if n < 0 => "negative",
+        _ => "large",
+    }
+}
+
+fn main() {
+    for n in [-5, 0, 2, 7, 100] {
+        println!("{n} is {}", describe(n));
+    }
+}
+```
+
+Ce seul `match` montre plusieurs formes de motif à la fois : une valeur
+exacte (`0`), des alternatives (`1 | 2 | 3`), une plage inclusive (`4..=9`),
+une condition de garde (`n if n < 0`), et le fourre-tout `_`. Comme `match`
+est exhaustif, supprimer la branche `_` ici serait une erreur de
+compilation — le compilateur peut prouver qu'il existe des valeurs `i32`
+qu'aucune des autres branches ne couvre.
+
+## Voir aussi
+
+- **[Fonctions](/fr/programming-languages/rust/functions)** — utiliser ces constructions à l'intérieur de corps de fonction et comme expressions de retour.
+- **[Gestion des erreurs](/fr/programming-languages/rust/error-handling)** — `match` est la façon principale dont le code Rust gère `Result` et `Option`.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire une fonction qui classifie la température en utilisant if/else comme expression."
+  items={[
+    { id: "let-temp", label: "    let temperature = 15;" },
+    { id: "let-desc-open", label: "    let description = if temperature > 25 {" },
+    { id: "hot", label: "        \"hot\"" },
+    { id: "elif", label: "    } else if temperature > 10 {" },
+    { id: "mild", label: "        \"mild\"" },
+    { id: "else", label: "    } else {" },
+    { id: "cold", label: "        \"cold\"" },
+    { id: "close", label: "    };" },
+    { id: "print", label: "    println!(\"It's {description} today\");" },
+  ]}
+  correctOrder={["let-temp", "let-desc-open", "hot", "elif", "mild", "else", "cold", "close", "print"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire une boucle qui break avec une valeur calculée à la troisième tentative."
+  items={[
+    { id: "let-attempts", label: "    let mut attempts = 0;" },
+    { id: "let-result-open", label: "    let result = loop {" },
+    { id: "increment", label: "        attempts += 1;" },
+    { id: "if-open", label: "        if attempts == 3 {" },
+    { id: "break", label: "            break attempts * 10;", explanation: "break doit venir après la vérification qui décide quand arrêter, et à l'intérieur du corps de la boucle." },
+    { id: "if-close", label: "        }" },
+    { id: "loop-close", label: "    };" },
+  ]}
+  correctOrder={["let-attempts", "let-result-open", "increment", "if-open", "break", "if-close", "loop-close"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que ceci affiche ?"
+  code={`fn describe(n: i32) -> &'static str {
+    match n {
+        0 => "zero",
+        1 | 2 | 3 => "small",
+        4..=9 => "medium",
+        n if n < 0 => "negative",
+        _ => "large",
+    }
+}
+
+fn main() {
+    println!("{}", describe(7));
+}`}
+  options={["small", "medium", "large", "Compile error"]}
+  correctIndex={1}
+  explanation={`7 tombe dans la plage inclusive 4..=9, donc la branche "medium" correspond. Il est tentant de penser que 7 tombe jusqu'à la branche fourre-tout "large", mais match vérifie les branches dans l'ordre et s'arrête à la première qui correspond — la branche de plage vient avant _.`}
+  actualOutput="medium"
+/>
+</ExerciseTabs>

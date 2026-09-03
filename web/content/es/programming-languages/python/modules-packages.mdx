@@ -1,0 +1,97 @@
+---
+title: Módulos y Paquetes
+description: Organizar y compartir código Python — import, instalar paquetes con pip, entornos virtuales, y requirements.txt frente a pyproject.toml.
+category: Programming Languages
+weight: 8
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Cualquier archivo `.py` es un **módulo**, y su código de nivel superior (funciones, clases, variables) se vuelve disponible en otros lugares mediante `import`.
+
+```python
+import math
+from datetime import date
+
+print(math.sqrt(16))   # 4.0
+print(date.today())      # 2026-09-01, for example
+```
+
+`import math` trae todo el módulo, y su contenido se accede con `math.sqrt(...)`; `from datetime import date` trae un nombre específico directamente al ámbito, así que se usa como `date` en vez de `datetime.date`. Tanto `math` como `datetime` vienen en la biblioteca estándar de Python — no se necesita instalación.
+
+Tus propios archivos funcionan de la misma manera: cualquier nombre definido en el nivel superior de `mymodule.py` se vuelve importable como `mymodule.name` (o mediante `from mymodule import name`) desde otro archivo del mismo proyecto.
+
+```python
+# mymodule.py
+def add(a, b):
+    return a + b
+```
+
+```python
+# main.py
+from mymodule import add
+print(add(2, 3))  # 5
+```
+
+Para código más allá de la biblioteca estándar, `pip` instala **paquetes** publicados en el Python Package Index (PyPI). Debido a que diferentes proyectos en la misma máquina a menudo necesitan versiones conflictivas del mismo paquete, los proyectos Python casi siempre usan un **entorno virtual** — un conjunto aislado y local al proyecto de paquetes instalados — en vez de instalar todo de forma global.
+
+```bash
+python -m venv .venv
+source .venv/bin/activate   # .venv\Scripts\activate on Windows
+pip install requests
+pip freeze > requirements.txt
+```
+
+`python -m venv .venv` crea el entorno aislado en una carpeta `.venv`; `activate` hace que la shell use el Python y `pip` de ese entorno en vez de los del sistema; `pip freeze > requirements.txt` captura exactamente lo que está instalado (con versiones fijadas) para que el entorno pueda recrearse en otro lugar con `pip install -r requirements.txt`.
+
+Los proyectos más nuevos declaran cada vez más las dependencias en `pyproject.toml` en vez de un `requirements.txt` desnudo, ya que también captura el nombre, versión, y configuración de build del proyecto en un único archivo estandarizado:
+
+```toml
+[project]
+name = "my-app"
+version = "0.1.0"
+dependencies = ["requests>=2.31"]
+```
+
+## Ver también
+
+- **[Manejo de Errores](/es/programming-languages/python/error-handling)** — patrones como `with open(...)` que provienen de la biblioteca estándar importada aquí.
+- **[Funciones](/es/programming-languages/python/functions)** — las funciones que se importan y llaman a través de los límites de los módulos.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para importar math y datetime, y luego usar ambos."
+  items={[
+    { id: "importmath", label: "import math" },
+    { id: "importdate", label: "from datetime import date" },
+    { id: "sqrt", label: "print(math.sqrt(16))", explanation: "math tiene que importarse antes de que se pueda llamar a math.sqrt." },
+    { id: "today", label: "print(date.today())", explanation: "date tiene que importarse antes de poder usarse directamente (sin un prefijo datetime.)." },
+  ]}
+  correctOrder={["importmath", "importdate", "sqrt", "today"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra los comandos de shell al orden correcto para configurar un entorno virtual, instalar un paquete, y registrarlo."
+  items={[
+    { id: "venv", label: "python -m venv .venv" },
+    { id: "activate", label: "source .venv/bin/activate", explanation: "El entorno debe crearse antes de poder activarse." },
+    { id: "install", label: "pip install requests", explanation: "El entorno necesita estar activo para que este pip instale dentro de .venv, no a nivel del sistema." },
+    { id: "freeze", label: "pip freeze > requirements.txt", explanation: "Esto solo puede capturar requests una vez que realmente está instalado." },
+  ]}
+  correctOrder={["venv", "activate", "install", "freeze"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`# greet.py\nprint("greet module loaded")\n\ndef hello():\n    print("hello")\n\n# main.py\nimport greet\nimport greet\ngreet.hello()`}
+  options={['"greet module loaded" printed twice, then "hello"', '"greet module loaded" printed once, then "hello"', 'Just "hello", with no loading message', 'An error: greet cannot be imported twice']}
+  correctIndex={1}
+  explanation="Python guarda en caché cada módulo la primera vez que se importa en un proceso. El segundo import greet lo encuentra ya en esa caché y lo reutiliza en vez de volver a ejecutar el archivo, así que el print de nivel superior solo se dispara una vez sin importar cuántos lugares importen el mismo módulo."
+  actualOutput='greet module loaded\nhello'
+/>
+</ExerciseTabs>

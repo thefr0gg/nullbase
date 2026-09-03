@@ -1,0 +1,171 @@
+---
+title: الوحدات والحزم
+description: وحدات ES، وحزم npm، وملف tsconfig.json، وكيف تجلب حزم @types معلومات الأنواع إلى مكتبات JavaScript غير المُصنَّفة.
+category: Programming Languages
+weight: 8
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+نظام الوحدات في TypeScript هو نظام وحدات ES في JavaScript
+(`import`/`export`) — لا صيغة وحدات خاصة بـTypeScript منفصلة للاستخدام
+اليومي. ما تضيفه TypeScript فوق ذلك هو تحقق في وقت الترجمة مما تُصدِّره
+الوحدة فعلياً، مدفوعاً بملف إعداد على مستوى المشروع كله، هو
+`tsconfig.json`.
+
+## وحدات ES
+
+```ts
+// math.ts
+export function add(a: number, b: number): number {
+  return a + b;
+}
+
+export const PI = 3.14159;
+```
+
+```ts
+// main.ts
+import { add, PI } from "./math";
+
+console.log(add(2, 3), PI);
+import { subtract } from "./math"; // Type error: Module '"./math"' has no exported member 'subtract'
+```
+
+بما أن تصديرات `math.ts` معروفة في وقت الترجمة، يُكتشَف استيراد شيء
+غير مُصدَّر فعلياً — خطأ إملائي، أو دالة أُعيدت تسميتها — فوراً، عند
+سطر `import`، بدلاً من الظهور لاحقاً كـ`subtract is not a function`
+عندما يعمل الكود.
+
+## npm وpackage.json
+
+تستخدم مشاريع TypeScript npm (أو مديراً متوافقاً مع npm) تماماً كما
+تفعل مشاريع JavaScript — تعيش الاعتماديات في `package.json`، وتُثبَّت
+في `node_modules`:
+
+```json
+{
+  "name": "my-app",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  }
+}
+```
+
+تكون `typescript` نفسها دائماً تقريباً `devDependency` — إنها أداة بناء
+(مُصرِّف `tsc`)، وليست شيئاً يحتاجه المُخرَج المُصرَّف في وقت التشغيل.
+
+## tsconfig.json
+
+يُعِدُّ `tsconfig.json` في جذر المشروع كيفية تصريف `tsc` للمشروع — أي
+ملفات تُدرَج، وأي إصدار JavaScript يُستهدَف، وما مدى صرامة مدقّق
+الأنواع:
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "strict": true,
+    "outDir": "./dist",
+    "rootDir": "./src"
+  },
+  "include": ["src/**/*.ts"]
+}
+```
+
+`strict: true` هو الإعداد الأكثر تأثيراً بمفرده — يُفعِّل حزمة من
+الفحوصات تشمل `strictNullChecks` (لا يمكن أن تكون المتغيرات
+`null`/`undefined` إلا إذا نصَّ النوع على ذلك) و
+`useUnknownInCatchVariables` (طالع [معالجة
+الأخطاء](/ar/programming-languages/typescript/error-handling)).
+تعامل معظم أدلة أسلوب TypeScript `strict: true` كخط أساس، لا كإضافة
+اختيارية.
+
+## حزم @types: تصنيف JavaScript غير المُصنَّف
+
+كثير من حزم npm مكتوبة بـJavaScript عادية ولا تشحن أي معلومات أنواع
+إطلاقاً. استيراد إحداها دون أنواع يمنح كل شيء منها النوع `any`،
+مُعطِّلاً التحقق بصمت لتلك المكتبة كلها:
+
+```ts
+import express from "express"; // Type error (without types): Could not find a declaration file for module 'express'
+```
+
+ينشر مشروع DefinitelyTyped تصريحات أنواع يصونها المجتمع لهذه الحزم
+تحت نطاق `@types` على npm:
+
+```bash
+npm install --save-dev @types/express
+```
+
+بمجرد تثبيت `@types/express`، تلتقطه TypeScript تلقائياً (من
+`node_modules/@types`) ويصبح نفس `import express from "express"`
+مُصنَّفاً بالكامل الآن — يعمل الإكمال التلقائي وفحص الأنواع مقابل
+واجهة برمجة تطبيقات `express` الفعلية، رغم أن `express` نفسها لا تحوي
+أي TypeScript فيها. بعض الحزم (مثل `zod`، التي رأيناها أعلاه) تشحن
+أنواعها الخاصة مباشرة ولا تحتاج إلى حزمة `@types` منفصلة إطلاقاً —
+تحقق من حقل `types` في ملف `package.json` الخاص بالحزمة نفسها قبل
+اللجوء إلى DefinitelyTyped.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لتصدير دالة ذات نوع محدد من وحدة واستيرادها بشكل صحيح في وحدة أخرى."
+  items={[
+    { id: "export-fn", label: "export function add(a: number, b: number): number {" },
+    { id: "export-body", label: "  return a + b;" },
+    { id: "export-close", label: "}", explanation: "يجب كتابة التصدير كاملاً قبل أن يتمكن ملف آخر من الاستيراد منه." },
+    { id: "import-stmt", label: "import { add } from \"./math\";" },
+    { id: "use", label: "console.log(add(2, 3));" },
+  ]}
+  correctOrder={["export-fn", "export-body", "export-close", "import-stmt", "use"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء tsconfig.json بسيط بوضع صارم ودليل مُخرَجات."
+  items={[
+    { id: "open", label: "{" },
+    { id: "opts-open", label: "  \"compilerOptions\": {" },
+    { id: "strict", label: "    \"strict\": true," },
+    { id: "outdir", label: "    \"outDir\": \"./dist\"", explanation: "يقع خياراً المُصرِّف كلاهما داخل كائن compilerOptions، قبل إغلاقه." },
+    { id: "opts-close", label: "  }," },
+    { id: "include", label: "  \"include\": [\"src/**/*.ts\"]" },
+    { id: "close", label: "}" },
+  ]}
+  correctOrder={["open", "opts-open", "strict", "outdir", "opts-close", "include", "close"]}
+/>
+
+<PredictOutput
+  title="ماذا يقول مدقّق الأنواع؟"
+  code={`// math.ts
+export function add(a: number, b: number): number {
+  return a + b;
+}
+
+// main.ts
+import { subtract } from "./math";
+subtract(5, 2);`}
+  options={["3", "Type error: Module '\"./math\"' has no exported member 'subtract'", "undefined", "Type error: Cannot find module './math'"]}
+  correctIndex={1}
+  explanation="لا يُصدِّر math.ts سوى add — لم يُصرَّح عن subtract قط بـexport. تتحقق TypeScript من قائمة تصديرات الوحدة الفعلية في وقت الترجمة، لذا يفشل استيراد اسم غير موجود هناك فوراً، بدلاً من أن يصبح خطأ وقت تشغيل من نوع 'subtract is not a function' كما كان سيحدث مع require() غير مُتحقَّق منه."
+  actualOutput={`Type error: Module '"./math"' has no exported member 'subtract'`}
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [معالجة الأخطاء](/ar/programming-languages/typescript/error-handling)
+- [الأنواع العامة (Generics)](/ar/programming-languages/typescript/advanced)

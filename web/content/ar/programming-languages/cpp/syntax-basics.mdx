@@ -1,0 +1,122 @@
+---
+title: بنية اللغة والمتغيرات
+description: تصريح المتغيرات، واختيار الأنواع، والقراءة/الكتابة عبر الدفقات (streams) — البنية التي يُبنى عليها كل موضوع آخر في C++.
+category: Programming Languages
+weight: 2
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تتمتع C++ بنوعية **ثابتة**: لكل متغير نوع ثابت في وقت الترجمة، ويرفض المترجم برنامجاً لا تطابق فيه قيمة النوع المُسندة إليه. هذا يلتقط فئة كاملة من الأخطاء قبل أن يعمل البرنامج أصلاً، بثمن الاضطرار لكتابة الأنواع (أو استنتاجها) مسبقاً بدلاً من تقريرها في وقت التشغيل.
+
+```cpp
+#include <iostream>
+#include <string>
+
+int main() {
+    int age = 30;
+    double price = 19.99;
+    char grade = 'A';
+    bool isActive = true;
+    std::string name = "Ada";
+
+    std::cout << name << " is " << age << " years old.\n";
+    return 0;
+}
+```
+
+الأنواع المدمجة الأساسية هي `int` (أعداد صحيحة)، و`double`/`float` (أعداد فاصلة عائمة)، و`char` (بايت واحد، عادة حرف واحد)، و`bool` (`true`/`false`). أما `std::string`، من رأس `<string>`، فليست نوعاً مدمجاً بل جزءاً من المكتبة القياسية — تدير ذاكرتها الخاصة، لذا فهي بخلاف مصفوفة أحرف على طراز C الخام تنمو وتتقلص بأمان مع إسناد نص إليها.
+
+## `auto` و`const`
+
+```cpp
+#include <iostream>
+
+int main() {
+    auto count = 42;          // deduced as int
+    auto ratio = 3.14;        // deduced as double
+    const int maxRetries = 5; // cannot be reassigned
+
+    std::cout << "count=" << count << " ratio=" << ratio << " max=" << maxRetries << "\n";
+    return 0;
+}
+```
+
+يطلب `auto` من المترجم استنتاج نوع متغير من قيمته الابتدائية بدلاً من كتابته صراحة — يظل المتغير ثابت النوع، لكنه مُستنتَج بدلاً من مكتوب صراحة. تُميّز `const` متغيراً كغير قابل للتعديل بعد التهيئة؛ محاولة `maxRetries = 10;` لاحقاً في الدالة ستفشل في الترجمة. استخدام `const` أينما لا ينبغي لقيمة أن تتغير فعلياً يوثّق تلك النية للقارئ ويتيح للمترجم التقاط إعادة إسناد عرضية.
+
+## قراءة الإدخال
+
+```cpp
+#include <iostream>
+
+int main() {
+    std::string name;
+    int age;
+
+    std::cout << "Enter your name: ";
+    std::cin >> name;
+    std::cout << "Enter your age: ";
+    std::cin >> age;
+
+    std::cout << name << " is " << age << " years old.\n";
+    return 0;
+}
+```
+
+تقرأ `std::cin` (المُصرَّح عنها في `<iostream>`) من الإدخال القياسي بنفس الطريقة التي تكتب بها `std::cout` إلى الإخراج القياسي، باستخدام `>>` بدلاً من `<<`. بشكل افتراضي تقرأ `std::cin >> name` رمزاً واحداً مفصولاً بمسافة بيضاء، لا سطراً كاملاً — قراءة `"Ada Lovelace"` بهذه الطريقة ستلتقط فقط `"Ada"`؛ يتطلب السطر الكامل `std::getline(std::cin, name)` بدلاً من ذلك.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="اجمع الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح للتصريح عن متغيرين وطباعة جملة باستخدامهما."
+  items={[
+    { id: "include", label: "#include <iostream>" },
+    { id: "main-open", label: "int main() {" },
+    { id: "declare-name", label: "    std::string city = \"Paris\";", explanation: "يجب أن يحدث التصريح قبل استخدام المتغير في عبارة الطباعة." },
+    { id: "declare-pop", label: "    int population = 2100000;" },
+    { id: "print", label: "    std::cout << city << \" has \" << population << \" people.\\n\";" },
+    { id: "return", label: "    return 0;" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["include", "main-open", "declare-name", "declare-pop", "print", "return", "main-close"]}
+/>
+
+<OrderingExercise
+  title="اجمع الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء برنامج يقرأ عدداً صحيحاً من المستخدم ويضاعفه."
+  items={[
+    { id: "include", label: "#include <iostream>" },
+    { id: "main-open", label: "int main() {" },
+    { id: "declare", label: "    int n;", explanation: "يجب أن توجد n قبل أن تقرأ std::cin فيها." },
+    { id: "read", label: "    std::cin >> n;" },
+    { id: "print", label: "    std::cout << n * 2 << std::endl;" },
+    { id: "return", label: "    return 0;" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["include", "main-open", "declare", "read", "print", "return", "main-close"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا؟"
+  code={`#include <iostream>
+
+int main() {
+    const int limit = 10;
+    auto ratio = 5 / 2.0;
+    std::cout << limit << " " << ratio << std::endl;
+    return 0;
+}`}
+  options={["10 2", "10 2.5", "10.0 2.5", "خطأ ترجمة"]}
+  correctIndex={1}
+  explanation="تُطبع limit كعدد صحيح عادي 10. تُستنتَج ratio كـ double لأن 2.0 حرفي فاصلة عائمة، لذا تُجري 5 / 2.0 قسمة فاصلة عائمة وتُنتج 2.5 — دون اقتطاع، بخلاف قسمة الأعداد الصحيحة."
+  actualOutput="10 2.5"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [C++](/ar/programming-languages/cpp) — النظرة العامة التي تُبنى عليها بنية هذه الصفحة.
+- [التحكم بمسار التنفيذ](/ar/programming-languages/cpp/control-flow) — استخدام هذه المتغيرات في الشروط والحلقات.

@@ -1,0 +1,145 @@
+---
+title: هياكل البيانات
+description: المصفوفات، وList<T>، وDictionary<TKey, TValue> — أنواع مجموعات C# المدمجة الأساسية.
+category: Programming Languages
+weight: 5
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تشحن C# مجموعة صغيرة من أنواع المجموعات التي تغطي معظم الاحتياجات
+اليومية: المصفوفات ثابتة الحجم، و`List<T>` القابل لتغيير الحجم،
+و`Dictionary<TKey, TValue>` ذات المفتاح-القيمة. الثلاثة عامة
+(generic)، لذا فهي آمنة من ناحية الأنواع دون تحويل صريح.
+
+## المصفوفات
+
+للمصفوفات حجم ثابت بمجرد إنشائها وهي مفهرَسة من الصفر:
+
+```csharp
+int[] numbers = { 1, 2, 3, 4, 5 };
+Console.WriteLine(numbers.Length); // 5
+Console.WriteLine(numbers[0]);     // 1
+
+numbers[0] = 100;
+
+int[] empty = new int[3]; // [0, 0, 0] — value types default to their zero value
+
+int[,] grid = new int[2, 3]; // a 2D array, 2 rows by 3 columns
+grid[0, 1] = 7;
+```
+
+لأن المصفوفات لا يمكنها النمو أو التقلص، يلجأ معظم الكود الذي
+يحتاج مجموعة ديناميكية الحجم إلى `List<T>` بدلاً من ذلك.
+
+## List\<T\>
+
+`List<T>` مجموعة مرتبة قابلة لتغيير الحجم — الأداة اليومية
+لتسلسلات العناصر:
+
+```csharp
+using System.Collections.Generic;
+using System.Linq;
+
+List<string> names = new List<string> { "Ada", "Grace" };
+names.Add("Alan");
+names.Remove("Grace");
+
+Console.WriteLine(names.Count);    // 2
+Console.WriteLine(names[0]);       // Ada
+Console.WriteLine(names.Contains("Alan")); // True
+
+foreach (string name in names)
+{
+    Console.WriteLine(name);
+}
+
+// LINQ works directly on List<T> and most other collections
+List<int> evens = new List<int> { 1, 2, 3, 4, 5, 6 }
+    .Where(n => n % 2 == 0)
+    .ToList();
+```
+
+## Dictionary\<TKey, TValue\>
+
+يخزّن `Dictionary<TKey, TValue>` أزواج مفتاح-قيمة ببحث سريع
+بالمفتاح:
+
+```csharp
+using System.Collections.Generic;
+
+Dictionary<string, int> ages = new Dictionary<string, int>
+{
+    ["Ada"] = 36,
+    ["Grace"] = 85,
+};
+
+ages["Alan"] = 41; // adds a new key
+ages["Ada"] = 37;  // updates an existing key
+
+if (ages.TryGetValue("Grace", out int graceAge))
+{
+    Console.WriteLine(graceAge); // 85
+}
+
+foreach (KeyValuePair<string, int> pair in ages)
+{
+    Console.WriteLine($"{pair.Key} is {pair.Value}");
+}
+
+Console.WriteLine(ages.ContainsKey("Nobody")); // False
+```
+
+`TryGetValue` الطريقة الاصطلاحية للبحث عن مفتاح قد لا يكون
+موجوداً — الفهرسة بـ`ages["Nobody"]` على مفتاح مفقود تُطلق
+`KeyNotFoundException` بدلاً من إرجاع `null` أو قيمة افتراضية.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="اجمع الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء List<int>، وإضافة عنصر، وطباعة عدده."
+  items={[
+    { id: "l1", label: "List<int> numbers = new List<int> { 1, 2, 3 };" },
+    { id: "l2", label: "numbers.Add(4);" },
+    { id: "l3", label: "Console.WriteLine(numbers.Count);" },
+  ]}
+  correctOrder={["l1", "l2", "l3"]}
+/>
+
+<OrderingExercise
+  title="اجمع الكود"
+  prompt="ضع هذه الأسطر بالترتيب لبناء Dictionary، والبحث عن مفتاح بأمان باستخدام TryGetValue، وطباعة النتيجة."
+  items={[
+    { id: "m1", label: "Dictionary<string, int> scores = new Dictionary<string, int> { [\"Sam\"] = 10 };" },
+    { id: "m2", label: "if (scores.TryGetValue(\"Sam\", out int score))" , explanation: "تُرجع TryGetValue قيمة منطقية وتُخرج القيمة عبر معامل out، متجنبةً استثناءً على مفتاح مفقود."},
+    { id: "m3", label: "{" },
+    { id: "m4", label: "    Console.WriteLine(score);" },
+    { id: "m5", label: "}" },
+  ]}
+  correctOrder={["m1", "m2", "m3", "m4", "m5"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا؟"
+  code={`int[] fixedArr = new int[3];
+List<int> dynamicList = new List<int>();
+
+fixedArr[0] = 1;
+dynamicList.Add(1);
+dynamicList.Add(2);
+
+Console.WriteLine(fixedArr.Length + " " + dynamicList.Count);`}
+  options={["0 2", "3 2", "3 0", "خطأ ترجمة"]}
+  correctIndex={1}
+  explanation="تكون fixedArr.Length ثابتة عند الإنشاء إلى 3، بغض النظر عن عدد العناصر المُسنَدة فعلياً — لا تتتبع المصفوفات 'عدداً' منفصلاً. تعكس dynamicList.Count العنصرين اللذين أُضيفا فعلياً."
+  actualOutput="3 2"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [الدوال](/ar/programming-languages/csharp/functions)
+- [الأصناف والواجهات](/ar/programming-languages/csharp/oop-or-structs)

@@ -1,0 +1,165 @@
+---
+title: Tableaux
+description: L'unique type array de PHP faisant double emploi en tant que liste indexée et table de hachage associative, plus les fonctions de tableau courantes.
+category: Programming Languages
+weight: 5
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+PHP a exactement une structure de données composée intégrée : `array`. Là où
+de nombreux langages donnent un type liste séparé et un type map/dictionnaire
+séparé, le tableau de PHP est les deux à la fois, soutenu en interne par une
+table de hachage ordonnée. C'est l'une des choses les plus spécifiques à PHP
+avec lesquelles se familiariser, car cela signifie que « array » en PHP est
+un concept beaucoup plus large que « array » en C, Java, ou Rust.
+
+## Tableaux indexés
+
+Sans clés explicites, PHP assigne des clés entières séquentielles commençant
+à 0 — c'est le cas d'usage « liste » :
+
+```php
+<?php
+
+$colors = ["red", "green", "blue"];
+
+echo $colors[0] . "\n";   // red
+echo count($colors) . "\n"; // 3
+
+$colors[] = "yellow"; // append
+foreach ($colors as $color) {
+    echo $color . "\n";
+}
+```
+
+## Tableaux associatifs
+
+Le même type `array` accepte des clés arbitraires — des chaînes, dans ce
+cas — en faisant une table de hachage :
+
+```php
+<?php
+
+$user = [
+    "name" => "Ada",
+    "role" => "admin",
+    "age"  => 36,
+];
+
+echo $user["name"] . "\n"; // Ada
+
+foreach ($user as $key => $value) {
+    echo "$key: $value\n";
+}
+```
+
+## La particularité : c'est le même type, et vous pouvez les mélanger
+
+Comme les tableaux indexés et associatifs sont la même structure sous-jacente,
+rien n'empêche de mélanger des clés entières et des clés chaîne dans un même
+tableau — et l'ordre des clés de PHP est **l'ordre d'insertion**, pas trié,
+ce qui surprend les personnes venant de langages avec un type map de
+hachage séparé :
+
+```php
+<?php
+
+$mixed = [
+    "name" => "Grace",
+    0      => "first positional",
+    "role" => "engineer",
+    1      => "second positional",
+];
+
+foreach ($mixed as $key => $value) {
+    echo "$key => $value\n";
+}
+// Prints in insertion order: name, 0, role, 1 — not sorted by key type or value
+```
+
+Cela signifie aussi qu'une « liste » en PHP n'est en réalité qu'une
+convention (des clés entières séquentielles à partir de 0), pas une garantie
+— `array_filter()` sur un tableau indexé préserve les clés originales et peut
+laisser des trous, ce qui est une source de bugs très courante quand le code
+suppose que les indices restent contigus :
+
+```php
+<?php
+
+$numbers = [10, 20, 30, 40];
+$evens = array_filter($numbers, fn($n) => $n % 2 === 0);
+
+print_r($evens);
+// [1 => 20, 3 => 40]  — original keys kept, index 0 and 2 are gone
+echo array_values($evens)[0] . "\n"; // array_values() re-indexes from 0
+```
+
+## Fonctions de tableau courantes
+
+La bibliothèque standard de PHP a bien plus d'une centaine de fonctions
+`array_*`. Quelques-unes qui reviennent constamment :
+
+```php
+<?php
+
+$nums = [5, 3, 8, 1];
+
+sort($nums);                          // [1, 3, 5, 8], sorts in place
+echo implode(", ", $nums) . "\n";      // "1, 3, 5, 8"
+
+$doubled = array_map(fn($n) => $n * 2, $nums);
+$total = array_reduce($nums, fn($carry, $n) => $carry + $n, 0);
+
+echo implode(", ", $doubled) . "\n"; // 2, 6, 10, 16
+echo $total . "\n";                   // 17
+```
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire un tableau indexé, y ajouter un élément, et afficher son nombre d'éléments."
+  items={[
+    { id: "g1", label: "<?php" },
+    { id: "g2", label: '$tags = ["php", "web"];' },
+    { id: "g3", label: '$tags[] = "arrays";', explanation: "[] ajoute un nouvel élément avec la prochaine clé entière séquentielle." },
+    { id: "g4", label: "echo count($tags) . \"\\n\";" },
+  ]}
+  correctOrder={["g1", "g2", "g3", "g4"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Ordonnez ces lignes pour construire un tableau associatif et lire une de ses valeurs."
+  items={[
+    { id: "h1", label: "<?php" },
+    { id: "h2", label: "$config = [" },
+    { id: "h3", label: '    "debug" => false,' },
+    { id: "h4", label: '    "env"   => "production",', explanation: "Chaque paire key => value est une entrée du tableau, séparée par une virgule comme n'importe quel littéral de tableau." },
+    { id: "h5", label: "];" },
+    { id: "h6", label: 'echo $config["env"] . "\\n";' },
+  ]}
+  correctOrder={["h1", "h2", "h3", "h4", "h5", "h6"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que ceci affiche ?"
+  code={`<?php
+
+var_dump("10" == "1e1");
+var_dump(0 == "abc");
+var_dump("abc" == 0);`}
+  options={["true / true / true", "true / false / false", "false / false / false", "true / false / true"]}
+  correctIndex={1}
+  explanation="'10' == '1e1' est true : les deux sont des chaînes numériques, donc PHP les compare comme des nombres (10 == 10.0). Mais depuis PHP 8, une chaîne non numérique comme 'abc' comparée à un nombre ne convertit plus la chaîne en 0 — c'est plutôt le nombre qui est converti en chaîne, donc 0 == 'abc' compare '0' à 'abc' et vaut false. Cela a changé par rapport à PHP 7, où les deux lignes auraient été true — un piège célèbre du jonglage de types de PHP."
+  actualOutput="bool(true)\nbool(false)\nbool(false)"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Fonctions](/fr/programming-languages/php/functions)
+- [Classes et traits](/fr/programming-languages/php/oop-or-structs)

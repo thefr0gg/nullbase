@@ -1,0 +1,180 @@
+---
+title: Namespaces y Composer
+description: require/include para la inclusión de archivos, los namespaces de PHP para organizar código, y Composer/composer.json como el gestor de paquetes de facto.
+category: Programming Languages
+weight: 8
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+La historia de módulos de PHP tiene dos capas fáciles de confundir al
+principio: las instrucciones de inclusión de archivos de bajo nivel
+(`require`/`include`), que han estado en el lenguaje desde el principio, y
+los namespaces más Composer, que llegaron después y ahora forman la columna
+vertebral de cómo se organiza y comparte realmente el código PHP moderno.
+
+## require e include
+
+Estas instrucciones traen el código de otro archivo PHP al actual, más o
+menos como `#include` en C pero evaluado en tiempo de ejecución, no en
+tiempo de compilación:
+
+```php
+<?php
+// math.php
+function square(int $n): int {
+    return $n * $n;
+}
+```
+
+```php
+<?php
+require "math.php";
+
+echo square(5) . "\n"; // 25
+```
+
+`require` genera un error fatal si falta el archivo; `include` solo genera
+una advertencia y deja que el script continúe. `require_once`/
+`include_once` añaden una comprobación que evita volver a incluir un archivo
+ya cargado — importante para evitar errores de "función ya declarada" cuando
+varios archivos podrían traer la misma dependencia.
+
+```php
+<?php
+require_once "math.php";
+require_once "math.php"; // silently skipped, already loaded
+```
+
+En la práctica, los proyectos PHP modernos rara vez escriben `require` a
+mano para su propio código — el autoloader de Composer (a continuación) lo
+hace innecesario — pero sigue siendo exactamente lo que se ejecuta por
+debajo.
+
+## Namespaces
+
+Un `namespace` agrupa clases/funciones/constantes relacionadas bajo un
+prefijo común, evitando colisiones de nombres entre tu código y el de una
+biblioteca (o entre dos bibliotecas) de la misma forma en que lo hacen los
+paquetes de Java o los namespaces de C++:
+
+```php
+<?php
+// src/Billing/Invoice.php
+namespace App\Billing;
+
+class Invoice {
+    public function __construct(public float $amount) {}
+}
+```
+
+```php
+<?php
+require "src/Billing/Invoice.php";
+
+use App\Billing\Invoice;
+
+$invoice = new Invoice(150.0);
+echo $invoice->amount . "\n"; // 150
+```
+
+`use` importa un nombre con namespace para que puedas referirte a él sin
+calificar; sin ella, tendrías que escribir el nombre completamente
+calificado `App\Billing\Invoice` cada vez.
+
+## Composer y composer.json
+
+Composer es el gestor de dependencias estándar de facto de PHP — casi todo
+proyecto PHP moderno, y todo framework importante (Laravel, Symfony), lo
+asume. Un proyecto declara sus dependencias en `composer.json`:
+
+```json
+{
+    "name": "acme/billing-app",
+    "require": {
+        "php": ">=8.2",
+        "monolog/monolog": "^3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    }
+}
+```
+
+`composer require monolog/monolog` añade una dependencia y actualiza este
+archivo automáticamente; `composer install` lo lee (junto con el archivo de
+bloqueo, `composer.lock`) y descarga versiones exactas y reproducibles en
+`vendor/`.
+
+La sección `autoload` es lo que reemplaza las llamadas manuales a `require`:
+Composer genera un **autoloader PSR-4** que mapea un prefijo de namespace a
+un directorio, así que las clases se cargan bajo demanda la primera vez que
+se referencian:
+
+```php
+<?php
+require "vendor/autoload.php"; // the one require you still write by hand
+
+use App\Billing\Invoice;
+use Monolog\Logger;
+
+$invoice = new Invoice(200.0);
+$logger = new Logger("billing");
+```
+
+Con esa única línea `require "vendor/autoload.php"`, tanto tus propias
+clases con namespace bajo `src/` como cada paquete instalado por Composer
+quedan disponibles sin más includes manuales.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para declarar una clase con namespace y usarla desde otro archivo."
+  items={[
+    { id: "m1", label: "<?php" },
+    { id: "m2", label: "namespace App\\Reports;" },
+    { id: "m3", label: "class Summary {", explanation: "La declaración del namespace debe ser la primera instrucción del archivo, antes de cualquier clase." },
+    { id: "m4", label: "    public function __construct(public string $title) {}" },
+    { id: "m5", label: "}" },
+  ]}
+  correctOrder={["m1", "m2", "m3", "m4", "m5"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Ordena estas líneas para cargar el autoloader de Composer y usar la clase de un paquete instalado."
+  items={[
+    { id: "n1", label: "<?php" },
+    { id: "n2", label: 'require "vendor/autoload.php";', explanation: "El autoloader debe requerirse antes de que cualquier clase con namespace de vendor/ pueda resolverse." },
+    { id: "n3", label: "use Monolog\\Logger;" },
+    { id: "n4", label: 'use Monolog\\Handler\\StreamHandler;' },
+    { id: "n5", label: '$logger = new Logger("app");' },
+    { id: "n6", label: '$logger->pushHandler(new StreamHandler("php://stdout"));' },
+  ]}
+  correctOrder={["n1", "n2", "n3", "n4", "n5", "n6"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`<?php
+// loaded twice on purpose
+require_once "math.php";
+require_once "math.php";
+
+echo square(4);`}
+  options={["16", "Fatal error: cannot redeclare square()", "1616", "16 (printed twice)"]}
+  correctIndex={0}
+  explanation="require_once lleva registro de qué archivos ya se han incluido y omite silenciosamente una solicitud repetida para el mismo archivo, a diferencia del require normal, que volvería a ejecutar el archivo y causaría un error fatal de 'no se puede redeclarar la función' la segunda vez."
+  actualOutput="16"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Manejo de Errores](/es/programming-languages/php/error-handling)
+- [Generadores y Patrones Async](/es/programming-languages/php/advanced)

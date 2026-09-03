@@ -1,0 +1,43 @@
+---
+title: Ordonnancement
+description: Comment le noyau décide lequel, parmi de nombreux processus exécutables, obtient le CPU ensuite et pour combien de temps — FCFS, Round Robin, ordonnancement par priorité, et files multi-niveaux à rétroaction.
+category: Operating Systems
+weight: 9
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+Un **ordonnanceur** est la partie du noyau qui décide, à tout instant donné, quel processus exécutable (ou thread) obtient réellement le droit de s'exécuter sur un cœur CPU ensuite, et pour combien de temps. Cela doit exister parce qu'il y a presque toujours plus de processus exécutables qu'il n'y a de cœurs pour les exécuter — une machine typique a une poignée de cœurs et couramment des dizaines ou des centaines de processus qui veulent du temps CPU. Quelque chose doit arbitrer, et l'algorithme utilisé a des conséquences réelles et ressenties : c'est la différence entre un système qui semble réactif sous charge et un système où une seule tâche lourde bloque tout le reste.
+
+## Préemptif vs coopératif
+
+La première décision de conception est de savoir si un processus en cours peut être interrompu avant de céder volontairement le CPU. Sous l'**ordonnancement coopératif**, un processus s'exécute jusqu'à ce qu'il choisisse de céder — en se bloquant sur une E/S, ou en appelant explicitement quelque chose comme `yield()` — ce qui signifie qu'un seul processus mal élevé ou simplement long peut geler tout le système, puisque rien ne le force à rendre le CPU. Sous l'**ordonnancement préemptif**, le noyau peut interrompre de force un processus en cours — typiquement via une interruption matérielle de minuterie se déclenchant à intervalle fixe — et confier le CPU à autre chose, que le processus interrompu ait été prêt à s'arrêter ou non. Tout OS généraliste largement utilisé aujourd'hui (Linux, Windows, macOS) est préemptif ; l'ordonnancement coopératif survit surtout dans les systèmes embarqués contraints et dans des modèles de concurrence en espace utilisateur (comme une boucle d'événements monothread) qui relèvent d'un niveau différent, plus élevé, que l'ordonnancement de processus de l'OS.
+
+## Algorithmes classiques et leurs compromis
+
+- **First-Come-First-Served (FCFS)** exécute les processus dans l'ordre où ils sont devenus exécutables, sans interruption une fois qu'un processus a commencé. C'est à peu près aussi simple qu'un ordonnanceur peut l'être, mais cela a un mode d'échec bien connu appelé **l'effet convoi** : si un processus s'exécute longtemps, chaque autre processus arrivé après lui — même court et rapide — attend derrière lui pendant tout ce temps, plombant la réactivité moyenne même si la plupart du travail impliqué était rapide.
+- **Round Robin** donne à chaque processus une **tranche de temps** fixe (un quantum) et boucle à travers les processus exécutables, préemptant celui qui s'exécute quand sa tranche se termine et passant au suivant dans la file. C'est équitable en un sens direct — aucun processus n'attend indéfiniment derrière un autre — mais cette équité a un coût : chaque préemption est un **changement de contexte**, qui prend lui-même du temps réel (sauvegarder l'état CPU d'un processus, charger celui d'un autre). Fixer la tranche de temps trop courte et le CPU passe une fraction significative de son temps à changer de contexte plutôt qu'à faire un travail utile ; la fixer trop longue et Round Robin commence à se comporter comme FCFS.
+- **L'ordonnancement par priorité** exécute toujours le processus exécutable de plus haute priorité ensuite. Cela permet à un système d'exprimer directement « ceci compte plus », mais pris naïvement, cela a un mode d'échec évident : un flux constant de travail à haute priorité peut **affamer** indéfiniment un processus à basse priorité, puisqu'il ne devient jamais la chose de plus haute priorité dans la file. La solution standard est le **vieillissement** (aging) — augmenter progressivement la priorité effective d'un processus plus il attend depuis longtemps, de sorte qu'à terme même le travail de plus basse priorité soit garanti de s'exécuter.
+- Les **files multi-niveaux à rétroaction** (multilevel feedback queues) sont moins un algorithme unique qu'un cadre combinant les idées ci-dessus : plusieurs files à différents niveaux de priorité, chacune peut-être avec sa propre longueur de tranche de temps, où un processus qui utilise toute sa tranche (se comportant comme une tâche gourmande en CPU) est rétrogradé vers une file de priorité plus basse avec des tranches plus longues, tandis qu'un processus qui cède rapidement (se comportant comme une tâche interactive liée aux E/S) est maintenu dans une file de haute priorité avec des tranches courtes pour qu'il reste réactif. C'est à peu près la forme que les ordonnanceurs généralistes réels approximent — le Completely Fair Scheduler (CFS) de Linux, par exemple, n'utilise pas de files fixes littérales mais poursuit le même objectif sous-jacent : garder le travail interactif vif, faire tout de même progresser le travail lié au CPU, et éviter d'affamer quoi que ce soit indéfiniment.
+
+<ItemExplorer
+  title="Comparaison des algorithmes d'ordonnancement"
+  layout="table"
+  tableColumns={[{ key: "fairness", label: "Équité" }, { key: "overhead", label: "Surcoût" }, { key: "weakness", label: "Faiblesse principale" }]}
+  items={[
+    { id: "fcfs", label: "First-Come-First-Served", color: "red", columns: { fairness: "Faible — uniquement l'ordre d'arrivée", overhead: "Le plus bas — aucune préemption nécessaire", weakness: "Effet convoi : un long processus bloque tout ce qui est derrière lui" } },
+    { id: "round-robin", label: "Round Robin", color: "blue", columns: { fairness: "Élevée — chaque processus a des tours réguliers", overhead: "Évolue selon la brièveté de la tranche de temps", weakness: "Des tranches trop courtes gaspillent du temps en changements de contexte" } },
+    { id: "priority", label: "Ordonnancement par priorité", color: "orange", columns: { fairness: "Délibérément inégale par conception", overhead: "Faible, sauf si le vieillissement est implémenté", weakness: "Famine du travail à basse priorité sans vieillissement" } },
+    { id: "mlfq", label: "File multi-niveaux à rétroaction", color: "green", columns: { fairness: "S'adapte au comportement réel d'un processus", overhead: "Le plus élevé — suivre et ajuster le comportement au fil du temps", weakness: "Réellement complexe à régler correctement" } },
+  ]}
+/>
+
+## Pourquoi cela compte encore au quotidien
+
+La plupart du code applicatif n'appelle jamais directement l'ordonnanceur, mais son comportement explique des choses que les développeurs voient constamment : pourquoi une tâche de fond gourmande en CPU peut rendre une requête interactive poussive sur la même machine, pourquoi changer la valeur `nice` d'un processus change réellement la quantité de CPU qu'il obtient par rapport à ses voisins, et pourquoi un système sous forte charge ne tombe pas en panne franchement mais se dégrade plutôt — chaque processus obtient toujours *un peu* de temps, juste moins, ce qui est exactement ce qu'un ordonnanceur préemptif orienté équité est conçu pour garantir.
+
+## Voir aussi
+
+- **[Signaux](/fr/operating-systems/signals)** — un mécanisme du noyau connexe mais distinct : les signaux interrompent la *logique* d'un processus, tandis que l'ordonnancement décide quand la logique d'un processus s'exécute du tout.
+- **[Processes](/fr/devops/processes)** — l'unité de travail entre lesquelles l'ordonnanceur choisit réellement.
+- **[Linux](/fr/devops/linux)** — `ps` et les outils associés pour inspecter ce qui s'exécute réellement sur un système réel.

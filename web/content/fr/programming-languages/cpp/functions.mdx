@@ -1,0 +1,154 @@
+---
+title: Fonctions
+description: Déclarer des fonctions C++, choisir entre passage par valeur et passage par référence, arguments par défaut, et surcharge.
+category: Programming Languages
+weight: 4
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Une fonction C++ a un type de retour explicite, un nom, et une liste de paramètres fixe — le compilateur vérifie chaque point d'appel par rapport à cette signature, donc appeler une fonction avec le mauvais nombre ou le mauvais type d'arguments est une erreur de compilation, pas quelque chose découvert à l'exécution.
+
+```cpp
+#include <iostream>
+
+int add(int a, int b) {
+    return a + b;
+}
+
+double average(int a, int b, int c) {
+    return (a + b + c) / 3.0;
+}
+
+int main() {
+    std::cout << add(4, 5) << "\n";
+    std::cout << average(2, 4, 9) << "\n";
+    return 0;
+}
+```
+
+## Passage par valeur vs. passage par référence
+
+```cpp
+#include <iostream>
+
+void incrementByValue(int n) {
+    n = n + 1; // only modifies the local copy
+}
+
+void incrementByReference(int& n) {
+    n = n + 1; // modifies the caller's variable
+}
+
+int main() {
+    int x = 10;
+    incrementByValue(x);
+    std::cout << "After by-value: " << x << "\n"; // still 10
+
+    incrementByReference(x);
+    std::cout << "After by-reference: " << x << "\n"; // now 11
+    return 0;
+}
+```
+
+Par défaut, C++ passe les arguments **par valeur** — la fonction reçoit une copie, donc les changements effectués à l'intérieur n'affectent jamais la variable de l'appelant. Ajouter `&` au type d'un paramètre en fait un paramètre **référence** : `n` devient un autre nom pour la véritable variable de l'appelant, donc les modifications à l'intérieur de la fonction sont visibles à l'extérieur. C'est aussi comme cela que C++ évite de copier de gros objets : un paramètre `const std::string&`, par exemple, permet à une fonction de lire une chaîne sans la copier et sans permettre qu'elle soit modifiée.
+
+## Arguments par défaut et surcharge
+
+```cpp
+#include <iostream>
+#include <string>
+
+void greet(const std::string& name, const std::string& greeting = "Hello") {
+    std::cout << greeting << ", " << name << "!\n";
+}
+
+int multiply(int a, int b) {
+    return a * b;
+}
+
+double multiply(double a, double b) {
+    return a * b;
+}
+
+int main() {
+    greet("Ada");                 // uses the default greeting
+    greet("Grace", "Welcome");    // overrides it
+
+    std::cout << multiply(3, 4) << "\n";       // calls the int version
+    std::cout << multiply(2.5, 4.0) << "\n";   // calls the double version
+    return 0;
+}
+```
+
+La valeur par défaut de `greeting` signifie que les appelants peuvent l'omettre entièrement ; un argument par défaut doit venir après tous les paramètres qui n'en ont pas. La **surcharge** permet à plusieurs fonctions de partager un nom tant que leurs listes de paramètres diffèrent — le compilateur choisit la version correspondante en fonction des types d'arguments à chaque point d'appel, résolu entièrement à la compilation.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Faites glisser les lignes dans le bon ordre pour construire une fonction qui échange deux entiers par référence et un main qui l'appelle."
+  items={[
+    { id: "include", label: "#include <iostream>" },
+    { id: "swap-sig", label: "void swap(int& a, int& b) {" },
+    { id: "temp", label: "    int temp = a;", explanation: "La valeur originale de a doit être sauvegardée avant que a ne soit écrasé." },
+    { id: "assign-a", label: "    a = b;" },
+    { id: "assign-b", label: "    b = temp;" },
+    { id: "swap-close", label: "}" },
+    { id: "main-open", label: "int main() {" },
+    { id: "vars", label: "    int x = 1, y = 2;" },
+    { id: "call", label: "    swap(x, y);" },
+    { id: "return", label: "    return 0;" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["include", "swap-sig", "temp", "assign-a", "assign-b", "swap-close", "main-open", "vars", "call", "return", "main-close"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Faites glisser les lignes dans le bon ordre pour construire une fonction surchargée describe() et un main qui appelle les deux versions."
+  items={[
+    { id: "include", label: "#include <iostream>" },
+    { id: "int-version", label: "void describe(int n) { std::cout << \"int: \" << n << \"\\n\"; }" },
+    { id: "double-version", label: "void describe(double n) { std::cout << \"double: \" << n << \"\\n\"; }", explanation: "Les deux surcharges doivent être déclarées avant que main() ne les appelle." },
+    { id: "main-open", label: "int main() {" },
+    { id: "call-int", label: "    describe(5);" },
+    { id: "call-double", label: "    describe(5.5);" },
+    { id: "return", label: "    return 0;" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["include", "int-version", "double-version", "main-open", "call-int", "call-double", "return", "main-close"]}
+/>
+
+<PredictOutput
+  title="Qu'affiche ceci ?"
+  code={`#include <iostream>
+
+void addOne(int n) {
+    n += 1;
+}
+
+void addOneRef(int& n) {
+    n += 1;
+}
+
+int main() {
+    int value = 5;
+    addOne(value);
+    addOneRef(value);
+    std::cout << value << std::endl;
+    return 0;
+}`}
+  options={["5", "6", "7", "Compile error"]}
+  correctIndex={1}
+  explanation="addOne(value) passe par valeur, donc elle ne modifie qu'une copie locale et value reste 5. addOneRef(value) passe par référence, donc elle modifie value directement, le portant à 6. L'appel par valeur n'a aucun effet durable."
+  actualOutput="6"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Flux de contrôle](/fr/programming-languages/cpp/control-flow) — les boucles et conditions typiquement utilisées à l'intérieur d'un corps de fonction.
+- [Structures de données](/fr/programming-languages/cpp/data-structures) — passer des conteneurs comme std::vector dans des fonctions efficacement.

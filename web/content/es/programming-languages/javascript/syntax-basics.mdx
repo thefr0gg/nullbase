@@ -1,0 +1,145 @@
+---
+title: Sintaxis y Variables
+description: Declaraciones de variables, tipos primitivos, literales de plantilla, y "truthiness" en JavaScript.
+category: Programming Languages
+weight: 2
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+JavaScript tiene tres formas de declarar una variable — `var`, `let`, y
+`const` — y no son intercambiables. `var` tiene alcance de función y es
+anterior al alcance de bloque en el lenguaje; `let` y `const`, añadidos en
+ES6, tienen alcance de bloque y deberían ser tu opción por defecto. Usa
+`const` a menos que sepas que el enlace necesita reasignarse, entonces usa
+`let`. Las bases de código de JavaScript modernas rara vez usan `var` en
+absoluto.
+
+```js
+const name = "nullbase";
+let count = 0;
+
+count = count + 1; // bien, let permite la reasignación
+// name = "other";  // TypeError: Assignment to constant variable.
+
+{
+  let count = 100; // un nuevo enlace, con alcance limitado a este bloque
+  console.log(count); // 100
+}
+console.log(count); // 1 — el count exterior no se toca
+```
+
+Nota que `const` impide *reasignar* el enlace, no mutar el valor al que
+apunta. Un array u objeto `const` todavía puede tener su contenido
+modificado.
+
+## Tipos primitivos y tipado dinámico
+
+JavaScript tiene siete tipos primitivos — `string`, `number`, `boolean`,
+`undefined`, `null`, `bigint`, y `symbol` — más `object` para todo lo demás
+(incluyendo arrays y funciones, que `typeof` reporta como `"object"` y
+`"function"` respectivamente). A diferencia de los lenguajes de tipado
+estático, el tipo de una variable no es fijo en la declaración; lo determina
+cualquier valor que actualmente resida en ella, y puede cambiar.
+
+```js
+let value = 42;
+console.log(typeof value); // "number"
+
+value = "now a string";
+console.log(typeof value); // "string"
+
+console.log(typeof undefined); // "undefined"
+console.log(typeof null);      // "object" — un bug famoso y de larga data en la especificación
+```
+
+Solo hay un tipo numérico, `number` (un valor de punto flotante de 64 bits),
+que es por lo que `0.1 + 0.2` famosamente no es exactamente igual a `0.3` —
+el mismo problema de redondeo de punto flotante que tiene todo lenguaje con
+dobles IEEE 754. `bigint` existe por separado para enteros más allá de
+`Number.MAX_SAFE_INTEGER`.
+
+## Literales de plantilla
+
+Las cadenas delimitadas por comillas invertidas soportan interpolación con
+`${}` y pueden abarcar múltiples líneas sin secuencias de escape:
+
+```js
+const user = "ada";
+const attempts = 3;
+
+const message = `User "${user}" has ${attempts} failed login attempt${attempts === 1 ? "" : "s"}.`;
+console.log(message);
+// User "ada" has 3 failed login attempts.
+```
+
+## Truthiness e igualdad
+
+Todo valor es "truthy" o "falsy" cuando se usa donde se espera un booleano
+(una condición `if`, por ejemplo). Los valores falsy son exactamente:
+`false`, `0`, `-0`, `0n`, `""`, `null`, `undefined`, y `NaN`. Todo lo demás —
+incluyendo `"0"` y `[]`, que sorprenden a muchos recién llegados — es
+truthy.
+
+```js
+if ("0") {
+  console.log("truthy!"); // esto se ejecuta — las cadenas no vacías siempre son truthy
+}
+
+console.log(0 == "0");   // true  — == coacciona los tipos antes de comparar
+console.log(0 === "0");  // false — === compara valor Y tipo, sin coacción
+console.log(null == undefined);  // true
+console.log(null === undefined); // false
+```
+
+Prefiere `===` y `!==` sobre `==` y `!=` casi en todas partes. Las reglas de
+coacción detrás de `==` son lo bastante inconsistentes como para que
+confiar en ellas sea una fuente común de bugs en vez de una conveniencia
+útil.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para declarar una constante, construir un mensaje con un literal de plantilla, y registrarlo."
+  items={[
+    { id: "decl", label: "const item = \"widget\";" },
+    { id: "price", label: "const price = 9.99;" },
+    { id: "msg", label: "const msg = `The ${item} costs $${price}.`;", explanation: "Tanto item como price ya deben existir antes de que esta línea los referencie." },
+    { id: "log", label: "console.log(msg);" },
+  ]}
+  correctOrder={["decl", "price", "msg", "log"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Ordena estas líneas para que el let con alcance de bloque oculte correctamente al exterior, y luego se registren ambos."
+  items={[
+    { id: "outer", label: "let level = \"outer\";" },
+    { id: "blockOpen", label: "{" },
+    { id: "inner", label: "  let level = \"inner\";" },
+    { id: "innerLog", label: "  console.log(level);" },
+    { id: "blockClose", label: "}" },
+    { id: "outerLog", label: "console.log(level);" },
+  ]}
+  correctOrder={["outer", "blockOpen", "inner", "innerLog", "blockClose", "outerLog"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`console.log([] == false);
+console.log([] === false);`}
+  options={["true then true", "true then false", "false then false", "false then true"]}
+  correctIndex={1}
+  explanation={`Con ==, [] se coacciona a una cadena (""), luego a un número (0), y false también se coacciona a 0, así que son iguales — true. === nunca coacciona, y un array nunca es === a un booleano, así que la segunda línea es false. Esta brecha entre == y === es exactamente por qué === es la opción por defecto más segura.`}
+  actualOutput="true
+false"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Flujo de Control](/es/programming-languages/javascript/control-flow)
+- [Estructuras de Datos](/es/programming-languages/javascript/data-structures)

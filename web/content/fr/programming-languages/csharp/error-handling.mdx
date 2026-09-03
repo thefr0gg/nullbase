@@ -1,0 +1,186 @@
+---
+title: Gestion des erreurs
+description: try/catch/finally, filtres d'exception, et écrire des types d'exception personnalisés en C#.
+category: Programming Languages
+weight: 7
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+C# utilise des exceptions pour la gestion des erreurs plutôt que des valeurs
+de retour d'erreur. N'importe quoi, d'un index de tableau invalide à un
+appel réseau échoué, lève un objet dérivé de `System.Exception`, et du code
+plus haut dans la pile d'appels peut l'intercepter.
+
+## try / catch / finally
+
+```csharp
+try
+{
+    int[] numbers = { 1, 2, 3 };
+    Console.WriteLine(numbers[10]); // throws IndexOutOfRangeException
+}
+catch (IndexOutOfRangeException ex)
+{
+    Console.WriteLine($"Caught: {ex.Message}");
+}
+finally
+{
+    Console.WriteLine("This always runs, exception or not.");
+}
+```
+
+`finally` s'exécute qu'une exception ait été levée ou non, et même si le
+bloc `try` ou `catch` retourne prématurément — c'est l'endroit pour du
+nettoyage comme fermer un fichier ou une connexion.
+
+Plusieurs blocs `catch` vous permettent de traiter différents types
+d'exception différemment ; ils sont vérifiés de haut en bas, donc placez les
+types les plus spécifiques en premier :
+
+```csharp
+try
+{
+    string input = "not a number";
+    int value = int.Parse(input);
+}
+catch (FormatException ex)
+{
+    Console.WriteLine($"Bad format: {ex.Message}");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Something else went wrong: {ex.Message}");
+}
+```
+
+Un filtre d'exception (`when`) permet à une seule clause `catch` de se
+déclencher uniquement sous des conditions supplémentaires, sans avaler les
+exceptions qui ne correspondent pas :
+
+```csharp
+try
+{
+    throw new InvalidOperationException("disk full");
+}
+catch (InvalidOperationException ex) when (ex.Message.Contains("disk"))
+{
+    Console.WriteLine("Handling a disk-related failure specifically.");
+}
+```
+
+## Exceptions personnalisées
+
+Dériver votre propre type d'exception depuis `Exception` (ou une classe de
+base plus spécifique) permet au code appelant d'intercepter précisément
+l'échec qui l'intéresse, et vous permet d'y attacher des données spécifiques
+au domaine :
+
+```csharp
+class InsufficientFundsException : Exception
+{
+    public decimal Shortfall { get; }
+
+    public InsufficientFundsException(decimal shortfall)
+        : base($"Insufficient funds: short by {shortfall:C}")
+    {
+        Shortfall = shortfall;
+    }
+}
+
+class Account
+{
+    public decimal Balance { get; private set; } = 100m;
+
+    public void Withdraw(decimal amount)
+    {
+        if (amount > Balance)
+        {
+            throw new InsufficientFundsException(amount - Balance);
+        }
+        Balance -= amount;
+    }
+}
+
+var account = new Account();
+try
+{
+    account.Withdraw(150m);
+}
+catch (InsufficientFundsException ex)
+{
+    Console.WriteLine(ex.Message);      // Insufficient funds: short by $50.00
+    Console.WriteLine(ex.Shortfall);    // 50
+}
+```
+
+Les exceptions personnalisées devraient toujours appeler le constructeur de
+base (`: base(message)`) pour que la propriété `.Message` standard et la
+mécanique de trace de pile continuent de fonctionner comme prévu.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Faites glisser les lignes dans le bon ordre pour construire un bloc try/catch/finally qui gère une division par zéro."
+  items={[
+    { id: "l1", label: "try" },
+    { id: "l2", label: "{" },
+    { id: "l3", label: "    int result = 10 / int.Parse(\"0\");" },
+    { id: "l4", label: "}" },
+    { id: "l5", label: "catch (DivideByZeroException ex)" },
+    { id: "l6", label: "{" },
+    { id: "l7", label: "    Console.WriteLine(ex.Message);" },
+    { id: "l8", label: "}" },
+    { id: "l9", label: "finally" },
+    { id: "l10", label: "{" },
+    { id: "l11", label: "    Console.WriteLine(\"Done\");" },
+    { id: "l12", label: "}" },
+  ]}
+  correctOrder={["l1", "l2", "l3", "l4", "l5", "l6", "l7", "l8", "l9", "l10", "l11", "l12"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Mettez ces lignes dans l'ordre pour déclarer une exception personnalisée avec un appel au constructeur de base."
+  items={[
+    { id: "m1", label: "class NegativeAmountException : Exception" },
+    { id: "m2", label: "{" },
+    { id: "m3", label: "    public NegativeAmountException(decimal amount)" },
+    { id: "m4", label: "        : base($\"Amount cannot be negative: {amount}\")" , explanation: "L'appel au constructeur de base doit apparaître sur la déclaration du constructeur lui-même, avant que le corps ne s'ouvre."},
+    { id: "m5", label: "    {" },
+    { id: "m6", label: "    }" },
+    { id: "m7", label: "}" },
+  ]}
+  correctOrder={["m1", "m2", "m3", "m4", "m5", "m6", "m7"]}
+/>
+
+<PredictOutput
+  title="Qu'affiche ceci ?"
+  code={`try
+{
+    Console.WriteLine("A");
+    throw new InvalidOperationException("oops");
+}
+catch (InvalidOperationException)
+{
+    Console.WriteLine("B");
+}
+finally
+{
+    Console.WriteLine("C");
+}
+Console.WriteLine("D");`}
+  options={["A B C D", "A C D", "A B D", "A B C"]}
+  correctIndex={0}
+  explanation="Le bloc try s'exécute jusqu'au throw, affichant A. Le catch correspondant s'exécute, affichant B. finally s'exécute toujours après cela, affichant C. Comme l'exception a été interceptée (pas relevée), l'exécution continue normalement à la ligne après le try/catch/finally, affichant D."
+  actualOutput="A B C D"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Classes et interfaces](/fr/programming-languages/csharp/oop-or-structs)
+- [Espaces de noms et NuGet](/fr/programming-languages/csharp/modules-packages)

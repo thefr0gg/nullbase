@@ -1,0 +1,144 @@
+---
+title: بنية اللغة والمتغيرات
+description: تصريحات المتغيرات في Go، والأنواع الأساسية، والقيم الصفرية، واختصار :=.
+category: Programming Languages
+weight: 2
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Go لغة ثابتة الأنواع: لكل متغير نوع ثابت معروف وقت التصريف. لكن خلافاً لـC،
+عادةً ما تتيح لك Go تجاهل كتابة النوع صراحة — يستنتجه المصرّف من القيمة
+التي تسندها.
+
+## تصريح المتغيرات
+
+الصيغة المطوَّلة تستخدم `var`:
+
+```go
+var name string = "Ada"
+var age int = 36
+var isAdmin bool = false
+```
+
+يمكنك حذف النوع عندما تكون القيمة كافية لتوضيحه:
+
+```go
+var name = "Ada"
+var age = 36
+```
+
+لكن داخل جسم الدالة، الصيغة الاصطلاحية هي `:=`، تصريح المتغير المختصر.
+تُصرِّح وتُهيِّئ في خطوة واحدة، وتعمل فقط للمتغيرات الجديدة داخل دالة
+(وليس على مستوى الحزمة):
+
+```go
+func main() {
+	name := "Ada"
+	age := 36
+	isAdmin := false
+	fmt.Println(name, age, isAdmin)
+}
+```
+
+`var` و`:=` غير قابلين للتبادل في كل سياق: يمكن لـ`var` أن يظهر على نطاق
+الحزمة ويتيح لك تصريح متغير دون قيمة أولية، بينما يتطلب `:=` متغيراً جديداً
+واحداً على الأقل في الطرف الأيسر ولا يظهر إلا داخل دالة.
+
+## القيم الصفرية
+
+لا يوجد في Go مفهوم "متغير غير مُهيَّأ". لكل نوع **قيمة صفرية** يحصل عليها
+المتغير تلقائياً إذا صرّحته دون مُهيِّئ:
+
+```go
+var count int     // 0
+var price float64 // 0.0
+var label string  // "" (سلسلة نصية فارغة)
+var ready bool    // false
+var list []int    // nil (شريحة nil، آمنة للقراءة منها)
+```
+
+هذا يُلغي فئة كاملة من أخطاء "المتغير غير المُهيَّأ" الموجودة في لغات مثل C.
+
+## الأنواع الأساسية
+
+من الأنواع المدمجة في Go:
+
+| الفئة | الأنواع |
+|---|---|
+| الأعداد الصحيحة | `int`, `int8`, `int16`, `int32`, `int64`، وأنواع `uint*` غير الموقَّعة |
+| الأعداد العشرية | `float32`, `float64` |
+| النصوص | `string`, `rune` (نقطة رمز يونيكود)، `byte` (اسم بديل لـ`uint8`) |
+| أخرى | `bool`, `complex64`, `complex128` |
+
+`int` هو نوع الأعداد الصحيحة العام وهو بحجم 64 بت على كل منصة حديثة عملياً؛
+لا تلجأ إلى نوع محدد الحجم مثل `int32` إلا عندما تحتاج عرضاً محدداً (صيغ
+ثنائية، تشغيل بيني).
+
+## الثوابت
+
+يُصرِّح `const` عن ثابت وقت التصريف. لا يمكن للثوابت استخدام `:=` ويجب أن
+تكون قيمتها معروفة وقت التصريف:
+
+```go
+const MaxRetries = 3
+const Pi = 3.14159
+
+func main() {
+	fmt.Println("Retrying up to", MaxRetries, "times")
+}
+```
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لتصريح متغيرين بـ `:=` وطباعة مجموعهما."
+  items={[
+    { id: "s1", label: "func main() {" },
+    { id: "s2", label: "\ta := 4" },
+    { id: "s3", label: "\tb := 7", explanation: "يجب أن يأتي كلا التصريحين المختصرين قبل استخدامهما." },
+    { id: "s4", label: "\tfmt.Println(a + b)" },
+    { id: "s5", label: "}" },
+  ]}
+  correctOrder={["s1", "s2", "s3", "s4", "s5"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="رتّب هذه الأسطر لتصريح ثابت على مستوى الحزمة باستخدام `var`، مع إعطائه نوعاً صريحاً، ثم طباعته."
+  items={[
+    { id: "t1", label: "package main" },
+    { id: "t2", label: "import \"fmt\"" },
+    { id: "t3", label: "var Threshold int = 100", explanation: "تصريحات var على مستوى الحزمة توضع خارج أي دالة." },
+    { id: "t4", label: "func main() {" },
+    { id: "t5", label: "\tfmt.Println(Threshold)" },
+    { id: "t6", label: "}" },
+  ]}
+  correctOrder={["t1", "t2", "t3", "t4", "t5", "t6"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا الكود؟"
+  code={`package main
+
+import "fmt"
+
+func main() {
+	var count int
+	var label string
+	fmt.Println(count, label == "")
+}`}
+  options={["0 true", "nil false", "خطأ تصريف: متغير غير مُهيَّأ", "0 false"]}
+  correctIndex={0}
+  explanation={`تصريح متغير دون مُهيِّئ يمنحه القيمة الصفرية لنوعه: 0 لـint، وسلسلة نصية فارغة لـstring. مقارنة سلسلة نصية فارغة بـ "" تُعطي true، وليست خطأً أو nil.`}
+  actualOutput="0 true"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [Go](/ar/programming-languages/go)
+- [التحكم بمسار التنفيذ](/ar/programming-languages/go/control-flow)

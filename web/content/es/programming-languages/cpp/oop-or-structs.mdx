@@ -1,0 +1,155 @@
+---
+title: Clases y Objetos
+description: Construir tipos reales en C++ con constructores, modificadores de acceso, y herencia — el núcleo orientado a objetos del lenguaje.
+category: Programming Languages
+weight: 6
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Una **clase** en C++ agrupa datos (variables miembro) y comportamiento (funciones miembro) en un solo tipo. A diferencia de un `struct` simple en C, una clase en C++ controla exactamente qué partes de ese conjunto puede tocar el código externo — el mecanismo que hace posible el encapsulamiento.
+
+## Constructores y modificadores de acceso
+
+```cpp
+#include <iostream>
+#include <string>
+
+class BankAccount {
+private:
+    std::string owner;
+    double balance;
+
+public:
+    // constructor: runs automatically when a BankAccount is created
+    BankAccount(std::string ownerName, double startingBalance) {
+        owner = ownerName;
+        balance = startingBalance;
+    }
+
+    void deposit(double amount) {
+        balance += amount;
+    }
+
+    double getBalance() const {
+        return balance;
+    }
+};
+
+int main() {
+    BankAccount account("Ada", 100.0);
+    account.deposit(50.0);
+    std::cout << account.getBalance() << "\n"; // 150
+
+    // account.balance = 1000000;  // would fail to compile: balance is private
+    return 0;
+}
+```
+
+Los miembros `private` (`owner`, `balance`) solo son accesibles desde dentro de las propias funciones miembro de la clase; los miembros `public` forman la interfaz externa de la clase. Por eso `account.balance` no puede tocarse directamente desde `main` — todo acceso debe pasar por `deposit()` y `getBalance()`, lo cual permite que la clase imponga sus propias reglas (por ejemplo, rechazar un depósito negativo) en lugar de confiar en que cada llamador haga lo correcto. El **constructor** — una función con el mismo nombre que la clase y sin tipo de retorno — se ejecuta automáticamente cada vez que se crea un objeto, garantizando que todo `BankAccount` empiece en un estado válido en lugar de depender de una llamada separada a `init()` que es fácil de olvidar.
+
+## Herencia
+
+```cpp
+#include <iostream>
+#include <string>
+
+class Animal {
+protected:
+    std::string name;
+
+public:
+    Animal(std::string animalName) : name(animalName) {}
+
+    virtual std::string speak() const {
+        return name + " makes a sound.";
+    }
+};
+
+class Dog : public Animal {
+public:
+    Dog(std::string dogName) : Animal(dogName) {}
+
+    std::string speak() const override {
+        return name + " barks.";
+    }
+};
+
+int main() {
+    Animal generic("Creature");
+    Dog rex("Rex");
+
+    std::cout << generic.speak() << "\n"; // Creature makes a sound.
+    std::cout << rex.speak() << "\n";     // Rex barks.
+    return 0;
+}
+```
+
+`class Dog : public Animal` hace que `Dog` herede los miembros de `Animal` — los miembros `protected` (como `name`) son visibles para las clases derivadas pero siguen ocultos al código externo, un punto medio entre `private` y `public`. `Animal(dogName)` en la lista de inicialización del constructor de `Dog` llama explícitamente al constructor de la clase base, ya que una clase derivada no sabe automáticamente cómo inicializar la parte base de sí misma. Marcar `speak()` como `virtual` en la clase base y `override` en la derivada habilita el **polimorfismo**: llamar a `speak()` a través de una referencia o puntero de la clase base despacha a la versión del tipo derivado real en tiempo de ejecución, en lugar de llamar siempre a `Animal::speak()`.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir una clase Rectangle con un constructor y un método area()."
+  items={[
+    { id: "class-open", label: "class Rectangle {" },
+    { id: "private", label: "private:" },
+    { id: "fields", label: "    double width, height;", explanation: "Los miembros deben declararse antes de que la lista de inicialización del constructor pueda referenciarlos." },
+    { id: "public", label: "public:" },
+    { id: "ctor", label: "    Rectangle(double w, double h) : width(w), height(h) {}" },
+    { id: "area", label: "    double area() const { return width * height; }" },
+    { id: "class-close", label: "};" },
+  ]}
+  correctOrder={["class-open", "private", "fields", "public", "ctor", "area", "class-close"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir una clase base Shape y una clase derivada Circle con un método virtual describe()."
+  items={[
+    { id: "base-open", label: "class Shape {" },
+    { id: "base-public", label: "public:" },
+    { id: "virtual-fn", label: "    virtual std::string describe() const { return \"a shape\"; }", explanation: "La función virtual de la clase base debe existir antes de que una clase derivada pueda sobrescribirla." },
+    { id: "base-close", label: "};" },
+    { id: "derived-open", label: "class Circle : public Shape {" },
+    { id: "derived-public", label: "public:" },
+    { id: "override-fn", label: "    std::string describe() const override { return \"a circle\"; }" },
+    { id: "derived-close", label: "};" },
+  ]}
+  correctOrder={["base-open", "base-public", "virtual-fn", "base-close", "derived-open", "derived-public", "override-fn", "derived-close"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`#include <iostream>
+
+class Shape {
+public:
+    virtual std::string name() const { return "Shape"; }
+};
+
+class Square : public Shape {
+public:
+    std::string name() const override { return "Square"; }
+};
+
+int main() {
+    Shape* s = new Square();
+    std::cout << s->name() << std::endl;
+    delete s;
+    return 0;
+}`}
+  options={["Shape", "Square", "Compile error", "Runtime error"]}
+  correctIndex={1}
+  explanation={`Aunque s se declara como Shape*, en realidad apunta a un objeto Square, y name() es virtual. El despacho virtual resuelve la llamada según el tipo real en tiempo de ejecución del objeto, no según el tipo declarado del puntero, así que se imprime "Square".`}
+  actualOutput="Square"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Estructuras de Datos](/es/programming-languages/cpp/data-structures) — los contenedores incorporados a partir de los cuales a menudo se construyen los miembros de una clase.
+- [Manejo de Errores](/es/programming-languages/cpp/error-handling) — lanzar una excepción desde un constructor cuando falla la inicialización.

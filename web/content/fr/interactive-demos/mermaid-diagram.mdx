@@ -1,0 +1,44 @@
+---
+title: Diagramme Mermaid
+description: Un diagramme déclaratif, texte en entrée/SVG en sortie — organigrammes, diagrammes de séquence, diagrammes d'état, et plus, thémés pour correspondre automatiquement au mode clair/sombre.
+category: Interactive Demos
+weight: 10
+interactive: true
+interactiveType: ["MermaidDiagram"]
+---
+
+`MermaidDiagram` est à l'autre bout du spectre par rapport à `DiagramExplorer` : au lieu qu'un auteur décrive des nœuds et des arêtes comme des données, il écrit une petite description textuelle en syntaxe [Mermaid](https://mermaid.js.org/) et la bibliothèque la met en page et la rend en SVG côté client. Bon pour tout ce pour quoi Mermaid a déjà un type de diagramme (organigrammes, diagrammes de séquence, diagrammes d'état, diagrammes ER, diagrammes de Gantt) — tournez-vous plutôt vers `DiagramExplorer` quand vous avez besoin que chaque nœud soit cliquable avec son propre panneau d'explication, ce que la sortie SVG statique de Mermaid ne prend pas en charge.
+
+## Un organigramme
+
+<MermaidDiagram
+  title="Une décision simple"
+  chart={`flowchart TD
+    A[Request arrives] --> B{Cache hit?}
+    B -->|Yes| C[Return cached response]
+    B -->|No| D[Query the database]
+    D --> E[Store in cache]
+    E --> C`}
+/>
+
+## Un diagramme de séquence
+
+<MermaidDiagram
+  title="Deux services et un cache partagé"
+  chart={`sequenceDiagram
+    participant Client
+    participant API
+    participant Cache
+    Client->>API: GET /products/42
+    API->>Cache: get("product:42")
+    Cache-->>API: miss
+    API->>API: query database
+    API->>Cache: set("product:42", ...)
+    API-->>Client: 200 OK`}
+/>
+
+La bibliothèque elle-même (~600 Ko) n'est importée dynamiquement que sur les pages qui affichent ce composant, et les couleurs du diagramme s'adaptent automatiquement au thème clair/sombre du site.
+
+## Voir aussi
+
+- **[Anatomie et cycle de vie d'une URL](/fr/interactive-demos/url-anatomy-and-lifecycle)** — `DiagramExplorer`, l'alternative cliquable à un diagramme Mermaid statique.

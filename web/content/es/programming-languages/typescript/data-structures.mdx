@@ -1,0 +1,127 @@
+---
+title: Estructuras de Datos
+description: Arrays tipados, tuplas de longitud fija, y los tipos genéricos Record y Map para colecciones con clave.
+category: Programming Languages
+weight: 5
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Las estructuras de datos incorporadas de JavaScript — arrays, objetos planos, `Map` — no rastrean qué hay dentro de ellas. TypeScript superpone parámetros de tipo sobre cada una de ellas, así que el compilador sabe (y verifica) qué contiene un array, qué forma tienen las claves y valores de un objeto, y cuáles son las claves y valores de un `Map`, todo sin cambiar cómo se comporta ninguno de ellos en tiempo de ejecución.
+
+## Arrays tipados
+
+```ts
+const scores: number[] = [10, 20, 30];
+scores.push(40); // OK
+scores.push("fifty"); // Type error: Argument of type 'string' is not assignable to parameter of type 'number'
+
+const names: Array<string> = ["Ada", "Grace"]; // equivalent generic-syntax form
+```
+
+`number[]` y `Array<number>` son el mismo tipo escrito de dos maneras. Una vez que un array está tipado, cada operación mutadora — `push`, `unshift`, asignación directa por índice — se verifica contra el tipo del elemento, no solo contra los valores iniciales.
+
+## Tuplas
+
+Una **tupla** es un array de longitud fija donde cada posición tiene su propio tipo declarado — algo de lo que los arrays planos de JavaScript no tienen concepto:
+
+```ts
+let point: [number, number] = [3, 4];
+point = [3, 4, 5]; // Type error: Source has 3 element(s) but target allows only 2
+
+let entry: [string, number] = ["age", 36];
+const [key, value] = entry; // key: string, value: number
+```
+
+Esto es útil para datos de forma fija como pares de coordenadas o entradas clave/valor, donde un `number[]` plano te permitiría añadir accidentalmente un tercer elemento u olvidar la diferencia entre el significado de la posición 0 y la posición 1.
+
+## Record para colecciones con clave
+
+`Record<K, V>` describe un objeto plano usado como diccionario — cada clave de tipo `K` se mapea a un valor de tipo `V`:
+
+```ts
+const inventory: Record<string, number> = {
+  apples: 10,
+  bananas: 5,
+};
+
+inventory.cherries = 20; // OK — any string key, number value
+inventory.apples = "ten"; // Type error: Type 'string' is not assignable to type 'number'
+```
+
+`Record` también puede restringir el *conjunto* de claves permitidas, usando una unión de literales de cadena en vez del `string` general:
+
+```ts
+type Status = "pending" | "active" | "closed";
+
+const labels: Record<Status, string> = {
+  pending: "Pending",
+  active: "Active",
+  closed: "Closed",
+};
+```
+
+Con `Status` como el tipo de clave, cada clave de la unión debe estar presente y no se permite ninguna otra clave — omitir `closed` de `labels`, o añadir una clave `archived`, es un error en tiempo de compilación.
+
+## Map con claves y valores tipados
+
+`Map<K, V>` es genérico, así que el compilador rastrea tanto el tipo de clave como el tipo de valor a través de cada llamada `get`/`set`:
+
+```ts
+const ages = new Map<string, number>();
+ages.set("Ada", 36);
+ages.set("Grace", 85);
+
+const adaAge = ages.get("Ada"); // type: number | undefined
+ages.set(1, 40); // Type error: Argument of type 'number' is not assignable to parameter of type 'string'
+```
+
+Nota que `ages.get("Ada")` está tipado como `number | undefined`, no solo `number` — `Map.get` siempre puede devolver `undefined` para una clave faltante, y TypeScript refleja eso en el tipo en vez de dejarte asumir que la clave existe.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para declarar una tupla tipada y desestructurarla en dos variables."
+  items={[
+    { id: "decl", label: "const entry: [string, number] = [\"age\", 36];" },
+    { id: "destructure", label: "const [key, value] = entry;", explanation: "La desestructuración lee de entry, así que entry debe declararse primero." },
+    { id: "log", label: "console.log(key, value);" },
+  ]}
+  correctOrder={["decl", "destructure", "log"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir un Record de etiquetas de estado con clave en una unión de literales de cadena."
+  items={[
+    { id: "type-decl", label: "type Status = \"pending\" | \"active\" | \"closed\";" },
+    { id: "record-open", label: "const labels: Record<Status, string> = {" },
+    { id: "pending", label: "  pending: \"Pending\"," },
+    { id: "active", label: "  active: \"Active\",", explanation: "Las tres claves de Status deben aparecer dentro del literal Record para que satisfaga el tipo." },
+    { id: "closed", label: "  closed: \"Closed\"," },
+    { id: "record-close", label: "};" },
+  ]}
+  correctOrder={["type-decl", "record-open", "pending", "active", "closed", "record-close"]}
+/>
+
+<PredictOutput
+  title="¿Qué dice el verificador de tipos?"
+  code={`const ages = new Map<string, number>();
+ages.set("Ada", 36);
+
+const adaAge = ages.get("Ada");
+console.log(adaAge.toFixed(0));`}
+  options={["\"36\"", "36", "Type error: Object is possibly 'undefined'", "Type error: Property 'toFixed' does not exist on type 'Map<string, number>'"]}
+  correctIndex={2}
+  explanation={`El método get de Map<string, number> devuelve number | undefined, ya que la clave podría no existir — TypeScript no sabe que "Ada" se acaba de establecer. Llamar a .toFixed directamente sobre ese valor sin antes comprobar undefined es un error de tipo, aunque esta llamada en particular tendría éxito en tiempo de ejecución.`}
+  actualOutput="Type error: Object is possibly 'undefined'"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Funciones](/es/programming-languages/typescript/functions)
+- [Clases e Interfaces](/es/programming-languages/typescript/oop-or-structs)

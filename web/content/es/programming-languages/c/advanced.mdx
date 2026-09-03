@@ -1,0 +1,179 @@
+---
+title: Punteros y Memoria
+description: Punteros, aritmética de punteros, y gestión manual de memoria con malloc/free — más los bugs de use-after-free, fugas, y doble liberación que permiten.
+category: Programming Languages
+weight: 9
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Los punteros son la característica que más define a C. Un **puntero** es una variable que contiene una dirección de memoria en lugar de un valor directamente — y como C expone direcciones de memoria en bruto al programador, sin un recolector de basura que limpie después, C te da tanto la capacidad de construir estructuras de datos extremadamente eficientes y de bajo nivel, como todos los bugs clásicos de memoria (fugas, punteros colgantes, desbordamientos de buffer) que los lenguajes de más alto nivel dedican verdadero esfuerzo de diseño a eliminar.
+
+## Fundamentos de punteros
+
+`&` toma la dirección de una variable; `*` (en una declaración) marca una variable como puntero, y `*` (en una expresión) desreferencia un puntero para llegar al valor al que apunta:
+
+```c
+#include <stdio.h>
+
+int main(void) {
+    int value = 42;
+    int *ptr = &value; /* ptr holds the address of value */
+
+    printf("value = %d\n", value);
+    printf("address of value = %p\n", (void *)&value);
+    printf("ptr points to = %p\n", (void *)ptr);
+    printf("dereferenced ptr = %d\n", *ptr); /* follows the address back to 42 */
+
+    *ptr = 100; /* writes through the pointer, changing value itself */
+    printf("value is now = %d\n", value);
+
+    return 0;
+}
+```
+
+`ptr` y `value` son dos variables distintas, pero `*ptr` y `value` se refieren exactamente a la misma memoria — modificar una a través del puntero cambia lo que la otra lee.
+
+## Aritmética de punteros y arrays
+
+El nombre de un array decae a un puntero a su primer elemento en la mayoría de las expresiones, y sumar un entero a un puntero lo mueve hacia adelante esa cantidad de *elementos* (no bytes) — el compilador escala el desplazamiento por el `sizeof` del tipo apuntado automáticamente:
+
+```c
+#include <stdio.h>
+
+int main(void) {
+    int numbers[5] = {10, 20, 30, 40, 50};
+    int *p = numbers; /* decays to &numbers[0] */
+
+    printf("%d\n", *p);       /* 10 */
+    printf("%d\n", *(p + 2)); /* 30 -- p+2 skips two ints, not two bytes */
+    printf("%d\n", p[2]);      /* 30 -- numbers[i] is literally *(numbers + i) */
+
+    for (int *cur = numbers; cur < numbers + 5; cur++) {
+        printf("%d ", *cur);
+    }
+    printf("\n");
+
+    return 0;
+}
+```
+
+`p[2]` y `*(p + 2)` son exactamente la misma operación en C — el indexado de arrays se define en términos de aritmética de punteros, no al revés, y es por eso que C famosamente permite el (en su mayoría inútil pero válido) `2[p]` también.
+
+## malloc, free, y gestión manual de memoria
+
+La memoria asignada con `malloc` vive en el **heap** y sobrevive hasta que se libera explícitamente con `free` — a diferencia de una variable local, no se limpia automáticamente cuando una función retorna, que es precisamente lo que la hace útil para datos que necesitan sobrevivir a la función que los creó:
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+int *makeArray(int size, int fillValue) {
+    int *arr = malloc(size * sizeof(int)); /* size ints worth of raw memory */
+    if (arr == NULL) {
+        return NULL; /* malloc failed, e.g. out of memory */
+    }
+    for (int i = 0; i < size; i++) {
+        arr[i] = fillValue;
+    }
+    return arr; /* safe: this memory lives on the heap, not the function's stack */
+}
+
+int main(void) {
+    int *nums = makeArray(5, 7);
+    if (nums == NULL) {
+        return 1;
+    }
+
+    for (int i = 0; i < 5; i++) {
+        printf("%d ", nums[i]);
+    }
+    printf("\n");
+
+    free(nums); /* release the memory back to the system */
+    nums = NULL; /* avoid leaving a dangling pointer around */
+
+    return 0;
+}
+```
+
+Todo `malloc` exitoso necesita exactamente un `free` correspondiente — llamarlo cero veces y la memoria tiene una fuga (nunca se recupera hasta que el proceso termina); llamarlo dos veces sobre el mismo puntero (una **doble liberación**) y el comportamiento es indefinido, a menudo corrompiendo la contabilidad interna del heap.
+
+## Errores comunes
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+int *danglingExample(void) {
+    int local = 5;
+    return &local; /* BUG: local's stack memory is gone once this function returns */
+}
+
+void useAfterFreeExample(void) {
+    int *p = malloc(sizeof(int));
+    *p = 1;
+    free(p);
+    printf("%d\n", *p); /* BUG: use-after-free -- p's memory may already be reused */
+}
+
+void leakExample(void) {
+    int *p = malloc(100 * sizeof(int));
+    /* BUG: no free(p) before p goes out of scope -- that memory is now unreachable */
+}
+```
+
+Ninguna de estas tres funciones fallará de forma confiable — eso es precisamente lo que las hace peligrosas. El puntero devuelto por `danglingExample` puede que aún "funcione" durante un tiempo porque nada más ha sobrescrito todavía esa memoria de pila; `useAfterFreeExample` puede imprimir `1` normalmente la mayoría de las veces. Herramientas como **Valgrind** y **AddressSanitizer** (`-fsanitize=address` con gcc/clang) existen precisamente porque estos bugs son silenciosos en tiempo de compilación e inconsistentes en tiempo de ejecución — instrumentan el acceso a memoria para detectar use-after-free, fugas, y escrituras fuera de límites que de otro modo pasarían desapercibidas hasta causar un crash en algún lugar sin relación.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla un intercambio de puntero a través de direcciones"
+  prompt="Arrastra estas líneas al orden que lee un valor a través de un puntero y luego lo modifica a través del mismo puntero."
+  items={[
+    { id: "decl", label: "int value = 10;" },
+    { id: "ptr", label: "int *ptr = &value;", explanation: "ptr debe apuntar a la dirección de value antes de poder desreferenciarse para leerlo o escribirlo." },
+    { id: "read", label: "printf(\"%d\\n\", *ptr);" },
+    { id: "write", label: "*ptr = 20;" },
+    { id: "readagain", label: "printf(\"%d\\n\", value);" },
+  ]}
+  correctOrder={["decl", "ptr", "read", "write", "readagain"]}
+/>
+
+<OrderingExercise
+  title="Ordena un ciclo de vida correcto de malloc/free"
+  prompt="Arrastra estas líneas al orden que asigna memoria, la usa, y la libera de forma segura."
+  items={[
+    { id: "malloc", label: "int *arr = malloc(3 * sizeof(int));" },
+    { id: "check", label: "if (arr == NULL) return 1;", explanation: "El resultado de malloc debe verificarse antes de desreferenciarlo -- escribir a través de un puntero NULL provoca un crash." },
+    { id: "fill", label: "arr[0] = 1; arr[1] = 2; arr[2] = 3;" },
+    { id: "print", label: "printf(\"%d %d %d\\n\", arr[0], arr[1], arr[2]);" },
+    { id: "free", label: "free(arr);" },
+  ]}
+  correctOrder={["malloc", "check", "fill", "print", "free"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime aquí la aritmética de punteros?"
+  code={`#include <stdio.h>
+
+int main(void) {
+    int nums[4] = {5, 10, 15, 20};
+    int *p = nums;
+    p = p + 2;
+    printf("%d\\n", *p);
+    return 0;
+}`}
+  options={["7 (5 plus 2)", "15", "The address of nums[2]", "Compile error"]}
+  correctIndex={1}
+  explanation="p + 2 avanza el puntero dos pasos del tamaño de un int, no dos bytes y no 2 sumado al valor apuntado -- ahora apunta a nums[2], que contiene 15. El compilador escala automáticamente la aritmética de punteros por sizeof(int), que es exactamente lo que hace que p[i] y *(p + i) sean equivalentes."
+  actualOutput="15"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- **[Estructuras de Datos](/es/programming-languages/c/data-structures)** — los arrays y la lista enlazada construidos con esta misma mecánica de punteros.
+- **[Funciones](/es/programming-languages/c/functions)** — cómo se usan los punteros para evadir el paso por valor en parámetros de salida.

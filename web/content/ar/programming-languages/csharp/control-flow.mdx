@@ -1,0 +1,184 @@
+---
+title: التحكم بمسار التنفيذ
+description: if/else، والحلقات، وتعبيرات switch مطابقة الأنماط في C# للتفرّع على الشكل والقيمة.
+category: Programming Languages
+weight: 3
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+يبدأ التحكم بمسار التنفيذ في C# مألوفاً — `if`/`else`، و`for`،
+و`while` — ثم يذهب أبعد من معظم لغات عائلة C بتعبيرات
+`switch` التي تطابق على النوع والبنية، لا المساواة فحسب.
+
+## if / else والحلقات
+
+```csharp
+int score = 82;
+
+if (score >= 90)
+{
+    Console.WriteLine("A");
+}
+else if (score >= 80)
+{
+    Console.WriteLine("B");
+}
+else
+{
+    Console.WriteLine("C or below");
+}
+
+for (int i = 0; i < 3; i++)
+{
+    Console.WriteLine($"Iteration {i}");
+}
+
+int n = 5;
+while (n > 0)
+{
+    Console.WriteLine(n);
+    n--;
+}
+```
+
+تُكرر `foreach` على أي `IEnumerable<T>` — المصفوفات، والقوائم،
+والقواميس — دون إدارة فهرس:
+
+```csharp
+string[] fruits = { "apple", "banana", "cherry" };
+foreach (string fruit in fruits)
+{
+    Console.WriteLine(fruit);
+}
+```
+
+## switch الكلاسيكية
+
+تطابق عبارة `switch` التقليدية قيمة مقابل مجموعة من الحالات
+الثابتة وتتطلب `break` صريحة (أو عبارة قفز أخرى) لكل حالة — الانزلاق
+إلى الحالة التالية خطأ ترجمة ما لم يكن جسم الحالة فارغاً:
+
+```csharp
+int day = 3;
+switch (day)
+{
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+        Console.WriteLine("Weekday");
+        break;
+    case 6:
+    case 7:
+        Console.WriteLine("Weekend");
+        break;
+    default:
+        Console.WriteLine("Invalid day");
+        break;
+}
+```
+
+## مطابقة الأنماط بتعبيرات switch
+
+منذ C# 8، يمكن استخدام `switch` كـ*تعبير* يُرجع قيمة، وتذهب
+أنماطها إلى أبعد من المساواة بكثير: أنماط النوع، والأنماط
+العلائقية، وأنماط الخصائص تتيح لك التفرّع على شكل كائن في مكان
+واحد.
+
+```csharp
+object shape = new { Kind = "circle", Radius = 3.0 };
+
+string Describe(object value) => value switch
+{
+    int n when n < 0 => "negative integer",
+    int n => $"non-negative integer: {n}",
+    string s when s.Length == 0 => "empty string",
+    string s => $"string of length {s.Length}",
+    null => "nothing at all",
+    _ => "something else",
+};
+
+Console.WriteLine(Describe(-5));   // negative integer
+Console.WriteLine(Describe("hi")); // string of length 2
+Console.WriteLine(Describe(null)); // nothing at all
+```
+
+يمكن لأنماط الخصائص تفكيك أعضاء كائن ومطابقتها مباشرة، وهذا شائع
+عند التعامل مع أنواع السجلات (records):
+
+```csharp
+record Point(int X, int Y);
+
+string Classify(Point p) => p switch
+{
+    { X: 0, Y: 0 } => "origin",
+    { X: 0 } => "on the Y axis",
+    { Y: 0 } => "on the X axis",
+    { X: > 0, Y: > 0 } => "first quadrant",
+    _ => "elsewhere",
+};
+
+Console.WriteLine(Classify(new Point(0, 0))); // origin
+Console.WriteLine(Classify(new Point(3, 5))); // first quadrant
+```
+
+يجب أن تكون تعبيرات `switch` مطابقة الأنماط شاملة من وجهة نظر
+المترجم — ذراع تجاهل `_` هي الطريقة المعتادة لضمان ذلك، مشابهة
+لـ`default` في عبارة `switch` الكلاسيكية.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="اجمع الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء حلقة for تطبع الأرقام من 0 إلى 2."
+  items={[
+    { id: "l1", label: "for (int i = 0; i < 3; i++)" },
+    { id: "l2", label: "{" },
+    { id: "l3", label: "    Console.WriteLine(i);" },
+    { id: "l4", label: "}" },
+  ]}
+  correctOrder={["l1", "l2", "l3", "l4"]}
+/>
+
+<OrderingExercise
+  title="اجمع الكود"
+  prompt="ضع هذه الأسطر بالترتيب لبناء تعبير switch يصنّف عدداً صحيحاً كسالب أو صفر أو موجب."
+  items={[
+    { id: "m1", label: "string Classify(int n) => n switch" },
+    { id: "m2", label: "{" },
+    { id: "m3", label: "    < 0 => \"negative\"," },
+    { id: "m4", label: "    0 => \"zero\"," , explanation: "تُفحَص الأنماط العلائقية مثل < 0 بالترتيب، من الأعلى إلى الأسفل، تماماً مثل حالات switch."},
+    { id: "m5", label: "    > 0 => \"positive\"," },
+    { id: "m6", label: "};" },
+  ]}
+  correctOrder={["m1", "m2", "m3", "m4", "m5", "m6"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا؟"
+  code={`object value = 42;
+
+string Describe(object v) => v switch
+{
+    string => "a string",
+    int n when n > 100 => "a big int",
+    int n => $"an int: {n}",
+    _ => "unknown",
+};
+
+Console.WriteLine(Describe(value));`}
+  options={["a string", "a big int", "an int: 42", "unknown"]}
+  correctIndex={2}
+  explanation="تُصنَدَق value كـint (42). تفشل في نمط السلسلة النصية، وتفشل في الحارس 'when n > 100' لأن 42 ليست أكبر من 100، وتطابق النمط البسيط 'int n'، فتطبع قيمتها."
+  actualOutput="an int: 42"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [بنية اللغة والمتغيرات](/ar/programming-languages/csharp/syntax-basics)
+- [الدوال](/ar/programming-languages/csharp/functions)

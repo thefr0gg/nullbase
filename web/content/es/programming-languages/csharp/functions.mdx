@@ -1,0 +1,135 @@
+---
+title: Métodos
+description: Declarar métodos en C#, tipos de retorno, parámetros opcionales y con nombre, y miembros con cuerpo de expresión.
+category: Programming Languages
+weight: 4
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+En C#, las funciones casi siempre se declaran como **métodos** — miembros de una clase o struct — en lugar de funciones libres independientes (las funciones locales son la excepción, cubiertas más abajo). Un método declara un tipo de retorno, un nombre, y una lista de parámetros.
+
+## Métodos básicos
+
+```csharp
+class Calculator
+{
+    public int Add(int a, int b)
+    {
+        return a + b;
+    }
+
+    // Expression-bodied method: shorthand for a single-expression body
+    public int Square(int x) => x * x;
+}
+
+var calc = new Calculator();
+Console.WriteLine(calc.Add(2, 3));    // 5
+Console.WriteLine(calc.Square(4));    // 16
+```
+
+Un método que no devuelve nada usa `void`. Los métodos `static` pertenecen al propio tipo en lugar de a una instancia, por lo cual `Main` siempre es `static`.
+
+## Parámetros opcionales y valores por defecto
+
+Los parámetros pueden declarar un valor por defecto, haciéndolos opcionales en el punto de llamada — todo parámetro después de uno con un valor por defecto también debe tener uno:
+
+```csharp
+string Greet(string name, string greeting = "Hello", bool shout = false)
+{
+    string message = $"{greeting}, {name}!";
+    return shout ? message.ToUpper() : message;
+}
+
+Console.WriteLine(Greet("Ada"));                        // Hello, Ada!
+Console.WriteLine(Greet("Ada", "Hey"));                  // Hey, Ada!
+Console.WriteLine(Greet("Ada", shout: true));            // HELLO, ADA!
+```
+
+## Argumentos con nombre
+
+Cualquier llamada puede pasar argumentos por nombre en lugar de por posición, en cualquier orden — esto es especialmente útil al saltarse parámetros opcionales anteriores, como hizo `shout: true` arriba. Los argumentos con nombre hacen que los puntos de llamada se autodocumenten cuando un método recibe varios parámetros del mismo tipo:
+
+```csharp
+void CreateUser(string name, int age, bool isAdmin = false)
+{
+    Console.WriteLine($"{name}, {age}, admin={isAdmin}");
+}
+
+CreateUser(name: "Grace", age: 40, isAdmin: true);
+CreateUser(age: 25, name: "Alan"); // order doesn't matter with names
+```
+
+## params y funciones locales
+
+`params` le permite a un método aceptar un número variable de argumentos finales como un array, y las funciones locales te permiten anidar un método auxiliar dentro de otro:
+
+```csharp
+int Sum(params int[] numbers)
+{
+    int total = 0;
+    foreach (int n in numbers)
+    {
+        total += n;
+    }
+    return total;
+}
+
+Console.WriteLine(Sum(1, 2, 3, 4)); // 10
+
+int Outer(int x)
+{
+    int Double(int n) => n * 2; // local function, only visible inside Outer
+    return Double(x) + 1;
+}
+
+Console.WriteLine(Outer(5)); // 11
+```
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir un método que suma dos números y llamarlo."
+  items={[
+    { id: "l1", label: "int Add(int a, int b)" },
+    { id: "l2", label: "{" },
+    { id: "l3", label: "    return a + b;" },
+    { id: "l4", label: "}" },
+    { id: "l5", label: "Console.WriteLine(Add(3, 4));" },
+  ]}
+  correctOrder={["l1", "l2", "l3", "l4", "l5"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Coloca estas líneas en orden para declarar un método con un parámetro opcional y llamarlo de dos formas."
+  items={[
+    { id: "m1", label: "string Greet(string name, string greeting = \"Hi\") => $\"{greeting}, {name}!\";" },
+    { id: "m2", label: "Console.WriteLine(Greet(\"Sam\"));" , explanation: "El valor por defecto se usa porque greeting se omite aquí."},
+    { id: "m3", label: "Console.WriteLine(Greet(\"Sam\", \"Yo\"));" },
+  ]}
+  correctOrder={["m1", "m2", "m3"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`void Describe(string name, int age = 30, bool vip = false)
+{
+    Console.WriteLine($"{name}, {age}, vip={vip}");
+}
+
+Describe(age: 25, name: "Rae");`}
+  options={["Rae, 25, vip=False", "25, Rae, vip=False", "Compile error", "Rae, 30, vip=False"]}
+  correctIndex={0}
+  explanation="Los argumentos con nombre pueden aparecer en cualquier orden en el punto de llamada; C# los empareja por nombre, no por posición. age y name están intercambiados en la llamada pero aun así se vinculan correctamente, y vip recae en su valor por defecto, false."
+  actualOutput="Rae, 25, vip=False"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Flujo de Control](/es/programming-languages/csharp/control-flow)
+- [Estructuras de Datos](/es/programming-languages/csharp/data-structures)

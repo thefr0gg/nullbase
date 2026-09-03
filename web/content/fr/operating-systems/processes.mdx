@@ -1,0 +1,66 @@
+---
+title: Processus
+description: Les états que traverse un processus de sa création à sa terminaison, ce que l'OS suit réellement à son sujet dans le bloc de contrôle de processus, et ce que fork/exec/wait/exit font à la table des processus en dessous.
+category: Operating Systems
+weight: 1
+interactive: true
+interactiveType: ["MermaidDiagram"]
+---
+
+Un **processus** n'existe pas simplement ou n'existe pas — entre le moment de sa création et le moment de sa sortie, le système d'exploitation le suit comme étant dans l'un d'un petit nombre d'états bien définis, et le fait passer constamment de l'un à l'autre à mesure qu'il rivalise avec chaque autre processus pour le CPU. Cette page couvre cette théorie : la machine à états dans laquelle vit chaque processus, la structure de comptabilité que le noyau conserve pour chacun, et ce que la poignée d'appels système qui créent et détruisent des processus font réellement à cette comptabilité. Pour le côté pratique, orienté administration système, des processus — PID, signaux, descripteurs de fichiers, arbres parent/enfant — voir plutôt [Processes](/fr/devops/processes) ; cette page suppose ce terrain acquis et va en dessous.
+
+## Les états du processus
+
+À tout instant, un processus est dans exactement l'un de cinq états, et l'**ordonnanceur** du noyau est ce qui décide quand il passe de l'un à l'autre :
+
+<MermaidDiagram title="Transitions d'état d'un processus" chart={`stateDiagram-v2
+    [*] --> New
+    New --> Ready: admitted
+    Ready --> Running: scheduler dispatch
+    Running --> Ready: time slice expires / preempted
+    Running --> Waiting: blocks on I/O or event
+    Waiting --> Ready: I/O or event completes
+    Running --> Terminated: exit
+    Terminated --> [*]
+`} />
+
+- **New (nouveau)** — le processus a été créé (son PCB existe) mais n'a pas encore été admis dans le pool en compétition pour le CPU.
+- **Ready (prêt)** — chargé et capable de s'exécuter, mais le CPU est actuellement occupé par autre chose ; il attend simplement son tour.
+- **Running (en cours)** — en train de s'exécuter réellement sur un cœur CPU en ce moment. Sur un seul cœur, exactement un processus est dans cet état à tout instant ; sur un système multicœur, un par cœur.
+- **Waiting (en attente, aussi dit bloqué)** — le processus a demandé quelque chose qu'il n'a pas encore — le résultat d'une opération d'E/S, ou un événement de synchronisation — et ne peut pas progresser tant que ça n'arrive pas. Un processus en attente est délibérément exclu de l'ordonnancement, puisque l'exécuter n'accomplirait rien.
+- **Terminated (terminé)** — fini (ou tué), et en attente que son parent récupère son statut de sortie.
+
+La transition Running → Ready est ce qui rend le **multitâche préemptif** possible du tout : l'ordonnanceur peut interrompre un processus qui n'a pas fini et n'est pas bloqué, simplement parce que sa tranche de temps est écoulée, et confier le CPU à quelqu'un d'autre. Sans cette transition, un processus gourmand en CPU pourrait monopoliser le processeur indéfiniment.
+
+## Le bloc de contrôle de processus
+
+Chaque processus que le noyau connaît a un **bloc de contrôle de processus (PCB)** correspondant — toute l'identité du processus du point de vue de l'OS. Quand l'ordonnanceur bascule loin d'un processus, tout ce qui est nécessaire pour le reprendre plus tard doit vivre quelque part, et le PCB est cet endroit. Il contient typiquement :
+
+- **L'état du processus** — lequel des cinq états ci-dessus le processus occupe actuellement.
+- **Le compteur de programme** — l'adresse de la prochaine instruction à exécuter quand ce processus reprendra.
+- **Les registres CPU** — le fichier de registres complet (registres généraux, pointeur de pile, codes de condition) tels qu'ils étaient à l'instant où le processus a cessé de s'exécuter.
+- **Les informations de gestion mémoire** — les pointeurs de table des pages ou limites de segments du processus, définissant exactement quelles régions de mémoire physique ce processus a le droit de toucher. Voir [Mémoire virtuelle](/fr/operating-systems/virtual-memory) pour ce que ce mappage fait réellement.
+- **La liste des fichiers ouverts** — la table des descripteurs de fichiers que ce processus a actuellement ouverts, et vers quoi ils pointent.
+- **Les informations d'ordonnancement** — la priorité, la quantité de temps CPU déjà utilisée, et tout ce dont l'algorithme de l'ordonnanceur a besoin pour décider qui s'exécute ensuite.
+- **Comptabilité et identité** — PID, PID parent, propriétaire, et totaux d'utilisation des ressources.
+
+La table des processus est, à sa base, simplement la collection de chaque PCB actuellement connu du noyau — une entrée par processus, de New à Terminated.
+
+## fork, exec, wait, exit
+
+Quatre appels système (sur les systèmes de type Unix) sont responsables de l'essentiel du cycle de vie :
+
+- **`fork()`** duplique le processus appelant : le noyau alloue un nouveau PCB, copie l'image mémoire du parent (en utilisant la copie sur écriture, donc les pages ne sont réellement dupliquées qu'une fois qu'un côté écrit dessus) et sa table de descripteurs de fichiers, puis insère le nouveau PCB dans la table des processus à l'état Ready. Les deux processus sont désormais identiques sauf pour leur PID et la valeur de retour que `fork()` donne à chacun — zéro pour l'enfant, le nouveau PID de l'enfant pour le parent.
+- **`exec()`** (une famille d'appels — `execve` et consorts) remplace l'image mémoire du processus *actuel* par un nouveau programme, chargeant du code et des données neufs et réinitialisant le compteur de programme, tout en gardant le même PID et le même PCB. `fork()` puis `exec()` ensemble, c'est ainsi qu'un shell lance un programme — se dupliquer, puis écraser la copie par quelque chose d'entièrement différent.
+- **`wait()`** permet à un parent de bloquer jusqu'à ce qu'un enfant spécifique, ou n'importe quel enfant, se termine, puis récupère le statut de sortie de cet enfant. C'est aussi ce qui retire réellement le PCB d'un processus Terminated de la table — un enfant qui se termine avant que son parent n'appelle `wait()` reste un **zombie**, occupant toujours une entrée, jusqu'à ce que son statut de sortie soit récupéré.
+- **`exit()`** met fin au processus appelant : il libère les ressources qu'il peut libérer immédiatement, met son état à Terminated, et stocke son code de sortie dans son PCB pour qu'un futur appel `wait()` le récupère.
+
+## Ce que fait réellement un changement de contexte
+
+Chaque fois que l'ordonnanceur déplace le CPU d'un processus à un autre, il effectue un **changement de contexte** : il sauvegarde l'état des registres CPU, le compteur de programme et le pointeur de pile du processus actuellement en cours dans le PCB de ce processus, puis charge l'état sauvegardé du processus *suivant* depuis son propre PCB dans les registres matériels réels. Le CPU n'a aucune idée qu'il vient de basculer entre deux programmes sans rapport — de son point de vue, il reprend simplement l'exécution à un compteur de programme avec un ensemble particulier de valeurs de registres, parce que c'est tout ce qu'est un changement de contexte : échanger l'état sauvegardé de quel PCB vit actuellement dans les registres physiques. Ce travail de sauvegarde/restauration est du pur surcoût — aucune instruction utile ne s'exécute pendant ce temps — ce qui explique pourquoi un intervalle d'ordonnancement très fin échange de la réactivité contre du temps réel et mesurable passé simplement à changer de contexte.
+
+## Voir aussi
+
+- **[Processes](/fr/devops/processes)** — PID, signaux, descripteurs de fichiers, et le côté pratique de la gestion des processus.
+- **[Threads](/fr/operating-systems/threads)** — une unité d'ordonnancement moins coûteuse qui partage la mémoire d'un processus au lieu d'obtenir la sienne propre.
+- **[Appels système](/fr/operating-systems/system-calls)** — la frontière mode utilisateur/mode noyau que `fork`, `exec`, `wait` et `exit` franchissent tous.

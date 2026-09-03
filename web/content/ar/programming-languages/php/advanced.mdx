@@ -1,0 +1,157 @@
+---
+title: المولّدات وأنماط البرمجة غير المتزامنة
+description: مولّدات PHP وyield للتكرار الكسول، ونظرة صادقة على سبب حاجة البرمجة غير المتزامنة الحقيقية في PHP إلى شيء خارج اللغة الأساسية.
+category: Programming Languages
+weight: 9
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+يستحق الأمر توضيحاً مباشراً مسبقاً: **PHP في جوهرها متزامنة وحاجبة (blocking)، على أساس كل طلب على حدة.** يبدأ سكربت PHP قياسي (يعمل تحت PHP-FPM، أو mod_php الخاص بـ Apache، أو خادم التطوير المدمج) عندما يصل طلب، وينفَّذ من الأعلى للأسفل، ثم يخرج — لا توجد حلقة أحداث تعمل تحته كما هو الحال في Node.js، ولا كلمتا `async`/`await` مفتاحيتان في اللغة. هذه ليست ثغرة بقدر ما هي نتيجة متعمَّدة لنموذج PHP القائم على عدم مشاركة أي شيء بين الطلبات، وهي اختلاف حقيقي عن اللغات التي تعامل التزامن كجزء أساسي.
+
+ما *تملكه* PHP أصلاً — وما يقصده الناس غالباً بشكل فضفاض عندما يقولون "PHP غير متزامنة" — هو **المولّدات (generators)**، التي تمنحك تكراراً كسولاً وفعّالاً من حيث الذاكرة. هذه ميزة لغة حقيقية ومن الدرجة الأولى. أما الإدخال/الإخراج غير الحاجب الحقيقي والتزامن الحقيقي، بالمقابل، فيحتاجان إلى شيء إضافي مبنيّ فوق PHP، وهذا ما تغطيه هذه الصفحة بصدق بدلاً من المبالغة في تقديمه.
+
+## المولّدات وyield
+
+تصبح الدالة التي تحتوي على `yield` مولّداً: بدلاً من حساب وإرجاع مصفوفة كاملة مسبقاً، تُنتج قيماً واحدة تلو الأخرى، عند الطلب، موقفة تنفيذها بين كل واحدة والأخرى.
+
+```php
+<?php
+
+function countUpTo(int $max) {
+    for ($i = 1; $i <= $max; $i++) {
+        yield $i;
+    }
+}
+
+foreach (countUpTo(5) as $n) {
+    echo $n . " ";
+}
+echo "\n"; // 1 2 3 4 5
+```
+
+الفائدة الأساسية هي الذاكرة: مولّد يُنتج مليون قيمة لا يحتفظ أبداً بكل المليون في الذاكرة دفعة واحدة، بخلاف بناء وإرجاع مصفوفة. هذا يجعل المولّدات مناسبة طبيعياً لقراءة ملفات كبيرة سطراً بسطر، أو إنتاج تسلسل لا نهائي (أو طويل جداً فقط):
+
+```php
+<?php
+
+function readLines(string $path) {
+    $handle = fopen($path, "r");
+    while (($line = fgets($handle)) !== false) {
+        yield rtrim($line, "\n");
+    }
+    fclose($handle);
+}
+
+foreach (readLines("access.log") as $line) {
+    if (str_contains($line, "ERROR")) {
+        echo $line . "\n";
+    }
+}
+```
+
+## yield بمفاتيح، وyield كتعبير
+
+يمكن لـ `yield` إنتاج أزواج مفتاح-قيمة، تماماً مثل مصفوفة ترابطية، ويمكن استخدامها أيضاً كتعبير يستقبل قيمة تُرسَل مرة أخرى إلى المولّد عبر `send()` — هذا ما يجعل المولّدات قوية بما يكفي لنمذجة تحكّم شبيه بالإجراءات المشتركة (coroutines)، وليس مجرد تكرار بسيط:
+
+```php
+<?php
+
+function keyValuePairs() {
+    yield "name" => "Ada";
+    yield "role" => "admin";
+}
+
+foreach (keyValuePairs() as $key => $value) {
+    echo "$key: $value\n";
+}
+
+function echoBack() {
+    while (true) {
+        $received = yield;
+        echo "got: $received\n";
+    }
+}
+
+$gen = echoBack();
+$gen->current();     // primes the generator to its first yield
+$gen->send("hello"); // got: hello
+```
+
+## أين تحتاج البرمجة غير المتزامنة الحقيقية إلى مساعدة
+
+لا تمنحك المولّدات وحدها تزامناً — تعمل `countUpTo(5)` أعلاه بالكامل ضمن الطلب الحالي أحادي الخيط. للقيام بعمل متزامن فعلياً (معالجة اتصالات متزامنة كثيرة، تشغيل إدخال/إخراج دون حجب العملية بأكملها)، تحتاج PHP القياسية إلى بيئة تشغيل أو مكتبة مبنية فوق اللغة، وليس ميزة أساسية:
+
+- **ReactPHP** و**Amp** مكتبتان في مساحة المستخدم تبنيان حلقة أحداث وتجريدات على غرار الوعود (promises) في PHP نفسها، مستخدمتين المولّدات داخلياً لتتيح لك كتابة كود قائم على `yield` يُقرأ إلى حد ما مثل `async`/`await`.
+- **Swoole** و**OpenSwoole** إضافتا PHP (مكتوبتان بلغة C) تستبدلان النموذج التقليدي "طلب واحد لكل عملية" بعملية خادم طويلة الأمد بحلقة أحداث، ما يمنح PHP إجراءات مشتركة (coroutines) حقيقية وإدخال/إخراج غير حاجب على مستوى بيئة التشغيل.
+- **FrankenPHP** خادم تطبيق أحدث يتيح أيضاً عمليات PHP طويلة الأمد بأسلوب العامل (worker)، كبديل لنموذج PHP-FPM-لكل-طلب الكلاسيكي.
+
+لا شيء من هذه أجزاء من PHP الأساسية، واللجوء إليها غير معتاد بالنسبة لتطبيق ويب PHP قياسي — معظم كود PHP (طلب Laravel أو WordPress النموذجي) متزامن عن قصد، وهذا خيار افتراضي معقول، وليس قيداً يجب الالتفاف عليه. PHP غير المتزامنة نمط حقيقي ومستخدم في الإنتاج في مجالات محددة (عمّال طويلو الأمد، خوادم WebSocket، خدمات مصغّرة عالية الإنتاجية)، لكنها الاستثناء، وليست كيف تُكتَب معظم PHP.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء مولّد ينتج مربعات الأعداد من 1 إلى 4."
+  items={[
+    { id: "o1", label: "<?php" },
+    { id: "o2", label: "function squares(int $max) {" },
+    { id: "o3", label: "    for ($i = 1; $i <= $max; $i++) {", explanation: "تحدد الحلقة القيم التي تُنتَج، واحدة تلو الأخرى." },
+    { id: "o4", label: "        yield $i ** 2;" },
+    { id: "o5", label: "    }" },
+    { id: "o6", label: "}" },
+    { id: "o7", label: "foreach (squares(4) as $sq) {" },
+    { id: "o8", label: '    echo $sq . " ";' },
+    { id: "o9", label: "}" },
+  ]}
+  correctOrder={["o1", "o2", "o3", "o4", "o5", "o6", "o7", "o8", "o9"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="رتّب هذه الأسطر لبناء مولّد ينتج أزواج مفتاح => قيمة مقروءة من مصفوفة."
+  items={[
+    { id: "p1", label: "<?php" },
+    { id: "p2", label: "function pairs(array $data) {" },
+    { id: "p3", label: "    foreach ($data as $key => $value) {", explanation: "تسير foreach الخاصة بالمولّد نفسه عبر المصفوفة المصدر؛ كل دورة تُنتج مرة واحدة." },
+    { id: "p4", label: "        yield $key => strtoupper($value);" },
+    { id: "p5", label: "    }" },
+    { id: "p6", label: "}" },
+    { id: "p7", label: 'foreach (pairs(["a" => "x", "b" => "y"]) as $k => $v) {' },
+    { id: "p8", label: '    echo "$k=$v ";' },
+    { id: "p9", label: "}" },
+  ]}
+  correctOrder={["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9"]}
+/>
+
+<PredictOutput
+  title="ماذا تطبع هذه الشيفرة؟"
+  code={`<?php
+
+function firstThree() {
+    echo "start\\n";
+    yield 1;
+    echo "middle\\n";
+    yield 2;
+    echo "end\\n";
+    yield 3;
+}
+
+$gen = firstThree();
+echo "generator created\\n";
+foreach ($gen as $value) {
+    echo "got $value\\n";
+}`}
+  options={["start\\nmiddle\\nend\\ngenerator created\\ngot 1\\ngot 2\\ngot 3\\n", "generator created\\nstart\\ngot 1\\nmiddle\\ngot 2\\nend\\ngot 3\\n", "generator created\\ngot 1\\ngot 2\\ngot 3\\n", "start\\ngenerator created\\ngot 1\\ngot 2\\ngot 3\\n"]}
+  correctIndex={1}
+  explanation="استدعاء firstThree() لا يُنفّذ أياً من كودها بعد — لا يعمل جسم دالة المولّد إلا كسولياً، أثناء التكرار على المولّد. لهذا تُطبع 'generator created' قبل 'start'؛ كل خطوة foreach لاحقة تستأنف الدالة مباشرة بعد آخر yield حتى التالية."
+  actualOutput="generator created\nstart\ngot 1\nmiddle\ngot 2\nend\ngot 3\n"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [المساحات الاسمية وComposer](/ar/programming-languages/php/modules-packages)
+- [PHP](/ar/programming-languages/php)

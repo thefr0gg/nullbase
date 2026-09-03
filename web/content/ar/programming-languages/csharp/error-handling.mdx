@@ -1,0 +1,184 @@
+---
+title: معالجة الأخطاء
+description: try/catch/finally، ومرشِّحات الاستثناءات، وكتابة أنواع استثناءات مخصصة في C#.
+category: Programming Languages
+weight: 7
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تستخدم C# الاستثناءات لمعالجة الأخطاء بدلاً من قيم إرجاع الخطأ.
+أي شيء من فهرس مصفوفة غير صالح إلى استدعاء شبكة فاشل يرمي كائناً
+مشتقاً من `System.Exception`، ويمكن للكود الأعلى في مكدس
+الاستدعاء التقاطه.
+
+## try / catch / finally
+
+```csharp
+try
+{
+    int[] numbers = { 1, 2, 3 };
+    Console.WriteLine(numbers[10]); // throws IndexOutOfRangeException
+}
+catch (IndexOutOfRangeException ex)
+{
+    Console.WriteLine($"Caught: {ex.Message}");
+}
+finally
+{
+    Console.WriteLine("This always runs, exception or not.");
+}
+```
+
+تعمل `finally` سواء أُطلق استثناء أم لا، وحتى لو أرجعت كتلة
+`try` أو `catch` مبكراً — إنها المكان المناسب للتنظيف مثل إغلاق
+ملف أو اتصال.
+
+تتيح لك عدة كتل `catch` معالجة أنواع استثناءات مختلفة بشكل
+مختلف؛ تُفحص من الأعلى إلى الأسفل، لذا ضع الأنواع الأكثر تحديداً
+أولاً:
+
+```csharp
+try
+{
+    string input = "not a number";
+    int value = int.Parse(input);
+}
+catch (FormatException ex)
+{
+    Console.WriteLine($"Bad format: {ex.Message}");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Something else went wrong: {ex.Message}");
+}
+```
+
+يتيح مرشِّح استثناء (`when`) لعبارة `catch` واحدة أن تُطلَق فقط
+تحت شروط إضافية، دون ابتلاع استثناءات لا تطابقها:
+
+```csharp
+try
+{
+    throw new InvalidOperationException("disk full");
+}
+catch (InvalidOperationException ex) when (ex.Message.Contains("disk"))
+{
+    Console.WriteLine("Handling a disk-related failure specifically.");
+}
+```
+
+## الاستثناءات المخصصة
+
+اشتقاق نوع استثناء خاص بك من `Exception` (أو صنف أساسي أكثر
+تحديداً) يتيح للكود المستدعي التقاط الفشل الذي يهمه بالضبط،
+ويتيح لك إرفاق بيانات خاصة بمجالك:
+
+```csharp
+class InsufficientFundsException : Exception
+{
+    public decimal Shortfall { get; }
+
+    public InsufficientFundsException(decimal shortfall)
+        : base($"Insufficient funds: short by {shortfall:C}")
+    {
+        Shortfall = shortfall;
+    }
+}
+
+class Account
+{
+    public decimal Balance { get; private set; } = 100m;
+
+    public void Withdraw(decimal amount)
+    {
+        if (amount > Balance)
+        {
+            throw new InsufficientFundsException(amount - Balance);
+        }
+        Balance -= amount;
+    }
+}
+
+var account = new Account();
+try
+{
+    account.Withdraw(150m);
+}
+catch (InsufficientFundsException ex)
+{
+    Console.WriteLine(ex.Message);      // Insufficient funds: short by $50.00
+    Console.WriteLine(ex.Shortfall);    // 50
+}
+```
+
+يجب أن تستدعي الاستثناءات المخصصة دائماً المُنشئ الأساسي
+(`: base(message)`) حتى تستمر خاصية `.Message` القياسية وآلية
+تتبع المكدس في العمل كما هو متوقع.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="اجمع الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء كتلة try/catch/finally تعالج قسمة على صفر."
+  items={[
+    { id: "l1", label: "try" },
+    { id: "l2", label: "{" },
+    { id: "l3", label: "    int result = 10 / int.Parse(\"0\");" },
+    { id: "l4", label: "}" },
+    { id: "l5", label: "catch (DivideByZeroException ex)" },
+    { id: "l6", label: "{" },
+    { id: "l7", label: "    Console.WriteLine(ex.Message);" },
+    { id: "l8", label: "}" },
+    { id: "l9", label: "finally" },
+    { id: "l10", label: "{" },
+    { id: "l11", label: "    Console.WriteLine(\"Done\");" },
+    { id: "l12", label: "}" },
+  ]}
+  correctOrder={["l1", "l2", "l3", "l4", "l5", "l6", "l7", "l8", "l9", "l10", "l11", "l12"]}
+/>
+
+<OrderingExercise
+  title="اجمع الكود"
+  prompt="ضع هذه الأسطر بالترتيب للتصريح عن استثناء مخصص باستدعاء لمُنشئ أساسي."
+  items={[
+    { id: "m1", label: "class NegativeAmountException : Exception" },
+    { id: "m2", label: "{" },
+    { id: "m3", label: "    public NegativeAmountException(decimal amount)" },
+    { id: "m4", label: "        : base($\"Amount cannot be negative: {amount}\")" , explanation: "يجب أن يظهر استدعاء المُنشئ الأساسي على تصريح المُنشئ نفسه، قبل فتح الجسم."},
+    { id: "m5", label: "    {" },
+    { id: "m6", label: "    }" },
+    { id: "m7", label: "}" },
+  ]}
+  correctOrder={["m1", "m2", "m3", "m4", "m5", "m6", "m7"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا؟"
+  code={`try
+{
+    Console.WriteLine("A");
+    throw new InvalidOperationException("oops");
+}
+catch (InvalidOperationException)
+{
+    Console.WriteLine("B");
+}
+finally
+{
+    Console.WriteLine("C");
+}
+Console.WriteLine("D");`}
+  options={["A B C D", "A C D", "A B D", "A B C"]}
+  correctIndex={0}
+  explanation="تعمل كتلة try حتى الـthrow، فتطبع A. تعمل catch المطابقة، فتطبع B. تعمل finally دائماً بعد ذلك، فتطبع C. بما أن الاستثناء التُقِط (ولم يُعَد رميه)، يستمر التنفيذ طبيعياً إلى السطر الذي يلي try/catch/finally، فيطبع D."
+  actualOutput="A B C D"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [الأصناف والواجهات](/ar/programming-languages/csharp/oop-or-structs)
+- [المساحات الاسمية وNuGet](/ar/programming-languages/csharp/modules-packages)

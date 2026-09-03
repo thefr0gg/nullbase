@@ -1,0 +1,132 @@
+---
+title: معالجة الأخطاء
+description: الإشارة إلى الفشل والتعافي منه في C++ باستخدام try/catch/throw، ولماذا تحل RAII غالباً محل كود التنظيف الصريح كلياً.
+category: Programming Languages
+weight: 7
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تملك C++ طريقتين متداخلتين للتعامل مع الفشل: **الاستثناءات**، التي تفكّ مكدس الاستدعاء حتى يلتقطها شيء ما، و**RAII** (اكتساب المورد هو التهيئة)، وهو نمط تصميم يربط تنظيف المورد بعمر الكائن بحيث يحدث تلقائياً — بما في ذلك أثناء انتشار استثناء.
+
+## `try` / `catch` / `throw`
+
+```cpp
+#include <iostream>
+#include <stdexcept>
+
+double divide(double a, double b) {
+    if (b == 0) {
+        throw std::invalid_argument("division by zero");
+    }
+    return a / b;
+}
+
+int main() {
+    try {
+        std::cout << divide(10, 2) << "\n"; // 5
+        std::cout << divide(10, 0) << "\n"; // throws
+        std::cout << "This line never runs\n";
+    } catch (const std::invalid_argument& e) {
+        std::cout << "Caught: " << e.what() << "\n";
+    }
+
+    std::cout << "Program continues normally\n";
+    return 0;
+}
+```
+
+تُطلق `throw` استثناءً — هنا، `std::invalid_argument` من رأس `<stdexcept>`، أحد عدة أنواع استثناءات قياسية مدمجة في المكتبة. يوقف الرمي التنفيذ الطبيعي فوراً ويبدأ فك مكدس الاستدعاء، متجاوزاً كل عبارة متبقية في `divide` وفي كتلة `try` الخاصة بـ `main`، حتى يصل إلى `catch` مطابقة. تلتقط `catch (const std::invalid_argument& e)` استثناءات من ذلك النوع بالضبط (أو نوع مشتق منه)؛ وتُرجع `e.what()` الرسالة الممرَّرة إلى المُنشئ. بمجرد انتهاء كتلة `catch`، يستأنف التنفيذ طبيعياً بعد كامل `try`/`catch` — لا ينهار البرنامج، ويعمل الكود الذي يليها (مثل `std::cout` الأخيرة) كما هو.
+
+## RAII بدلاً من التنظيف اليدوي
+
+```cpp
+#include <iostream>
+#include <fstream>
+
+void writeLog(const std::string& message) {
+    std::ofstream logFile("app.log", std::ios::app); // resource acquired here
+
+    if (!logFile.is_open()) {
+        throw std::runtime_error("could not open log file");
+    }
+
+    logFile << message << "\n";
+    // no explicit close() call needed — logFile's destructor closes the
+    // file automatically when it goes out of scope, even if an exception
+    // is thrown somewhere after this point
+}
+
+int main() {
+    try {
+        writeLog("Application started");
+    } catch (const std::runtime_error& e) {
+        std::cout << "Logging failed: " << e.what() << "\n";
+    }
+    return 0;
+}
+```
+
+تكتسب `std::ofstream` موردها (مقبض ملف مفتوح) في مُنشئها وتحرره (تُغلق الملف) في هدّامها (destructor). ولأن C++ تضمن تشغيل هدّام كائن محلي عند خروجه من النطاق — سواء خرج ذلك النطاق طبيعياً، أو عبر `return`، أو بسبب انتشار استثناء عبره — لا تُسرِّب `logFile` مقبض ملف مفتوح أبداً، دون `try`/`finally` ودون استدعاء `close()` صريح مطلوب في أي مكان. هذا هو النمط الذي تتبعه معظم أنواع مكتبة C++ القياسية (`std::vector`، و`std::string`، و`std::unique_ptr`)، وسبب ندرة احتياج C++ الحديثة الاصطلاحية لأي كود تنظيف يدوي على الإطلاق: لفّ موردٍ في نوع يُحرره هدّامه، وتنبع الصحة تلقائياً من النطاق.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="اجمع الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء دالة ترمي عند إدخال سالب، مُستدعاة من try/catch."
+  items={[
+    { id: "include", label: "#include <stdexcept>" },
+    { id: "fn-sig", label: "int squareRoot(int n) {" },
+    { id: "check", label: "    if (n < 0) throw std::invalid_argument(\"negative\");", explanation: "يجب أن يحدث الفحص والرمي قبل أي كود يفترض أن n صالحة." },
+    { id: "compute", label: "    return static_cast<int>(n);" },
+    { id: "fn-close", label: "}" },
+    { id: "try-open", label: "try {" },
+    { id: "call", label: "    squareRoot(-4);" },
+    { id: "catch", label: "} catch (const std::invalid_argument& e) {" },
+    { id: "handle", label: "    std::cout << e.what();" },
+    { id: "catch-close", label: "}" },
+  ]}
+  correctOrder={["include", "fn-sig", "check", "compute", "fn-close", "try-open", "call", "catch", "handle", "catch-close"]}
+/>
+
+<OrderingExercise
+  title="اجمع الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء صنف يكتسب مورداً في مُنشئه ويحرره في هدّامه (RAII)."
+  items={[
+    { id: "class-open", label: "class ScopedLock {" },
+    { id: "public", label: "public:" },
+    { id: "ctor", label: "    ScopedLock() { std::cout << \"locked\\n\"; }", explanation: "يجب التصريح عن المُنشئ، الذي يكتسب المورد، قبل الهدّام الذي يحرره." },
+    { id: "dtor", label: "    ~ScopedLock() { std::cout << \"unlocked\\n\"; }" },
+    { id: "class-close", label: "};" },
+  ]}
+  correctOrder={["class-open", "public", "ctor", "dtor", "class-close"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا؟"
+  code={`#include <iostream>
+#include <stdexcept>
+
+int main() {
+    try {
+        std::cout << "before\\n";
+        throw std::runtime_error("failed");
+        std::cout << "after\\n";
+    } catch (const std::runtime_error& e) {
+        std::cout << "caught: " << e.what() << std::endl;
+    }
+    return 0;
+}`}
+  options={["before\\nafter\\ncaught: failed", "before\\ncaught: failed", "caught: failed", "خطأ ترجمة"]}
+  correctIndex={1}
+  explanation={`تُطبع "before"، ثم تنقل throw التحكم فوراً إلى كتلة catch المطابقة — يُتجاوز سطر std::cout << "after" كلياً لأن التنفيذ لا يصله أبداً بمجرد رمي استثناء. تعمل فقط "before" ومخرجات كتلة catch فعلياً.`}
+  actualOutput="before\ncaught: failed"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [الأصناف والكائنات](/ar/programming-languages/cpp/oop-or-structs) — المُنشئات والهدّامات التي تعتمد عليها RAII.
+- [المؤشرات والذاكرة](/ar/programming-languages/cpp/advanced) — كيف تُطبِّق المؤشرات الذكية RAII على الذاكرة الديناميكية تحديداً.

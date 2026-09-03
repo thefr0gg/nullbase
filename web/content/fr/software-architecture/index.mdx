@@ -1,0 +1,26 @@
+---
+title: Architecture logicielle
+description: Les formes de haut niveau que peuvent prendre le code et le déploiement d'un système — comment les pièces sont découpées, comment elles se parlent, et les compromis que chaque forme sacrifie.
+category: Software Architecture
+weight: 13
+---
+
+Là où [Backend](/fr/backend) couvre ce qui tourne à l'intérieur d'un seul serveur et [API Web](/fr/web-apis) couvre la forme d'une requête et d'une réponse, cette section se situe un niveau au-dessus : comment les pièces d'un système entier sont organisées et déployées les unes par rapport aux autres, et comment le code interne d'un seul service peut lui-même être structuré. Aucun de ces patterns n'est mutuellement exclusif — un système réel en superpose généralement plusieurs (un monolithe organisé en clean architecture à l'intérieur, déployé derrière une fonction serverless en périphérie, communiquant avec le service d'une autre équipe via des événements).
+
+## Comment le système est découpé
+
+- **[Architecture client-serveur](/fr/software-architecture/client-server-architecture)** — le pattern de base sous presque tout le reste ici : un client qui demande, un serveur qui répond.
+- **[Monolithes](/fr/software-architecture/monoliths)** — une unité déployable unique contenant toute la logique de l'application.
+- **[Microservices](/fr/software-architecture/microservices)** — des services déployables indépendamment possédant leurs propres données.
+- **[Architecture sans serveur](/fr/software-architecture/serverless-architecture)** — des fonctions et des services managés au lieu de serveurs que vous exploitez vous-même.
+- **[Architecture événementielle](/fr/software-architecture/event-driven-architecture)** — des composants qui communiquent via des événements plutôt que des appels directs.
+
+## Comment un service parle au monde extérieur
+
+- **[Architecture REST](/fr/software-architecture/rest-architecture)** — les contraintes architecturales derrière le terme, pas juste « une API qui renvoie du JSON ».
+
+## Comment l'intérieur d'un service est organisé
+
+- **[Architecture en couches](/fr/software-architecture/layered-architecture)** — du code découpé en couches horizontales, chacune ne dépendant que de celle en dessous d'elle.
+- **[Clean Architecture](/fr/software-architecture/clean-architecture)** — des dépendances pointant vers l'intérieur, vers une logique métier indépendante du framework, plutôt que vers l'extérieur, vers l'infrastructure.
+- **[Conception pilotée par le domaine](/fr/software-architecture/domain-driven-design)** — modéliser le code autour du langage et des frontières propres du domaine métier.

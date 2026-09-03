@@ -1,0 +1,180 @@
+---
+title: الأصناف والكائنات
+description: صيغة class في JavaScript، والوراثة، وسلسلة النماذج الأولية (prototype chain) التي تشغّلها فعلياً في الأسفل.
+category: Programming Languages
+weight: 6
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تملك JavaScript كائنات منذ عام 1995 لكنها لم تحصل على صيغة `class` حتى
+ES6 (2015). من المهم فهم أن `class` سكّر نحوي: في الأسفل، لا تزال
+JavaScript تنفّذ الوراثة المبنية على النماذج الأولية، نفس الآلية التي
+امتلكتها دائماً. معرفة كلتا الطبقتين — صيغة `class` الودّية وسلسلة
+النماذج الأولية التي تُصرَّف إليها — يفسّر الكثير من السلوك الذي يبدو
+سحرياً لولا ذلك.
+
+## صيغة Class
+
+```js
+class Animal {
+  constructor(name) {
+    this.name = name;
+  }
+
+  speak() {
+    return `${this.name} makes a sound.`;
+  }
+}
+
+class Dog extends Animal {
+  speak() {
+    return `${this.name} barks.`;
+  }
+}
+
+const generic = new Animal("Creature");
+const rex = new Dog("Rex");
+
+console.log(generic.speak()); // "Creature makes a sound."
+console.log(rex.speak());     // "Rex barks."
+```
+
+يُعِدُّ `extends` الوراثة، وتستدعي `super(...)` داخل باني صنف فرعي الباني
+الأب — مطلوبة قبل أن تتمكن من استخدام `this` في باني صنف مشتق.
+
+```js
+class Employee extends Animal {
+  constructor(name, role) {
+    super(name);       // يجب أن تعمل قبل استخدام `this` أدناه
+    this.role = role;
+  }
+
+  speak() {
+    return `${super.speak()} ${this.name} works as ${this.role}.`;
+  }
+}
+
+const e = new Employee("Sam", "an engineer");
+console.log(e.speak());
+// "Sam makes a sound. Sam works as an engineer."
+```
+
+تدعم الأصناف أيضاً أعضاء `static` (مرتبطة بالصنف نفسه، وليس بالنسخ)،
+وحقولاً خاصة بلاحقة `#` (غير قابلة للوصول حقاً من خارج الصنف، خلافاً
+لاصطلاح `_prefix`)، وgetters/setters.
+
+```js
+class Counter {
+  #count = 0; // حقل خاص — غير مرئي أو قابل للضبط من خارج الصنف
+
+  static description = "A simple counter";
+
+  increment() {
+    this.#count += 1;
+    return this.#count;
+  }
+
+  get value() {
+    return this.#count;
+  }
+}
+
+const c = new Counter();
+c.increment();
+c.increment();
+console.log(c.value);       // 2
+console.log(Counter.description); // "A simple counter"
+// console.log(c.#count);   // SyntaxError — #count غير قابل للوصول هنا
+```
+
+## ما يحدث فعلياً: سلسلة النماذج الأولية
+
+لكل كائن في JavaScript رابط داخلي بكائن آخر يُسمّى نموذجه الأولي، مُشكِّلاً
+سلسلة. عندما تصل إلى خاصية، ينظر المحرك في الكائن نفسه أولاً، ثم يصعد
+سلسلة النماذج الأولية حتى يجد الخاصية أو تنفد السلسلة. توابع `class` هي
+مجرد دوال عادية مُلحَقة بـ`SomeClass.prototype`، مشتركة بين كل نسخة بدلاً
+من نسخها إلى كل واحدة.
+
+```js
+function Animal(name) { // "دالة باني" على الطراز القديم — مكافئ ما قبل ES6 للصنف
+  this.name = name;
+}
+
+Animal.prototype.speak = function () {
+  return `${this.name} makes a sound.`;
+};
+
+const a = new Animal("Creature");
+console.log(a.speak()); // "Creature makes a sound."
+
+// هذا بالضبط ما يُصرَّف إليه `class Animal { speak() {...} }`.
+console.log(Object.getPrototypeOf(a) === Animal.prototype); // true
+console.log(a.hasOwnProperty("speak"));                       // false — تعيش speak على النموذج الأولي، وليس على `a` نفسها
+```
+
+هذا سبب كون إضافة تابع إلى `Animal.prototype` بعد إنشاء نسخ لا يزال يجعله
+متاحاً على تلك النسخ الموجودة — فهي لا تحمل نسختها الخاصة من التابع، بل
+تبحث عنه عبر السلسلة في كل مرة يُستدعى فيها.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء صنف فرعي يستدعي باني أبيه بـ()super."
+  items={[
+    { id: "base", label: "class Shape {" },
+    { id: "baseCtor", label: "  constructor(color) { this.color = color; }" },
+    { id: "baseClose", label: "}" },
+    { id: "sub", label: "class Circle extends Shape {" },
+    { id: "subCtor", label: "  constructor(color, radius) {" },
+    { id: "superCall", label: "    super(color);", explanation: "يجب أن تعمل ()super قبل استخدام `this`، وقبل أن يتمكن باني الصنف الفرعي من الانتهاء." },
+    { id: "field", label: "    this.radius = radius;" },
+    { id: "subCtorClose", label: "  }" },
+    { id: "subClose", label: "}" },
+  ]}
+  correctOrder={["base", "baseCtor", "baseClose", "sub", "subCtor", "superCall", "field", "subCtorClose", "subClose"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="رتّب هذه الأسطر لإلحاق تابع بنموذج أولي لدالة باني بالطريقة السابقة لـES6."
+  items={[
+    { id: "ctor", label: "function Robot(id) {" },
+    { id: "assign", label: "  this.id = id;" },
+    { id: "ctorClose", label: "}" },
+    { id: "proto", label: "Robot.prototype.announce = function () {" },
+    { id: "protoBody", label: "  return `Unit ${this.id} reporting.`;" },
+    { id: "protoClose", label: "};" },
+    { id: "instance", label: "const r2 = new Robot(2);" },
+  ]}
+  correctOrder={["ctor", "assign", "ctorClose", "proto", "protoBody", "protoClose", "instance"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا الكود؟"
+  code={`class Base {
+  greet() {
+    return "base";
+  }
+}
+
+const b = new Base();
+Base.prototype.greet = function () {
+  return "overridden";
+};
+
+console.log(b.greet());`}
+  options={["\"base\"", "\"overridden\"", "TypeError", "undefined"]}
+  correctIndex={1}
+  explanation="لا تُنسَخ توابع النسخة إلى كل كائن — تحمل b فقط رابطاً بـBase.prototype وتبحث عن greet هناك في كل مرة تُستدعى. بما أن Base.prototype.greet أُعيد إسنادها بعد إنشاء b، تجد b.greet() النسخة الجديدة، وليست تلك الموجودة وقت الإنشاء."
+  actualOutput="overridden"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [هياكل البيانات](/ar/programming-languages/javascript/data-structures)
+- [معالجة الأخطاء](/ar/programming-languages/javascript/error-handling)

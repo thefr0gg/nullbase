@@ -1,0 +1,147 @@
+---
+title: هياكل البيانات
+description: تخزين مجموعات القيم في C++ عبر المصفوفات ثابتة الحجم، وstd::vector القابل لتغيير الحجم، وstd::map المرتبة بالمفتاح.
+category: Programming Languages
+weight: 5
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تمنحك C++ خياراً من الحاويات بحسب ما إذا كان الحجم معروفاً مسبقاً وما إذا كنت تحتاج بحثاً سريعاً بالمفتاح بدلاً من الموضع — اختيار الحاوية الخاطئة مصدر شائع للأخطاء والبطء غير الضروري معاً.
+
+## المصفوفات
+
+```cpp
+#include <iostream>
+
+int main() {
+    int scores[5] = {90, 85, 77, 92, 60};
+
+    for (int i = 0; i < 5; i++) {
+        std::cout << "scores[" << i << "] = " << scores[i] << "\n";
+    }
+    return 0;
+}
+```
+
+لمصفوفة على طراز C مثل `scores` حجم ثابت في وقت الترجمة ولا فحص للحدود — قراءة أو كتابة `scores[5]` تُترجَم بلا مشكلة لكنها تقرأ خارج ذاكرة المصفوفة، وهو سلوك غير معرَّف يمكن أن يُفسد بيانات غير متعلقة بصمت. لا يُتتبَّع حجمها أيضاً في وقت التشغيل؛ تحتاج دالة تستقبل `scores` إلى تمرير الطول بشكل منفصل.
+
+## `std::vector`
+
+```cpp
+#include <iostream>
+#include <vector>
+
+int main() {
+    std::vector<int> scores;
+    scores.push_back(90);
+    scores.push_back(85);
+    scores.push_back(77);
+
+    scores.push_back(100);
+    std::cout << "Count: " << scores.size() << "\n";
+
+    for (int s : scores) {
+        std::cout << s << " ";
+    }
+    std::cout << "\n";
+
+    scores.pop_back();
+    std::cout << "After pop_back, count: " << scores.size() << "\n";
+    return 0;
+}
+```
+
+`std::vector<int>` مصفوفة قابلة لتغيير الحجم: تُلحق `push_back` عنصراً وتُنمِّي التخزين الأساسي تلقائياً، وتُبلغ `size()` عن عدد العناصر الحالي، وتُزيل `pop_back()` العنصر الأخير. بخلاف مصفوفة خام، يعرف المتجه دائماً طوله الخاص ويدير ذاكرته الخاصة — وهذا سبب كون `std::vector` الخيار الافتراضي لتسلسل من القيم في C++ الحديثة، محجوزة مصفوفة ثابتة الحجم على طراز C فقط عندما يكون الحجم ثابتاً حقاً ومعروفاً في وقت الترجمة (أو في `std::array`، الذي يوفر ضمان الحجم الثابت نفسه بواجهة أكثر أماناً).
+
+## `std::map`
+
+```cpp
+#include <iostream>
+#include <map>
+#include <string>
+
+int main() {
+    std::map<std::string, int> ages;
+    ages["Ada"] = 36;
+    ages["Grace"] = 85;
+    ages["Alan"] = 41;
+
+    ages["Ada"] = 37; // overwrites the existing entry
+
+    for (const auto& pair : ages) {
+        std::cout << pair.first << " -> " << pair.second << "\n";
+    }
+    return 0;
+}
+```
+
+يخزّن `std::map<K, V>` أزواج مفتاح-قيمة ويحافظ عليها مرتبة داخلياً بالمفتاح (باستخدام شجرة ثنائية متوازنة)، لذا فإن التكرار على خريطة يزور دائماً المدخلات بترتيب تصاعدي للمفتاح — هنا، أبجدياً بالاسم. تُدرج الفهرسة بـ `ages["Ada"]` مدخلاً جديداً أو تُحدِّث الموجود إن كان المفتاح موجوداً بالفعل؛ البحث عن مفتاح غير موجود بـ `[]` يُدرجه بصمت بقيمة مُنشأة افتراضياً، وهذه مفاجأة شائعة — `ages.find("Bob")` أو `ages.count("Bob")` طريقتان أكثر أماناً للتحقق من وجود مفتاح دون إدراجه.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="اجمع الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء متجه، وإلحاق ثلاث قيم، وطباعة حجمه."
+  items={[
+    { id: "include-vector", label: "#include <vector>" },
+    { id: "include-iostream", label: "#include <iostream>" },
+    { id: "main-open", label: "int main() {" },
+    { id: "declare", label: "    std::vector<int> nums;", explanation: "يجب أن يوجد المتجه قبل أن يمكن استدعاء push_back عليه." },
+    { id: "push1", label: "    nums.push_back(10);" },
+    { id: "push2", label: "    nums.push_back(20);" },
+    { id: "print-size", label: "    std::cout << nums.size() << std::endl;" },
+    { id: "return", label: "    return 0;" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["include-vector", "include-iostream", "main-open", "declare", "push1", "push2", "print-size", "return", "main-close"]}
+/>
+
+<OrderingExercise
+  title="اجمع الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء std::map، وإدراج مدخلَين، والبحث عن أحدهما."
+  items={[
+    { id: "include-map", label: "#include <map>" },
+    { id: "include-string", label: "#include <string>" },
+    { id: "main-open", label: "int main() {" },
+    { id: "declare", label: "    std::map<std::string, int> inventory;" },
+    { id: "insert1", label: "    inventory[\"apples\"] = 50;", explanation: "يجب التصريح عن الخريطة قبل إدراج أي مدخلات فيها." },
+    { id: "insert2", label: "    inventory[\"bananas\"] = 30;" },
+    { id: "lookup", label: "    std::cout << inventory[\"apples\"] << std::endl;" },
+    { id: "return", label: "    return 0;" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["include-map", "include-string", "main-open", "declare", "insert1", "insert2", "lookup", "return", "main-close"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا؟"
+  code={`#include <iostream>
+#include <map>
+#include <string>
+
+int main() {
+    std::map<std::string, int> scores;
+    scores["b"] = 2;
+    scores["a"] = 1;
+    scores["c"] = 3;
+
+    for (const auto& pair : scores) {
+        std::cout << pair.first;
+    }
+    std::cout << std::endl;
+    return 0;
+}`}
+  options={["bac", "abc", "cba", "خطأ ترجمة"]}
+  correctIndex={1}
+  explanation={`يحافظ std::map على ترتيب مدخلاته بالمفتاح دائماً، بغض النظر عن ترتيب الإدراج. رغم إدراج "b" أولاً، يزور التكرار على الخريطة المفاتيح بترتيب تصاعدي: a وb وc.`}
+  actualOutput="abc"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [الدوال](/ar/programming-languages/cpp/functions) — تمرير المتجهات والخرائط إلى الدوال بالمرجع.
+- [الأصناف والكائنات](/ar/programming-languages/cpp/oop-or-structs) — بناء أنواع بيانات خاصة بك تتجاوز الحاويات القياسية.

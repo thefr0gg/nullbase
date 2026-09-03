@@ -1,0 +1,144 @@
+---
+title: هياكل البيانات
+description: المصفوفات ذات النوع المحدد، والصفوف (tuples) ثابتة الطول، والنوعان العامّان Record وMap للمجموعات ذات المفاتيح.
+category: Programming Languages
+weight: 5
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+هياكل البيانات المدمجة في JavaScript — المصفوفات، والكائنات العادية،
+و`Map` — لا تتتبع ما بداخلها. تضيف TypeScript معاملات نوع (type
+parameters) فوق كل واحد منها، بحيث يعرف المُصرِّف (ويتحقق) ما تحمله
+المصفوفة، وما شكل مفاتيح الكائن وقيمه، وما نوعا مفاتيح وقيم `Map`، كل
+ذلك دون تغيير طريقة عمل أيٍّ منها في وقت التشغيل.
+
+## المصفوفات ذات النوع المحدد
+
+```ts
+const scores: number[] = [10, 20, 30];
+scores.push(40); // OK
+scores.push("fifty"); // Type error: Argument of type 'string' is not assignable to parameter of type 'number'
+
+const names: Array<string> = ["Ada", "Grace"]; // equivalent generic-syntax form
+```
+
+`number[]` و`Array<number>` نفس النوع مكتوباً بطريقتين. بمجرد تحديد
+نوع مصفوفة، تُفحَص كل عملية تعديل — `push`، و`unshift`، والإسناد
+المباشر بالفهرس — مقابل نوع العنصر، وليس فقط القيم الأولية.
+
+## الصفوف (Tuples)
+
+**الصف (tuple)** مصفوفة ثابتة الطول حيث لكل موضع نوعه المُصرَّح به
+الخاص — شيء لا مفهوم له في مصفوفات JavaScript العادية:
+
+```ts
+let point: [number, number] = [3, 4];
+point = [3, 4, 5]; // Type error: Source has 3 element(s) but target allows only 2
+
+let entry: [string, number] = ["age", 36];
+const [key, value] = entry; // key: string, value: number
+```
+
+هذا مفيد للبيانات ثابتة الشكل مثل أزواج الإحداثيات أو مُدخَلات
+مفتاح/قيمة، حيث كانت `number[]` العادية لتسمح لك بإضافة عنصر ثالث
+بالخطأ أو نسيان الفرق بين معنى الموضع 0 والموضع 1.
+
+## Record للمجموعات ذات المفاتيح
+
+يصف `Record<K, V>` كائناً عادياً يُستخدَم كقاموس — كل مفتاح من النوع
+`K` يُطابَق بقيمة من النوع `V`:
+
+```ts
+const inventory: Record<string, number> = {
+  apples: 10,
+  bananas: 5,
+};
+
+inventory.cherries = 20; // OK — any string key, number value
+inventory.apples = "ten"; // Type error: Type 'string' is not assignable to type 'number'
+```
+
+يمكن لـ`Record` أيضاً تقييد *مجموعة* المفاتيح المسموحة، باستخدام
+اتحاد (union) من قيم نصية حرفية بدلاً من `string` العامة:
+
+```ts
+type Status = "pending" | "active" | "closed";
+
+const labels: Record<Status, string> = {
+  pending: "Pending",
+  active: "Active",
+  closed: "Closed",
+};
+```
+
+مع `Status` كنوع للمفتاح، يجب أن يكون كل مفتاح من الاتحاد موجوداً ولا
+يُسمَح بأي مفتاح آخر — حذف `closed` من `labels`، أو إضافة مفتاح
+`archived`، خطأ في وقت الترجمة.
+
+## Map بمفاتيح وقيم ذات نوع محدد
+
+`Map<K, V>` عامة (generic)، لذا يتتبع المُصرِّف نوع المفتاح ونوع
+القيمة معاً عبر كل استدعاء لـ`get`/`set`:
+
+```ts
+const ages = new Map<string, number>();
+ages.set("Ada", 36);
+ages.set("Grace", 85);
+
+const adaAge = ages.get("Ada"); // type: number | undefined
+ages.set(1, 40); // Type error: Argument of type 'number' is not assignable to parameter of type 'string'
+```
+
+لاحظ أن نوع `ages.get("Ada")` هو `number | undefined`، وليس فقط
+`number` — يمكن لـ`Map.get` دائماً أن تُعيد `undefined` لمفتاح غير
+موجود، وتعكس TypeScript ذلك في النوع بدلاً من تركك تفترض أن المفتاح
+موجود.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح للتصريح عن صف (tuple) ذي نوع محدد وتفكيكه إلى متغيرين."
+  items={[
+    { id: "decl", label: "const entry: [string, number] = [\"age\", 36];" },
+    { id: "destructure", label: "const [key, value] = entry;", explanation: "التفكيك يقرأ من entry، لذا يجب التصريح عن entry أولاً." },
+    { id: "log", label: "console.log(key, value);" },
+  ]}
+  correctOrder={["decl", "destructure", "log"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء Record لتسميات الحالة مفتاحه اتحاد من قيم نصية حرفية."
+  items={[
+    { id: "type-decl", label: "type Status = \"pending\" | \"active\" | \"closed\";" },
+    { id: "record-open", label: "const labels: Record<Status, string> = {" },
+    { id: "pending", label: "  pending: \"Pending\"," },
+    { id: "active", label: "  active: \"Active\",", explanation: "يجب أن تظهر مفاتيح Status الثلاثة كلها داخل حرفية Record حتى تُحقِّق النوع." },
+    { id: "closed", label: "  closed: \"Closed\"," },
+    { id: "record-close", label: "};" },
+  ]}
+  correctOrder={["type-decl", "record-open", "pending", "active", "closed", "record-close"]}
+/>
+
+<PredictOutput
+  title="ماذا يقول مدقّق الأنواع؟"
+  code={`const ages = new Map<string, number>();
+ages.set("Ada", 36);
+
+const adaAge = ages.get("Ada");
+console.log(adaAge.toFixed(0));`}
+  options={["\"36\"", "36", "Type error: Object is possibly 'undefined'", "Type error: Property 'toFixed' does not exist on type 'Map<string, number>'"]}
+  correctIndex={2}
+  explanation={`تُعيد طريقة get في Map<string, number> النوع number | undefined، لأن المفتاح قد لا يكون موجوداً — لا تعرف TypeScript أن "Ada" أُضيفت للتو. استدعاء .toFixed مباشرة على تلك القيمة دون التحقق أولاً من undefined خطأ نوعي، حتى لو كان هذا الاستدعاء بالذات سينجح في وقت التشغيل.`}
+  actualOutput="Type error: Object is possibly 'undefined'"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [الدوال](/ar/programming-languages/typescript/functions)
+- [الأصناف والواجهات](/ar/programming-languages/typescript/oop-or-structs)

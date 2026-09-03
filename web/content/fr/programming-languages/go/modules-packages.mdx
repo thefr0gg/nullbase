@@ -1,0 +1,160 @@
+---
+title: Modules et paquets
+description: Comment Go organise le code en paquets et les dépendances en modules suivis par go.mod et go.sum.
+category: Programming Languages
+weight: 8
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Go organise le code sur deux niveaux : les **paquets** regroupent des
+fichiers source liés à l'intérieur d'un répertoire, et les **modules**
+regroupent des paquets en une unité versionnée et distribuable, avec sa
+propre liste de dépendances.
+
+## Paquets
+
+Chaque fichier `.go` commence par une déclaration `package`. Tous les
+fichiers d'un même répertoire doivent déclarer le même nom de package, et
+ce nom devient l'espace de noms que le reste du code importe :
+
+```go
+package geometry
+
+func Area(width, height float64) float64 {
+	return width * height
+}
+```
+
+Un autre fichier ailleurs l'importe par son chemin de module et appelle le
+nom exporté (avec une majuscule) :
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"example.com/myapp/geometry"
+)
+
+func main() {
+	fmt.Println(geometry.Area(3, 4)) // 12
+}
+```
+
+`import` peut importer plusieurs paquets à la fois à l'intérieur de
+parenthèses, comme ci-dessus. La bibliothèque standard est livrée sous
+forme de paquets ordinaires que vous importez de la même façon —
+`"fmt"`, `"strings"`, `"net/http"` — sans étape d'installation séparée.
+
+## go.mod et les modules Go
+
+Un **module** est l'unité de gestion de version et de dépendances —
+habituellement un dépôt Git. `go mod init` crée un fichier `go.mod`
+déclarant le chemin du module et la version de Go qu'il cible :
+
+```bash
+go mod init example.com/myapp
+```
+
+```go
+module example.com/myapp
+
+go 1.22
+```
+
+Ajouter un import vers une véritable dépendance et exécuter `go build` (ou
+`go mod tidy`) la récupère et enregistre la version exacte dans `go.mod`,
+avec une somme de contrôle cryptographique de chaque dépendance dans
+`go.sum` :
+
+```go
+module example.com/myapp
+
+go 1.22
+
+require github.com/google/uuid v1.6.0
+```
+
+`go.sum` n'est pas destiné à être édité à la main — c'est un fichier de
+verrouillage que Go maintient pour garantir des builds reproductibles : le
+même `go.mod` résout toujours vers un code de dépendance identique
+octet pour octet.
+
+## Commandes de module utiles
+
+```bash
+go mod init example.com/myapp   # démarrer un nouveau module
+go mod tidy                      # ajouter les dépendances manquantes / retirer celles inutilisées
+go get github.com/some/pkg@v1.2.0  # ajouter ou mettre à jour une dépendance
+go build ./...                    # construire tous les paquets du module
+```
+
+## Paquets internes
+
+Un répertoire nommé `internal` restreint ce qui peut l'importer : les
+paquets sous `internal/` ne sont importables que par du code à l'intérieur
+de l'arbre du module enraciné au parent d'`internal`. C'est le mécanisme
+intégré de Go pour marquer du code comme « détail d'implémentation, pas
+une partie de votre API publique », imposé par le compilateur plutôt que
+par la seule convention.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour créer un nouveau module et son package main."
+  items={[
+    { id: "n1", label: "go mod init example.com/hello" },
+    { id: "n2", label: "package main" },
+    { id: "n3", label: "import \"fmt\"", explanation: "Le module doit exister avant que vous n'écriviez des fichiers source qui lui appartiennent." },
+    { id: "n4", label: "func main() {" },
+    { id: "n5", label: "\tfmt.Println(\"hello\")" },
+    { id: "n6", label: "}" },
+  ]}
+  correctOrder={["n1", "n2", "n3", "n4", "n5", "n6"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Ordonnez ces lignes pour importer un paquet local et appeler une de ses fonctions exportées."
+  items={[
+    { id: "q1", label: "package main" },
+    { id: "q2", label: "import (" },
+    { id: "q3", label: "\t\"fmt\"" },
+    { id: "q4", label: "\t\"example.com/myapp/geometry\"", explanation: "Les imports sont regroupés à l'intérieur de parenthèses, aussi bien pour la bibliothèque standard que pour les chemins locaux." },
+    { id: "q5", label: ")" },
+    { id: "q6", label: "func main() {" },
+    { id: "q7", label: "\tfmt.Println(geometry.Area(2, 5))" },
+    { id: "q8", label: "}" },
+  ]}
+  correctOrder={["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que ce code affiche ?"
+  code={`package main
+
+import "fmt"
+
+func main() {
+	fmt.Println(add(2, 3))
+}
+
+func add(a, b int) int {
+	return a + b
+}`}
+  options={["Erreur de compilation : add utilisé avant d'être déclaré", "5", "2 3", "Erreur de compilation : add non exporté"]}
+  correctIndex={1}
+  explanation="Contrairement à un langage de script lu de haut en bas, Go compile tout un fichier (et le package) avant de l'exécuter, donc l'ordre de déclaration à l'intérieur d'un fichier n'a pas d'importance — add peut être défini après main et quand même être appelé depuis celle-ci. Les noms en minuscule sont utilisables au sein du même package quel que soit leur statut d'export."
+  actualOutput="5"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Gestion des erreurs](/fr/programming-languages/go/error-handling)
+- [Goroutines et Channels](/fr/programming-languages/go/advanced)

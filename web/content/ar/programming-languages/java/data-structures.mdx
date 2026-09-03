@@ -1,0 +1,137 @@
+---
+title: هياكل البيانات
+description: مصفوفات Java الثابتة الحجم إلى جانب المجموعتين القابلتين لتغيير الحجم ArrayList وHashMap من إطار المجموعات (Collections Framework).
+category: Programming Languages
+weight: 5
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تمنحك Java طبقتين من الحاويات: **المصفوفات** المدمجة، ثابتة الحجم بمجرد
+إنشائها، و**إطار المجموعات** (`java.util`)، الذي تلجأ إليه معظم الأكواد
+اليومية فعلياً بأنواعه العامة القابلة لتغيير الحجم مثل `ArrayList`
+و`HashMap`.
+
+## المصفوفات
+
+تحتفظ المصفوفة بعدد ثابت من عناصر نوع واحد، مُخصَّص مسبقاً:
+
+```java
+int[] scores = new int[3];
+scores[0] = 70;
+scores[1] = 85;
+scores[2] = 92;
+
+int[] literal = {70, 85, 92}; // مصفوفة حرفية، الحجم مُستنتَج
+
+System.out.println(scores.length); // 3، حقل، وليس استدعاء تابع
+```
+
+المصفوفات مُفهرَسة من الصفر، والقراءة أو الكتابة خارج `[0, length)` ترمي
+`ArrayIndexOutOfBoundsException` وقت التشغيل بدلاً من إفساد الذاكرة
+بصمت. `length` حقل `final` على كائن المصفوفة، وليس تابعاً — خلافاً لـ
+`String.length()` أو `List.size()`، وهما تابعان.
+
+## ArrayList
+
+`ArrayList<T>` قائمة قابلة لتغيير الحجم، مدعومة بمصفوفة، من `java.util`.
+بما أن الأنواع العامة في Java لا يمكنها احتواء الأنواع الأولية مباشرة،
+يجب أن يكون `T` نوعاً مرجعياً — استخدم صنف الغلاف (`Integer`، وليس `int`)
+لأنواع العناصر الأولية:
+
+```java
+import java.util.ArrayList;
+import java.util.List;
+
+List<String> names = new ArrayList<>();
+names.add("Ada");
+names.add("Linus");
+names.add(1, "Grace"); // إدراج عند الفهرس 1، مع إزاحة العناصر اللاحقة يميناً
+
+System.out.println(names);       // [Ada, Grace, Linus]
+System.out.println(names.get(0)); // Ada
+System.out.println(names.size()); // 3
+
+names.remove("Linus");
+System.out.println(names); // [Ada, Grace]
+```
+
+تصريح المتغير كـ`List<String>` (الواجهة) بدلاً من `ArrayList<String>`
+(الصنف الملموس) اصطلاحي — يتيح لك استبدال تنفيذ `List` مختلف لاحقاً دون
+لمس كود يستدعي توابع الواجهة فقط.
+
+## HashMap
+
+يخزّن `HashMap<K, V>` أزواج مفتاح-قيمة بمتوسط O(1) للبحث والإدراج
+والحذف، مدعوماً بجدول تجزئة. لا يضمن أي ترتيب للتكرار:
+
+```java
+import java.util.HashMap;
+import java.util.Map;
+
+Map<String, Integer> ages = new HashMap<>();
+ages.put("Ada", 36);
+ages.put("Linus", 54);
+
+System.out.println(ages.get("Ada"));          // 36
+System.out.println(ages.get("Grace"));         // null: المفتاح غير موجود
+System.out.println(ages.getOrDefault("Grace", 0)); // 0: قيمة افتراضية آمنة
+System.out.println(ages.containsKey("Linus")); // true
+
+for (Map.Entry<String, Integer> entry : ages.entrySet()) {
+    System.out.println(entry.getKey() + " is " + entry.getValue());
+}
+```
+
+`get` على مفتاح مفقود تُعيد `null` بدلاً من الرمي، وهو مصدر شائع لأخطاء
+`NullPointerException` إذا استُخدمت النتيجة دون تحقق من null أو
+`getOrDefault`. إذا احتجت ترتيب تكرار يمكن التنبؤ به، يحافظ
+`LinkedHashMap` على ترتيب الإدراج ويحافظ `TreeMap` على ترتيب المفاتيح
+مُرتَّبة.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لإنشاء مصفوفة ثابتة الحجم، وملئها، وطباعة طولها."
+  items={[
+    { id: "d1", label: "int[] scores = new int[3];" },
+    { id: "d2", label: "scores[0] = 70;" },
+    { id: "d3", label: "scores[1] = 85;" },
+    { id: "d4", label: "scores[2] = 92;", explanation: "يجب إسناد كل فهرس قبل طباعة الطول، رغم أن القيمة المطبوعة لن تتغير على أي حال." },
+    { id: "d5", label: "System.out.println(scores.length);" },
+  ]}
+  correctOrder={["d1", "d2", "d3", "d4", "d5"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="رتّب هذه الأسطر لبناء HashMap، وإضافة مُدخَل، وقراءة مفتاح مفقود بأمان بقيمة افتراضية."
+  items={[
+    { id: "e1", label: "Map<String, Integer> ages = new HashMap<>();" },
+    { id: "e2", label: "ages.put(\"Ada\", 36);" },
+    { id: "e3", label: "int grace = ages.getOrDefault(\"Grace\", 0);", explanation: "تحتاج getOrDefault إلى تعبئة الخريطة أولاً، رغم أن \"Grace\" نفسها لم تُضَف أبداً." },
+    { id: "e4", label: "System.out.println(grace);" },
+  ]}
+  correctOrder={["e1", "e2", "e3", "e4"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا الكود؟"
+  code={`Map<String, Integer> ages = new HashMap<>();
+ages.put("Ada", 36);
+Integer result = ages.get("Linus");
+System.out.println(result);`}
+  options={["0", "null", "NullPointerException", "خطأ تصريف"]}
+  correctIndex={1}
+  explanation="تُعيد HashMap.get قيمة null عندما يكون المفتاح غير موجود بدلاً من الرمي — result من نوع Integer (نوع مرجعي)، لذا يمكنه احتواء null بشكل قانوني وطباعته تطبع السلسلة النصية 'null'. هذا فخ كلاسيكي: فك تغليف تلك القيمة null لاحقاً إلى int أولي سيرمي خطأً، لكن طباعة إحالة Integer نفسها لا يفعل."
+  actualOutput="null"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [التوابع](/ar/programming-languages/java/functions)
+- [الأصناف والواجهات](/ar/programming-languages/java/oop-or-structs)

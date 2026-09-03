@@ -1,0 +1,37 @@
+---
+title: Permissions
+description: Comment le noyau décide si un processus a le droit de toucher une ressource — le modèle propriétaire/groupe/autres, ce que signifie réellement l'exécution sur un répertoire, et les bits setuid/setgid/sticky.
+category: Operating Systems
+weight: 6
+---
+
+Les **permissions** sont la façon dont le noyau répond à une question qu'il doit se poser à pratiquement chaque appel système : *ce* processus a-t-il le droit de faire *ceci* à *cette* ressource ? Chaque processus s'exécute sous une identité — un ID utilisateur et un ou plusieurs ID de groupe, hérités de qui l'a lancé — et chaque ressource (un fichier, un répertoire, un périphérique) porte des métadonnées de permission décrivant qui a le droit de la lire, de l'écrire et de l'exécuter. Le noyau vérifie l'identité du processus par rapport aux permissions de la ressource au moment même de l'accès, pas seulement une fois quand un fichier est ouvert — ce qui explique en partie pourquoi les modèles de permission finissent plus subtils que « puis-je ouvrir ce fichier ».
+
+## Identité, pas intention
+
+Un processus ne peut pas déclarer ce qu'il essaie de faire et faire confiance à l'OS pour le croire. Il a une identité fixe (son ID utilisateur effectif et son ID de groupe) attachée par le noyau, et chaque opération — ouvrir un fichier, envoyer un signal à un autre processus, se lier à un port réseau privilégié — est vérifiée par rapport à cette identité au moment où elle se produit. C'est pourquoi, par exemple, un processus de longue durée qui abandonne ses privilèges après le démarrage (un schéma courant pour les démons réseau qui ont besoin d'un port privilégié au démarrage mais pas ensuite) ne peut réellement pas récupérer ces privilèges sans aide — le noyau ne garde pas trace de « était root avant », il vérifie l'identité que le processus détient en ce moment.
+
+## Les trois bits, et ce que signifie l'exécution sur un répertoire
+
+Le triptyque familier `rwx` — lecture, écriture, exécution — est vérifié séparément pour le propriétaire du fichier, son groupe, et tous les autres, ce qui explique pourquoi `ls -l` affiche neuf caractères de permission en trois groupes de trois (voir [Linux](/fr/devops/linux) pour la syntaxe `chmod`/`ls -l` elle-même). Ce que ces bits *signifient* dépend de s'ils sont attachés à un fichier ou à un répertoire, et le bit d'exécution en particulier signifie quelque chose de réellement différent pour chacun :
+
+- Sur un **fichier**, exécution signifie « le noyau vous laissera l'exécuter comme un programme » (ou l'interpréter comme un script avec une ligne shebang).
+- Sur un **répertoire**, exécution signifie « vous pouvez traverser cet répertoire » — résoudre un chemin à travers lui et accéder aux choses qu'il contient par nom — ce qui est une capacité complètement différente de la lecture. Un répertoire avec lecture mais sans exécution permet de lister ce qu'il contient (voir les noms de fichiers) mais pas d'y `cd` ou d'ouvrir un fichier quelconque par chemin ; un répertoire avec exécution mais sans lecture permet d'accéder à un fichier à l'intérieur si vous connaissez déjà son nom exact, mais pas de découvrir ce qui s'y trouve en le listant. Cette scission déroute constamment les gens parce que « exécution » se lit comme « exécuter », mais un répertoire n'est pas un programme — le bit a été réutilisé pour la traversée à la place.
+
+## setuid, setgid et le sticky bit
+
+Trois bits supplémentaires changent la façon dont se comporte le modèle propriétaire/groupe/autres pour des cas spécifiques, et chacun fait quelque chose de concret au niveau du noyau plutôt que d'être un simple indicateur de politique :
+
+- **setuid** sur un fichier exécutable indique au noyau d'exécuter ce programme avec l'identité du *propriétaire du fichier* plutôt que celle de qui l'a lancé. C'est ainsi que fonctionne `passwd` : un utilisateur ordinaire doit modifier `/etc/shadow`, un fichier que seul root peut écrire, pour changer son propre mot de passe — `passwd` appartient à root et a setuid activé, donc quand un utilisateur normal l'exécute, le processus s'exécute temporairement en tant que root juste assez longtemps pour effectuer ce seul changement contrôlé, puis se termine. Sans setuid, seul root pourrait jamais changer un mot de passe quelconque.
+- **setgid** fait l'équivalent pour l'identité de groupe, et sur un *répertoire* spécifiquement, il a un second effet : tout nouveau fichier ou sous-répertoire créé à l'intérieur hérite du groupe du répertoire plutôt que du groupe principal de l'utilisateur créateur — utile pour les répertoires de projet partagés où les fichiers de chacun doivent rester dans un groupe commun quel que soit qui les a créés.
+- Le **sticky bit**, sur un répertoire, restreint la suppression et le renommage : même si un utilisateur a un accès en écriture au répertoire (ce qui lui permettrait normalement de supprimer tout ce qu'il contient), il ne peut supprimer ou renommer que les fichiers qu'il possède lui-même. `/tmp` est l'exemple canonique — tout le monde a besoin d'y écrire, mais personne ne devrait pouvoir supprimer les fichiers temporaires d'un autre utilisateur simplement parce que le répertoire lui-même est accessible en écriture à tous.
+
+## Au-delà de propriétaire/groupe/autres : les ACL
+
+Le modèle propriétaire/groupe/autres ne peut exprimer qu'un seul utilisateur spécifique (le propriétaire) et un seul groupe spécifique bénéficiant d'un traitement distinct — tous les autres tombent dans un unique compartiment « autres ». Ce n'est souvent pas assez granulaire : donner un accès en lecture à trois utilisateurs spécifiques non liés sans tous les mettre dans un nouveau groupe partagé est maladroit sous le modèle classique. Les **listes de contrôle d'accès (ACL)** étendent le modèle en attachant une liste arbitraire de paires (utilisateur ou groupe, permissions) à une ressource, vérifiées dans l'ordre, permettant d'accorder ou de refuser un accès spécifique à des identités spécifiques au-delà du seul propriétaire et du seul groupe que permettent les bits traditionnels. La plupart des systèmes de fichiers modernes les prennent en charge comme extension optionnelle superposée aux bits classiques, pas à leur place.
+
+## Voir aussi
+
+- **[Linux](/fr/devops/linux)** — les commandes pratiques `chmod`/`ls -l` pour lire et fixer ces bits au quotidien.
+- **[Signaux](/fr/operating-systems/signals)** — un autre cas où l'identité d'un processus détermine ce qu'il a le droit de faire à un autre processus.
+- **[Processes](/fr/devops/processes)** — l'identité utilisateur/groupe décrite ici est une propriété du processus, pas seulement du fichier programme.

@@ -1,0 +1,179 @@
+---
+title: المؤشرات والذاكرة
+description: المؤشرات، وحساب المؤشرات، وإدارة الذاكرة اليدوية باستخدام malloc/free — إضافة إلى أخطاء الاستخدام بعد التحرير والتسريب والتحرير المزدوج التي تتيحها.
+category: Programming Languages
+weight: 9
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+المؤشرات هي الميزة التي تُميّز C أكثر من غيرها. **المؤشر** متغير يحمل عنوان ذاكرة بدلاً من قيمة مباشرة — ولأن C تكشف عناوين الذاكرة الخام للمبرمج، دون جامع قمامة يُنظّف لاحقاً، تمنحك C القدرة على بناء هياكل بيانات فائقة الكفاءة ومنخفضة المستوى، وكل خطأ ذاكرة كلاسيكي (التسريبات، والمؤشرات المتدلية، وفيضانات المخزن المؤقت) تنفق اللغات عالية المستوى جهد تصميم حقيقياً للقضاء عليه.
+
+## أساسيات المؤشرات
+
+يأخذ `&` عنوان متغير؛ ويُشير `*` (في تصريح) إلى أن المتغير مؤشر، بينما يُفكك `*` (في تعبير) المؤشر للوصول إلى القيمة التي يشير إليها:
+
+```c
+#include <stdio.h>
+
+int main(void) {
+    int value = 42;
+    int *ptr = &value; /* ptr holds the address of value */
+
+    printf("value = %d\n", value);
+    printf("address of value = %p\n", (void *)&value);
+    printf("ptr points to = %p\n", (void *)ptr);
+    printf("dereferenced ptr = %d\n", *ptr); /* follows the address back to 42 */
+
+    *ptr = 100; /* writes through the pointer, changing value itself */
+    printf("value is now = %d\n", value);
+
+    return 0;
+}
+```
+
+`ptr` و`value` متغيران منفصلان، لكن `*ptr` و`value` يشيران إلى الذاكرة نفسها بالضبط — تعديل أحدهما عبر المؤشر يغيّر ما يقرأه الآخر.
+
+## حساب المؤشرات والمصفوفات
+
+يتحلل اسم المصفوفة إلى مؤشر إلى عنصرها الأول في معظم التعبيرات، وإضافة عدد صحيح إلى مؤشر يحرّكه للأمام بذلك العدد من *العناصر* (لا البايتات) — يُقيّس المترجم الإزاحة بـ `sizeof` النوع المُشار إليه تلقائياً:
+
+```c
+#include <stdio.h>
+
+int main(void) {
+    int numbers[5] = {10, 20, 30, 40, 50};
+    int *p = numbers; /* decays to &numbers[0] */
+
+    printf("%d\n", *p);       /* 10 */
+    printf("%d\n", *(p + 2)); /* 30 -- p+2 skips two ints, not two bytes */
+    printf("%d\n", p[2]);      /* 30 -- numbers[i] is literally *(numbers + i) */
+
+    for (int *cur = numbers; cur < numbers + 5; cur++) {
+        printf("%d ", *cur);
+    }
+    printf("\n");
+
+    return 0;
+}
+```
+
+`p[2]` و`*(p + 2)` عمليتان متطابقتان تماماً في C — تُعرَّف فهرسة المصفوفات بدلالة حساب المؤشرات، لا العكس، وهذا سبب سماح C الشهير بـ (المشروع قانونياً وإن كان عديم الفائدة غالباً) `2[p]` أيضاً.
+
+## malloc وfree وإدارة الذاكرة اليدوية
+
+تعيش الذاكرة المخصَّصة بـ `malloc` في **الكومة (heap)** وتبقى موجودة حتى تُحرَّر صراحة بـ `free` — بخلاف متغير محلي، لا تُنظَّف تلقائياً عند عودة دالة، وهذا بالضبط ما يجعلها مفيدة للبيانات التي تحتاج للبقاء بعد انتهاء الدالة التي أنشأتها:
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+int *makeArray(int size, int fillValue) {
+    int *arr = malloc(size * sizeof(int)); /* size ints worth of raw memory */
+    if (arr == NULL) {
+        return NULL; /* malloc failed, e.g. out of memory */
+    }
+    for (int i = 0; i < size; i++) {
+        arr[i] = fillValue;
+    }
+    return arr; /* safe: this memory lives on the heap, not the function's stack */
+}
+
+int main(void) {
+    int *nums = makeArray(5, 7);
+    if (nums == NULL) {
+        return 1;
+    }
+
+    for (int i = 0; i < 5; i++) {
+        printf("%d ", nums[i]);
+    }
+    printf("\n");
+
+    free(nums); /* release the memory back to the system */
+    nums = NULL; /* avoid leaving a dangling pointer around */
+
+    return 0;
+}
+```
+
+يحتاج كل `malloc` ناجح إلى `free` مطابقة واحدة بالضبط — استدعها صفر مرات وتتسرب الذاكرة (لا تُستعاد أبداً حتى تخرج العملية)؛ واستدعها مرتين على المؤشر نفسه (**تحرير مزدوج**) والسلوك عندها غير معرَّف، وغالباً ما يُفسد محاسبة الكومة الداخلية.
+
+## أخطاء شائعة
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+int *danglingExample(void) {
+    int local = 5;
+    return &local; /* BUG: local's stack memory is gone once this function returns */
+}
+
+void useAfterFreeExample(void) {
+    int *p = malloc(sizeof(int));
+    *p = 1;
+    free(p);
+    printf("%d\n", *p); /* BUG: use-after-free -- p's memory may already be reused */
+}
+
+void leakExample(void) {
+    int *p = malloc(100 * sizeof(int));
+    /* BUG: no free(p) before p goes out of scope -- that memory is now unreachable */
+}
+```
+
+لن تنهار أي من هذه الدوال الثلاث بشكل موثوق — وهذا بالضبط ما يجعلها خطيرة. قد يظل المؤشر الذي تُرجعه `danglingExample` "يعمل" لفترة لأن لا شيء آخر كتب فوق تلك الذاكرة في المكدس بعد؛ وقد تطبع `useAfterFreeExample` القيمة `1` بشكل طبيعي في معظم الأحيان. توجد أدوات مثل **Valgrind** و**AddressSanitizer** (`-fsanitize=address` مع gcc/clang) خصيصاً لأن هذه الأخطاء صامتة في وقت الترجمة وغير ثابتة في وقت التشغيل — فهي تُراقب الوصول إلى الذاكرة لالتقاط الاستخدام بعد التحرير، والتسريبات، والكتابة خارج الحدود التي قد تمر دون ملاحظة إلى أن تسبب انهياراً في مكان غير متعلق تماماً.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="اجمع تبديلاً عبر عناوين المؤشرات"
+  prompt="اسحب هذه الأسطر إلى الترتيب الذي يقرأ قيمة عبر مؤشر ثم يعدّلها عبر المؤشر نفسه."
+  items={[
+    { id: "decl", label: "int value = 10;" },
+    { id: "ptr", label: "int *ptr = &value;", explanation: "يجب توجيه ptr إلى عنوان value قبل أن يمكن تفكيكه لقراءتها أو الكتابة فيها." },
+    { id: "read", label: "printf(\"%d\\n\", *ptr);" },
+    { id: "write", label: "*ptr = 20;" },
+    { id: "readagain", label: "printf(\"%d\\n\", value);" },
+  ]}
+  correctOrder={["decl", "ptr", "read", "write", "readagain"]}
+/>
+
+<OrderingExercise
+  title="رتّب دورة حياة صحيحة لـ malloc/free"
+  prompt="اسحب هذه الأسطر إلى الترتيب الذي يخصّص ذاكرة، ويستخدمها، ويحررها بأمان."
+  items={[
+    { id: "malloc", label: "int *arr = malloc(3 * sizeof(int));" },
+    { id: "check", label: "if (arr == NULL) return 1;", explanation: "يجب فحص نتيجة malloc قبل تفكيكها — الكتابة عبر مؤشر NULL تنهار البرنامج." },
+    { id: "fill", label: "arr[0] = 1; arr[1] = 2; arr[2] = 3;" },
+    { id: "print", label: "printf(\"%d %d %d\\n\", arr[0], arr[1], arr[2]);" },
+    { id: "free", label: "free(arr);" },
+  ]}
+  correctOrder={["malloc", "check", "fill", "print", "free"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع حساب المؤشرات هنا؟"
+  code={`#include <stdio.h>
+
+int main(void) {
+    int nums[4] = {5, 10, 15, 20};
+    int *p = nums;
+    p = p + 2;
+    printf("%d\\n", *p);
+    return 0;
+}`}
+  options={["7 (5 زائد 2)", "15", "عنوان nums[2]", "خطأ ترجمة"]}
+  correctIndex={1}
+  explanation="تُقدّم p + 2 المؤشر بخطوتَين بحجم int، لا بايتَين ولا بإضافة 2 إلى القيمة المُشار إليها -- إنها تشير الآن إلى nums[2]، التي تحمل 15. يُقيّس المترجم حساب المؤشرات تلقائياً بـ sizeof(int)، وهذا بالضبط ما يجعل p[i] و*(p + i) متكافئَين."
+  actualOutput="15"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- **[هياكل البيانات](/ar/programming-languages/c/data-structures)** — المصفوفات والقائمة المترابطة المبنية من آليات المؤشرات نفسها.
+- **[الدوال](/ar/programming-languages/c/functions)** — كيفية استخدام المؤشرات للالتفاف حول التمرير بالقيمة للمعاملات المُخرَجة.

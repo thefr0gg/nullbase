@@ -1,0 +1,112 @@
+---
+title: Sintaxis y Variables
+description: Variables, inferencia de tipos con var, tipos por valor vs. por referencia, y tipos de referencia anulables en C#.
+category: Programming Languages
+weight: 2
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+C# es estáticamente tipado: toda variable tiene un tipo conocido en tiempo de compilación, ya sea que lo escribas explícitamente o dejes que el compilador lo infiera. Las sentencias terminan con un punto y coma, los bloques se delimitan con `{}`, y los identificadores distinguen entre mayúsculas y minúsculas.
+
+## Declarar variables
+
+Puedes declarar una variable con un tipo explícito o con `var`, lo cual le pide al compilador que infiera el tipo a partir del lado derecho. Ambos producen exactamente la misma variable estáticamente tipada — `var` no es tipado dinámico.
+
+```csharp
+int age = 30;
+double price = 19.99;
+string name = "nullbase";
+bool isActive = true;
+
+// var infers the type at compile time — it's still int, not "any"
+var count = 42;        // inferred as int
+var label = "widgets"; // inferred as string
+```
+
+Una vez que una variable se declara con un tipo (explícito o inferido), ese tipo queda fijo — no puedes asignarle después un `string` a una variable que fue inferida como `int`.
+
+## Tipos por valor vs. tipos por referencia
+
+C# distingue los tipos por valor (`int`, `double`, `bool`, `struct`, y otros primitivos), que se copian por valor, de los tipos por referencia (`class`, `string`, arrays, y casi todo lo demás), que se copian por referencia.
+
+```csharp
+int a = 5;
+int b = a;   // b gets a copy of a's value
+b = 10;
+Console.WriteLine(a); // still 5
+
+int[] arr1 = { 1, 2, 3 };
+int[] arr2 = arr1;     // arr2 refers to the same array as arr1
+arr2[0] = 99;
+Console.WriteLine(arr1[0]); // 99 — both variables point at the same array
+```
+
+`string` es técnicamente un tipo por referencia, pero es inmutable, así que se comporta como un valor en la práctica: ningún método de `string` lo muta jamás en su lugar, cada operación devuelve una nueva cadena.
+
+## Constantes y tipos anulables
+
+`const` declara una constante en tiempo de compilación; `readonly` (cubierto junto con las clases) declara un valor que solo puede establecerse una vez, en el momento de la construcción. Los tipos de referencia son anulables por defecto a menos que actives la verificación de tipos de referencia anulables (`#nullable enable`, o a nivel de todo el proyecto vía `.csproj`), lo cual permite que el compilador marque los lugares donde un `null` podría colarse inesperadamente.
+
+```csharp
+#nullable enable
+
+const double Pi = 3.14159;
+
+string? maybeNull = null;      // explicitly nullable
+string definitelyNotNull = "hi"; // compiler warns if this is ever assigned null
+
+int? maybeNumber = null;       // nullable value type via Nullable<T>
+if (maybeNumber.HasValue)
+{
+    Console.WriteLine(maybeNumber.Value);
+}
+```
+
+`int?` es una forma abreviada de `Nullable<int>` — los tipos por valor no son anulables por defecto, así que C# los envuelve en un struct que agrega una marca de "tiene valor" cuando necesitas un tipo por valor que también pueda ser `null`.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para declarar dos variables — una explícita, una inferida — e imprimir su suma."
+  items={[
+    { id: "l1", label: "int x = 4;" },
+    { id: "l2", label: "var y = 6;", explanation: "var puede aparecer en cualquier lugar donde podría ir un tipo, siempre que el compilador pueda inferirlo a partir del inicializador." },
+    { id: "l3", label: "Console.WriteLine(x + y);" },
+  ]}
+  correctOrder={["l1", "l2", "l3"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Coloca estas líneas en orden para declarar un int anulable, verificarlo, e imprimir su valor de forma segura."
+  items={[
+    { id: "m1", label: "int? maybeNumber = 7;" },
+    { id: "m2", label: "if (maybeNumber.HasValue)" },
+    { id: "m3", label: "{" },
+    { id: "m4", label: "    Console.WriteLine(maybeNumber.Value);" },
+    { id: "m5", label: "}" },
+  ]}
+  correctOrder={["m1", "m2", "m3", "m4", "m5"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`int[] original = { 1, 2, 3 };
+int[] alias = original;
+alias[0] = 100;
+Console.WriteLine(original[0]);`}
+  options={["1", "100", "0", "Compile error"]}
+  correctIndex={1}
+  explanation="Los arrays son tipos por referencia en C#. alias no copia el array — es una segunda referencia al mismo objeto array, así que mutar a través de alias también es visible a través de original."
+  actualOutput="100"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [C#](/es/programming-languages/csharp)
+- [Flujo de Control](/es/programming-languages/csharp/control-flow)

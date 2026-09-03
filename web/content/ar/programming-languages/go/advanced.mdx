@@ -1,0 +1,168 @@
+---
+title: Goroutines والقنوات
+description: نموذج التزامن في Go — الگوروتينات الخفيفة والقنوات المستخدَمة للتنسيق والتواصل بينها.
+category: Programming Languages
+weight: 9
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+التزامن هو السمة المميّزة لـGo. بدلاً من كشف خيوط نظام التشغيل الخام
+والأقفال كأداة رئيسية، تمنحك Go **الگوروتينات (goroutines)** — وحدات
+تنفيذ متزامن خفيفة للغاية تديرها بيئة تشغيل Go — و**القنوات (channels)**،
+أنابيب مكتوبة (typed) تتواصل الگوروتينات عبرها بأمان. الفلسفة، المستعارة
+من نموذج CSP لتوني هور، تُلخَّص في سطر من توثيق Go: "لا تتواصل بمشاركة
+الذاكرة؛ بل شارك الذاكرة بالتواصل."
+
+## الگوروتينات
+
+بدء گوروتين يحتاج كلمة مفتاحية واحدة، `go`، توضع قبل استدعاء دالة. يعود
+الاستدعاء فوراً، وتعمل الدالة بشكل متزامن:
+
+```go
+func sayHello() {
+	fmt.Println("hello from a goroutine")
+}
+
+func main() {
+	go sayHello()
+	time.Sleep(100 * time.Millisecond) // إعطاؤها فرصة للعمل
+	fmt.Println("main done")
+}
+```
+
+الگوروتينات رخيصة — بضعة كيلوبايتات من المكدس تنمو حسب الحاجة، مقارنة
+بميغابايتات لخيط نظام تشغيل — لذا من الطبيعي أن يُشغِّل برنامج Go آلاف
+منها في آنٍ واحد. `time.Sleep` أعلاه طريقة خام للانتظار؛ الكود الحقيقي
+يستخدم القنوات أو `sync.WaitGroup` بدلاً من ذلك، لأن النوم لمدة ثابتة
+حالة تسابق (race condition) في انتظار الحدوث.
+
+## القنوات
+
+القناة موصل مكتوب ترسل قيماً إليه وتستقبل قيماً منه، تُنشأ بـ`make`:
+
+```go
+func main() {
+	ch := make(chan string)
+
+	go func() {
+		ch <- "result from goroutine" // إرسال
+	}()
+
+	msg := <-ch // استقبال — يُحجَب حتى وصول قيمة
+	fmt.Println(msg)
+}
+```
+
+الإرسال والاستقبال على قناة غير مُخزَّنة (unbuffered) يُحجَبان كلاهما حتى
+يصبح الطرف الآخر جاهزاً، وهذا ما يجعل القنوات مفيدة للتزامن، وليس فقط لنقل
+البيانات: الاستقبال أعلاه لا يكتمل إلا بعد أن يرسل الگوروتين قيمته فعلياً،
+مما يمنحك تسليماً آمناً بلا قفل صريح.
+
+## القنوات المُخزَّنة والإغلاق
+
+يُنشئ `make(chan T, n)` قناة بمساحة لـ`n` قيمة قبل أن يُحجَب إرسال. إغلاق
+قناة بـ`close` يشير إلى عدم وصول مزيد من القيم، وهو ما تستخدمه `range`
+لمعرفة متى تتوقف:
+
+```go
+func main() {
+	results := make(chan int, 3)
+
+	go func() {
+		for i := 1; i <= 3; i++ {
+			results <- i * i
+		}
+		close(results)
+	}()
+
+	for value := range results {
+		fmt.Println(value) // 1، ثم 4، ثم 9
+	}
+}
+```
+
+## select
+
+تنتظر `select` عمليات قناة متعددة في آنٍ واحد وتُتابع بأيها يصبح جاهزاً
+أولاً — نظير التزامن لـ`switch` على القنوات:
+
+```go
+func main() {
+	c1 := make(chan string)
+	c2 := make(chan string)
+
+	go func() { c1 <- "from c1" }()
+	go func() { c2 <- "from c2" }()
+
+	for i := 0; i < 2; i++ {
+		select {
+		case msg1 := <-c1:
+			fmt.Println(msg1)
+		case msg2 := <-c2:
+			fmt.Println(msg2)
+		}
+	}
+}
+```
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لإطلاق گوروتين يرسل قيمة واحدة على قناة، ثم استقبالها في main."
+  items={[
+    { id: "a1", label: "func main() {" },
+    { id: "a2", label: "\tch := make(chan int)" },
+    { id: "a3", label: "\tgo func() {", explanation: "يجب أن توجد القناة قبل أن يتمكن گوروتين من الإرسال عليها." },
+    { id: "a4", label: "\t\tch <- 7" },
+    { id: "a5", label: "\t}()" },
+    { id: "a6", label: "\tfmt.Println(<-ch)" },
+    { id: "a7", label: "}" },
+  ]}
+  correctOrder={["a1", "a2", "a3", "a4", "a5", "a6", "a7"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="رتّب هذه الأسطر لإنتاج ثلاث قيم على قناة مُخزَّنة من گوروتين، وإغلاقها، ثم تفريغها بـrange في main."
+  items={[
+    { id: "b1", label: "ch := make(chan int, 3)" },
+    { id: "b2", label: "go func() {" },
+    { id: "b3", label: "\tfor i := 1; i <= 3; i++ {" },
+    { id: "b4", label: "\t\tch <- i", explanation: "يجب إرسال القيم قبل إغلاق القناة." },
+    { id: "b5", label: "\t}" },
+    { id: "b6", label: "\tclose(ch)" },
+    { id: "b7", label: "}()" },
+    { id: "b8", label: "for v := range ch {" },
+    { id: "b9", label: "\tfmt.Println(v)" },
+    { id: "b10", label: "}" },
+  ]}
+  correctOrder={["b1", "b2", "b3", "b4", "b5", "b6", "b7", "b8", "b9", "b10"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا الكود؟"
+  code={`package main
+
+import "fmt"
+
+func main() {
+	ch := make(chan int, 1)
+	ch <- 10
+	ch <- 20
+	fmt.Println(<-ch)
+}`}
+  options={["10", "20", "يتوقف البرنامج (deadlock)", "10\\n20"]}
+  correctIndex={2}
+  explanation="القناة مُخزَّنة بسعة 1. الإرسال الأول (10) يتّسع في المخزن المؤقت ويعود فوراً. الإرسال الثاني (20) يُحجَب لأن المخزن المؤقت ممتلئ ولم يستقبل أحد بعد — وبما أن هذا كله يحدث على گوروتين main الوحيد دون گوروتين آخر لتفريغه، يتوقف البرنامج (خطأ تشغيل فادح: كل الگوروتينات نائمة)."
+  actualOutput="fatal error: all goroutines are asleep - deadlock!"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [الوحدات والحزم](/ar/programming-languages/go/modules-packages)
+- [معالجة الأخطاء](/ar/programming-languages/go/error-handling)

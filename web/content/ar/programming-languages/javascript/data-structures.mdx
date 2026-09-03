@@ -1,0 +1,152 @@
+---
+title: هياكل البيانات
+description: المصفوفات، والكائنات، ومجموعتا Map وSet في JavaScript، بما في ذلك مفاجآت شائعة حول مساواة الإحالة (reference equality).
+category: Programming Languages
+weight: 5
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تملك JavaScript هيكلي بيانات أساسيين مدمجين في بنية اللغة — المصفوفات
+والكائنات — بالإضافة إلى نوعي مجموعة مخصَّصين، `Map` و`Set`، أُضيفا في
+ES6 للحالات التي تقصّر فيها الكائنات العادية.
+
+## المصفوفات
+
+المصفوفات قوائم مرتَّبة وقابلة لتغيير الحجم، وتأتي كل مصفوفة بمجموعة
+كبيرة من التوابع المدمجة لتحويل البيانات دون حلقات مكتوبة يدوياً. `map`
+و`filter` و`reduce` هي الثلاثة التي ستلجأ إليها باستمرار:
+
+```js
+const prices = [10, 25, 8, 40];
+
+const withTax = prices.map(p => p * 1.08);
+const affordable = prices.filter(p => p < 30);
+const total = prices.reduce((sum, p) => sum + p, 0);
+
+console.log(withTax);   // [10.8, 27, 8.64, 43.2]
+console.log(affordable); // [10, 25, 8]
+console.log(total);      // 83
+```
+
+تُعيد `map` و`filter` مصفوفات جديدة بدلاً من تعديل الأصلية؛ في المقابل،
+تُعدِّل `push` و`pop` و`splice` و`sort` المصفوفة في مكانها — تمييز يستحق
+الحفظ لأنه من السهل تعديل مصفوفة لم تقصد تغييرها.
+
+## الكائنات
+
+الكائنات مجموعات غير مرتَّبة من أزواج مفتاح/قيمة (عملياً، تحافظ المحركات
+الحديثة على ترتيب الإدراج للمفاتيح النصية). يعمل الوصول للخاصية بترميز
+النقطة أو الأقواس، ويستخرج التفكيك (destructuring) القيم بإيجاز.
+
+```js
+const user = {
+  name: "ada",
+  role: "admin",
+  loginCount: 12,
+};
+
+const { name, role } = user; // تفكيك
+console.log(`${name} (${role})`); // "ada (admin)"
+
+const updated = { ...user, loginCount: user.loginCount + 1 }; // نشر — نسخة سطحية بحقل واحد مُغيَّر
+console.log(updated.loginCount); // 13
+console.log(user.loginCount);    // 12 — الكائن الأصلي لم يُمَس
+```
+
+## مساواة الإحالة
+
+تُقارَن الكائنات والمصفوفات بالإحالة، وليس بالقيمة. مصفوفتان بمحتوى
+متطابق لن تكونا أبداً `===` إلا إذا كانتا حرفياً نفس الكائن في الذاكرة.
+
+```js
+const a = [1, 2, 3];
+const b = [1, 2, 3];
+const c = a;
+
+console.log(a === b); // false — مصفوفتان مختلفتان، نفس المحتوى
+console.log(a === c); // true  — تشير c إلى نفس مصفوفة a تماماً
+
+c.push(4);
+console.log(a); // [1, 2, 3, 4] — تعديل c يغيّر a أيضاً، لأنهما نفس الكائن
+```
+
+## Map وSet
+
+يسمح الكائن العادي فقط بمفاتيح نصية أو رمزية، والتكرار عبر مُدخَلاته
+بترتيب مضمون أمر صعب قليلاً. تُصلِح `Map` كليهما: يمكن لأي قيمة أن تكون
+مفتاحاً، وتتكرر بترتيب الإدراج.
+
+```js
+const scores = new Map();
+scores.set("alice", 90);
+scores.set("bob", 85);
+
+console.log(scores.get("alice")); // 90
+console.log(scores.size);          // 2
+
+for (const [player, score] of scores) {
+  console.log(`${player}: ${score}`);
+}
+```
+
+تخزّن `Set` قيماً فريدة — إضافة قيمة مكررة عملية عديمة الأثر — مما يجعل
+إزالة التكرار سطراً واحداً:
+
+```js
+const tags = new Set(["js", "web", "js", "frontend"]);
+console.log(tags.size);       // 3
+console.log([...tags]);        // ["js", "web", "frontend"]
+console.log(tags.has("web"));  // true
+```
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لتصفية مصفوفة أرقام وجمع النتيجة."
+  items={[
+    { id: "arr", label: "const nums = [3, 8, 15, 4, 22];" },
+    { id: "big", label: "const big = nums.filter(n => n > 10);" },
+    { id: "total", label: "const total = big.reduce((sum, n) => sum + n, 0);", explanation: "تحتاج reduce إلى وجود `big` مسبقاً كالمصفوفة التي تجمعها." },
+    { id: "log", label: "console.log(total);" },
+  ]}
+  correctOrder={["arr", "big", "total", "log"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="رتّب هذه الأسطر لبناء Set من مصفوفة والتحقق من العضوية."
+  items={[
+    { id: "arr2", label: "const ids = [1, 2, 2, 3, 1];" },
+    { id: "set", label: "const uniqueIds = new Set(ids);" },
+    { id: "size", label: "console.log(uniqueIds.size);" },
+    { id: "has", label: "console.log(uniqueIds.has(2));" },
+  ]}
+  correctOrder={["arr2", "set", "size", "has"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا الكود؟"
+  code={`const original = { count: 1, tags: ["a"] };
+const copy = { ...original };
+
+copy.count = 99;
+copy.tags.push("b");
+
+console.log(original.count);
+console.log(original.tags);`}
+  options={["1 ثم [\"a\"]", "99 ثم [\"a\", \"b\"]", "1 ثم [\"a\", \"b\"]", "99 ثم [\"a\"]"]}
+  correctIndex={2}
+  explanation="النشر بـ{...original} يصنع نسخة سطحية: الحقول الأولية على المستوى الأعلى مثل count تُنسَخ بالقيمة، لذا تغيير copy.count لا يمس original.count. لكن tags كائن (مصفوفة)، فالنشر ينسخ الإحالة فقط — يشير copy.tags وoriginal.tags إلى نفس المصفوفة، لذا الإضافة إلى أحدهما تؤثر على كليهما."
+  actualOutput="1
+[ 'a', 'b' ]"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [الدوال والإغلاقات](/ar/programming-languages/javascript/functions)
+- [الأصناف والكائنات](/ar/programming-languages/javascript/oop-or-structs)

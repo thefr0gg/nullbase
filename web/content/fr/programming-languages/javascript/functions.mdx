@@ -1,0 +1,177 @@
+---
+title: Fonctions et closures
+description: Déclarations de fonction, fonctions fléchées, paramètres par défaut et rest, et les closures en JavaScript.
+category: Programming Languages
+weight: 4
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Les fonctions en JavaScript sont des valeurs : vous pouvez les assigner à
+des variables, les passer comme arguments, les stocker dans des tableaux,
+et les renvoyer depuis d'autres fonctions. Cette propriété de « fonctions
+de première classe » est le fondement des callbacks, des méthodes de
+tableau comme `map`/`filter`, et des closures.
+
+## Déclarer des fonctions
+
+Il y a trois façons courantes d'écrire une fonction, et elles diffèrent
+par plus que la simple syntaxe.
+
+```js
+// Déclaration de fonction — hissée, peut être appelée avant que sa définition n'apparaisse
+function add(a, b) {
+  return a + b;
+}
+
+// Expression de fonction — pas hissée, n'existe qu'une fois cette ligne exécutée
+const subtract = function (a, b) {
+  return a - b;
+};
+
+// Fonction fléchée — syntaxe concise, pas de `this` ou `arguments` propres
+const multiply = (a, b) => a * b;
+```
+
+Les déclarations de fonction sont hissées avec leur corps complet, donc en
+appeler une avant sa ligne dans le fichier fonctionne très bien. Les
+expressions de fonction et les fonctions fléchées assignées à
+`const`/`let` ne le sont pas — la variable existe (dans une « zone morte
+temporelle ») mais n'est pas appelable avant que l'assignation ne
+s'exécute.
+
+## Fonctions fléchées
+
+Les fonctions fléchées sont plus qu'un raccourci. Elles n'ont pas leur
+propre `this`, `arguments`, ou `super` — elles les capturent depuis la
+portée englobante à la place. Cela en fait le bon choix pour des callbacks
+où vous voulez que `this` reste lié au contexte environnant, et le mauvais
+choix pour des méthodes d'objet qui ont besoin de leur propre `this`.
+
+```js
+const doubled = [1, 2, 3].map(n => n * 2);
+console.log(doubled); // [2, 4, 6]
+
+const counter = {
+  count: 0,
+  incrementBad: () => {
+    this.count++; // `this` ici n'EST PAS l'objet counter — les fonctions fléchées
+                  // n'ont pas leur propre `this`, donc ceci ne fait silencieusement rien d'utile
+  },
+  incrementGood() {
+    this.count++; // une méthode ordinaire — `this` fait correctement référence à `counter`
+  },
+};
+```
+
+## Paramètres par défaut et rest
+
+Les paramètres peuvent avoir des valeurs par défaut, utilisées seulement
+quand l'argument est `undefined` (pas pour toute autre valeur falsy). Les
+paramètres rest rassemblent les arguments restants dans un vrai tableau.
+
+```js
+function createUser(name, role = "member") {
+  return { name, role };
+}
+
+console.log(createUser("ada"));            // { name: "ada", role: "member" }
+console.log(createUser("grace", "admin")); // { name: "grace", role: "admin" }
+
+function sum(...numbers) {
+  return numbers.reduce((total, n) => total + n, 0);
+}
+
+console.log(sum(1, 2, 3, 4)); // 10
+```
+
+## Closures
+
+Une closure est une fonction qui « se souvient » des variables de la
+portée dans laquelle elle a été créée, même après que cette portée
+extérieure a terminé son exécution. C'est ainsi que vous obtenez un état
+privé sans classes : chaque appel à une fonction extérieure crée une
+portée fraîche et isolée que les fonctions internes peuvent continuer à
+référencer.
+
+```js
+function makeCounter() {
+  let count = 0; // privé à chaque compteur — non accessible depuis l'extérieur
+
+  return {
+    increment() {
+      count += 1;
+      return count;
+    },
+    reset() {
+      count = 0;
+    },
+  };
+}
+
+const counterA = makeCounter();
+const counterB = makeCounter();
+
+console.log(counterA.increment()); // 1
+console.log(counterA.increment()); // 2
+console.log(counterB.increment()); // 1 — un `count` complètement séparé
+```
+
+Chaque appel à `makeCounter()` crée une nouvelle variable `count`, et les
+méthodes renvoyées forment une closure sur celle-ci en particulier —
+`counterA` et `counterB` n'interfèrent jamais l'un avec l'autre.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire une fonction qui filtre et double un tableau à l'aide de fonctions fléchées."
+  items={[
+    { id: "arr", label: "const nums = [1, 2, 3, 4, 5];" },
+    { id: "evens", label: "const evens = nums.filter(n => n % 2 === 0);" },
+    { id: "doubled", label: "const doubled = evens.map(n => n * 2);", explanation: "doubled dépend de l'existence préalable de evens, donc le filtrage doit se produire en premier." },
+    { id: "log", label: "console.log(doubled);" },
+  ]}
+  correctOrder={["arr", "evens", "doubled", "log"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Mettez ces lignes dans l'ordre pour construire un solde bancaire basé sur une closure avec une variable privée."
+  items={[
+    { id: "fnOpen", label: "function makeAccount(initial) {" },
+    { id: "balance", label: "  let balance = initial;" },
+    { id: "return", label: "  return {" },
+    { id: "deposit", label: "    deposit(amount) { balance += amount; return balance; }," },
+    { id: "getBalance", label: "    getBalance() { return balance; }," },
+    { id: "returnClose", label: "  };" },
+    { id: "fnClose", label: "}" },
+  ]}
+  correctOrder={["fnOpen", "balance", "return", "deposit", "getBalance", "returnClose", "fnClose"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que ce code affiche ?"
+  code={`function makeMultiplier(factor) {
+  return n => n * factor;
+}
+
+const triple = makeMultiplier(3);
+const quadruple = makeMultiplier(4);
+
+console.log(triple(5));
+console.log(quadruple(5));`}
+  options={["15 puis 15", "15 puis 20", "20 puis 15", "12 puis 20"]}
+  correctIndex={1}
+  explanation="Chaque appel à makeMultiplier crée sa propre closure sur un `factor` distinct. triple a capturé 3, donc triple(5) vaut 15 ; quadruple a capturé 4, donc quadruple(5) vaut 20. Les deux closures ne partagent ni n'écrasent le factor l'une de l'autre même si elles viennent de la même fonction."
+  actualOutput="15
+20"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Flux de contrôle](/fr/programming-languages/javascript/control-flow)
+- [Asynchrone et Promises](/fr/programming-languages/javascript/advanced)

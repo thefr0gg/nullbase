@@ -1,0 +1,54 @@
+---
+title: Llamadas al Sistema
+description: La frontera entre modo usuario y modo kernel que todo programa tiene que cruzar para tocar el hardware, y cómo una llamada al sistema cambia mecánicamente la CPU a través de ella y de vuelta.
+category: Operating Systems
+weight: 5
+interactive: true
+interactiveType: ["MermaidDiagram"]
+---
+
+Una **llamada al sistema** es la única forma en que a un programa ordinario se le permite tocar el hardware, otro proceso, o cualquier otra cosa que el kernel considere privilegiada — leer un archivo, enviar un paquete de red, asignar memoria, incluso preguntar qué hora es. Un programa en ejecución no puede simplemente extender la mano y manipular directamente un controlador de disco o la memoria de otro proceso; tiene que pedirle al kernel que lo haga en su nombre, a través de una interfaz estrecha y bien definida. Entender por qué existe esa frontera, y qué sucede realmente cuando el código la cruza, explica mucho sobre por qué los sistemas operativos son confiables en absoluto a pesar de ejecutar lado a lado programas de usuario arbitrarios, a veces con bugs o maliciosos.
+
+## Modo usuario y modo kernel
+
+Las CPU que ejecutan sistemas operativos de propósito general soportan al menos dos niveles de privilegio, comúnmente llamados **modo usuario** y **modo kernel**. El código que se ejecuta en modo usuario está deliberadamente restringido: no puede ejecutar ciertas instrucciones (como las que reconfiguran la unidad de gestión de memoria o hablan directamente con un controlador de disco), y solo puede tocar la memoria en la que se ha mapeado su propio proceso. El código que se ejecuta en modo kernel no tiene tales restricciones — puede ejecutar cualquier instrucción y tocar cualquier dirección de memoria física.
+
+Casi todo lo que hace un programa normal se ejecuta en modo usuario, por una razón simple: si cada proceso se ejecutara con todos los privilegios, un solo programa con bugs o malicioso podría sobrescribir la memoria de otro proceso, corromper el disco directamente, o desactivar las protecciones para todos los demás en la máquina. Confinar el código ordinario al modo usuario es lo que hace que el aislamiento de procesos ([cubierto en la página de Procesos](/es/operating-systems/processes)) sea realmente exigible en lugar de solo una convención educada.
+
+## Qué hace mecánicamente una llamada al sistema
+
+Como un proceso en modo usuario no puede simplemente saltar al código del kernel y empezar a ejecutar instrucciones privilegiadas — eso derrotaría todo el propósito de tener dos niveles de privilegio — una llamada al sistema funciona a través de un mecanismo controlado, soportado por hardware: una **trampa (trap)** (también llamada interrupción por software). El proceso ejecuta una instrucción especial que la CPU reconoce, la cual cambia al procesador a modo kernel y transfiere el control a un único punto de entrada fijo dentro del kernel — nunca a una dirección que el proceso de usuario pueda elegir. A partir de ahí:
+
+<MermaidDiagram title="Una llamada al sistema cruzando la frontera usuario/kernel" chart={`sequenceDiagram
+    participant U as User-mode process
+    participant K as Kernel
+    U->>U: calls a library wrapper (e.g. read())
+    U->>K: trap instruction — CPU switches to kernel mode
+    K->>K: kernel handler validates args, does privileged work
+    K->>U: return — CPU switches back to user mode
+    U->>U: library wrapper returns a value to the caller
+`} />
+
+1. El proceso coloca el número de llamada al sistema y sus argumentos en el lugar que espera la convención (normalmente registros específicos), y luego ejecuta la instrucción de trampa.
+2. La CPU cambia a modo kernel y salta al único manejador de trampas del kernel, usando el número de llamada al sistema para buscar qué rutina real del kernel ejecutar.
+3. La rutina del kernel hace el trabajo privilegiado solicitado — leer bloques de disco, entregar una señal, actualizar una tabla de páginas — con acceso completo al hardware y a las estructuras de datos del kernel.
+4. El kernel coloca un valor de retorno (o un código de error) de vuelta donde la convención de llamada lo espera, y luego ejecuta una instrucción que cambia la CPU de vuelta a modo usuario y reanuda el proceso original exactamente donde lo dejó.
+
+Todo el intercambio es un traspaso controlado: el proceso de usuario nunca ejecuta instrucciones privilegiadas él mismo, y el kernel solo ejecuta código que él mismo escribió en un punto de entrada que él eligió, sin importar lo que pidiera el proceso de usuario.
+
+## Algunas llamadas al sistema concretas
+
+- **`open`** — pide al kernel que localice un archivo (a través de las propias estructuras de inodo del sistema de archivos, ver [Sistemas de Archivos](/es/operating-systems/file-systems)) y devuelva un descriptor de archivo que lo referencie.
+- **`read`** / **`write`** — piden al kernel que copie bytes entre un descriptor de archivo y un búfer en la propia memoria del proceso.
+- **`fork`** — pide al kernel que duplique el proceso llamante, como se cubre en la página de [Procesos](/es/operating-systems/processes).
+- **`execve`** — pide al kernel que reemplace la imagen de memoria del proceso llamante con un programa nuevo.
+
+## Por qué `printf` y `fopen` son wrappers, no llamadas al sistema en sí
+
+Casi nadie realmente emite una instrucción de trampa cruda a mano — la biblioteca estándar de C (y equivalentes en el runtime de cualquier otro lenguaje) proporciona funciones ordinarias como `printf`, `fopen`, y `malloc` que parecen llamadas a función normales pero que, por debajo, son wrappers delgados que eventualmente llaman a `write`, `open`, o `brk`/`mmap`. La capa de biblioteca existe por conveniencia y portabilidad: `printf` hace el buffering y el parseo de cadenas de formato enteramente en modo usuario, llamando a la llamada al sistema `write` real solo ocasionalmente para vaciar un búfer lleno, y `fopen` envuelve `open` con una abstracción `FILE*` con buffer encima. El trabajo privilegiado real — la parte que podría tocar un disco, asignar memoria real, o afectar a otro proceso — siempre termina en una trampa genuina hacia el kernel; todo lo que está por encima de eso en una biblioteca estándar es contabilidad.
+
+## Ver también
+
+- **[Procesos](/es/operating-systems/processes)** — `fork`, `exec`, `wait`, y `exit` son en sí mismas llamadas al sistema cuyos efectos del lado del kernel describe esa página.
+- **[Memoria Virtual](/es/operating-systems/virtual-memory)** — los fallos de página se manejan con el mismo mecanismo de trampa, aunque ningún programa los solicite explícitamente.
+- **[Sistemas de Archivos](/es/operating-systems/file-systems)** — sobre qué están operando realmente `open`, `read`, y `write` dentro del kernel.

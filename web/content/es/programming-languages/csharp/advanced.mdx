@@ -1,0 +1,160 @@
+---
+title: Async y Tasks
+description: El modelo async/await de C#, Task y Task<T>, y cómo el código asíncrono se compone con await y Task.WhenAll.
+category: Programming Languages
+weight: 9
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+La característica de concurrencia distintiva de C# es `async`/`await` construida sobre
+`Task` y `Task<T>` — operaciones asíncronas que representan "un valor que
+estará disponible más adelante" (de forma muy similar a una `Promise` de JavaScript, aunque `Task`
+es anterior al uso generalizado de ese patrón y está respaldada por el thread
+pool de .NET en lugar de un bucle de eventos de un solo hilo).
+
+## Task y Task\<T\>
+
+Un `Task` representa una operación en curso sin resultado; `Task<T>` representa
+una que eventualmente producirá un valor de tipo `T`:
+
+```csharp
+using System.Threading;
+using System.Threading.Tasks;
+
+Task<int> task = Task.Run(() =>
+{
+    Thread.Sleep(1000); // simulate slow work
+    return 42;
+});
+
+Console.WriteLine("Started, doing other work...");
+int result = task.Result; // blocks until the task completes
+Console.WriteLine(result); // 42
+```
+
+Bloquear en `.Result` anula buena parte del propósito de la asincronía — el código
+asíncrono real usa `await` en su lugar, lo cual suspende el método actual sin
+bloquear el hilo subyacente.
+
+## async / await
+
+Marcar un método como `async` le permite usar `await` para suspenderse hasta que un `Task`
+se complete, sin bloquear el hilo llamador. Un método `async` en sí mismo
+devuelve un `Task` (o `Task<T>`), así que los llamadores pueden hacerle `await` a su vez:
+
+```csharp
+using System.Net.Http;
+using System.Threading.Tasks;
+
+async Task<string> FetchGreetingAsync()
+{
+    await Task.Delay(500); // simulates an I/O-bound wait, non-blocking
+    return "Hello from the async world";
+}
+
+async Task RunAsync()
+{
+    Console.WriteLine("Before await");
+    string greeting = await FetchGreetingAsync();
+    Console.WriteLine(greeting);
+    Console.WriteLine("After await");
+}
+
+await RunAsync();
+```
+
+El método no bloquea un hilo mientras espera a `Task.Delay` — el control
+regresa al llamador, y el resto de `FetchGreetingAsync` se reanuda en un
+hilo del thread pool una vez que termina el retraso. Por esto `async`/`await` es
+el idioma preferido para trabajo limitado por E/S (llamadas de red, acceso a archivos, consultas
+a bases de datos): los hilos no se desperdician esperando ociosos por E/S.
+
+## Ejecutar tareas concurrentemente
+
+Esperar tareas de una en una las ejecuta secuencialmente. `Task.WhenAll` inicia
+varias tareas y las espera todas juntas, ejecutando el trabajo independiente
+de forma concurrente:
+
+```csharp
+async Task<int> FetchLengthAsync(string url)
+{
+    await Task.Delay(300); // stands in for an HTTP call
+    return url.Length;
+}
+
+async Task RunAllAsync()
+{
+    Task<int> t1 = FetchLengthAsync("https://a.example");
+    Task<int> t2 = FetchLengthAsync("https://b.example");
+    Task<int> t3 = FetchLengthAsync("https://c.example");
+
+    int[] lengths = await Task.WhenAll(t1, t2, t3);
+    Console.WriteLine(string.Join(", ", lengths));
+}
+
+await RunAllAsync();
+```
+
+Como `t1`, `t2`, y `t3` se inician todos antes de cualquier `await`, sus
+llamadas a `Task.Delay(300)` se solapan — el método completo toma aproximadamente 300ms en total,
+no 900ms, a diferencia de esperar a cada una inmediatamente después de iniciarla.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir un método async que espera un retraso y devuelve un valor."
+  items={[
+    { id: "l1", label: "async Task<int> GetNumberAsync()" },
+    { id: "l2", label: "{" },
+    { id: "l3", label: "    await Task.Delay(100);" },
+    { id: "l4", label: "    return 7;" },
+    { id: "l5", label: "}" },
+  ]}
+  correctOrder={["l1", "l2", "l3", "l4", "l5"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Coloca estas líneas en orden para iniciar dos tareas concurrentemente y esperarlas juntas con Task.WhenAll."
+  items={[
+    { id: "m1", label: "Task<int> t1 = DoWorkAsync(1);" },
+    { id: "m2", label: "Task<int> t2 = DoWorkAsync(2);" , explanation: "Ambas tareas deben iniciarse (asignarse) antes de esperar a cualquiera de ellas, de lo contrario se ejecutan una tras otra en lugar de solaparse."},
+    { id: "m3", label: "int[] results = await Task.WhenAll(t1, t2);" },
+    { id: "m4", label: "Console.WriteLine(results.Sum());" },
+  ]}
+  correctOrder={["m1", "m2", "m3", "m4"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`async Task<string> SlowGreetingAsync()
+{
+    await Task.Delay(200);
+    return "done";
+}
+
+async Task RunAsync()
+{
+    Console.WriteLine("1");
+    var task = SlowGreetingAsync();
+    Console.WriteLine("2");
+    string result = await task;
+    Console.WriteLine(result);
+}
+
+await RunAsync();`}
+  options={["1 2 done", "1 done 2", "done 1 2", "1 2 (hangs forever)"]}
+  correctIndex={0}
+  explanation={`Llamar a SlowGreetingAsync() inicia la tarea pero no bloquea, así que "2" se imprime inmediatamente después de "1", antes de que el retraso termine. Solo el await posterior suspende RunAsync hasta que la tarea se completa, después de lo cual se imprime "done".`}
+  actualOutput="1 2 done"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Espacios de Nombres y NuGet](/es/programming-languages/csharp/modules-packages)
+- [C#](/es/programming-languages/csharp)

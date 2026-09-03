@@ -1,0 +1,51 @@
+---
+title: Microservices
+description: Des services déployables indépendamment possédant leurs propres données et se parlant sur le réseau — de vrais gains d'autonomie, et la vraie taxe de systèmes distribués qui les accompagne.
+category: Software Architecture
+weight: 3
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+Les **microservices** découpent une application en plusieurs services déployables indépendamment, chacun possédant ses propres données et sa propre base de code, communiquant entre eux sur le réseau plutôt que par des appels de fonction en processus. Là où un [monolithe](/fr/software-architecture/monoliths) est une unité déployable unique, un système de microservices peut en compter des dizaines — un service de commandes, un service de facturation, un service de notifications — chacun pouvant être construit, testé, déployé et mis à l'échelle selon son propre calendrier.
+
+## Ce qu'apporte réellement le « déployable indépendamment »
+
+La promesse centrale des microservices est de découpler le *cycle de vie* des différentes parties du système les unes des autres. Une équipe peut livrer un correctif au service de notifications un mardi après-midi sans coordonner avec, tester contre, ou même notifier l'équipe qui possède la facturation — tant que les deux services s'accordent toujours sur la forme des requêtes entre eux. Cette indépendance se compose en quelques bénéfices concrets :
+
+- **Une mise à l'échelle indépendante.** Si le service de notifications est gourmand en CPU et le service de facturation surtout inactif, chacun peut être mis à l'échelle pour correspondre à sa propre charge, au lieu du « tout mettre à l'échelle ensemble » d'un monolithe.
+- **L'autonomie des équipes.** Chaque service peut avoir une équipe propriétaire claire, son propre rythme de publication, et sa propre rotation d'astreinte, ce qui passe bien mieux à l'échelle organisationnelle que des dizaines d'équipes commitant dans une base de code et un pipeline de déploiement partagés.
+- **La diversité technologique.** Un service peut choisir le langage, le framework ou la base de données les mieux adaptés à son problème spécifique — un service de recherche construit autour d'un index spécialisé n'a pas besoin de partager un runtime avec un service faisant du simple CRUD.
+
+## Ce que ça coûte réellement
+
+Rien de tout cela n'est gratuit, et les coûts sont la raison pour laquelle « il suffit de le découper en microservices » est un mauvais conseil pour un système qui ne ressent pas déjà une douleur à l'échelle d'un monolithe :
+
+- **Les appels réseau remplacent les appels de fonction.** Un appel qui était autrefois une invocation de fonction en processus — bon marché, synchrone, incapable d'échouer partiellement — est maintenant une requête réseau qui peut être lente, peut expirer, et peut échouer indépendamment de l'appelant, tout cela devant maintenant être géré explicitement par l'appelant.
+- **Les transactions distribuées.** Une seule transaction de base de données ne peut plus s'étendre sur une opération touchant les bases de données séparées de deux services. Garder les données cohérentes entre services signifie généralement adopter des patterns comme le [pattern saga](https://microservices.io/patterns/data/saga.html) ou la cohérence à terme au lieu du `COMMIT` atomique qu'un monolithe obtient gratuitement.
+- **La complexité opérationnelle.** Chaque service supplémentaire est une chose de plus à déployer, surveiller, journaliser, alerter et sécuriser. Déboguer une seule requête utilisateur signifie maintenant souvent la tracer à travers les journaux de plusieurs services au lieu de lire une seule stack trace.
+- **La découverte de services.** Les services ont besoin d'un moyen fiable de trouver l'adresse réseau actuelle des autres, surtout à mesure que des instances sont créées et détruites par la mise à l'échelle automatique — un problème qui n'existe tout simplement pas à l'intérieur d'un seul processus.
+
+## Le piège du monolithe distribué
+
+Le mode d'échec qui mérite d'être connu par son nom est le **monolithe distribué** : un système découpé en services séparés qui doivent tout de même être déployés ensemble parce qu'ils sont étroitement couplés via des bases de données partagées, des chaînes d'appels synchrones, ou une bibliothèque partagée dont ils dépendent tous en lockstep. Il a tous les coûts des microservices — appels réseau, surcharge opérationnelle, plus de pièces mobiles à surveiller — et aucun du bénéfice censé les justifier, puisque rien ne peut réellement être livré indépendamment. Cela arrive généralement quand un système est découpé le long des mauvaises coutures (par couche technique plutôt que par capacité métier, disons) plutôt que selon des frontières réellement indépendantes.
+
+<ItemExplorer
+  title="Monolithe vs microservices"
+  layout="table"
+  tableColumns={[{ key: "deploy", label: "Déploiement" }, { key: "scaling", label: "Mise à l'échelle" }, { key: "complexity", label: "Complexité opérationnelle" }]}
+  items={[
+    { id: "monolith", label: "Monolithe", color: "blue", columns: { deploy: "Un artefact, un pipeline", scaling: "Mettre à l'échelle toute l'application ensemble", complexity: "Faible — une seule chose à exécuter et surveiller" } },
+    { id: "microservices", label: "Microservices", color: "green", columns: { deploy: "Chaque service se déploie selon son propre calendrier", scaling: "Mettre à l'échelle chaque service selon sa propre charge", complexity: "Élevée — de nombreux services, des appels réseau, et des modes de défaillance à gérer" } },
+  ]}
+/>
+
+## Quand ça en vaut la peine
+
+Les microservices tendent à être rentables une fois qu'un système et son organisation sont assez grands pour que les déploiements couplés et le domaine de défaillance partagé d'un monolithe causent déjà une douleur réelle et récurrente — pas comme architecture de départ par défaut. Les équipes qui tirent le plus de valeur de la scission sont généralement celles qui y ont été forcées par une échelle réelle, pas celles qui l'ont adoptée préventivement parce que c'est le pattern dont parlent les grandes entreprises.
+
+## Voir aussi
+
+- **[Monolithes](/fr/software-architecture/monoliths)** — le point de départ auquel les microservices sont habituellement une réponse.
+- **[Architecture sans serveur](/fr/software-architecture/serverless-architecture)** — une autre façon d'obtenir une mise à l'échelle indépendante, sans gérer vous-même des services.
+- **[Architecture événementielle](/fr/software-architecture/event-driven-architecture)** — une façon courante dont les microservices communiquent sans s'appeler directement.

@@ -1,0 +1,50 @@
+---
+title: Architecture événementielle
+description: Des composants qui communiquent en annonçant des événements plutôt qu'en s'appelant directement — un couplage lâche et un traitement asynchrone, échangés contre une cohérence à terme et un traçage plus difficile.
+category: Software Architecture
+weight: 5
+interactive: true
+interactiveType: ["MermaidDiagram"]
+---
+
+L'**architecture événementielle** structure un système autour de composants qui communiquent en produisant et en réagissant à des **événements** — des faits « ceci s'est produit », comme `OrderPlaced` ou `UserSignedUp` — plutôt qu'en appelant directement les fonctions ou API des uns et des autres. Au lieu qu'un appelant dise « fais ça maintenant et dis-moi le résultat », un **producteur** annonce que quelque chose s'est produit et poursuit son chemin, et un ou plusieurs **consommateurs** y réagissent indépendamment, selon leur propre calendrier, sans que le producteur ait besoin de savoir qu'ils existent.
+
+## Producteurs, consommateurs, et le courtier entre eux
+
+Les trois pièces qui font fonctionner ceci :
+
+- Les **producteurs** émettent des événements quand quelque chose de notable se produit dans leur partie du système — ils ne savent pas et ne se soucient pas de qui, s'il y a quelqu'un, écoute.
+- Un **courtier d'événements** (ou bus de messages) se place entre producteurs et consommateurs, recevant les événements et les délivrant en aval. C'est souvent le même type de tampon durable couvert dans [Queues](/fr/backend/queues) — Kafka, Cloudflare Queues, SQS/SNS, Redis Streams — avec un ajout : les systèmes événementiels utilisent couramment un modèle de livraison **pub/sub**, où chaque consommateur intéressé obtient sa propre copie de l'événement, plutôt que le « exactement un consommateur prend chaque message » d'une file de travail.
+- Les **consommateurs** s'abonnent aux événements qui les intéressent et réagissent — envoyer un e-mail, mettre à jour un modèle de lecture, déclencher un autre processus — chaque fois que l'un arrive.
+
+<MermaidDiagram
+  title="Un événement, trois consommateurs indépendants"
+  chart={`graph LR
+    P[Order Service<br/>produces OrderPlaced] --> B[Event Broker]
+    B --> C1[Email Service]
+    B --> C2[Inventory Service]
+    B --> C3[Analytics Service]
+`}
+/>
+
+## Ce que ça apporte
+
+- **Un couplage lâche.** Le service de commandes qui émet `OrderPlaced` n'a pas besoin de savoir qu'un service d'e-mail, un service d'inventaire et un pipeline analytique y réagissent tous — de nouveaux consommateurs peuvent commencer à écouter un événement existant sans que le producteur ne change du tout, ce qui est un changement bien plus petit que d'ajouter un nouvel appel sortant à chaque producteur ayant besoin d'atteindre une nouvelle destination.
+- **Un traitement asynchrone.** Le producteur ne bloque pas en attendant que chaque consommateur termine son travail — il émet l'événement et poursuit immédiatement, si bien qu'un consommateur en aval lent (une API d'e-mail tierce ayant une mauvaise journée) ne ralentit pas la requête qui a déclenché l'événement en premier lieu.
+- **Une piste d'audit naturelle.** Un flux d'événements « ceci s'est produit », conservé, est intrinsèquement un enregistrement de tout ce que le système a fait au fil du temps — utile pour le débogage, pour reconstruire un état dérivé à partir de rien, ou pour satisfaire une exigence d'audit, d'une façon qu'un système construit purement sur des appels directs ne vous donne pas automatiquement.
+
+## Ce que ça coûte
+
+- **Une cohérence à terme.** Parce que les consommateurs réagissent de façon asynchrone, il existe une fenêtre — souvent des millisecondes, mais pas toujours — où le reste du système n'a pas encore rattrapé son retard : l'inventaire n'a pas été décrémenté, le tableau de bord analytique ne s'est pas mis à jour. Le code et les utilisateurs en aval doivent pouvoir tolérer cet écart, ce qui est une véritable contrainte de conception, pas juste un détail d'implémentation.
+- **Plus difficile de tracer le chemin complet d'une requête.** Un appel de fonction direct a une pile d'appels évidente. Un événement peut déclencher un consommateur, qui émet son propre événement, qui déclenche un autre consommateur plusieurs sauts plus loin — la chaîne complète de ce qui s'est passé suite à une action initiale n'est visible depuis aucun endroit unique, à moins que le système n'investisse délibérément dans le traçage distribué ou des identifiants de corrélation propagés à travers chaque événement.
+- **Déboguer une chaîne d'événements est réellement plus difficile.** Quand quelque chose tourne mal trois consommateurs en aval de l'événement original, en trouver la cause racine signifie reconstruire une séquence de réactions asynchrones à travers des services et journaux possiblement séparés, plutôt que de lire une seule stack trace synchrone de haut en bas.
+
+## Où ça convient
+
+Les patterns événementiels tendent à mériter leur coût spécifiquement là où la liste des « qui a besoin de savoir cela » est ouverte ou grandissante (ajouter une nouvelle partie intéressée ne devrait pas signifier changer le producteur), là où un travail lent en aval ne devrait pas bloquer l'action qui l'a déclenché, ou là où un historique durable de ce qui s'est passé a une réelle valeur en soi. Pour une interaction étroitement délimitée où l'appelant a réellement besoin d'un résultat immédiat pour continuer, un appel synchrone direct — ou une simple requête [client-serveur](/fr/software-architecture/client-server-architecture) — est généralement plus simple et plus facile à raisonner que de la faire passer par un événement et d'attendre qu'un consommateur réagisse.
+
+## Voir aussi
+
+- **[Queues](/fr/backend/queues)** — le tampon durable qui implémente généralement le courtier dans un système événementiel.
+- **[Microservices](/fr/software-architecture/microservices)** — l'architecture à l'intérieur de laquelle la communication événementielle apparaît le plus souvent, comme alternative aux services s'appelant directement.
+- **[Background Jobs](/fr/backend/background-jobs)** — un travail reporté hors du cycle de requête, souvent déclenché par un événement plutôt qu'exécuté en ligne.

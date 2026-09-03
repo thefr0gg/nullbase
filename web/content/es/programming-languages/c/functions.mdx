@@ -1,0 +1,143 @@
+---
+title: Funciones
+description: Declarar, definir y llamar funciones en C — semántica de paso por valor, parámetros de salida mediante punteros, prototipos, y recursión.
+category: Programming Languages
+weight: 4
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Las funciones en C son exclusivamente por valor: cada argumento se copia en los parámetros locales de la función, así que una función nunca puede modificar la variable del llamador directamente — solo su propia copia. Este único hecho determina buena parte del C idiomático, incluyendo por qué los "parámetros de salida" se pasan como punteros en lugar de devolverse directamente, y por qué entender el paso por valor es un prerrequisito para entender los punteros en absoluto.
+
+## Declarar y llamar a una función
+
+Una función tiene un tipo de retorno, un nombre, una lista de parámetros, y un cuerpo. C también distingue un **prototipo** (solo la firma, terminada en `;`) de una **definición** (la firma más el cuerpo) — un prototipo te permite llamar a una función antes de que el compilador haya visto su definición completa:
+
+```c
+#include <stdio.h>
+
+int add(int a, int b); /* prototype: tells the compiler this function exists */
+
+int main(void) {
+    int result = add(3, 4); /* can be called here even though add is defined below */
+    printf("3 + 4 = %d\n", result);
+    return 0;
+}
+
+int add(int a, int b) { /* definition */
+    return a + b;
+}
+```
+
+Sin el prototipo, llamar a `add` antes de que su definición aparezca en el archivo sería un error de compilación en el C moderno — el compilador necesita conocer la firma de una función antes de poder generar código que la llame correctamente.
+
+## Paso por valor y por qué importa
+
+```c
+#include <stdio.h>
+
+void tryToDouble(int n) {
+    n = n * 2; /* only modifies the local copy */
+}
+
+void doubleViaPointer(int *n) {
+    *n = *n * 2; /* dereferences the pointer to modify the caller's variable */
+}
+
+int main(void) {
+    int x = 5;
+
+    tryToDouble(x);
+    printf("after tryToDouble: %d\n", x); /* still 5 */
+
+    doubleViaPointer(&x); /* pass the address of x */
+    printf("after doubleViaPointer: %d\n", x); /* now 10 */
+
+    return 0;
+}
+```
+
+`tryToDouble` recibe una copia del valor de `x` y no puede afectar al original. `doubleViaPointer` en cambio recibe la *dirección* de `x`, y la desreferencia con `*n` para llegar directamente a la memoria del llamador — así es como C simula el "paso por referencia", y es la razón por la que funciones como `scanf` requieren `&variable` para cada valor que necesitan escribir de vuelta.
+
+## Recursión
+
+Una función que se llama a sí misma funciona exactamente igual que lo haría con iteración, siempre que exista un caso base que detenga la recursión:
+
+```c
+#include <stdio.h>
+
+long factorial(int n) {
+    if (n <= 1) {
+        return 1; /* base case */
+    }
+    return n * factorial(n - 1); /* recursive case */
+}
+
+int main(void) {
+    for (int i = 1; i <= 6; i++) {
+        printf("%d! = %ld\n", i, factorial(i));
+    }
+    return 0;
+}
+```
+
+Cada llamada a `factorial` obtiene su propio marco de pila con su propia copia de `n` — la recursión en C consume memoria real de pila por cada llamada, y un caso base ausente o inalcanzable causa un desbordamiento de pila en lugar de un bucle infinito que simplemente se cuelga.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla una función con un prototipo"
+  prompt="Arrastra estas líneas al orden que declara un prototipo, llama a la función desde main, y la define después."
+  items={[
+    { id: "proto", label: "int square(int n);", explanation: "El prototipo debe venir antes que main para que el compilador conozca la firma de square cuando main la llama." },
+    { id: "mainopen", label: "int main(void) {" },
+    { id: "call", label: "    printf(\"%d\\n\", square(5));" },
+    { id: "mainclose", label: "    return 0;\n}" },
+    { id: "def", label: "int square(int n) {\n    return n * n;\n}" },
+  ]}
+  correctOrder={["proto", "mainopen", "call", "mainclose", "def"]}
+/>
+
+<OrderingExercise
+  title="Ordena un intercambio basado en punteros"
+  prompt="Arrastra estas líneas al orden que intercambia dos enteros en main usando una función auxiliar que recibe punteros."
+  items={[
+    { id: "protoswap", label: "void swap(int *a, int *b);" },
+    { id: "mainopen", label: "int main(void) {" },
+    { id: "vars", label: "    int x = 1, y = 2;" },
+    { id: "call", label: "    swap(&x, &y);", explanation: "swap necesita las direcciones de x e y para modificar las variables del llamador, no sus valores." },
+    { id: "print", label: "    printf(\"%d %d\\n\", x, y);" },
+    { id: "mainclose", label: "    return 0;\n}" },
+    { id: "def", label: "void swap(int *a, int *b) {\n    int temp = *a;\n    *a = *b;\n    *b = temp;\n}" },
+  ]}
+  correctOrder={["protoswap", "mainopen", "vars", "call", "print", "mainclose", "def"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`#include <stdio.h>
+
+void increment(int n) {
+    n = n + 1;
+}
+
+int main(void) {
+    int count = 10;
+    increment(count);
+    increment(count);
+    printf("%d\\n", count);
+    return 0;
+}`}
+  options={["10", "11", "12", "Compile error"]}
+  correctIndex={0}
+  explanation="increment recibe una copia de count cada vez que se le llama, así que modificar n dentro de la función no tiene efecto sobre count en main — permanece en 10 sin importar cuántas veces se llame a increment. Para realmente cambiar count, increment necesitaría recibir un int * y desreferenciarlo."
+  actualOutput="10"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- **[Flujo de Control](/es/programming-languages/c/control-flow)** — los bucles y condicionales a partir de los cuales se construyen las funciones.
+- **[Punteros y Memoria](/es/programming-languages/c/advanced)** — una mirada más profunda a los punteros usados aquí para evadir el paso por valor.

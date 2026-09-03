@@ -1,0 +1,24 @@
+---
+title: Codec (Base64 / encodage URL)
+description: Un outil d'encodage/décodage en direct — la seule primitive de ce système qui ne simule rien, utilisant les véritables btoa/encodeURIComponent du navigateur.
+category: Interactive Demos
+weight: 11
+interactive: true
+interactiveType: ["Codec"]
+---
+
+Contrairement à tous les autres widgets de ce système, `Codec` ne simule rien — il exécute les véritables fonctions d'encodage du navigateur (`btoa`/`atob` pour Base64, `encodeURIComponent`/`decodeURIComponent` pour l'encodage URL) directement sur ce que vous tapez. C'est pourquoi c'est la seule primitive sans badge « Simulé ».
+
+## Base64
+
+<Codec mode="base64" defaultInput="Hello, nullbase!" />
+
+## Encodage URL
+
+<Codec mode="url" defaultInput="a value with spaces & special=characters" />
+
+Essayez de basculer l'un ou l'autre sur « decode » et de coller la sortie de « encode » — vous devriez retrouver exactement votre saisie d'origine.
+
+## Voir aussi
+
+- **[Base64](/fr/data-serialization/base64)** — la référence de format avec laquelle ce composant fait paire dans cette section.

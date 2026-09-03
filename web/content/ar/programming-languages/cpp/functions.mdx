@@ -1,0 +1,154 @@
+---
+title: الدوال
+description: تصريح دوال C++، والاختيار بين التمرير بالقيمة والتمرير بالمرجع، والوسائط الافتراضية، والحمل الزائد (overloading).
+category: Programming Languages
+weight: 4
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+لدالة C++ نوع إرجاع صريح، واسم، وقائمة معاملات ثابتة — يفحص المترجم كل موقع استدعاء مقابل ذلك التوقيع، لذا فإن استدعاء دالة بعدد أو نوع خاطئ من الوسائط خطأ ترجمة، لا شيء يُكتشف في وقت التشغيل.
+
+```cpp
+#include <iostream>
+
+int add(int a, int b) {
+    return a + b;
+}
+
+double average(int a, int b, int c) {
+    return (a + b + c) / 3.0;
+}
+
+int main() {
+    std::cout << add(4, 5) << "\n";
+    std::cout << average(2, 4, 9) << "\n";
+    return 0;
+}
+```
+
+## التمرير بالقيمة مقابل التمرير بالمرجع
+
+```cpp
+#include <iostream>
+
+void incrementByValue(int n) {
+    n = n + 1; // only modifies the local copy
+}
+
+void incrementByReference(int& n) {
+    n = n + 1; // modifies the caller's variable
+}
+
+int main() {
+    int x = 10;
+    incrementByValue(x);
+    std::cout << "After by-value: " << x << "\n"; // still 10
+
+    incrementByReference(x);
+    std::cout << "After by-reference: " << x << "\n"; // now 11
+    return 0;
+}
+```
+
+بشكل افتراضي، تُمرِّر C++ الوسائط **بالقيمة** — تستقبل الدالة نسخة، لذا لا تؤثر التغييرات داخلها أبداً على متغير المستدعي. إضافة `&` إلى نوع معامل يجعله معامل **مرجع**: تصبح `n` اسماً آخر لمتغير المستدعي الفعلي، لذا تكون التعديلات داخل الدالة مرئية خارجها. هذه أيضاً طريقة C++ لتجنب نسخ الكائنات الكبيرة: معامل `const std::string&`، مثلاً، يتيح لدالة قراءة سلسلة نصية دون نسخها ودون السماح بتعديلها.
+
+## الوسائط الافتراضية والحمل الزائد
+
+```cpp
+#include <iostream>
+#include <string>
+
+void greet(const std::string& name, const std::string& greeting = "Hello") {
+    std::cout << greeting << ", " << name << "!\n";
+}
+
+int multiply(int a, int b) {
+    return a * b;
+}
+
+double multiply(double a, double b) {
+    return a * b;
+}
+
+int main() {
+    greet("Ada");                 // uses the default greeting
+    greet("Grace", "Welcome");    // overrides it
+
+    std::cout << multiply(3, 4) << "\n";       // calls the int version
+    std::cout << multiply(2.5, 4.0) << "\n";   // calls the double version
+    return 0;
+}
+```
+
+قيمة `greeting` الافتراضية تعني أن بإمكان المستدعين حذفها كلياً؛ يجب أن تأتي الوسيطة الافتراضية بعد كل المعاملات التي لا قيمة افتراضية لها. يتيح **الحمل الزائد** لعدة دوال مشاركة اسم طالما اختلفت قوائم معاملاتها — يختار المترجم النسخة المطابقة بناءً على أنواع الوسائط في كل موقع استدعاء، ويُحل الأمر بالكامل في وقت الترجمة.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="اجمع الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء دالة تبدّل عددين صحيحين بالمرجع وmain تستدعيها."
+  items={[
+    { id: "include", label: "#include <iostream>" },
+    { id: "swap-sig", label: "void swap(int& a, int& b) {" },
+    { id: "temp", label: "    int temp = a;", explanation: "يجب حفظ القيمة الأصلية لـ a قبل الكتابة فوق a." },
+    { id: "assign-a", label: "    a = b;" },
+    { id: "assign-b", label: "    b = temp;" },
+    { id: "swap-close", label: "}" },
+    { id: "main-open", label: "int main() {" },
+    { id: "vars", label: "    int x = 1, y = 2;" },
+    { id: "call", label: "    swap(x, y);" },
+    { id: "return", label: "    return 0;" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["include", "swap-sig", "temp", "assign-a", "assign-b", "swap-close", "main-open", "vars", "call", "return", "main-close"]}
+/>
+
+<OrderingExercise
+  title="اجمع الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء دالة describe() محمّلة زائداً وmain تستدعي كلا النسختين."
+  items={[
+    { id: "include", label: "#include <iostream>" },
+    { id: "int-version", label: "void describe(int n) { std::cout << \"int: \" << n << \"\\n\"; }" },
+    { id: "double-version", label: "void describe(double n) { std::cout << \"double: \" << n << \"\\n\"; }", explanation: "يجب التصريح عن كلا الحملين الزائدين قبل أن تستدعيهما main()." },
+    { id: "main-open", label: "int main() {" },
+    { id: "call-int", label: "    describe(5);" },
+    { id: "call-double", label: "    describe(5.5);" },
+    { id: "return", label: "    return 0;" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["include", "int-version", "double-version", "main-open", "call-int", "call-double", "return", "main-close"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا؟"
+  code={`#include <iostream>
+
+void addOne(int n) {
+    n += 1;
+}
+
+void addOneRef(int& n) {
+    n += 1;
+}
+
+int main() {
+    int value = 5;
+    addOne(value);
+    addOneRef(value);
+    std::cout << value << std::endl;
+    return 0;
+}`}
+  options={["5", "6", "7", "خطأ ترجمة"]}
+  correctIndex={1}
+  explanation="تمرّر addOne(value) بالقيمة، لذا تعدّل نسخة محلية فقط وتبقى value عند 5. أما addOneRef(value) فتمرّر بالمرجع، فتعدّل value مباشرة، لتصبح 6. ليس للاستدعاء بالقيمة أي أثر دائم على الإطلاق."
+  actualOutput="6"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [التحكم بمسار التنفيذ](/ar/programming-languages/cpp/control-flow) — الحلقات والشروط المستخدَمة عادة داخل جسم دالة.
+- [هياكل البيانات](/ar/programming-languages/cpp/data-structures) — تمرير حاويات مثل std::vector إلى الدوال بكفاءة.

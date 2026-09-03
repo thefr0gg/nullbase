@@ -1,0 +1,33 @@
+---
+title: Interpréteurs
+description: Comment le code source (ou le bytecode) est exécuté directement, étape par étape, pendant que le programme tourne — interpréteurs à parcours d'arbre vs interpréteurs de bytecode, et les compromis face à la compilation à l'avance.
+category: Computer Science
+weight: 7
+---
+
+Un **interpréteur** exécute la logique d'un programme directement, une étape à la fois, au moment où le programme s'exécute — plutôt que de tout traduire en code machine au préalable comme le fait un [compilateur](/fr/computer-science/compilers). Les mêmes étapes de lexing et de parsing qu'utilise un compilateur se produisent tout de même (le texte source doit toujours devenir un [AST](/fr/computer-science/compilers) ou une structure similaire avant que quoi que ce soit puisse l'exécuter), mais la dernière étape diffère : au lieu de générer du code machine à partir de cette structure, un interpréteur la parcourt et *effectue* les opérations qu'elle décrit sur le moment.
+
+## Interpréteurs à parcours d'arbre
+
+La conception la plus simple parcourt directement l'AST produit par un analyseur syntaxique : un nœud « addition » amène l'interpréteur à évaluer ses deux enfants et à additionner les résultats, sur place, récursivement, pour tout l'arbre. C'est simple à construire et facile à raisonner, mais lent — chaque exécution reparcourt la structure de l'arbre et redistribue selon le type de nœud, un travail qu'un compilateur aurait fait une seule fois et gravé dans le code machine produit.
+
+## Interpréteurs de bytecode
+
+La plupart des runtimes de langages interprétés réels empruntent une voie intermédiaire : compiler l'AST une seule fois en un **bytecode** compact et plat — une séquence d'instructions simples pour une machine virtuelle hypothétique, pas la forme d'arbre originale de l'AST — puis interpréter *cela* plutôt que l'arbre. Les instructions de bytecode sont plus simples et plus uniformes à distribuer que des nœuds d'arbre arbitraires, donc c'est nettement plus rapide que le parcours d'arbre, même sans jamais toucher au vrai code machine. CPython (l'implémentation Python de référence), la JVM et YARV de Ruby fonctionnent tous ainsi : une étape de compilation se produit toujours, mais sa sortie est du bytecode pour leur propre machine virtuelle plutôt que des instructions natives pour un vrai CPU.
+
+## Pourquoi interpréter malgré tout
+
+Étant donné que le code compilé s'exécute plus vite, l'interprétation se justifie sur d'autres axes :
+
+- **Temps de démarrage** — il n'y a pas d'étape de build séparée entre modifier un fichier et l'exécuter, ce qui explique en grande partie pourquoi les langages de script (Python, Ruby, JavaScript dans un navigateur) adoptent ce modèle par défaut — personne ne veut compiler un script d'une ligne.
+- **Portabilité** — le même bytecode (ou la même source) s'exécute partout où un interpréteur compatible existe, sans recompilation par architecture cible — « écrire une fois, exécuter partout » est en réalité « écrire une fois, interpréter partout ».
+- **Comportement dynamique** — des fonctionnalités comme `eval`, la génération de code à l'exécution, ou des types qui ne sont pas entièrement connus avant que le programme ne soit déjà en cours d'exécution s'intègrent naturellement dans un modèle encore activement en train d'exécuter plutôt qu'un modèle ayant déjà terminé de tout traduire en amont.
+
+## Où s'insère la compilation JIT
+
+L'écart de performance entre l'interprétation et la compilation à l'avance est exactement ce que la **compilation JIT (just-in-time)** existe pour combler, comme couvert sur la page [Compilateurs](/fr/computer-science/compilers) : un runtime commence par interpréter du bytecode, profile quels chemins de code s'exécutent réellement souvent, et compile uniquement ces chemins chauds en code machine natif en cours d'exécution. V8 (JavaScript), la JVM et PyPy superposent tous cela à un interpréteur plutôt que de choisir exclusivement un modèle — obtenant le démarrage rapide d'un interpréteur et la vitesse en régime permanent d'un compilateur pour les parties du programme qui en valent réellement la peine.
+
+## Voir aussi
+
+- **[Compilateurs](/fr/computer-science/compilers)** — l'alternative à l'avance, et le front-end partagé (lexing, parsing) que les deux approches utilisent.
+- **[Langages de programmation](/fr/programming-languages)** — des pages par langage couvrant lequel de ces modèles le runtime grand public de chaque langage utilise réellement.

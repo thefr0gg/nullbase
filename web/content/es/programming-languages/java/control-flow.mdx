@@ -1,0 +1,179 @@
+---
+title: Flujo de Control
+description: El if/else de Java, switch (incluyendo la forma moderna con flecha), y los bucles for/while/do-while.
+category: Programming Languages
+weight: 3
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Las construcciones de flujo de control de Java te resultarán familiares si
+conoces C, C++, o JavaScript — las llaves delimitan bloques y las
+condiciones deben ser expresiones `boolean` genuinas, no valores truthy/falsy
+coaccionados desde números u objetos.
+
+## if / else
+
+```java
+int score = 82;
+
+if (score >= 90) {
+    System.out.println("A");
+} else if (score >= 80) {
+    System.out.println("B");
+} else {
+    System.out.println("C or below");
+}
+```
+
+A diferencia de C, `if (score)` no compila cuando `score` es un `int` — la
+condición debe ser una expresión `boolean` como `score != 0`. Esto descarta
+toda una clase de bugs de "asignación en vez de comparación", ya que
+`if (score = 0)` también es un error de compilación en vez de una asignación
+silenciosa.
+
+## switch: forma clásica y forma flecha
+
+El `switch` clásico cae al siguiente caso a menos que uses `break`:
+
+```java
+int day = 3;
+String name;
+switch (day) {
+    case 1:
+        name = "Monday";
+        break;
+    case 2:
+        name = "Tuesday";
+        break;
+    case 3:
+        name = "Wednesday";
+        break;
+    default:
+        name = "Unknown";
+}
+System.out.println(name);
+```
+
+Java 14 introdujo la forma flecha, que no cae al siguiente caso y puede
+producir un valor directamente con `yield` (o como expresión):
+
+```java
+int day = 3;
+String name = switch (day) {
+    case 1 -> "Monday";
+    case 2 -> "Tuesday";
+    case 3 -> "Wednesday";
+    default -> "Unknown";
+};
+System.out.println(name);
+```
+
+La forma flecha generalmente se prefiere en el Java moderno: es más difícil
+caer al siguiente caso por accidente, y usarla como expresión significa que
+el compilador puede comprobar que cada rama produce un valor del mismo tipo.
+
+## Bucles
+
+Java tiene tres formas de bucle. `for` con un contador explícito:
+
+```java
+for (int i = 0; i < 5; i++) {
+    System.out.println(i);
+}
+```
+
+El `for` mejorado (un "for-each") para iterar una colección o array sin
+indexación manual:
+
+```java
+int[] scores = {70, 85, 92};
+for (int score : scores) {
+    System.out.println(score);
+}
+```
+
+`while` y `do-while`, distinguidos por cuándo se comprueba la condición —
+`while` la comprueba antes de la primera iteración, `do-while` siempre
+ejecuta el cuerpo al menos una vez:
+
+```java
+int n = 5;
+while (n > 0) {
+    System.out.println(n);
+    n--;
+}
+
+int attempts = 0;
+do {
+    attempts++;
+} while (attempts < 3);
+System.out.println(attempts);
+```
+
+`break` sale de un bucle por completo; `continue` salta a la siguiente
+iteración. Ambos aceptan una etiqueta (`outer:`) para apuntar a un bucle que
+lo contiene cuando los bucles están anidados.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir una cadena if/else que clasifique una puntuación."
+  items={[
+    { id: "a1", label: "int score = 82;" },
+    { id: "a2", label: "if (score >= 90) {" },
+    { id: "a3", label: "    System.out.println(\"A\");" },
+    { id: "a4", label: "} else if (score >= 80) {", explanation: "else if debe seguir directamente a la llave de cierre de la rama anterior." },
+    { id: "a5", label: "    System.out.println(\"B\");" },
+    { id: "a6", label: "} else {" },
+    { id: "a7", label: "    System.out.println(\"C or below\");" },
+    { id: "a8", label: "}" },
+  ]}
+  correctOrder={["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Ordena estas líneas para construir un switch en forma flecha que asigne el nombre de un día y lo imprima."
+  items={[
+    { id: "b1", label: "int day = 2;" },
+    { id: "b2", label: "String name = switch (day) {" },
+    { id: "b3", label: "    case 1 -> \"Monday\";" },
+    { id: "b4", label: "    case 2 -> \"Tuesday\";", explanation: "El case del valor que coincide puede aparecer en cualquier posición entre las ramas, pero todas las ramas están dentro del bloque switch." },
+    { id: "b5", label: "    default -> \"Unknown\";" },
+    { id: "b6", label: "};" },
+    { id: "b7", label: "System.out.println(name);" },
+  ]}
+  correctOrder={["b1", "b2", "b3", "b4", "b5", "b6", "b7"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`int day = 2;
+String result = "";
+switch (day) {
+    case 1:
+        result += "Mon";
+    case 2:
+        result += "Tue";
+    case 3:
+        result += "Wed";
+        break;
+    default:
+        result += "Other";
+}
+System.out.println(result);`}
+  options={["Tue", "TueWed", "MonTueWed", "Other"]}
+  correctIndex={1}
+  explanation="El switch clásico cae al siguiente caso cuando no hay break. Al coincidir con case 2 se ejecuta su cuerpo y luego sigue ejecutando también el cuerpo de case 3, ya que no hay break hasta después de case 3, produciendo 'Tue' + 'Wed'."
+  actualOutput="TueWed"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Sintaxis y Variables](/es/programming-languages/java/syntax-basics)
+- [Métodos](/es/programming-languages/java/functions)

@@ -1,0 +1,174 @@
+---
+title: التحكم بمسار التنفيذ
+description: عبارات if/else في Java، وswitch (بما فيها الصيغة السهمية الحديثة)، وحلقات for/while/do-while.
+category: Programming Languages
+weight: 3
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+ستبدو بنى التحكم بمسار التنفيذ في Java مألوفة إذا كنت تعرف C أو ++C أو
+JavaScript — الأقواس تحدّ الكتل ويجب أن تكون الشروط تعبيرات `boolean`
+حقيقية، وليست قيماً صحيحة/زائفة مُحوَّلة من أرقام أو كائنات.
+
+## if / else
+
+```java
+int score = 82;
+
+if (score >= 90) {
+    System.out.println("A");
+} else if (score >= 80) {
+    System.out.println("B");
+} else {
+    System.out.println("C or below");
+}
+```
+
+خلافاً لـC، لا يُصرَّف `if (score)` عندما تكون `score` من نوع `int` — يجب
+أن يكون الشرط تعبير `boolean` مثل `score != 0`. هذا يستبعد فئة كاملة من
+أخطاء "الإسناد بدلاً من المقارنة"، بما أن `if (score = 0)` أيضاً خطأ
+تصريف وليس إسناداً صامتاً.
+
+## switch: الصيغة الكلاسيكية والسهمية
+
+تنساب `switch` الكلاسيكية إلى الحالة التالية ما لم تستخدم `break`:
+
+```java
+int day = 3;
+String name;
+switch (day) {
+    case 1:
+        name = "Monday";
+        break;
+    case 2:
+        name = "Tuesday";
+        break;
+    case 3:
+        name = "Wednesday";
+        break;
+    default:
+        name = "Unknown";
+}
+System.out.println(name);
+```
+
+أدخلت Java 14 الصيغة السهمية، التي لا تنساب ويمكنها إنتاج قيمة مباشرة
+بـ`yield` (أو كتعبير):
+
+```java
+int day = 3;
+String name = switch (day) {
+    case 1 -> "Monday";
+    case 2 -> "Tuesday";
+    case 3 -> "Wednesday";
+    default -> "Unknown";
+};
+System.out.println(name);
+```
+
+الصيغة السهمية مفضَّلة عموماً في Java الحديثة: يصعب الانسياب فيها عن غير
+قصد، واستخدامها كتعبير يعني أن المصرّف يستطيع التحقق من أن كل فرع ينتج
+قيمة من نفس النوع.
+
+## الحلقات
+
+تملك Java ثلاث صيغ حلقات. `for` بعدّاد صريح:
+
+```java
+for (int i = 0; i < 5; i++) {
+    System.out.println(i);
+}
+```
+
+`for` المُحسَّنة ("for-each") لتكرار مجموعة أو مصفوفة دون فهرسة يدوية:
+
+```java
+int[] scores = {70, 85, 92};
+for (int score : scores) {
+    System.out.println(score);
+}
+```
+
+`while` و`do-while`، تُميَّزان بتوقيت التحقق من الشرط — تتحقق `while` قبل
+التكرار الأول، بينما تُشغِّل `do-while` الجسم مرة واحدة على الأقل دائماً:
+
+```java
+int n = 5;
+while (n > 0) {
+    System.out.println(n);
+    n--;
+}
+
+int attempts = 0;
+do {
+    attempts++;
+} while (attempts < 3);
+System.out.println(attempts);
+```
+
+يخرج `break` من الحلقة كلياً؛ يتخطى `continue` إلى التكرار التالي. يقبل
+كلاهما تسمية (`outer:`) لاستهداف حلقة محيطة عندما تكون الحلقات متداخلة.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء سلسلة if/else تصنّف درجة."
+  items={[
+    { id: "a1", label: "int score = 82;" },
+    { id: "a2", label: "if (score >= 90) {" },
+    { id: "a3", label: "    System.out.println(\"A\");" },
+    { id: "a4", label: "} else if (score >= 80) {", explanation: "يجب أن يأتي else if مباشرة بعد القوس المغلق للفرع السابق." },
+    { id: "a5", label: "    System.out.println(\"B\");" },
+    { id: "a6", label: "} else {" },
+    { id: "a7", label: "    System.out.println(\"C or below\");" },
+    { id: "a8", label: "}" },
+  ]}
+  correctOrder={["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="رتّب هذه الأسطر لبناء switch بصيغة سهمية يسند اسم يوم ويطبعه."
+  items={[
+    { id: "b1", label: "int day = 2;" },
+    { id: "b2", label: "String name = switch (day) {" },
+    { id: "b3", label: "    case 1 -> \"Monday\";" },
+    { id: "b4", label: "    case 2 -> \"Tuesday\";", explanation: "يمكن أن تظهر حالة القيمة المطابقة في أي مكان بين الفروع، لكن كل الفروع توضع داخل كتلة switch." },
+    { id: "b5", label: "    default -> \"Unknown\";" },
+    { id: "b6", label: "};" },
+    { id: "b7", label: "System.out.println(name);" },
+  ]}
+  correctOrder={["b1", "b2", "b3", "b4", "b5", "b6", "b7"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا الكود؟"
+  code={`int day = 2;
+String result = "";
+switch (day) {
+    case 1:
+        result += "Mon";
+    case 2:
+        result += "Tue";
+    case 3:
+        result += "Wed";
+        break;
+    default:
+        result += "Other";
+}
+System.out.println(result);`}
+  options={["Tue", "TueWed", "MonTueWed", "Other"]}
+  correctIndex={1}
+  explanation="تنساب switch الكلاسيكية عند غياب break. مطابقة case 2 تُشغِّل جسمها ثم تستمر في تنفيذ جسم case 3 أيضاً، بما أنه لا break حتى بعد case 3، منتجة 'Tue' + 'Wed'."
+  actualOutput="TueWed"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [بنية اللغة والمتغيرات](/ar/programming-languages/java/syntax-basics)
+- [التوابع](/ar/programming-languages/java/functions)

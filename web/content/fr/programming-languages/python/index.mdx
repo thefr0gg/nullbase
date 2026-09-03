@@ -1,0 +1,92 @@
+---
+title: Python
+description: Un langage interprété, à typage dynamique, avec batteries incluses, construit autour de la lisibilité — utilisé aussi bien pour le scripting, les backends web, le traitement de données que l'automatisation.
+category: Programming Languages
+weight: 1
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Python est un langage interprété à typage dynamique dont le trait déterminant est de faire de la lisibilité une caractéristique du langage plutôt qu'une préférence de style : les blocs sont définis par l'indentation plutôt que par des accolades ou des mots-clés `end`, si bien que la structure visuelle d'un script et son flux de contrôle réel ne peuvent jamais diverger. Il n'y a pas d'étape de compilation séparée à exécuter — l'implémentation de référence, CPython, lit un fichier `.py` et l'exécute directement — ce qui explique en partie pourquoi Python se retrouve partout, des scripts ponctuels aux backends web de production, en passant par les pipelines de données et le code de machine learning.
+
+```python
+print("Hello, world!")
+
+name = "Ada"
+age = 36
+print(f"{name} is {age} years old")
+```
+
+Deux choses ressortent déjà dans ce minuscule exemple. D'abord, il n'y a aucune déclaration de type nulle part — `name` et `age` tirent leur type des valeurs qui leur sont assignées, et une variable peut être réassignée à un type différent plus tard sans aucune protestation. Ensuite, la chaîne `f"..."` est une f-string : un littéral de chaîne avec des espaces réservés `{expression}` évalués en ligne, qui est la façon dont la plupart du code Python construit du texte formaté plutôt que de concaténer des morceaux avec `+`.
+
+Python est aussi livré avec une grande bibliothèque standard et un immense écosystème de paquets tiers installables via `pip`, si bien qu'une quantité surprenante de travail réel — lire du JSON, faire des requêtes HTTP, analyser des dates — ne nécessite aucune dépendance au-delà de ce qui est déjà installé, ou d'un simple `pip install`.
+
+```python
+def fizzbuzz(n):
+    for i in range(1, n + 1):
+        if i % 15 == 0:
+            print("FizzBuzz")
+        elif i % 3 == 0:
+            print("Fizz")
+        elif i % 5 == 0:
+            print("Buzz")
+        else:
+            print(i)
+
+fizzbuzz(15)
+```
+
+Remarquez qu'il n'y a pas de parenthèses autour de la condition du `if`, pas de points-virgules terminant les instructions, et que l'étendue du corps de la fonction est définie uniquement par le niveau d'indentation de ses lignes — retirez l'indentation et c'est une erreur de syntaxe, pas simplement une mise en forme désordonnée.
+
+## Ce qu'il y a dans cette section
+
+- **[Syntaxe et variables](/fr/programming-languages/python/syntax-basics)** — l'indentation, le typage dynamique, et les types intégrés de Python.
+- **[Flux de contrôle](/fr/programming-languages/python/control-flow)** — `if`/`elif`/`else`, les boucles, et la clause `for...else` moins courante de Python.
+- **[Fonctions](/fr/programming-languages/python/functions)** — `def`, les arguments par défaut, et `*args`/`**kwargs`.
+- **[Structures de données](/fr/programming-languages/python/data-structures)** — les listes, tuples, dicts, et sets.
+- **[Classes et objets](/fr/programming-languages/python/oop-or-structs)** — `__init__`, l'héritage, et les méthodes dunder.
+- **[Gestion des erreurs](/fr/programming-languages/python/error-handling)** — `try`/`except`/`finally` et les exceptions personnalisées.
+- **[Modules et paquets](/fr/programming-languages/python/modules-packages)** — `import`, `pip`, et les environnements virtuels.
+- **[Décorateurs et générateurs](/fr/programming-languages/python/advanced)** — les fonctionnalités emblématiques du niveau intermédiaire de Python.
+
+## Voir aussi
+
+- **[Syntaxe et variables](/fr/programming-languages/python/syntax-basics)** — les règles concrètes derrière les variables et les instructions print utilisées ci-dessus.
+- **[Fonctions](/fr/programming-languages/python/functions)** — transformer un script comme `fizzbuzz` en un morceau de code réutilisable et paramétré.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire un script qui salue un utilisateur par son nom."
+  items={[
+    { id: "input", label: 'name = input("What is your name? ")' },
+    { id: "format", label: 'greeting = f"Hello, {name}!"', explanation: "La f-string a besoin que `name` existe déjà avant de pouvoir y être formatée." },
+    { id: "print", label: "print(greeting)", explanation: "Rien ne peut être affiché tant que `greeting` n'a pas été construite." },
+  ]}
+  correctOrder={["input", "format", "print"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire un script qui calcule et affiche l'aire d'un rectangle."
+  items={[
+    { id: "width", label: "width = 5" },
+    { id: "height", label: "height = 3" },
+    { id: "area", label: "area = width * height", explanation: "`width` et `height` doivent tous deux être définis avant que cette ligne puisse les référencer." },
+    { id: "print", label: "print(area)", explanation: "`area` n'existe pas tant que la multiplication ci-dessus n'a pas été exécutée." },
+  ]}
+  correctOrder={["width", "height", "area", "print"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que ceci affiche ?"
+  code={`print(3 + 4 * 2)`}
+  options={["14", "11", "10", "Erreur : expression ambiguë"]}
+  correctIndex={1}
+  explanation="Python suit la priorité standard des opérateurs : la multiplication l'emporte sur l'addition, donc ceci équivaut à 3 + (4 * 2) = 3 + 8 = 11, et non (3 + 4) * 2."
+  actualOutput="11"
+/>
+</ExerciseTabs>

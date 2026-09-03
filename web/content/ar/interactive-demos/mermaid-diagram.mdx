@@ -1,0 +1,44 @@
+---
+title: مخطط Mermaid
+description: مخطط تصريحي، نص في الإدخال وSVG في الإخراج — مخططات تدفق، ومخططات تسلسل، ومخططات حالات، وأكثر، بتنسيق يطابق الوضعين الفاتح والداكن تلقائيًا.
+category: Interactive Demos
+weight: 10
+interactive: true
+interactiveType: ["MermaidDiagram"]
+---
+
+`MermaidDiagram` هو الطرف الآخر من الطيف مقارنة بـ`DiagramExplorer`: فبدلاً من أن يصف المؤلف العقد والروابط كبيانات، يكتب وصفًا نصيًا صغيرًا بصيغة [Mermaid](https://mermaid.js.org/) وتتولى المكتبة ترتيبه وعرضه كـSVG في المتصفح. مناسب لأي شيء لدى Mermaid بالفعل نوع مخطط له (مخططات تدفق، مخططات تسلسل، مخططات حالات، مخططات ER، مخططات Gantt) — استخدم `DiagramExplorer` بدلاً منه عندما تحتاج أن تكون كل عقدة قابلة للنقر مع لوحة شرح خاصة بها، وهو ما لا يدعمه ناتج SVG الثابت لـMermaid.
+
+## مخطط تدفق
+
+<MermaidDiagram
+  title="قرار بسيط"
+  chart={`flowchart TD
+    A[Request arrives] --> B{Cache hit?}
+    B -->|Yes| C[Return cached response]
+    B -->|No| D[Query the database]
+    D --> E[Store in cache]
+    E --> C`}
+/>
+
+## مخطط تسلسل
+
+<MermaidDiagram
+  title="خدمتان وذاكرة تخزين مؤقت مشتركة"
+  chart={`sequenceDiagram
+    participant Client
+    participant API
+    participant Cache
+    Client->>API: GET /products/42
+    API->>Cache: get("product:42")
+    Cache-->>API: miss
+    API->>API: query database
+    API->>Cache: set("product:42", ...)
+    API-->>Client: 200 OK`}
+/>
+
+يتم استيراد المكتبة نفسها (~600 كيلوبايت) ديناميكيًا فقط في الصفحات التي تعرض هذا العنصر، وتتكيّف ألوان المخطط تلقائيًا مع السمة الفاتحة أو الداكنة للموقع.
+
+## طالع أيضاً
+
+- **[تشريح ودورة حياة الرابط](/ar/interactive-demos/url-anatomy-and-lifecycle)** — `DiagramExplorer`، البديل القابل للنقر عن مخطط Mermaid الثابت.

@@ -1,0 +1,172 @@
+---
+title: Sintaxis y Variables
+description: Las etiquetas <?php ?> de PHP, el sigilo $ en cada variable, tipos laxos frente a estrictos, e interpolación de cadenas.
+category: Programming Languages
+weight: 2
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+El código PHP vive dentro de etiquetas `<?php ... ?>`. Todo lo que está
+fuera de esas etiquetas — incluso en medio de un archivo — se pasa
+directamente como salida, lo cual es lo que hace que PHP sea conveniente
+para mezclar markup y lógica en el mismo archivo.
+
+## La etiqueta `<?php`
+
+```php
+<html>
+<body>
+<?php
+$name = "Ada";
+echo "<p>Hello, $name!</p>";
+?>
+</body>
+</html>
+```
+
+En la práctica, los archivos que contienen *solo* PHP (sin HTML al final)
+deberían omitir por completo la etiqueta de cierre `?>`. Es opcional, y
+omitirla evita un bug sutil: cualquier espacio en blanco o salto de línea
+después de `?>` se envía a la salida, lo que puede romper cosas como
+establecer cabeceras HTTP después de que el script "termina."
+
+```php
+<?php
+
+echo "No closing tag needed for a pure-PHP file.\n";
+```
+
+## Las variables siempre empiezan con `$`
+
+Cada variable en PHP lleva el prefijo de un signo de dólar, sin excepciones
+— esto es una de las cosas más reconocibles al instante sobre la sintaxis de
+PHP. Las variables también son de tipado dinámico: no declaras un tipo por
+adelantado, y una variable puede contener un tipo de valor diferente después
+de una asignación posterior.
+
+```php
+<?php
+
+$age = 30;          // int
+$age = "thirty";     // now a string — perfectly legal
+$isAdmin = true;      // bool
+$price = 19.99;        // float
+```
+
+Los nombres de variables distinguen entre mayúsculas y minúsculas (`$Name` y
+`$name` son variables diferentes) y deben empezar con una letra o un guion
+bajo, nunca con un dígito.
+
+## Constantes
+
+`define()` y el más moderno `const` crean ambos valores que no pueden
+reasignarse. `const` es preferido para valores escalares simples y funciona
+tanto a nivel superior como dentro de clases:
+
+```php
+<?php
+
+const MAX_RETRIES = 3;
+define("APP_NAME", "nullbase");
+
+echo MAX_RETRIES . " retries allowed for " . APP_NAME . "\n";
+```
+
+Nota que las constantes se referencian *sin* el sigilo `$` — otro punto
+donde la regla del sigilo de PHP tiene una excepción bien conocida.
+
+## Interpolación de cadenas
+
+Las cadenas entre comillas dobles interpolan variables directamente; las
+cadenas entre comillas simples nunca lo hacen. Esto es una fuente común de
+bugs sutiles cuando se pretende un `$` literal, así que vale la pena
+conocerlo de memoria:
+
+```php
+<?php
+
+$user = "grace";
+echo "Logged in as $user\n";   // Logged in as grace
+echo 'Logged in as $user\n';    // Logged in as $user\n  (literal, no newline)
+```
+
+Las llaves desambiguan una variable del texto circundante, y son necesarias
+para interpolar limpiamente un acceso a propiedad o array:
+
+```php
+<?php
+
+$user = ["name" => "grace"];
+echo "Hello, {$user['name']}!\n";
+```
+
+## Tipado laxo y malabarismo de tipos
+
+Por defecto, PHP convertirá tipos sobre la marcha para hacer que una
+operación funcione — esto se llama **malabarismo de tipos** (type juggling).
+`declare(strict_types=1)` al inicio de un archivo desactiva eso para las
+comprobaciones de tipo de argumentos y retorno de funciones (aunque los
+operadores de comparación laxa como `==` siguen haciendo malabarismo de
+todos modos):
+
+```php
+<?php
+declare(strict_types=1);
+
+function double(int $n): int {
+    return $n * 2;
+}
+
+echo double(5) . "\n";   // 10
+// double("5") would now throw a TypeError instead of silently converting
+```
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para declarar una variable e interpolarla en una cadena entre comillas dobles."
+  items={[
+    { id: "a1", label: "<?php" },
+    { id: "a2", label: '$city = "Berlin";' },
+    { id: "a3", label: 'echo "Welcome to $city!\\n";', explanation: "La variable debe existir antes de ser interpolada." },
+  ]}
+  correctOrder={["a1", "a2", "a3"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Ordena estas líneas para declarar una función con tipado estricto y llamarla."
+  items={[
+    { id: "b1", label: "<?php" },
+    { id: "b2", label: "declare(strict_types=1);" },
+    { id: "b3", label: "function triple(int $n): int {", explanation: "declare(strict_types=1) debe ser la primera instrucción del archivo." },
+    { id: "b4", label: "    return $n * 3;" },
+    { id: "b5", label: "}" },
+    { id: "b6", label: "echo triple(4) . \"\\n\";" },
+  ]}
+  correctOrder={["b1", "b2", "b3", "b4", "b5", "b6"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`<?php
+
+$count = "5";
+$total = $count + 1;
+echo $total;
+echo gettype($total);`}
+  options={["51int", "6int", "6string", "Fatal error: cannot add string and int"]}
+  correctIndex={1}
+  explanation="Fuera de strict_types, el operador aritmético + dispara el malabarismo de tipos: la cadena numérica '5' se convierte al entero 5, así que $total es 6, un int. La concatenación de cadenas usaría . en vez de +, lo cual es una confusión común entre principiantes."
+  actualOutput="6int"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [PHP](/es/programming-languages/php)
+- [Flujo de Control](/es/programming-languages/php/control-flow)

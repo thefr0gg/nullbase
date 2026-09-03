@@ -1,0 +1,177 @@
+---
+title: التحكم بمسار التنفيذ
+description: عبارات if/else في Go، وحلقتها الوحيدة for التي تحل محل while وdo-while، وعبارات switch.
+category: Programming Languages
+weight: 3
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تُبقي Go التحكم بمسار التنفيذ بسيطاً عن قصد. لا يوجد `while`، ولا
+`do-while`، ولا عامل شرطي ثلاثي — `for` تغطي كل حاجات التكرار، و`switch`
+أكثر مرونة منها في معظم لغات عائلة C.
+
+## if / else
+
+لا تحتاج الشروط أبداً إلى أقواس، لكن القوس المفتوح يجب أن يكون في نفس سطر
+`if` — قواعد Go النحوية تعتمد على إدراج الفاصلة المنقوطة التلقائي، وقوس
+في سطر منفصل يكسر ذلك.
+
+```go
+func classify(score int) string {
+	if score >= 90 {
+		return "A"
+	} else if score >= 80 {
+		return "B"
+	} else {
+		return "F"
+	}
+}
+```
+
+يقبل `if` أيضاً عبارة تهيئة، محصورة في نطاق سلسلة `if`/`else` — تُستخدم
+عادةً للتحقق من خطأ فور إنتاجه:
+
+```go
+if value, ok := lookup("key"); ok {
+	fmt.Println("found:", value)
+} else {
+	fmt.Println("not found")
+}
+// value وok غير مرئيين هنا — يوجدان فقط داخل if/else
+```
+
+## for — الحلقة الوحيدة في Go
+
+تملك Go كلمة مفتاحية واحدة للتكرار تغطي ما تقسّمه لغات أخرى إلى `for`
+و`while` وحلقات لا نهائية.
+
+الصيغة الكلاسيكية ثلاثية الأجزاء:
+
+```go
+for i := 0; i < 5; i++ {
+	fmt.Println(i)
+}
+```
+
+الشرط فقط — هذه هي `while` الخاصة بـGo:
+
+```go
+n := 1
+for n < 100 {
+	n *= 2
+}
+```
+
+بلا شرط إطلاقاً — حلقة لا نهائية، تُقرَن عادةً بـ`break`:
+
+```go
+count := 0
+for {
+	count++
+	if count == 3 {
+		break
+	}
+}
+```
+
+`for ... range` تتكرر عبر الشرائح، والمصفوفات، والخرائط، والسلاسل النصية،
+والقنوات:
+
+```go
+names := []string{"Ada", "Grace", "Linus"}
+for i, name := range names {
+	fmt.Println(i, name)
+}
+```
+
+## switch
+
+لا تنساب `switch` في Go افتراضياً إلى الحالة التالية (عكس C/Java)، لذا
+نادراً ما تحتاج `break`. يمكن للحالات أيضاً أن تسرد قيماً متعددة أو تحذف
+تعبير switch كلياً لتعمل كسلسلة if/else أنظف:
+
+```go
+func describe(n int) string {
+	switch {
+	case n < 0:
+		return "negative"
+	case n == 0:
+		return "zero"
+	case n%2 == 0:
+		return "positive even"
+	default:
+		return "positive odd"
+	}
+}
+```
+
+استخدم `fallthrough` صراحةً في المناسبات النادرة التي تريد فيها تشغيل
+الحالة التالية على أي حال:
+
+```go
+switch day := "sat"; day {
+case "sat", "sun":
+	fmt.Println("weekend")
+default:
+	fmt.Println("weekday")
+}
+```
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء حلقة for تطبع الأرقام من 0 إلى 2."
+  items={[
+    { id: "c1", label: "func main() {" },
+    { id: "c2", label: "\tfor i := 0; i < 3; i++ {" },
+    { id: "c3", label: "\t\tfmt.Println(i)", explanation: "جسم الحلقة يُزاح مستوى واحداً أعمق من عبارة for." },
+    { id: "c4", label: "\t}" },
+    { id: "c5", label: "}" },
+  ]}
+  correctOrder={["c1", "c2", "c3", "c4", "c5"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="رتّب هذه الأسطر لبناء سلسلة if/else-if/else تصنّف درجة حرارة."
+  items={[
+    { id: "d1", label: "if temp > 30 {" },
+    { id: "d2", label: "\tfmt.Println(\"hot\")" },
+    { id: "d3", label: "} else if temp > 15 {", explanation: "يجب أن يأتي else if مباشرة بعد القوس المغلق للكتلة السابقة، في نفس السطر." },
+    { id: "d4", label: "\tfmt.Println(\"mild\")" },
+    { id: "d5", label: "} else {" },
+    { id: "d6", label: "\tfmt.Println(\"cold\")" },
+    { id: "d7", label: "}" },
+  ]}
+  correctOrder={["d1", "d2", "d3", "d4", "d5", "d6", "d7"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا الكود؟"
+  code={`package main
+
+import "fmt"
+
+func main() {
+	switch n := 4; {
+	case n%2 == 0:
+		fmt.Println("even")
+	case n%2 != 0:
+		fmt.Println("odd")
+	}
+}`}
+  options={["even", "odd", "even\\nodd", "خطأ تصريف: switch يحتاج قيمة"]}
+  correctIndex={0}
+  explanation={`switch بلا تعبير بعد switch (فقط عبارة تهيئة منتهية بفاصلة منقوطة) يُقيِّم كل حالة كشرط منطقي، مثل سلسلة if/else-if. تتوقف عند أول حالة صحيحة ولا تنساب، لذا "even" فقط تُطبع.`}
+  actualOutput="even"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [بنية اللغة والمتغيرات](/ar/programming-languages/go/syntax-basics)
+- [الدوال](/ar/programming-languages/go/functions)

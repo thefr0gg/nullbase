@@ -1,0 +1,179 @@
+---
+title: Fonctions
+description: Déclarer des fonctions PHP, arguments par défaut, fonctions variadiques, indications de type, et closures.
+category: Programming Languages
+weight: 4
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Les fonctions en PHP sont déclarées avec le mot-clé `function` et peuvent
+apparaître au premier niveau (PHP n'exige pas que le code vive à l'intérieur
+d'une classe). Depuis PHP 7, les paramètres et les valeurs de retour peuvent
+porter des indications de type, que le moteur applique à l'exécution.
+
+## Déclaration de base
+
+```php
+<?php
+
+function greet(string $name): string {
+    return "Hello, $name!";
+}
+
+echo greet("Ada") . "\n";
+```
+
+## Arguments par défaut
+
+N'importe quel paramètre peut avoir une valeur par défaut, ce qui permet aux
+appelants de l'omettre. Les paramètres par défaut doivent venir après les
+paramètres sans valeur par défaut :
+
+```php
+<?php
+
+function makeGreeting(string $name, string $greeting = "Hello"): string {
+    return "$greeting, $name!";
+}
+
+echo makeGreeting("Grace") . "\n";              // Hello, Grace!
+echo makeGreeting("Grace", "Welcome") . "\n";    // Welcome, Grace!
+```
+
+## Arguments nommés
+
+PHP 8.0 a ajouté les arguments nommés, qui permettent à un appelant de
+sauter des valeurs par défaut antérieures sans les répéter positionnellement :
+
+```php
+<?php
+
+function connect(string $host, int $port = 5432, bool $ssl = false): string {
+    return ($ssl ? "ssl://" : "") . "$host:$port";
+}
+
+echo connect("db.internal", ssl: true) . "\n"; // ssl://db.internal:5432
+```
+
+## Fonctions variadiques
+
+Préfixer le dernier paramètre avec `...` rassemble n'importe quel nombre
+d'arguments finaux dans un tableau — l'équivalent en PHP de `*args` :
+
+```php
+<?php
+
+function sum(int ...$numbers): int {
+    $total = 0;
+    foreach ($numbers as $n) {
+        $total += $n;
+    }
+    return $total;
+}
+
+echo sum(1, 2, 3, 4) . "\n"; // 10
+echo sum() . "\n";            // 0
+```
+
+L'opérateur de dispersion `...` fait l'inverse lors de l'appel d'une
+fonction : il déballe un tableau en arguments positionnels.
+
+```php
+<?php
+
+$values = [3, 6, 9];
+echo sum(...$values) . "\n"; // 18
+```
+
+## Passage par référence
+
+Par défaut, les arguments sont passés par valeur — une fonction reçoit une
+copie. Ajouter `&` avant un paramètre le passe par référence à la place,
+permettant à la fonction de muter la variable de l'appelant :
+
+```php
+<?php
+
+function increment(int &$n): void {
+    $n++;
+}
+
+$counter = 10;
+increment($counter);
+echo $counter . "\n"; // 11
+```
+
+## Fonctions anonymes et fonctions fléchées
+
+PHP supporte les closures via `function` (avec une clause `use` explicite
+pour capturer les variables externes) et la syntaxe plus concise `fn` de
+fonction fléchée, qui capture automatiquement par valeur :
+
+```php
+<?php
+
+$multiplier = 3;
+
+$classic = function (int $n) use ($multiplier): int {
+    return $n * $multiplier;
+};
+
+$arrow = fn(int $n): int => $n * $multiplier;
+
+echo $classic(5) . " " . $arrow(5) . "\n"; // 15 15
+```
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire une fonction avec un argument par défaut et l'appeler."
+  items={[
+    { id: "e1", label: "<?php" },
+    { id: "e2", label: "function power(int $base, int $exp = 2): int {" },
+    { id: "e3", label: "    return $base ** $exp;", explanation: "La valeur par défaut de l'exposant ne s'applique que si l'appelant omet le second argument." },
+    { id: "e4", label: "}" },
+    { id: "e5", label: 'echo power(5) . "\\n";' },
+  ]}
+  correctOrder={["e1", "e2", "e3", "e4", "e5"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Ordonnez ces lignes pour construire une fonction variadique qui joint ses arguments avec une virgule."
+  items={[
+    { id: "f1", label: "<?php" },
+    { id: "f2", label: "function joinAll(string ...$parts): string {" },
+    { id: "f3", label: "    return implode(\", \", $parts);", explanation: "$parts est un tableau ordinaire à l'intérieur du corps de la fonction une fois les paramètres variadiques rassemblés." },
+    { id: "f4", label: "}" },
+    { id: "f5", label: 'echo joinAll("a", "b", "c") . "\\n";' },
+  ]}
+  correctOrder={["f1", "f2", "f3", "f4", "f5"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que ceci affiche ?"
+  code={`<?php
+
+function addOne(int $n): int {
+    $n = $n + 1;
+    return $n;
+}
+
+$value = 10;
+addOne($value);
+echo $value;`}
+  options={["10", "11", "Fatal error: undefined variable", "10.0"]}
+  correctIndex={0}
+  explanation="Sans & dans la liste de paramètres, PHP passe $n par valeur. addOne mute sa propre copie locale ; $value dans la portée de l'appelant n'est pas touché, donc il affiche toujours 10."
+  actualOutput="10"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Flux de contrôle](/fr/programming-languages/php/control-flow)
+- [Tableaux](/fr/programming-languages/php/data-structures)

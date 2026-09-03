@@ -1,0 +1,130 @@
+---
+title: JavaScript
+description: Un aperçu de JavaScript, le langage dynamiquement typé qui s'exécute dans chaque navigateur et, via Node.js, sur des serveurs aussi.
+category: Programming Languages
+weight: 1
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+JavaScript a été créé par Brendan Eich en 1995 en environ dix jours,
+initialement pour rendre les pages web interactives à l'intérieur de
+Netscape Navigator. Malgré cette origine précipitée — et un nom choisi pour
+des raisons marketing plutôt que pour une réelle parenté avec Java — il est
+devenu le seul langage de programmation qui s'exécute nativement dans
+chaque navigateur web, et, depuis l'arrivée de Node.js en 2009, un choix de
+premier ordre pour les serveurs, les CLI, et les applications de bureau
+aussi. Le langage lui-même est standardisé sous le nom d'ECMAScript, et le
+JavaScript moderne (couramment appelé « ES6+ » d'après la révision de
+2015) a l'air assez différent du JavaScript du début des années 2000.
+
+JavaScript est dynamiquement typé (les types des variables sont vérifiés à
+l'exécution, pas à la compilation), monothread avec une boucle d'événements
+pour la concurrence, et basé sur des prototypes en interne même s'il offre
+désormais une syntaxe `class` par-dessus. Il est aussi réputé pour sa
+tolérance : des opérations qui seraient une erreur de compilation dans
+beaucoup de langages — comparer une chaîne à un nombre, appeler une méthode
+sur `undefined` — sont souvent permises et produisent un résultat, parfois
+surprenant.
+
+## Ce qui rend JavaScript distinctif
+
+- **S'exécute partout.** Navigateurs, serveurs (Node.js, Deno, Bun),
+  mobile (React Native), même des appareils embarqués. Aucun autre langage
+  n'a cette portée.
+- **Monothread avec une boucle d'événements.** JavaScript n'exécute jamais
+  deux morceaux de votre code en même temps. Les E/S longues (requêtes
+  réseau, lectures de fichiers, minuteurs) sont gérées de manière
+  asynchrone via des callbacks, des Promises, ou `async`/`await`, sans
+  bloquer le reste du programme.
+- **Dynamique et faiblement typé.** Les variables n'ont pas de type
+  déclaré ; la même variable peut contenir un nombre, puis une chaîne, puis
+  une fonction.
+- **Fonctions de première classe.** Les fonctions sont des valeurs — vous
+  pouvez les stocker dans des variables, les passer comme arguments, et
+  les renvoyer depuis d'autres fonctions. C'est ce qui rend les closures et
+  les API basées sur les callbacks naturelles en JS.
+- **Objets basés sur les prototypes.** Les objets héritent directement
+  d'autres objets à travers une chaîne de prototypes, plutôt que de classes
+  au sens classique. La syntaxe `class` (ajoutée en ES6) est un sucre
+  syntaxique pratique par-dessus ce mécanisme, pas un modèle d'héritage
+  différent.
+
+Voici un exemple petit mais complet :
+
+```js
+function greet(name) {
+  return `Hello, ${name}!`;
+}
+
+console.log(greet("nullbase"));
+```
+
+Exécuter ceci avec Node.js (`node greet.js`) ou le coller dans la console
+d'un navigateur produit la même sortie — il n'y a pas d'étape de
+compilation, et la même syntaxe fonctionne dans les deux environnements.
+
+## Quand se tourner vers JavaScript
+
+JavaScript est la seule option pour la logique côté client dans une page
+web, et une option solide pour les serveurs quand vous voulez partager du
+code (logique de validation, modèles de données) entre le frontend et le
+backend, ou quand votre charge de travail est intensive en E/S — de
+nombreuses requêtes réseau concurrentes — plutôt qu'intensive en CPU.
+C'est un choix plus faible pour du calcul intensif lié au CPU ou de la
+programmation système, où les langages compilés et statiquement typés
+offrent des performances plus prévisibles et attrapent davantage d'erreurs
+avant même que le code ne s'exécute.
+
+## Et ensuite
+
+Les pages suivantes parcourent JavaScript depuis les fondations :
+variables et syntaxe, flux de contrôle, fonctions et closures, les
+structures de données intégrées, classes et héritage prototypal, gestion
+des erreurs, le système de modules et npm, et enfin la programmation
+asynchrone avec les Promises et `async`/`await`.
+
+<CodePlayground title="Essayez en direct" initialCode={`function greet(name) {\n  return \`Hello, \${name}!\`;\n}\n\nconsole.log(greet("World"));`} />
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire un programme JavaScript minimal et fonctionnel qui affiche un message de bienvenue."
+  items={[
+    { id: "fn-open", label: "function greet(name) {" },
+    { id: "fn-body", label: "  return `Hello, ${name}!`;" },
+    { id: "fn-close", label: "}" },
+    { id: "call", label: "console.log(greet(\"nullbase\"));" },
+  ]}
+  correctOrder={["fn-open", "fn-body", "fn-close", "call"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Mettez ces lignes dans l'ordre pour déclarer une variable, vérifier une condition dessus, et afficher le résultat."
+  items={[
+    { id: "decl", label: "const age = 20;" },
+    { id: "if-open", label: "if (age >= 18) {", explanation: "La condition a besoin que age existe déjà, donc la déclaration doit venir en premier." },
+    { id: "if-body", label: "  console.log(\"adult\");" },
+    { id: "if-close", label: "}" },
+  ]}
+  correctOrder={["decl", "if-open", "if-body", "if-close"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que ce code affiche ?"
+  code={`console.log(typeof "5" + 5);`}
+  options={["\"string5\"", "10", "\"5\" + 5", "NaN"]}
+  correctIndex={0}
+  explanation={`typeof "5" s'évalue en premier et renvoie la chaîne "string". Puis "string" + 5 concatène, produisant "string5" — le piège classique est de supposer que le + 5 s'applique à la valeur originale passée à typeof, alors que typeof s'est déjà exécuté et a renvoyé une chaîne.`}
+  actualOutput="string5"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Syntaxe et variables](/fr/programming-languages/javascript/syntax-basics)
+- [Asynchrone et Promises](/fr/programming-languages/javascript/advanced)

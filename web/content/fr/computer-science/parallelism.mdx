@@ -1,0 +1,27 @@
+---
+title: Parallélisme
+description: Exécuter réellement plus d'une chose au même instant précis — pourquoi cela nécessite plusieurs cœurs, la différence entre parallélisme de données et de tâches, et la loi d'Amdahl sur pourquoi davantage de cœurs ne signifie pas toujours proportionnellement plus de vitesse.
+category: Computer Science
+weight: 9
+---
+
+Le **parallélisme** signifie que plus d'une unité de travail s'exécute physiquement au même instant précis, sur du matériel séparé — des cœurs de [CPU](/fr/computer-science/cpu) séparés, des machines séparées, ou les milliers de voies d'un [GPU](/fr/computer-science/gpu). C'est l'élément que la [concurrence](/fr/computer-science/concurrency) ne requiert pas : un programme concurrent entrelace le travail et *peut* s'exécuter en parallèle si le matériel le permet, mais une machine monocœur ne peut rendre deux choses parallèles quelle que soit la façon dont le logiciel est structuré — il n'y a qu'un seul endroit où les instructions peuvent réellement s'exécuter.
+
+## Parallélisme de données vs parallélisme de tâches
+
+- Le **parallélisme de données** applique la même opération à de nombreux morceaux de données indépendants à la fois — redimensionner chaque image d'un dossier, ou les multiplications de matrices derrière le calcul [GPU](/fr/computer-science/gpu). Comme chaque morceau est indépendant, répartir le travail entre les cœurs (ou les voies GPU) est presque mécanique.
+- Le **parallélisme de tâches** exécute des opérations réellement *différentes* en même temps — un cœur affichant une interface pendant qu'un autre gère une requête réseau pendant qu'un troisième exécute un calcul en arrière-plan. Le travail n'est pas identique entre les unités, donc le répartir demande une structure de programme plus délibérée que le parallélisme de données.
+
+## La loi d'Amdahl
+
+Ajouter des cœurs ne rend pas un programme proportionnellement plus rapide sauf si le programme *entier* peut être parallélisé, et la **loi d'Amdahl** quantifie précisément le coût de ce « sauf si » : si une fraction `p` du temps d'exécution d'un programme peut être parallélisée et que le reste, `1 − p`, est strictement séquentiel, l'accélération maximale possible avec n'importe quel nombre de cœurs est `1 / (1 − p)`. Un programme parallélisable à 90 % plafonne à une accélération de 10x peu importe le nombre de cœurs qu'on lui jette, parce que les 10 % restants doivent toujours s'exécuter sur un seul cœur, dans l'ordre, quoi que soit disponible par ailleurs. C'est la raison théorique pour laquelle « ajouter simplement plus de cœurs » a des rendements décroissants, et pourquoi identifier et réduire le goulot d'étranglement séquentiel d'un programme importe généralement plus que le nombre brut de cœurs une fois qu'on a dépassé une poignée de cœurs.
+
+## Où se situe réellement la difficulté
+
+Répartir un travail indépendant entre les cœurs est la moitié facile de la programmation parallèle ; la moitié difficile est tout ce que la [concurrence](/fr/computer-science/concurrency) couvre déjà — état partagé, conditions de concurrence, verrouillage — sauf que maintenant c'est réellement simultané plutôt que simplement entrelacé, ce qui retire l'option de raisonner en supposant qu'« un seul de ces éléments s'exécute réellement à la fois ». Une condition de concurrence qui n'apparaissait qu'occasionnellement sous une concurrence entrelacée peut devenir le cas courant une fois que les deux threads impliqués s'exécutent réellement en même temps sur des cœurs séparés.
+
+## Voir aussi
+
+- **[Concurrence](/fr/computer-science/concurrency)** — la moitié « structure de programme » de « plus d'une chose à la fois », distincte de leur exécution réellement simultanée.
+- **[CPU](/fr/computer-science/cpu)** et **[GPU](/fr/computer-science/gpu)** — les deux formes matérielles sur lesquelles le travail parallèle s'exécute réellement, construites respectivement pour le parallélisme de tâches et le parallélisme de données.
+- **[Systèmes distribués](/fr/computer-science/distributed-systems)** — le parallélisme poussé au-delà des cœurs d'une seule machine, vers des machines séparées connectées par un réseau.

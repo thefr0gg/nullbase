@@ -1,0 +1,26 @@
+---
+title: Arquitectura de Software
+description: Las formas de alto nivel que puede adoptar el código y el despliegue de un sistema — cómo se dividen las piezas, cómo se hablan entre sí, y las compensaciones que sacrifica cada forma.
+category: Software Architecture
+weight: 13
+---
+
+Donde [Backend](/es/backend) cubre qué se ejecuta dentro de un solo servidor y [Web APIs](/es/web-apis) cubre la forma de una solicitud y una respuesta, esta sección está un nivel arriba: cómo se organizan y se despliegan las piezas de un sistema entero entre sí, y cómo puede estructurarse el código interno de un único servicio. Ninguno de estos patrones es mutuamente excluyente — un sistema real normalmente es varios de ellos superpuestos (un monolito organizado con arquitectura limpia por dentro, desplegado detrás de una función serverless de borde, comunicándose con el servicio de otro equipo a través de eventos).
+
+## Cómo se divide el sistema
+
+- **[Arquitectura Cliente-Servidor](/es/software-architecture/client-server-architecture)** — el patrón base por debajo de casi todo lo demás aquí: un cliente que pregunta, un servidor que responde.
+- **[Monolitos](/es/software-architecture/monoliths)** — una única unidad desplegable que contiene toda la lógica de la aplicación.
+- **[Microservicios](/es/software-architecture/microservices)** — servicios desplegables de forma independiente que son dueños de sus propios datos.
+- **[Arquitectura Serverless](/es/software-architecture/serverless-architecture)** — funciones y servicios gestionados en lugar de servidores que ejecutas tú mismo.
+- **[Arquitectura Orientada a Eventos](/es/software-architecture/event-driven-architecture)** — componentes que se comunican a través de eventos en lugar de llamadas directas.
+
+## Cómo habla un servicio con el mundo exterior
+
+- **[Arquitectura REST](/es/software-architecture/rest-architecture)** — las restricciones arquitectónicas detrás del término, no solo "una API que devuelve JSON".
+
+## Cómo se organiza el interior de un servicio
+
+- **[Arquitectura en Capas](/es/software-architecture/layered-architecture)** — código dividido en capas horizontales, cada una dependiendo solo de la que está debajo.
+- **[Arquitectura Limpia](/es/software-architecture/clean-architecture)** — dependencias que apuntan hacia dentro, hacia la lógica de negocio agnóstica de framework, en lugar de hacia fuera, hacia la infraestructura.
+- **[Diseño Guiado por el Dominio](/es/software-architecture/domain-driven-design)** — modelar el código en torno al propio lenguaje y las fronteras del dominio de negocio.

@@ -1,0 +1,28 @@
+---
+title: GPU
+description: Pourquoi une unité de traitement graphique est une machine différente d'un CPU plutôt qu'une simple version plus rapide — des milliers de cœurs simples construits pour le travail data-parallèle, et pourquoi cette forme s'est avérée aussi adaptée à l'apprentissage profond qu'au rendu graphique.
+category: Computer Science
+weight: 5
+---
+
+Un **GPU** (unité de traitement graphique) est une puce construite autour d'un pari différent de celui d'un [CPU](/fr/computer-science/cpu) : au lieu d'une poignée de cœurs puissants chacun optimisé pour exécuter un flux d'instructions aussi vite que possible, un GPU a des milliers de cœurs beaucoup plus simples, tous optimisés pour effectuer la *même* opération sur des données *différentes* en même temps. Ce n'est pas un CPU plus rapide — c'est une machine de forme différente, bonne pour une classe plus étroite de problèmes et bien meilleure sur ces problèmes qu'un CPU ne l'est.
+
+## SIMD et parallélisme de données
+
+L'idée centrale est le **SIMD** — Single Instruction, Multiple Data (instruction unique, données multiples) : une instruction (disons, « multiplier ces deux nombres ») est émise une seule fois et appliquée simultanément sur un grand lot de voies de données. Cela correspond directement aux problèmes **data-parallèles**, où le même calcul s'exécute indépendamment sur de nombreux morceaux de données indépendants — exactement la forme du rendu d'une image, où le même calcul d'ombrage s'exécute une fois par pixel (des millions, tous indépendants les uns des autres) plutôt que dans un ordre séquentiel qui dépendrait des pixels précédents.
+
+Un cœur de CPU, en revanche, est construit pour le **parallélisme de tâches** et la performance mono-thread à faible latence — prédiction de branchement, pipelines profonds, grands caches, tout cela dépensé pour faire terminer *un seul* flux d'instructions aussi vite que possible, y compris des flux d'instructions pleins de branches imprévisibles et d'étapes dépendantes. Confier à un GPU une charge de travail pleine de branches et de dépendances séquentielles gaspille presque tout son avantage, puisque ses cœurs ne sont rapides que lorsqu'ils font tous la même chose.
+
+## Pourquoi cette forme convient à l'apprentissage profond
+
+La raison pour laquelle les GPU sont devenus centraux en apprentissage automatique n'a rien à voir spécifiquement avec le graphisme : entraîner et exécuter un réseau de neurones consiste massivement en **multiplication de matrices** — la même opération de multiplication-addition répétée sur d'immenses grilles de nombres indépendantes, ce qui est précisément la forme data-parallèle pour laquelle un GPU est construit. Un calcul qui prendrait des minutes à un CPU, effectuant les multiplications largement une par une (ou par petits lots SIMD), peut se terminer sur un GPU en une fraction du temps en le répartissant sur des milliers de cœurs à la fois. C'est aussi pourquoi les GPU sont désormais souvent décrits par leur bande passante mémoire et leur nombre de cœurs plutôt que par leur vitesse d'horloge — pour cette charge de travail, la quantité de données pouvant circuler et le nombre de voies pouvant travailler dessus à la fois importent plus que la vitesse d'une seule voie.
+
+## Calcul GPU vs graphisme
+
+Les GPU modernes sont utilisés de deux façons : le **pipeline graphique** traditionnel (sommets, rastérisation, ombrage — piloté par des API comme Vulkan, Metal ou DirectX) et le **calcul GPU à usage général (GPGPU)** — utiliser le même matériel parallèle pour du travail non graphique comme l'entraînement de modèles de ML, la simulation scientifique ou le minage de cryptomonnaie, via des frameworks comme CUDA (spécifique à NVIDIA) ou le plus portable OpenCL. Les deux voies sollicitent le même matériel sous-jacent ; la différence tient simplement à qui émet les instructions et à ce que représentent les données.
+
+## Voir aussi
+
+- **[CPU](/fr/computer-science/cpu)** — le pendant orienté tâches et faible latence auquel cette page s'oppose.
+- **[Parallélisme](/fr/computer-science/parallelism)** — le concept général de faire plus d'une chose au même instant précis, dont un GPU est l'exemple matériel le plus extrême.
+- **[Mémoire](/fr/computer-science/memory)** — les GPU ont leur propre mémoire séparée à haute bande passante, distincte de la RAM d'un CPU, précisément parce qu'alimenter des milliers de cœurs à la fois requiert bien plus de bande passante qu'une charge de travail CPU.

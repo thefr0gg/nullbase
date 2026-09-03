@@ -1,0 +1,180 @@
+---
+title: البرمجة غير المتزامنة والوعود
+description: الوعود (Promises)، وasync/await، وحلقة الأحداث (event loop) التي تُشغِّل JavaScript غير المتزامنة على خيط واحد.
+category: Programming Languages
+weight: 9
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+البرمجة غير المتزامنة هي الموضوع المتوسط المميز لـJavaScript — النقطة
+التي يتحوّل فيها تصميم اللغة أحادي الخيط والمدفوع بالأحداث من شيء يبقى
+غير مرئي إلى شيء عليك التفكير فيه بفاعلية. فهم الوعود (Promises)،
+وasync/await، وكيفية جدولة حلقة الأحداث لها تقريباً هو ما يفصل بين
+"أستطيع كتابة JavaScript" و"أستطيع التنبؤ بما ستفعله JavaScript الخاصة بي."
+
+## الوعود (Promises)
+
+يمثّل `Promise` قيمة غير متاحة بعد — النتيجة النهائية لعملية غير متزامنة
+مثل طلب شبكة. يكون دائماً في إحدى ثلاث حالات: معلَّق (pending)، مُحقَّق
+(fulfilled، بقيمة)، أو مرفوض (rejected، بخطأ)، وبمجرد أن يستقر (يتحقق أو
+يُرفَض)، يبقى على تلك الحال بشكل دائم.
+
+```js
+function delay(ms, value) {
+  return new Promise(resolve => {
+    setTimeout(() => resolve(value), ms);
+  });
+}
+
+delay(1000, "done!")
+  .then(result => console.log(result)) // "done!" after ~1 second
+  .catch(err => console.error(err));
+```
+
+تسجّل `.then()` رد نداء للتحقق، وتسجّل `.catch()` للرفض، ويعيد كلاهما
+وعداً جديداً، وهذا ما يتيح لك تسلسلهما:
+
+```js
+delay(500, 5)
+  .then(n => n * 2)
+  .then(n => n + 1)
+  .then(result => console.log(result)) // 11
+  .catch(err => console.error("Something failed:", err));
+```
+
+يُشغِّل `Promise.all` عدة وعود بشكل متزامن (concurrently) ويُحلّ بمجرد
+تحقق كل واحد منها، بالترتيب الأصلي — مفيد عندما لا تعتمد العمليات على
+بعضها بعضاً وإلا كنت ستنتظرها واحدة تلو الأخرى دون سبب.
+
+```js
+Promise.all([delay(100, "a"), delay(50, "b"), delay(200, "c")]).then(
+  results => console.log(results) // ["a", "b", "c"] after ~200ms total, not 350ms
+);
+```
+
+## async/await
+
+`async`/`await` صياغة مبنية فوق الوعود تتيح لكود غير متزامن أن يُقرأ مثل
+كود متزامن عادي. تُعيد الدالة `async` دائماً وعداً، وتوقف `await` التنفيذ
+*داخل تلك الدالة* (وليس البرنامج كله) حتى يستقر الوعد الذي يُنتظَر.
+
+```js
+async function getUserSummary(id) {
+  const response = await fetch(`/api/users/${id}`);
+  const user = await response.json();
+  return `${user.name} (${user.email})`;
+}
+
+getUserSummary(1).then(summary => console.log(summary));
+```
+
+هذا يعادل تماماً سلسلة `.then()`، لكنه أسهل في القراءة وفي التغليف داخل
+`try`/`catch` لمعالجة الأخطاء. تشغيل عمليات `await` مستقلة بالتسلسل
+يُهدر وقتاً بنفس طريقة سلسلة `.then()` الساذجة — استخدم `Promise.all`
+عندما لا تعتمد العمليات على بعضها بعضاً:
+
+```js
+// Sequential — waits for the first request to fully finish before starting the second.
+async function slow() {
+  const a = await delay(100, "a");
+  const b = await delay(100, "b");
+  return [a, b]; // takes ~200ms
+}
+
+// Concurrent — both requests are in flight at the same time.
+async function fast() {
+  const [a, b] = await Promise.all([delay(100, "a"), delay(100, "b")]);
+  return [a, b]; // takes ~100ms
+}
+```
+
+## حلقة الأحداث (event loop)، باختصار
+
+تعمل JavaScript على خيط واحد، لذا لا يمكنها فعل شيئين حرفياً في آن واحد.
+بدلاً من ذلك، تُسلِّم بيئة التشغيل (متصفح أو Node.js) العمليات البطيئة —
+المؤقتات، وإدخال/إخراج الشبكة، والوصول إلى الملفات — لتُعالَج خارج ذلك
+الخيط، و**حلقة الأحداث** هي الآلية التي تُعيد نتائجها كردود نداء بمجرد
+انتهاء الكود الذي يعمل حالياً. الأهم أن مكدس الاستدعاءات يعمل دائماً حتى
+اكتماله قبل أن تُعالِج حلقة الأحداث أي شيء منتظِر خلفه — وهذا سبب أن
+`setTimeout(fn, 0)` لا يعمل فوراً، بل يعمل بعد انتهاء كل الكود المتزامن
+المصفوف حالياً في الانتظار.
+
+```js
+console.log("1: start");
+
+setTimeout(() => console.log("2: timeout"), 0);
+
+Promise.resolve().then(() => console.log("3: promise"));
+
+console.log("4: end");
+
+// Output order: 1, 4, 3, 2
+```
+
+يعمل الكود المتزامن (`1` و`4`) دائماً أولاً، بالترتيب. ثم تعمل ردود نداء
+الوعود المصفوفة ("طابور المهام الصغرى" microtask queue) قبل ردود نداء
+المؤقتات المصفوفة ("طابور المهام الكبرى" macrotask queue) — وهذا سبب
+طباعة `3` قبل `2` رغم أن الوعد جُدوِل بعد المؤقت.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء دالة غير متزامنة تجلب بيانات JSON وتطبعها مع معالجة الأخطاء."
+  items={[
+    { id: "fnOpen", label: "async function loadData(url) {" },
+    { id: "tryOpen", label: "  try {" },
+    { id: "fetchLine", label: "    const response = await fetch(url);" },
+    { id: "jsonLine", label: "    const data = await response.json();", explanation: "يجب أن يوجد response قبل إمكانية استدعاء ()json. عليه." },
+    { id: "log", label: "    console.log(data);" },
+    { id: "catchOpen", label: "  } catch (err) {" },
+    { id: "catchBody", label: "    console.error(\"Load failed:\", err.message);" },
+    { id: "catchClose", label: "  }" },
+    { id: "fnClose", label: "}" },
+  ]}
+  correctOrder={["fnOpen", "tryOpen", "fetchLine", "jsonLine", "log", "catchOpen", "catchBody", "catchClose", "fnClose"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="رتّب هذه الأسطر لتشغيل قيمتين مؤجَّلتين مستقلتين بشكل متزامن باستخدام Promise.all."
+  items={[
+    { id: "delayFn", label: "function delay(ms, value) { return new Promise(res => setTimeout(() => res(value), ms)); }" },
+    { id: "asyncOpen", label: "async function run() {" },
+    { id: "allCall", label: "  const [x, y] = await Promise.all([delay(100, 1), delay(100, 2)]);" },
+    { id: "log", label: "  console.log(x + y);" },
+    { id: "asyncClose", label: "}" },
+    { id: "invoke", label: "run();" },
+  ]}
+  correctOrder={["delayFn", "asyncOpen", "allCall", "log", "asyncClose", "invoke"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا الكود؟"
+  code={`console.log("a");
+
+setTimeout(() => console.log("b"), 0);
+
+Promise.resolve()
+  .then(() => console.log("c"))
+  .then(() => console.log("d"));
+
+console.log("e");`}
+  options={["a, b, c, d, e", "a, e, c, d, b", "a, e, b, c, d", "a, c, d, e, b"]}
+  correctIndex={1}
+  explanation="يعمل الكود المتزامن (a، e) دائماً أولاً وبالترتيب، لأن مكدس الاستدعاءات يجب أن يفرغ قبل أن تنظر حلقة الأحداث إلى أي شيء آخر. ثم يُفرَّغ طابور المهام الصغرى (ردود نداء الوعود) بالكامل — كلا ()then. المتسلسلتين، c ثم d — قبل أن يحصل طابور المهام الكبرى (رد نداء setTimeout، b) على دوره، رغم أن المؤقت جُدوِل بتأخير 0 ملي ثانية."
+  actualOutput="a
+e
+c
+d
+b"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [الدوال والإغلاقات](/ar/programming-languages/javascript/functions)
+- [معالجة الأخطاء](/ar/programming-languages/javascript/error-handling)

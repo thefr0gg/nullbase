@@ -1,0 +1,50 @@
+---
+title: Mémoire virtuelle
+description: Pourquoi chaque processus obtient sa propre illusion d'un espace d'adressage complet, comment la pagination et le TLB rendent cette illusion rapide, et ce qui se passe lors d'un défaut de page quand l'illusion se heurte aux limites physiques.
+category: Operating Systems
+weight: 3
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+La **mémoire virtuelle** est la couche d'indirection qui permet à chaque processus de croire qu'il possède un espace d'adressage entier et privé pour lui-même — commençant à l'adresse zéro, aussi grand que l'architecture du CPU le permet — quelle que soit la quantité de RAM physique dont dispose réellement la machine ou ce que font les autres processus au même moment. Aucun processus ne touche jamais directement une adresse RAM physique ; chaque accès mémoire qu'il effectue est une adresse *virtuelle* que le matériel et l'OS traduisent en un véritable emplacement physique en coulisses, et cette seule couche d'indirection est ce qui rend possibles à la fois l'isolation des processus, l'exécution de programmes plus gros que la RAM, et le multitâche sûr.
+
+## Ce que l'illusion apporte
+
+- **L'isolation** — parce que les adresses virtuelles du processus A sont mappées vers un ensemble d'adresses physiques complètement différent de celui du processus B, A n'a aucun moyen même d'*exprimer* une adresse qui tombe dans la mémoire de B. Un bug ou une écriture malveillante dans un processus ne peut pas corrompre silencieusement les données d'un autre, sans que l'OS ait à vérifier chaque accès mémoire à la main.
+- **Des programmes plus gros que la RAM** — l'espace d'adressage virtuel d'un processus n'a pas besoin d'être entièrement résident en mémoire physique à la fois. Des parties peuvent vivre sur disque jusqu'à être réellement touchées, si bien qu'un programme peut être écrit comme si la mémoire était pratiquement illimitée.
+- **Un modèle mental plus simple pour chaque programme** — parce que les adresses sont privées et commencent au même endroit pour tout le monde, un compilateur et un éditeur de liens peuvent disposer la mémoire d'un programme sans rien savoir de ce qui tourne par ailleurs sur la machine au même moment.
+
+## La pagination
+
+Le mécanisme qui rend cela praticable est la **pagination** : la mémoire virtuelle et la mémoire physique sont toutes deux découpées en morceaux de taille fixe appelés **pages** (4 Ko est une valeur par défaut courante), et l'OS maintient une **table des pages** par processus qui mappe chaque page virtuelle de ce processus vers un cadre de page physique quelque part en RAM. Un accès mémoire comme « lire à l'adresse virtuelle `0x4000` » est découpé en un numéro de page et un décalage dans la page ; la table des pages transforme le numéro de page en cadre de page physique réel, et le décalage est ajouté ensuite sans changement. Comme cela fonctionne en unités de taille fixe plutôt qu'en régions arbitraires de taille variable, l'OS peut placer les pages de n'importe quel processus n'importe où en mémoire physique sans que la mémoire physique ait besoin d'être contiguë — simplifiant radicalement l'allocation par rapport aux schémas antérieurs qui exigeaient que des programmes entiers tiennent dans un seul bloc ininterrompu.
+
+## Le TLB
+
+Parcourir une table des pages complète à *chaque accès mémoire* serait prohibitivement lent, donc le CPU garde un petit cache extrêmement rapide des traductions virtuel-vers-physique récentes appelé le **translation lookaside buffer (TLB)**. Lors d'un **succès de TLB**, le CPU a déjà l'adresse physique et saute entièrement le parcours de la table des pages ; lors d'un **échec de TLB**, il doit parcourir la table des pages (ou des structures gérées matériellement) pour trouver le mappage, puis mettre ce résultat en cache dans le TLB pour la prochaine fois. Comme les programmes tendent à accéder à un ensemble relativement restreint de pages de façon répétée dans une courte fenêtre (localité de référence), le taux de succès du TLB est généralement très élevé en pratique — mais un changement de contexte vers un autre processus invalide la plupart de ces traductions mises en cache, puisque les adresses virtuelles d'un nouveau processus se mappent ailleurs entièrement, ce qui explique en partie pourquoi les changements de contexte portent un coût réel au-delà de la simple sauvegarde/restauration de registres [couverte sur la page Processus](/fr/operating-systems/processes).
+
+## Les défauts de page
+
+Un **défaut de page** se produit quand un processus accède à une page virtuelle dont la table des pages dit qu'elle n'est actuellement mappée à aucun cadre physique valide, et ce n'est pas automatiquement un crash — les deux cas sont très différents :
+
+<ItemExplorer
+  title="Types de défauts de page"
+  layout="table"
+  tableColumns={[{ key: "cause", label: "Ce qui le déclenche" }, { key: "cost", label: "Coût de résolution" }]}
+  items={[
+    { id: "minor", label: "Défaut mineur (soft)", color: "blue", columns: { cause: "La page est en réalité déjà en mémoire physique (par ex. partagée avec un autre processus, ou récupérée mais pas encore réutilisée) mais pas encore mappée dans la table des pages de ce processus", cost: "Peu coûteux — l'OS met simplement à jour l'entrée de la table des pages pour pointer vers une mémoire déjà résidente. Aucun accès disque." } },
+    { id: "major", label: "Défaut majeur (hard)", color: "red", columns: { cause: "La page n'est réellement pas du tout en RAM — elle doit être lue depuis le disque (depuis le fichier exécutable, ou depuis le swap)", cost: "Des ordres de grandeur plus lent — une vraie lecture disque (ou SSD) doit se terminer avant que le processus puisse reprendre, ce qui explique pourquoi une activité de pagination intense est une falaise de performance si visible." } },
+  ]}
+/>
+
+Un accès *invalide* — un qui n'est adossé à aucun mappage légitime du tout, comme un véritable déréférencement de pointeur hors limites — est aussi techniquement un défaut de page, mais l'OS le résout en délivrant une faute au processus plutôt qu'en réparant un mappage, ce qui, sur la plupart des systèmes, est exactement ce qu'est une erreur de segmentation sous le capot.
+
+## Le swapping
+
+Quand la mémoire physique vient réellement à manquer, l'OS se replie sur le **swapping** (ou pagination sortante) : il choisit une page actuellement résidente en RAM qui n'a pas été utilisée récemment, écrit son contenu dans une zone réservée du disque (l'espace de swap), et réutilise ce cadre physique pour ce qui a besoin de mémoire maintenant. Si le processus d'origine touche à nouveau cette page plus tard, il subit un défaut de page majeur et l'OS la relit depuis le swap. Cela maintient le système en fonctionnement au lieu de simplement faire échouer une allocation, mais l'accès disque est nettement plus lent que la RAM, donc un système qui fait beaucoup de swap (« thrashing ») peut passer plus de temps à déplacer des pages vers et depuis le disque qu'à faire un travail réel — le signe classique qu'une machine a besoin de plus de RAM plutôt que de plus d'optimisation.
+
+## Voir aussi
+
+- **[Processus](/fr/operating-systems/processes)** — le bloc de contrôle de processus qui contient le pointeur de table des pages de chaque processus.
+- **[Systèmes de fichiers](/fr/operating-systems/file-systems)** — les structures côté disque dans lesquelles l'espace de swap et les défauts de page majeurs lisent finalement.
+- **[Appels système](/fr/operating-systems/system-calls)** — le privilège en mode noyau dont un processus a besoin pour que ses tables des pages soient touchées du tout.

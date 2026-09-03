@@ -1,0 +1,122 @@
+---
+title: الدوال
+description: تعريف الدوال، وإرجاع القيم دون جملة return، وإغلاقات Rust.
+category: Programming Languages
+weight: 4
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تُعرَّف الدوال في Rust بـ `fn`، وتحتاج كل وسيطة إلى تصريح نوع صريح — بخلاف روابط `let`، لا تستنتج Rust أنواع الوسائط أو الإرجاع من كيفية استدعاء الدالة، لأن ذلك كان سيجعل توقيع الدالة يعتمد على مواضع استدعائها بدلاً من كونه عقداً ثابتاً.
+
+```rust
+fn add(a: i32, b: i32) -> i32 {
+    a + b // no semicolon: this is the returned expression
+}
+
+fn main() {
+    let sum = add(3, 4);
+    println!("{sum}");
+}
+```
+
+## التعبيرات مقابل الجمل كقيم إرجاع
+
+آخر تعبير في جسم الدالة يصبح تلقائياً قيمة إرجاعها، *طالما لا توجد فاصلة منقوطة لاحقة له*. أضف فاصلة منقوطة وسيصبح جملة تُقيَّم إلى `()`، ما يغيّر بصمت ما تُعيده الدالة:
+
+```rust
+fn add_broken(a: i32, b: i32) -> i32 {
+    a + b; // semicolon turns this into a statement, not a return value
+} // error: mismatched types — expected i32, found ()
+```
+
+لا يزال بإمكانك استخدام الكلمة المفتاحية `return` صراحة — وهي ضرورية للإرجاع المبكر من منتصف دالة — لكن الاعتماد على التعبير اللاحق لمسار الخروج "العادي" هو الأسلوب الاصطلاحي.
+
+```rust
+fn classify(n: i32) -> &'static str {
+    if n < 0 {
+        return "negative"; // early return, semicolon required after return
+    }
+    if n == 0 {
+        "zero"
+    } else {
+        "positive"
+    } // trailing expression: the normal-path return value
+}
+```
+
+## الإغلاقات (Closures)
+
+**الإغلاق** دالة مجهولة يمكنها التقاط متغيرات من النطاق الذي عُرِّفت فيه — تُكتَب بأنابيب حول وسائطها (`|x| ...`) بدلاً من `fn name(x: T)`. تُستخدم الإغلاقات بكثافة مع دوال المكرِّرات مثل `map` و`filter`.
+
+```rust
+fn main() {
+    let threshold = 10;
+    let numbers = vec![4, 12, 7, 15, 3];
+
+    // the closure captures `threshold` from the surrounding scope
+    let above: Vec<i32> = numbers.into_iter().filter(|n| *n > threshold).collect();
+
+    println!("{above:?}"); // [12, 15]
+}
+```
+
+بخلاف `fn` عادية، يستطيع هذا الإغلاق رؤية `threshold` دون تمريره صراحة — تستعير الإغلاقات أو تنقل المتغيرات التي تشير إليها من بيئتها، وهذا بالضبط ما يتيح لإغلاق `filter` المقارنة بقيمة معرَّفة خارجه.
+
+## طالع أيضاً
+
+- **[التحكم بمسار التنفيذ](/ar/programming-languages/rust/control-flow)** — التعبيرات (`if`، `match`، `loop`) التي تنتهي غالباً كقيمة إرجاع لاحقة لدالة.
+- **[معالجة الأخطاء](/ar/programming-languages/rust/error-handling)** — الدوال التي قد تفشل تُعيد عادة `Result<T, E>` بدلاً من إطلاق استثناء.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء دالة تجمع عددين وموضع استدعاء يطبع النتيجة."
+  items={[
+    { id: "fn-sig", label: "fn add(a: i32, b: i32) -> i32 {" },
+    { id: "fn-body", label: "    a + b" },
+    { id: "fn-close", label: "}" },
+    { id: "main-open", label: "fn main() {" },
+    { id: "sum", label: "    let sum = add(3, 4);", explanation: "يجب تعريف add قبل أن تستدعيها main بترتيب قراءة الملف، ويجب أن توجد sum قبل طباعتها." },
+    { id: "print", label: "    println!(\"{sum}\");" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["fn-sig", "fn-body", "fn-close", "main-open", "sum", "print", "main-close"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء دالة تصنّف رقماً، باستخدام إرجاع مبكر للحالة السالبة."
+  items={[
+    { id: "sig", label: "fn classify(n: i32) -> &'static str {" },
+    { id: "neg-if", label: "    if n < 0 {" },
+    { id: "return", label: "        return \"negative\";", explanation: "يجب أن يحدث الإرجاع المبكر قبل جملة if/else اللاحقة التي تعالج الحالات المتبقية." },
+    { id: "neg-close", label: "    }" },
+    { id: "zero-if", label: "    if n == 0 {" },
+    { id: "zero", label: "        \"zero\"" },
+    { id: "else", label: "    } else {" },
+    { id: "pos", label: "        \"positive\"" },
+    { id: "zero-close", label: "    }" },
+    { id: "close", label: "}" },
+  ]}
+  correctOrder={["sig", "neg-if", "return", "neg-close", "zero-if", "zero", "else", "pos", "zero-close", "close"]}
+/>
+
+<PredictOutput
+  title="ماذا تطبع هذه الشيفرة؟"
+  code={`fn add(a: i32, b: i32) -> i32 {
+    a + b;
+}
+
+fn main() {
+    println!("{}", add(3, 4));
+}`}
+  options={["7", "0", "()", "Compile error"]}
+  correctIndex={3}
+  explanation="تحوّل الفاصلة المنقوطة بعد a + b التعبير إلى جملة، لذا يصبح آخر تعبير في جسم الدالة قيمة الوحدة الضمنية () — لكن التوقيع يَعِد بـ i32. ترفض Rust هذا أثناء الترجمة بخطأ عدم تطابق أنواع بدلاً من إرجاع 0 أو الوحدة بصمت."
+  actualOutput="error[E0308]: mismatched types — expected `i32`, found `()`"
+/>
+</ExerciseTabs>

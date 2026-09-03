@@ -1,0 +1,35 @@
+---
+title: Monolithes
+description: Une unité déployable unique contenant toute la logique d'une application — pourquoi presque tous les projets commencent ici, et ce qui tourne réellement mal quand elle grandit.
+category: Software Architecture
+weight: 2
+---
+
+Un **monolithe** est une application construite et déployée comme une unité unique — une base de code, un artefact de build, un processus en cours d'exécution (ou un ensemble de répliques identiques de ce processus) contenant toute la logique de l'application : l'API, les règles métier, souvent les tâches en arrière-plan aussi, tout compilé ou assemblé ensemble et livré comme une seule chose. « Monolithe » est utilisé comme une insulte dans une grande partie du discours sur l'architecture, mais le terme lui-même décrit simplement une structure, et il vaut la peine d'être honnête là-dessus : un nombre énorme de systèmes réussis et rentables ont fonctionné comme un monolithe pendant toute leur durée de vie et n'ont jamais eu besoin d'être autre chose.
+
+## Pourquoi les équipes commencent là
+
+Presque tous les projets qui deviennent ensuite quelque chose de plus élaboré ont commencé comme un monolithe, et pas par accident. Une seule base de code signifie qu'un appel de fonction n'est qu'un appel de fonction — pas de réseau, pas de sérialisation, pas de défaillance partielle à laquelle penser. Un seul déploiement signifie qu'il y a exactement une chose à construire, tester et livrer, et exactement un endroit où regarder quand quelque chose casse. Le développement local est simple : cloner un dépôt, exécuter un processus, et toute l'application est devant vous. Aucune des surcharges de coordination qu'exigent les systèmes distribués — découverte de service, retentatives réseau, traçage distribué — n'existe encore, parce qu'il n'y a rien de distribué à coordonner.
+
+Ce n'est pas un compromis de kit de démarrage dont il faudrait avoir honte. Pour une équipe d'une poignée d'ingénieurs, ou un produit dont les différentes parties n'ont pas réellement des besoins de mise à l'échelle ou de publication radicalement différents, un monolithe est très souvent le choix *correct* à long terme, pas juste le plus facile au départ.
+
+## Où ça commence réellement à faire mal
+
+La douleur apparaît spécifiquement à mesure que la base de code et l'équipe grandissent toutes deux, et elle se regroupe autour de quelques formes récurrentes :
+
+- **Des déploiements couplés.** Si l'application entière est livrée comme un seul artefact, alors livrer un correctif d'une ligne au flux de paiement nécessite de redéployer (et de retester, et de re-vérifier) toute l'application, y compris les parties que personne n'a touchées. À mesure que la base de code grandit, le rayon d'impact de chaque déploiement grandit avec elle.
+- **Un domaine de défaillance partagé.** Une fuite de mémoire, une boucle infinie, ou une exception non gérée dans une fonctionnalité peut faire tomber le processus servant chaque *autre* fonctionnalité aussi, puisqu'elles s'exécutent toutes dans le même processus et partagent les mêmes ressources (mémoire, CPU, pool de connexions à la base de données).
+- **Mettre à l'échelle tout le reste pour mettre à l'échelle une seule partie.** Si seul le endpoint de traitement d'images est sous forte charge, la réponse d'un monolithe est toujours « faire tourner plus de copies de toute l'application » — vous ne pouvez pas mettre à l'échelle juste le chemin chaud sans payer pour mettre à l'échelle tout ce qui est empaqueté avec.
+- **Friction organisationnelle.** Plusieurs équipes commitant dans la même base de code et le même pipeline de déploiement finissent inévitablement par se marcher sur les pieds — conflits de fusion, un build cassé d'une équipe bloquant la publication de tout le monde, et une suite de tests toujours plus longue dont chaque équipe paie le coût à chaque changement, peu importe le code qu'elle teste réellement.
+
+## Le compromis honnête
+
+Rien de tout cela ne signifie qu'un monolithe est une erreur à construire ou à conserver. Cela signifie que les points de douleur ci-dessus concernent spécifiquement l'indépendance de déploiement, l'isolation des défaillances, et l'échelle organisationnelle — des problèmes qui ne mordent qu'une fois qu'un système et une équipe sont assez grands pour les ressentir. Une équipe de cinq personnes servant un trafic modeste ne gagne rien à payer d'avance la taxe opérationnelle des [microservices](/fr/software-architecture/microservices) ; un **monolithe modulaire** — une unité déployable unique organisée en interne en modules bien séparés avec des frontières claires — capture souvent la majeure partie du bénéfice de maintenabilité que les gens veulent réellement de « découper les choses », sans aucun des appels réseau, sans abandonner la simplicité d'un seul déploiement, et sans exclure une scission ultérieure si et quand la douleur arrive réellement.
+
+La décision de scinder un monolithe devrait généralement suivre un problème réel et ressenti — une équipe spécifique bloquée par le rythme de publication d'une autre équipe, un composant spécifique qui doit être mis à l'échelle indépendamment — plutôt que d'être prise préventivement sur l'hypothèse qu'un système plus grand en aura éventuellement besoin. Scinder trop tôt achète tous les coûts des microservices avant que l'organisation ne soit assez grande pour avoir besoin d'un quelconque de ses bénéfices.
+
+## Voir aussi
+
+- **[Microservices](/fr/software-architecture/microservices)** — l'étape suivante habituelle, et ce qu'il en coûte réellement de la franchir.
+- **[Architecture client-serveur](/fr/software-architecture/client-server-architecture)** — le pattern de base sur lequel un monolithe repose toujours, côté serveur de la séparation.
+- **[Application Servers](/fr/backend/application-servers)** — le processus qu'un monolithe exécute typiquement.

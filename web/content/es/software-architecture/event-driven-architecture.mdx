@@ -1,0 +1,50 @@
+---
+title: Arquitectura Orientada a Eventos
+description: Componentes que se comunican anunciando eventos en lugar de llamarse directamente entre sí — acoplamiento débil y procesamiento asíncrono, a cambio de consistencia eventual y un rastreo más difícil.
+category: Software Architecture
+weight: 5
+interactive: true
+interactiveType: ["MermaidDiagram"]
+---
+
+La **arquitectura orientada a eventos** estructura un sistema en torno a componentes que se comunican produciendo y reaccionando a **eventos** — hechos de "esto sucedió", como `OrderPlaced` o `UserSignedUp` — en lugar de llamar directamente a las funciones o APIs del otro. En lugar de que un llamante diga "haz esto ahora y dime el resultado", un **productor** anuncia que algo sucedió y sigue adelante, y uno o más **consumidores** reaccionan a ello de forma independiente, en su propio calendario, sin que el productor necesite saber que existen.
+
+## Productores, consumidores, y el broker entre ellos
+
+Las tres piezas que hacen que esto funcione:
+
+- Los **productores** emiten eventos cuando sucede algo notable en su parte del sistema — no saben ni les importa quién, si acaso alguien, está escuchando.
+- Un **broker de eventos** (o bus de mensajes) se sitúa entre productores y consumidores, recibiendo eventos y entregándolos hacia adelante. Esto a menudo es el mismo tipo de búfer duradero cubierto en [Colas](/es/backend/queues) — Kafka, Cloudflare Queues, SQS/SNS, Redis Streams — con una adición: los sistemas orientados a eventos comúnmente usan un modelo de entrega **pub/sub**, donde cada consumidor interesado obtiene su propia copia del evento, en lugar del "exactamente un consumidor toma cada mensaje" de una cola de trabajo.
+- Los **consumidores** se suscriben a los eventos que les importan y reaccionan — enviando un correo, actualizando un modelo de lectura, iniciando otro proceso — cuando sea que llegue uno.
+
+<MermaidDiagram
+  title="Un evento, tres consumidores independientes"
+  chart={`graph LR
+    P[Order Service<br/>produces OrderPlaced] --> B[Event Broker]
+    B --> C1[Email Service]
+    B --> C2[Inventory Service]
+    B --> C3[Analytics Service]
+`}
+/>
+
+## Qué compra esto
+
+- **Acoplamiento débil.** El servicio de pedidos que emite `OrderPlaced` no necesita saber que un servicio de correo, un servicio de inventario, y un pipeline de analítica reaccionan a él — nuevos consumidores pueden empezar a escuchar un evento existente sin que el productor cambie en absoluto, que es un cambio mucho más pequeño que agregar una nueva llamada saliente a cada productor que necesita alcanzar un nuevo destino.
+- **Procesamiento asíncrono.** El productor no bloquea esperando a que cada consumidor termine su trabajo — emite el evento y sigue adelante inmediatamente, así que un consumidor downstream lento (una API de correo de terceros teniendo un mal día) no ralentiza la solicitud que disparó el evento en primer lugar.
+- **Un registro de auditoría natural.** Un flujo de eventos de "esto sucedió", conservado, es inherentemente un registro de todo lo que hizo el sistema a lo largo del tiempo — útil para depurar, para reconstruir estado derivado desde cero, o para satisfacer un requisito de auditoría, de una forma que un sistema construido puramente sobre llamadas directas no te da automáticamente.
+
+## Qué cuesta
+
+- **Consistencia eventual.** Como los consumidores reaccionan asíncronamente, hay una ventana — a menudo milisegundos, pero no siempre — donde el resto del sistema todavía no se ha puesto al día: el inventario no se ha decrementado, el panel de analítica no se ha actualizado. El código y los usuarios downstream tienen que poder tolerar esa brecha, lo cual es una restricción de diseño real, no solo un detalle de implementación.
+- **Más difícil rastrear la ruta completa de una solicitud.** Una llamada a función directa tiene un stack de llamadas obvio. Un evento puede disparar a un consumidor, que emite su propio evento, que dispara a otro consumidor varios saltos más allá — la cadena completa de lo que sucedió como resultado de una acción inicial no es visible desde ningún lugar único a menos que el sistema invierta deliberadamente en rastreo distribuido o IDs de correlación enhebrados a través de cada evento.
+- **Depurar una cadena de eventos es genuinamente más difícil.** Cuando algo sale mal tres consumidores más allá del evento original, encontrar la causa raíz significa reconstruir una secuencia de reacciones asíncronas a través de servicios y logs posiblemente separados, en lugar de leer un único stack trace síncrono de arriba a abajo.
+
+## Dónde encaja
+
+Los patrones orientados a eventos tienden a ganarse su costo específicamente donde la lista de "quién necesita saber sobre esto" es abierta o creciente (agregar una nueva parte interesada no debería significar cambiar al productor), donde el trabajo downstream lento no debería bloquear la acción que lo disparó, o donde un historial duradero de lo que sucedió tiene valor real por sí mismo. Para una interacción de alcance estrecho donde el llamante genuinamente necesita un resultado inmediato para avanzar, una llamada síncrona directa — o una simple solicitud [cliente-servidor](/es/software-architecture/client-server-architecture) — normalmente es más simple y más fácil de razonar que enrutarla a través de un evento y esperar a que un consumidor reaccione.
+
+## Ver también
+
+- **[Colas](/es/backend/queues)** — el búfer duradero que normalmente implementa el broker en un sistema orientado a eventos.
+- **[Microservicios](/es/software-architecture/microservices)** — la arquitectura dentro de la cual más a menudo aparece la comunicación orientada a eventos, como alternativa a que los servicios se llamen entre sí.
+- **[Trabajos en Segundo Plano](/es/backend/background-jobs)** — trabajo diferido fuera del ciclo de solicitud, a menudo disparado por un evento en lugar de ejecutado en línea.

@@ -2,6 +2,7 @@ import "../globals.css";
 import "../mdx.css";
 import { Geist_Mono, JetBrains_Mono, Noto_Kufi_Arabic, Noto_Sans_Arabic, Plus_Jakarta_Sans } from "next/font/google";
 import Link from "next/link";
+import { Heart } from "lucide-react";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { ThemeToggle } from "@/app/_components/theme-toggle";
@@ -165,6 +166,16 @@ export default async function LocaleLayout({
                 <div className="flex shrink-0 items-center gap-1.5">
                   <AdminPanelLink />
                   <LanguageSwitcher currentLocale={locale} localesForSlug={localesForSlug} dict={dict} />
+                  <a
+                    href="https://ko-fi.com/U8H826028S"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Support This Website"
+                    title="Support This Website"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-surface text-text-secondary transition-colors hover:bg-electric-blue/10 hover:text-electric-blue"
+                  >
+                    <Heart className="h-4 w-4" />
+                  </a>
                   <ThemeToggle dict={dict} />
                 </div>
               </div>
@@ -172,7 +183,7 @@ export default async function LocaleLayout({
             <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-8 sm:px-6 sm:py-10">
               {children}
             </main>
-            <footer className="flex flex-col items-center gap-2 border-t border-border py-8 text-center text-sm text-text-secondary">
+            <footer className="flex flex-col items-center gap-4 border-t border-border px-4 py-8 text-center text-sm text-text-secondary sm:px-6">
               <span>{dict.footer.tagline}</span>
               <Link
                 href={`${slugToHref(locale, [])}/privacy`}

@@ -1,0 +1,179 @@
+---
+title: الدوال
+description: تصريح الدوال في Go، وقيم الإرجاع المتعددة، والإرجاع المسمّى، والمعاملات المتغيرة العدد.
+category: Programming Languages
+weight: 4
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تُصرَّح الدوال في Go بـ`func`، ويأتي نوع الإرجاع بعد قائمة المعاملات، وليس
+قبل الاسم:
+
+```go
+func add(a int, b int) int {
+	return a + b
+}
+```
+
+يمكن للمعاملات المتتالية من نفس النوع أن تشترك في تعليق نوع واحد:
+
+```go
+func add(a, b int) int {
+	return a + b
+}
+```
+
+## قيم إرجاع متعددة
+
+هذه إحدى أبرز ميزات Go المميّزة، وتُستخدم في كل مكان بالمكتبة القياسية.
+يمكن لدالة أن تُعيد أكثر من قيمة، مفصولة بفواصل:
+
+```go
+func divide(a, b int) (int, int) {
+	quotient := a / b
+	remainder := a % b
+	return quotient, remainder
+}
+
+func main() {
+	q, r := divide(17, 5)
+	fmt.Println(q, r) // 3 2
+}
+```
+
+الاستخدام الأكثر شيوعاً هو إقران نتيجة بخطأ أو بعلامة "ok"، وهذه هي طريقة
+Go لاستبدال الاستثناءات وغموض القيم القابلة للإرجاع الفارغ في اصطلاح واحد:
+
+```go
+func lookup(m map[string]int, key string) (int, bool) {
+	value, ok := m[key]
+	return value, ok
+}
+
+func main() {
+	scores := map[string]int{"ada": 100}
+	if value, ok := lookup(scores, "ada"); ok {
+		fmt.Println("score:", value)
+	}
+}
+```
+
+إذا لم تحتج إحدى قيم الإرجاع، تجاهلها بـ`_`:
+
+```go
+_, remainder := divide(17, 5)
+```
+
+## قيم الإرجاع المسمّاة
+
+يمكن تسمية قيم الإرجاع في التوقيع. تُعيد عبارة `return` مجردة بعدها قيمها
+الحالية — مفيدة للدوال القصيرة، لكن يسهل إساءة استخدامها لتنتج كوداً صعب
+القراءة إذا أُفرِط فيها:
+
+```go
+func split(sum int) (x, y int) {
+	x = sum * 4 / 9
+	y = sum - x
+	return // يُعيد x, y
+}
+```
+
+## المعاملات متغيرة العدد
+
+معامل مسبوق بـ`...` يقبل أي عدد من الوسائط، تُجمَع في شريحة داخل الدالة:
+
+```go
+func sum(nums ...int) int {
+	total := 0
+	for _, n := range nums {
+		total += n
+	}
+	return total
+}
+
+func main() {
+	fmt.Println(sum(1, 2, 3))    // 6
+	fmt.Println(sum())            // 0
+}
+```
+
+## الدوال كقيم
+
+الدوال قيم من الدرجة الأولى في Go — يمكن إسنادها إلى متغيرات، وتمريرها
+كوسائط، وإعادتها من دوال أخرى:
+
+```go
+func makeMultiplier(factor int) func(int) int {
+	return func(n int) int {
+		return n * factor
+	}
+}
+
+func main() {
+	double := makeMultiplier(2)
+	fmt.Println(double(21)) // 42
+}
+```
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء دالة تُعيد قيمتين وطباعة كلتيهما."
+  items={[
+    { id: "f1", label: "func minMax(a, b int) (int, int) {" },
+    { id: "f2", label: "\tif a < b {" },
+    { id: "f3", label: "\t\treturn a, b" },
+    { id: "f4", label: "\t}", explanation: "أغلق كتلة if قبل عبارة return الاحتياطية." },
+    { id: "f5", label: "\treturn b, a" },
+    { id: "f6", label: "}" },
+    { id: "f7", label: "lo, hi := minMax(9, 3)" },
+    { id: "f8", label: "fmt.Println(lo, hi)" },
+  ]}
+  correctOrder={["f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="رتّب هذه الأسطر لبناء دالة متغيرة العدد تجمع وسائطها."
+  items={[
+    { id: "g1", label: "func sum(nums ...int) int {" },
+    { id: "g2", label: "\ttotal := 0" },
+    { id: "g3", label: "\tfor _, n := range nums {", explanation: "يجب أن تُصرَّح الحلقة بعد تهيئة total إلى 0." },
+    { id: "g4", label: "\t\ttotal += n" },
+    { id: "g5", label: "\t}" },
+    { id: "g6", label: "\treturn total" },
+    { id: "g7", label: "}" },
+  ]}
+  correctOrder={["g1", "g2", "g3", "g4", "g5", "g6", "g7"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا الكود؟"
+  code={`package main
+
+import "fmt"
+
+func swap(a, b int) (int, int) {
+	return b, a
+}
+
+func main() {
+	x, y := 1, 2
+	x, y = swap(x, y)
+	fmt.Println(x, y)
+}`}
+  options={["1 2", "2 1", "خطأ تصريف: قيم إرجاع كثيرة جداً", "0 0"]}
+  correctIndex={1}
+  explanation="تُعيد swap وسائطها بترتيب معكوس عبر إرجاع متعدد القيم. إسناد x, y = swap(x, y) يعيد إسناد كلا المتغيرين دفعة واحدة، فتصبح x تساوي 2 وy تساوي 1."
+  actualOutput="2 1"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [التحكم بمسار التنفيذ](/ar/programming-languages/go/control-flow)
+- [معالجة الأخطاء](/ar/programming-languages/go/error-handling)

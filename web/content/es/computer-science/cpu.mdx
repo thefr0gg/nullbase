@@ -1,0 +1,39 @@
+---
+title: CPU
+description: El ciclo de captación-decodificación-ejecución por el que pasa cada instrucción, cómo el pipelining y los múltiples núcleos superponen ese ciclo para ganar velocidad, y por qué la velocidad de reloj por sí sola dejó de ser toda la historia del rendimiento.
+category: Computer Science
+weight: 4
+---
+
+La **CPU** (unidad central de procesamiento) es el chip que realmente ejecuta las instrucciones de un programa, una a la vez, millones o miles de millones de veces por segundo. Casi todo lo demás en este sitio describe software que se ejecuta *encima* de lo que cubre esta página.
+
+## El ciclo de captación-decodificación-ejecución
+
+Cada instrucción que ejecuta una CPU pasa por el mismo ciclo básico:
+
+1. **Captación (fetch)** — leer la siguiente instrucción de la memoria, en la dirección a la que apunta actualmente el **contador de programa**.
+2. **Decodificación** — averiguar qué operación codifica la instrucción y qué registros o direcciones de memoria necesita.
+3. **Ejecución** — realizar efectivamente la operación (una operación aritmética en la ALU, una lectura/escritura de memoria, un salto que cambia el contador de programa).
+4. **Escritura de resultado** — almacenar el resultado en algún lugar que la siguiente instrucción pueda ver, normalmente un [registro](/es/computer-science/memory).
+
+La **velocidad de reloj** (medida en GHz) es cuántos de estos ciclos puede ejecutar el chip por segundo — pero un número más alto dejó de ser toda la historia una vez que los chips se volvieron lo suficientemente rápidos como para estar limitados por el calor y el consumo de energía en lugar de por la velocidad a la que puede conmutar un transistor, que es por lo que las ganancias de rendimiento de las últimas dos décadas han venido principalmente de las técnicas de abajo en lugar de que la velocidad de reloj en bruto siga escalando.
+
+## Pipelining
+
+Una CPU no espera a que una instrucción termine todo el ciclo antes de empezar la siguiente — hace **pipelining**: mientras la instrucción 2 se está decodificando, la instrucción 1 ya se está ejecutando, y la instrucción 3 ya se está captando. Esto no hace que ninguna instrucción individual sea más rápida, pero aumenta drásticamente el **throughput** — la tasa de instrucciones que se completan por segundo — de la misma forma que un túnel de lavado procesa más coches por hora trabajando en varios a la vez en distintas etapas, en lugar de lavar un coche cualquiera más rápido.
+
+El pipelining tiene un modo de fallo: una **bifurcación** (un `if`, una condición de bucle) significa que la CPU no sabe qué instrucción viene a continuación hasta que la bifurcación se resuelve realmente. Las CPU modernas adivinan por adelantado con **predicción de bifurcaciones**, ejecutando especulativamente por el camino predicho — y cuando la suposición es incorrecta, todo lo hecho especulativamente tiene que descartarse, un **vaciado de pipeline** que cuesta mucho más que si la CPU simplemente hubiera esperado.
+
+## Múltiples núcleos
+
+Una CPU **multinúcleo** es, desde el punto de vista del software, varias CPU independientes en un chip, cada una capaz de captar-decodificar-ejecutar su propio flujo de instrucciones al mismo tiempo — [paralelismo](/es/computer-science/parallelism) verdadero, no solo la superposición que ofrece el pipelining. Es por esto que "cuántos núcleos" se convirtió en una especificación tan relevante como la velocidad de reloj: un programa escrito para usar solo un núcleo no obtiene ningún beneficio de los demás núcleos inactivos a su lado, que es exactamente la brecha que las técnicas de [concurrencia](/es/computer-science/concurrency) y programación paralela existen para cerrar.
+
+## Conjuntos de instrucciones: CISC frente a RISC
+
+El vocabulario específico de instrucciones que entiende una CPU es su **arquitectura de conjunto de instrucciones (ISA)**. **x86** (escritorios y servidores Intel/AMD) es un diseño **CISC** (conjunto de instrucciones complejo) con muchas instrucciones especializadas y de longitud variable; **ARM** (la mayoría de teléfonos, y cada vez más portátiles y servidores) es un diseño **RISC** (conjunto de instrucciones reducido) que favorece muchas instrucciones simples y de longitud fija que son individualmente más baratas de decodificar y encauzar — parte de por qué los chips ARM históricamente han tenido una ventaja en eficiencia energética. Ninguno es estrictamente "mejor"; son apuestas diferentes sobre dónde gastar el presupuesto de transistores, y el software tiene que compilarse por separado para cada uno.
+
+## Ver también
+
+- **[GPU](/es/computer-science/gpu)** — un tipo distinto de procesador, construido en torno al paralelismo masivo en lugar de ejecutar un flujo de instrucciones rápido.
+- **[Memoria](/es/computer-science/memory)** — la jerarquía de registros y caché que lee y escribe el ciclo de captación-decodificación-ejecución de esta página.
+- **[Concurrencia](/es/computer-science/concurrency)** y **[Paralelismo](/es/computer-science/parallelism)** — las técnicas de software para realmente poner a trabajar múltiples núcleos.

@@ -1,0 +1,37 @@
+---
+title: Permisos
+description: Cómo decide el kernel si a un proceso se le permite tocar un recurso — el modelo propietario/grupo/otros, qué significa realmente ejecutar en un directorio, y los bits setuid/setgid/sticky.
+category: Operating Systems
+weight: 6
+---
+
+Los **permisos** son cómo responde el kernel a una pregunta que tiene que hacerse en esencialmente cada llamada al sistema: ¿se le permite a *este* proceso hacer *eso* a *este* recurso? Cada proceso se ejecuta bajo una identidad — un ID de usuario y uno o más ID de grupo, heredados de quien lo inició — y cada recurso (un archivo, un directorio, un dispositivo) lleva metadatos de permisos que describen quién puede leerlo, escribirlo, y ejecutarlo. El kernel comprueba la identidad del proceso contra los permisos del recurso en el acceso mismo, no solo una vez cuando se abre un archivo — lo cual es parte de por qué los modelos de permisos terminan siendo más sutiles que "puedo abrir este archivo".
+
+## Identidad, no intención
+
+Un proceso no puede declarar qué está intentando hacer y esperar que el sistema operativo confíe en él. Tiene una identidad fija (su ID de usuario y de grupo efectivos) adjunta por el kernel, y cada operación — abrir un archivo, enviar una señal a otro proceso, vincularse a un puerto de red privilegiado — se comprueba contra esa identidad en el momento en que ocurre. Esto es por lo que, por ejemplo, un proceso de larga duración que abandona sus privilegios después del arranque (un patrón común en daemons de red que necesitan un puerto privilegiado al iniciar pero no después) genuinamente no puede recuperar esos privilegios sin ayuda — el kernel no está rastreando "solía ser root", está comprobando la identidad que tiene el proceso ahora mismo.
+
+## Los tres bits, y qué significa ejecutar en un directorio
+
+La familiar tríada `rwx` — lectura, escritura, ejecución — se comprueba por separado para el propietario del archivo, su grupo, y todos los demás, que es por lo que `ls -l` muestra nueve caracteres de permiso en tres grupos de tres (ver [Linux](/es/devops/linux) para la sintaxis de `chmod`/`ls -l` en sí). Lo que *significan* esos bits depende de si están asociados a un archivo o a un directorio, y el bit de ejecución en particular significa algo genuinamente distinto en cada caso:
+
+- En un **archivo**, ejecutar significa "el kernel te dejará ejecutar esto como un programa" (o interpretarlo como un script con una línea shebang).
+- En un **directorio**, ejecutar significa "puedes atravesar *hacia dentro de* este directorio" — resolver una ruta a través de él y acceder a las cosas de dentro por nombre — lo cual es una capacidad completamente distinta a la lectura. Un directorio con lectura pero sin ejecución te permite listar lo que hay en él (ver los nombres de archivo) pero no hacer `cd` en él ni abrir ninguno de los archivos por ruta; un directorio con ejecución pero sin lectura te permite acceder a un archivo dentro de él si ya conoces su nombre exacto, pero no descubrir qué hay ahí listándolo. Esta división confunde constantemente a la gente porque "ejecutar" se lee como "correr", pero un directorio no es un programa — el bit se reutilizó para el traspaso en su lugar.
+
+## setuid, setgid, y el sticky bit
+
+Tres bits adicionales cambian cómo se comporta el modelo propietario/grupo/otros para casos específicos, y cada uno hace algo concreto a nivel de kernel en lugar de ser solo una bandera de política:
+
+- **setuid** en un archivo ejecutable le dice al kernel que ejecute ese programa con la identidad del *propietario del archivo* en lugar de la identidad de quien lo lanzó. Así es como funciona `passwd`: un usuario ordinario necesita modificar `/etc/shadow`, un archivo que solo root puede escribir, para cambiar su propia contraseña — `passwd` es propiedad de root y tiene setuid activado, así que cuando un usuario normal lo ejecuta, el proceso temporalmente se ejecuta como root solo el tiempo suficiente para hacer ese único cambio controlado, y luego termina. Sin setuid, solo root podría cambiar jamás cualquier contraseña.
+- **setgid** hace el equivalente para la identidad de grupo, y en un *directorio* específicamente tiene un segundo efecto: cualquier archivo o subdirectorio nuevo creado dentro hereda el grupo del directorio en lugar del grupo primario del usuario creador — útil para directorios de proyectos compartidos donde los archivos de todos necesitan quedarse en un grupo común sin importar quién los creó.
+- El **sticky bit**, en un directorio, restringe el borrado y el renombrado: incluso si un usuario tiene acceso de escritura al directorio (lo cual normalmente le permitiría borrar cualquier cosa en él), solo puede borrar o renombrar archivos de los que él mismo sea propietario. `/tmp` es el ejemplo canónico — todos necesitan escribir ahí, pero nadie debería poder borrar los archivos temporales de otro usuario solo porque el directorio en sí sea escribible por todos.
+
+## Más allá de propietario/grupo/otros: ACLs
+
+El modelo propietario/grupo/otros solo puede expresar un usuario específico (el propietario) y un grupo específico recibiendo un trato distinto — cualquier otro cae en un único cubo de "otros". Eso a menudo no es lo suficientemente granular: dar acceso de lectura a tres usuarios específicos no relacionados sin ponerlos a todos en un nuevo grupo compartido es incómodo bajo el modelo clásico. Las **Listas de Control de Acceso (ACLs)** extienden el modelo adjuntando una lista arbitraria de pares (usuario o grupo, permisos) a un recurso, comprobados en orden, así que puedes otorgar o denegar acceso específico a identidades específicas más allá del único propietario y el único grupo que permiten los bits tradicionales. La mayoría de los sistemas de archivos modernos las soportan como una extensión opcional superpuesta encima de, no en lugar de, los bits clásicos.
+
+## Ver también
+
+- **[Linux](/es/devops/linux)** — los comandos prácticos `chmod`/`ls -l` para leer y establecer estos bits día a día.
+- **[Señales](/es/operating-systems/signals)** — otro caso donde la identidad de un proceso determina qué se le permite hacer a otro proceso.
+- **[Procesos](/es/devops/processes)** — la identidad de usuario/grupo descrita aquí es una propiedad del proceso, no solo del archivo del programa.

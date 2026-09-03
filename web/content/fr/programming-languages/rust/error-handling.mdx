@@ -1,0 +1,197 @@
+---
+title: Gestion des erreurs
+description: Rust n'a pas d'exceptions — Result<T, E> et Option<T> font de l'échec et de l'absence une partie de la signature de type d'une fonction, vérifiée à la compilation.
+category: Programming Languages
+weight: 7
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Rust n'a pas de `try`/`catch` ni de `null`. À la place, une fonction qui
+pourrait échouer renvoie `Result<T, E>`, et une valeur qui pourrait être
+absente est enveloppée dans `Option<T>`. Les deux sont des enums ordinaires
+définis dans la bibliothèque standard — il n'y a pas de magie de langage
+spéciale, juste un type que le compilateur vous force à traiter avant de
+pouvoir accéder à la valeur à l'intérieur.
+
+```rust
+enum Option<T> {
+    Some(T),
+    None,
+}
+
+enum Result<T, E> {
+    Ok(T),
+    Err(E),
+}
+```
+
+Comme l'échec et l'absence apparaissent dans la signature de type, le
+compilateur peut imposer que vous les ayez traités — vous ne pouvez pas
+accidentellement utiliser un `Result<T, E>` comme si c'était un simple `T`,
+comme le permet un langage avec exceptions où l'on peut appeler une
+fonction et oublier qu'elle pourrait lever une exception.
+
+## `Option<T>` : pas de null
+
+Là où un autre langage renverrait `null` ou `undefined` pour « rien ici »,
+Rust renvoie `None`. Il n'existe aucune valeur pouvant silencieusement tenir
+lieu d'« absent » comme `null` peut le faire en Java ou JavaScript —
+`Option<T>` doit être explicitement déballé avant que le `T` à l'intérieur
+puisse être utilisé.
+
+```rust
+fn find_even(numbers: &[i32]) -> Option<i32> {
+    for &n in numbers {
+        if n % 2 == 0 {
+            return Some(n);
+        }
+    }
+    None
+}
+
+fn main() {
+    let numbers = [1, 3, 5, 8, 9];
+
+    match find_even(&numbers) {
+        Some(n) => println!("found an even number: {n}"),
+        None => println!("no even number in the list"),
+    }
+}
+```
+
+## `Result<T, E>` : échec récupérable
+
+`Result<T, E>` est le pendant d'`Option` pour les opérations qui échouent
+*avec une raison* plutôt que de simplement se retrouver vides. `E` est
+typiquement un type d'erreur décrivant ce qui s'est mal passé.
+
+```rust
+fn divide(a: f64, b: f64) -> Result<f64, String> {
+    if b == 0.0 {
+        Err(String::from("division by zero"))
+    } else {
+        Ok(a / b)
+    }
+}
+
+fn main() {
+    match divide(10.0, 2.0) {
+        Ok(result) => println!("result: {result}"),
+        Err(e) => println!("error: {e}"),
+    }
+
+    match divide(10.0, 0.0) {
+        Ok(result) => println!("result: {result}"),
+        Err(e) => println!("error: {e}"),
+    }
+}
+```
+
+## L'opérateur `?`
+
+Comparer manuellement chaque `Result` qu'une fonction produit devient vite
+verbeux, surtout quand une fonction appelle plusieurs opérations faillibles
+d'affilée et veut simplement s'arrêter à la première erreur. L'opérateur `?`
+fait exactement cela : appliqué à un `Result`, il déballe `Ok(value)` en
+`value` et, sur `Err(e)`, renvoie immédiatement ce `Err` depuis la fonction
+englobante — à condition que le type de retour de la fonction englobante
+soit compatible.
+
+```rust
+fn divide(a: f64, b: f64) -> Result<f64, String> {
+    if b == 0.0 {
+        Err(String::from("division by zero"))
+    } else {
+        Ok(a / b)
+    }
+}
+
+fn compute(a: f64, b: f64, c: f64) -> Result<f64, String> {
+    let step1 = divide(a, b)?; // returns early with Err if divide fails
+    let step2 = divide(step1, c)?;
+    Ok(step2 * 100.0)
+}
+
+fn main() {
+    match compute(100.0, 5.0, 0.0) {
+        Ok(result) => println!("result: {result}"),
+        Err(e) => println!("compute failed: {e}"),
+    }
+}
+```
+
+`compute` ne compare jamais explicitement le résultat de `divide` — `?` le
+fait en ligne. Cela ne compile que parce que `compute` lui-même renvoie
+`Result<f64, String>` ; `?` ne peut être utilisé qu'à l'intérieur d'une
+fonction dont il est autorisé à court-circuiter le type de retour.
+
+## Pourquoi pas des exceptions ?
+
+Les concepteurs de Rust ont choisi cela plutôt que des exceptions
+délibérément : une exception peut être levée depuis presque n'importe où et
+interceptée presque n'importe où, ce qui signifie que la signature d'une
+fonction ne vous dit pas ce qu'elle pourrait lever. `Result<T, E>` met
+l'échec dans le système de types, si bien que c'est le compilateur — pas la
+documentation, pas les tests à l'exécution — qui impose qu'un appelant
+reconnaisse qu'un cas d'erreur existe, même si tout ce qu'il fait est de le
+propager immédiatement avec `?`.
+
+## Voir aussi
+
+- **[Fonctions](/fr/programming-languages/rust/functions)** — comment le retour anticipé de `?` interagit avec le type de retour déclaré d'une fonction.
+- **[Structs et traits](/fr/programming-languages/rust/oop-or-structs)** — `Option` et `Result` sont eux-mêmes des enums avec des méthodes définies via `impl`, le même mécanisme utilisé pour les types personnalisés.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire une fonction renvoyant Option<i32> qui trouve le premier nombre pair, plus un match sur son résultat."
+  items={[
+    { id: "sig", label: "fn find_even(numbers: &[i32]) -> Option<i32> {" },
+    { id: "for-open", label: "    for &n in numbers {" },
+    { id: "if-open", label: "        if n % 2 == 0 {" },
+    { id: "some", label: "            return Some(n);", explanation: "Le retour anticipé n'a de sens qu'une fois que la boucle et la vérification de parité qui le déclenchent sont en place." },
+    { id: "if-close", label: "        }" },
+    { id: "for-close", label: "    }" },
+    { id: "none", label: "    None" },
+    { id: "fn-close", label: "}" },
+  ]}
+  correctOrder={["sig", "for-open", "if-open", "some", "if-close", "for-close", "none", "fn-close"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire une fonction compute qui enchaîne deux divisions faillibles avec l'opérateur ?."
+  items={[
+    { id: "sig", label: "fn compute(a: f64, b: f64, c: f64) -> Result<f64, String> {" },
+    { id: "step1", label: "    let step1 = divide(a, b)?;" },
+    { id: "step2", label: "    let step2 = divide(step1, c)?;", explanation: "step2 dépend de la valeur de step1, donc step1 doit être calculé en premier." },
+    { id: "ok", label: "    Ok(step2 * 100.0)" },
+    { id: "close", label: "}" },
+  ]}
+  correctOrder={["sig", "step1", "step2", "ok", "close"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que ceci affiche ?"
+  code={`fn divide(a: f64, b: f64) -> Result<f64, String> {
+    if b == 0.0 {
+        Err(String::from("division by zero"))
+    } else {
+        Ok(a / b)
+    }
+}
+
+fn main() {
+    let result = divide(10.0, 0.0);
+    println!("{}", result.unwrap());
+}`}
+  options={["division by zero", "0", "inf", "Runtime panic"]}
+  correctIndex={3}
+  explanation="unwrap() sur un Err ne renvoie pas la chaîne d'erreur ni un nombre de repli — il panique et fait planter le programme immédiatement, en affichant le contenu de l'Err dans le message de panique. unwrap() est destiné aux cas dont on est certain qu'ils sont Ok ; l'appeler sur un Result qu'on n'a pas vérifié est exactement ce que match ou ? existent pour éviter."
+  actualOutput={`thread 'main' panicked at 'called Result::unwrap() on an Err value: "division by zero"'`}
+/>
+</ExerciseTabs>

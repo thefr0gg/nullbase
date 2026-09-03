@@ -1,0 +1,173 @@
+---
+title: معالجة الأخطاء
+description: try/catch/finally، ورمي القيم، وبناء أصناف فرعية مخصَّصة من Error في JavaScript.
+category: Programming Languages
+weight: 7
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تعالج JavaScript الأخطاء بالاستثناءات: تُطلِق `throw` استثناءً، وتعالجه
+`try`/`catch`/`finally`. خلافاً لبعض اللغات، تتيح لك JavaScript رمي أي
+قيمة إطلاقاً — سلسلة نصية، رقم، كائن عادي — لكن عملياً ينبغي أن ترمي
+دائماً `Error` (أو صنفاً فرعياً منه)، لأن كائنات `Error` تلتقط تتبع مكدس
+(stack trace) عند نقطة إنشائها، وهو أمر لا يُقدَّر بثمن للتصحيح.
+
+## try/catch/finally
+
+```js
+function parseConfig(json) {
+  try {
+    return JSON.parse(json);
+  } catch (err) {
+    console.error("Invalid config JSON:", err.message);
+    return {};
+  } finally {
+    console.log("Parse attempt finished.");
+  }
+}
+
+console.log(parseConfig('{"port": 8080}')); // { port: 8080 }
+console.log(parseConfig("not json"));         // تُسجِّل الخطأ، تُعيد {}
+```
+
+تعمل `finally` سواء رُمي خطأ أم لا، وسواء أعادت كتلة `try` أو `catch`
+مبكراً أم لا — إنها المكان الصحيح لتنظيف يجب أن يحدث على أي حال، مثل
+إغلاق اتصال أو مسح علامة تحميل.
+
+```js
+function withLogging(fn) {
+  console.log("starting");
+  try {
+    return fn();
+  } finally {
+    console.log("done"); // يعمل رغم أن كتلة try تعيد أعلاه
+  }
+}
+
+withLogging(() => 42);
+// starting
+// done
+```
+
+## أصناف Error فرعية مخصَّصة
+
+يتيح لك توسيع صنف `Error` المدمج إرفاق بيانات إضافية بخطأ وتمكين
+المستدعين من تمييز أنواع الأخطاء بـ`instanceof`، بدلاً من تحليل رسائل
+الخطأ كسلاسل نصية.
+
+```js
+class ValidationError extends Error {
+  constructor(message, field) {
+    super(message);
+    this.name = "ValidationError"; // يظهر في تتبعات المكدس والسجلات
+    this.field = field;
+  }
+}
+
+function validateAge(age) {
+  if (typeof age !== "number" || age < 0) {
+    throw new ValidationError("Age must be a non-negative number", "age");
+  }
+  return age;
+}
+
+try {
+  validateAge(-5);
+} catch (err) {
+  if (err instanceof ValidationError) {
+    console.log(`${err.name}: ${err.message} (field: ${err.field})`);
+  } else {
+    throw err; // ليس لنا — دعه ينتشر بدلاً من ابتلاعه بصمت
+  }
+}
+// ValidationError: Age must be a non-negative number (field: age)
+```
+
+إعادة رمي أخطاء غير معروفة من كتلة `catch` — بدلاً من ابتلاع كل شيء —
+مهمة: `catch` لا تتحقق مما التقطته يمكن أن تخفي أخطاء حقيقية (`TypeError`
+من خطأ مطبعي، مثلاً) خلف أي معالجة عامة كتبتها للخطأ الذي توقعته.
+
+## الأخطاء والكود غير المتزامن
+
+تعمل `try`/`catch` أيضاً حول Promises منتظَرة (awaited) تُرفَض، وهو أحد
+أكبر مكاسب راحة الاستخدام لـ`async`/`await` على سلاسل `.then()`/
+`.catch()` الخام:
+
+```js
+async function fetchUser(id) {
+  try {
+    const response = await fetch(`/api/users/${id}`);
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}`);
+    }
+    return await response.json();
+  } catch (err) {
+    console.error("Could not fetch user:", err.message);
+    return null;
+  }
+}
+```
+
+تحتاج سلسلة `.then()` عادية إلى `.catch()` في النهاية لمعالجة الرفض؛
+نسيان واحدة يترك Promise مرفوضاً يختفي بصمت (أو يُطلِق تحذير "رفض غير
+معالَج") بدلاً من مُعالجته إطلاقاً.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء كتلة try/catch/finally حول تحليل JSON محفوف بالمخاطر."
+  items={[
+    { id: "tryOpen", label: "try {" },
+    { id: "parse", label: "  const data = JSON.parse(input);" },
+    { id: "return", label: "  console.log(data);" },
+    { id: "catchOpen", label: "} catch (err) {" },
+    { id: "catchBody", label: "  console.error(\"Parse failed:\", err.message);" },
+    { id: "finallyOpen", label: "} finally {" },
+    { id: "finallyBody", label: "  console.log(\"attempt complete\");" },
+    { id: "close", label: "}" },
+  ]}
+  correctOrder={["tryOpen", "parse", "return", "catchOpen", "catchBody", "finallyOpen", "finallyBody", "close"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="رتّب هذه الأسطر لتعريف صنف Error فرعي مخصَّص ورمي نسخة منه."
+  items={[
+    { id: "classOpen", label: "class NotFoundError extends Error {" },
+    { id: "ctorOpen", label: "  constructor(resource) {" },
+    { id: "superCall", label: "    super(`${resource} was not found`);", explanation: "يجب أن تعمل ()super أولاً حتى يتمكن صنف Error الأساسي من إعداد الرسالة وتتبع المكدس." },
+    { id: "name", label: "    this.name = \"NotFoundError\";" },
+    { id: "ctorClose", label: "  }" },
+    { id: "classClose", label: "}" },
+    { id: "throwLine", label: "throw new NotFoundError(\"user\");" },
+  ]}
+  correctOrder={["classOpen", "ctorOpen", "superCall", "name", "ctorClose", "classClose", "throwLine"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا الكود؟"
+  code={`function attempt() {
+  try {
+    return "from try";
+  } finally {
+    console.log("cleanup ran");
+  }
+}
+
+console.log(attempt());`}
+  options={["\"from try\" ثم \"cleanup ran\"", "\"cleanup ran\" ثم \"from try\"", "فقط \"from try\"", "فقط \"cleanup ran\""]}
+  correctIndex={1}
+  explanation={`رغم أن كتلة try تصل إلى return أولاً، تعمل finally دائماً قبل أن تُعيد الدالة فعلياً التحكم إلى المستدعي — لذا "cleanup ran" تُسجَّل قبل أن يحصل console.log(attempt()) الخارجي على قيمته للطباعة إطلاقاً. تُحسَب قيمة الإرجاع لكن تُحبَس حتى تنتهي finally.`}
+  actualOutput="cleanup ran
+from try"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [الأصناف والكائنات](/ar/programming-languages/javascript/oop-or-structs)
+- [البرمجة غير المتزامنة والوعود](/ar/programming-languages/javascript/advanced)

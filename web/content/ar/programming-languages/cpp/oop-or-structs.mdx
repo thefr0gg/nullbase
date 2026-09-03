@@ -1,0 +1,155 @@
+---
+title: الأصناف والكائنات
+description: بناء أنواع حقيقية في C++ بواسطة المُنشئات (constructors)، ومحددات الوصول، والوراثة — النواة كائنية التوجه للغة.
+category: Programming Languages
+weight: 6
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+يجمع **الصنف** في C++ البيانات (المتغيرات الأعضاء) والسلوك (الدوال الأعضاء) في نوع واحد. بخلاف `struct` بسيطة في C، يتحكم صنف C++ بدقة في أي أجزاء من تلك الحزمة يُسمح للكود الخارجي بلمسها — الآلية التي تجعل التغليف (encapsulation) ممكناً.
+
+## المُنشئات ومحددات الوصول
+
+```cpp
+#include <iostream>
+#include <string>
+
+class BankAccount {
+private:
+    std::string owner;
+    double balance;
+
+public:
+    // constructor: runs automatically when a BankAccount is created
+    BankAccount(std::string ownerName, double startingBalance) {
+        owner = ownerName;
+        balance = startingBalance;
+    }
+
+    void deposit(double amount) {
+        balance += amount;
+    }
+
+    double getBalance() const {
+        return balance;
+    }
+};
+
+int main() {
+    BankAccount account("Ada", 100.0);
+    account.deposit(50.0);
+    std::cout << account.getBalance() << "\n"; // 150
+
+    // account.balance = 1000000;  // would fail to compile: balance is private
+    return 0;
+}
+```
+
+الأعضاء `private` (`owner`، و`balance`) يمكن الوصول إليها فقط من داخل الدوال الأعضاء الخاصة بالصنف نفسه؛ بينما تشكّل الأعضاء `public` واجهة الصنف الخارجية. هذا سبب عدم إمكانية لمس `account.balance` مباشرة من `main` — يجب أن يمر كل وصول عبر `deposit()` و`getBalance()`، مما يتيح للصنف فرض قواعده الخاصة (مثل رفض إيداع سالب) بدلاً من الوثوق بكل مستدعٍ ليفعل الصواب. **المُنشئ** — دالة بنفس اسم الصنف وبلا نوع إرجاع — يعمل تلقائياً كلما أُنشئ كائن، ما يضمن أن كل `BankAccount` يبدأ في حالة صالحة بدلاً من الاعتماد على استدعاء `init()` منفصل يسهل نسيانه.
+
+## الوراثة
+
+```cpp
+#include <iostream>
+#include <string>
+
+class Animal {
+protected:
+    std::string name;
+
+public:
+    Animal(std::string animalName) : name(animalName) {}
+
+    virtual std::string speak() const {
+        return name + " makes a sound.";
+    }
+};
+
+class Dog : public Animal {
+public:
+    Dog(std::string dogName) : Animal(dogName) {}
+
+    std::string speak() const override {
+        return name + " barks.";
+    }
+};
+
+int main() {
+    Animal generic("Creature");
+    Dog rex("Rex");
+
+    std::cout << generic.speak() << "\n"; // Creature makes a sound.
+    std::cout << rex.speak() << "\n";     // Rex barks.
+    return 0;
+}
+```
+
+تجعل `class Dog : public Animal` صنف `Dog` يرث أعضاء `Animal` — الأعضاء `protected` (مثل `name`) مرئية للأصناف المشتقة لكنها لا تزال مخفية عن الكود الخارجي، حل وسط بين `private` و`public`. يستدعي `Animal(dogName)` في قائمة تهيئة مُنشئ `Dog` مُنشئ الصنف الأساسي صراحة، لأن الصنف المشتق لا يعرف تلقائياً كيفية تهيئة الجزء الأساسي من نفسه. وضع علامة `virtual` على `speak()` في الصنف الأساسي و`override` في المشتق يُفعّل **تعدد الأشكال (polymorphism)**: استدعاء `speak()` عبر مرجع أو مؤشر للصنف الأساسي يُرسل إلى نسخة النوع المشتق الفعلي في وقت التشغيل، بدلاً من استدعاء `Animal::speak()` دائماً.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="اجمع الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء صنف Rectangle بمُنشئ وتابع area()."
+  items={[
+    { id: "class-open", label: "class Rectangle {" },
+    { id: "private", label: "private:" },
+    { id: "fields", label: "    double width, height;", explanation: "يجب التصريح عن الأعضاء قبل أن تتمكن قائمة تهيئة المُنشئ من الإشارة إليها." },
+    { id: "public", label: "public:" },
+    { id: "ctor", label: "    Rectangle(double w, double h) : width(w), height(h) {}" },
+    { id: "area", label: "    double area() const { return width * height; }" },
+    { id: "class-close", label: "};" },
+  ]}
+  correctOrder={["class-open", "private", "fields", "public", "ctor", "area", "class-close"]}
+/>
+
+<OrderingExercise
+  title="اجمع الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء صنف أساسي Shape وصنف مشتق Circle بتابع افتراضي describe()."
+  items={[
+    { id: "base-open", label: "class Shape {" },
+    { id: "base-public", label: "public:" },
+    { id: "virtual-fn", label: "    virtual std::string describe() const { return \"a shape\"; }", explanation: "يجب أن توجد الدالة الافتراضية للصنف الأساسي قبل أن يتمكن صنف مشتق من تجاوزها." },
+    { id: "base-close", label: "};" },
+    { id: "derived-open", label: "class Circle : public Shape {" },
+    { id: "derived-public", label: "public:" },
+    { id: "override-fn", label: "    std::string describe() const override { return \"a circle\"; }" },
+    { id: "derived-close", label: "};" },
+  ]}
+  correctOrder={["base-open", "base-public", "virtual-fn", "base-close", "derived-open", "derived-public", "override-fn", "derived-close"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا؟"
+  code={`#include <iostream>
+
+class Shape {
+public:
+    virtual std::string name() const { return "Shape"; }
+};
+
+class Square : public Shape {
+public:
+    std::string name() const override { return "Square"; }
+};
+
+int main() {
+    Shape* s = new Square();
+    std::cout << s->name() << std::endl;
+    delete s;
+    return 0;
+}`}
+  options={["Shape", "Square", "خطأ ترجمة", "خطأ وقت تشغيل"]}
+  correctIndex={1}
+  explanation={`رغم أن s مُصرَّح عنها كـ Shape*، فهي تشير فعلياً إلى كائن Square، وname() افتراضية. يحل الإرسال الافتراضي (virtual dispatch) الاستدعاء بناءً على النوع الفعلي للكائن في وقت التشغيل، لا النوع المُصرَّح عنه للمؤشر، لذا تُطبع "Square".`}
+  actualOutput="Square"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [هياكل البيانات](/ar/programming-languages/cpp/data-structures) — الحاويات المدمجة التي غالباً ما تُبنى منها أعضاء صنف.
+- [معالجة الأخطاء](/ar/programming-languages/cpp/error-handling) — الرمي من داخل مُنشئ عند فشل التهيئة.

@@ -1,0 +1,132 @@
+---
+title: بنية اللغة والمتغيرات
+description: تصريحات المتغيرات في Java، والأنواع الأولية، وأصناف الغلاف (wrapper classes)، واستنتاج النوع بـvar.
+category: Programming Languages
+weight: 2
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Java ثابتة الأنواع: نوع كل متغير ثابت وقت التصريف ويُتحقَّق منه قبل أن
+يعمل البرنامج مطلقاً. خلافاً للغات ديناميكية الأنواع، لا يمكنك إعادة
+إسناد متغير إلى قيمة من نوع غير متوافق — يرفضها المصرّف قبل أن تحصل على
+الفرصة.
+
+## تصريح المتغيرات
+
+الصيغة الصريحة تذكر النوع، ثم الاسم، ثم مُهيِّئ اختياري:
+
+```java
+int age = 36;
+double price = 19.99;
+boolean isAdmin = false;
+String name = "Ada";
+```
+
+منذ Java 10، يتيح `var` للمصرّف استنتاج النوع من المُهيِّئ داخل جسم
+تابع. لا تزال ثابتة الأنواع — `var` مجرد اختصار لاستنتاج المصرّف النوع
+وقت التصريف، وليست نوعاً ديناميكياً:
+
+```java
+var age = 36;        // مُستنتَج كـint
+var name = "Ada";    // مُستنتَج كـString
+var isAdmin = false; // مُستنتَج كـboolean
+```
+
+لا يمكن استخدام `var` للحقول أو معاملات التوابع أو أنواع الإرجاع، ويتطلب
+مُهيِّئاً كي يكون للمصرّف ما يستنتج منه — `var x;` لا يُصرَّف.
+
+## الأنواع الأولية مقابل أصناف الغلاف
+
+تملك Java ثمانية أنواع **أولية** مدمجة ليست كائنات وتحمل قيمتها مباشرة،
+دون إحالة بمؤشر:
+
+| الفئة | الأنواع |
+|---|---|
+| الأعداد الصحيحة | `byte`, `short`, `int`, `long` |
+| الأعداد العشرية | `float`, `double` |
+| أخرى | `char` (وحدة رمز UTF-16)، `boolean` |
+
+لكل نوع أولي **صنف غلاف (wrapper class)** مقابل (`Integer`، `Double`،
+`Boolean`، وهكذا) يُغلِّفه في كائن — مطلوب كلما احتجت لنوع أولي أن يتصرف
+كـكائن، مثل تخزينه في مجموعة كـ`ArrayList<Integer>`، لأن المجموعات العامة
+(generic) لا يمكنها احتواء الأنواع الأولية مباشرة:
+
+```java
+int primitive = 42;
+Integer boxed = 42;          // تغليف تلقائي: int -> Integer ضمنياً
+int backToPrimitive = boxed; // فك تغليف تلقائي: Integer -> int ضمنياً
+```
+
+يُسمّى هذا التحويل الضمني التغليف وفك التغليف التلقائيين. إنه مريح لكنه
+ليس مجانياً — التغليف يخصص كائناً — وغلاف `null` يُفَك تغليفه إلى نوع
+أولي يرمي `NullPointerException` وقت التشغيل.
+
+## الثوابت بـfinal
+
+`final` على متغير محلي أو حقل يعني أنه يمكن إسناده مرة واحدة بالضبط. إنها
+أقرب مكافئ في Java للثابت:
+
+```java
+final double PI = 3.14159;
+final int MAX_RETRIES = 3;
+
+// PI = 3.0; // خطأ تصريف: لا يمكن إسناد قيمة إلى المتغير النهائي PI
+```
+
+بالعُرف، تُسمّى حقول `final` المقصودة كثوابت بصيغة `SCREAMING_SNAKE_CASE`.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لتصريح متغيرين من نوع int وطباعة مجموعهما."
+  items={[
+    { id: "s1", label: "public class Main {" },
+    { id: "s2", label: "    public static void main(String[] args) {" },
+    { id: "s3", label: "        int a = 4;" },
+    { id: "s4", label: "        int b = 7;", explanation: "يجب تصريح كلا المتغيرين قبل استخدامهما في المجموع." },
+    { id: "s5", label: "        System.out.println(a + b);" },
+    { id: "s6", label: "    }" },
+    { id: "s7", label: "}" },
+  ]}
+  correctOrder={["s1", "s2", "s3", "s4", "s5", "s6", "s7"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="رتّب هذه الأسطر لتصريح ثابت final، ثم استخدام var لاستنتاج نوع متغير وطباعة كليهما."
+  items={[
+    { id: "t1", label: "public class Main {" },
+    { id: "t2", label: "    static final int MAX_RETRIES = 3;", explanation: "حقول final تُصرَّح عرفاً في أعلى الصنف، قبل main." },
+    { id: "t3", label: "    public static void main(String[] args) {" },
+    { id: "t4", label: "        var attempt = 1;" },
+    { id: "t5", label: "        System.out.println(attempt + \" of \" + MAX_RETRIES);" },
+    { id: "t6", label: "    }" },
+    { id: "t7", label: "}" },
+  ]}
+  correctOrder={["t1", "t2", "t3", "t4", "t5", "t6", "t7"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا الكود؟"
+  code={`public class Main {
+    public static void main(String[] args) {
+        Integer boxed = null;
+        int value = boxed;
+        System.out.println(value);
+    }
+}`}
+  options={["0", "null", "NullPointerException وقت التشغيل", "خطأ تصريف"]}
+  correctIndex={2}
+  explanation="فك تغليف Integer قيمته null إلى int يستدعي ()boxed.intValue ضمنياً، واستدعاء تابع على null يرمي NullPointerException وقت التشغيل. يُصرَّف الكود دون مشكلة — الفشل يظهر فقط عندما يعمل الكود فعلياً."
+  actualOutput="Exception in thread 'main' java.lang.NullPointerException"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [Java](/ar/programming-languages/java)
+- [التحكم بمسار التنفيذ](/ar/programming-languages/java/control-flow)

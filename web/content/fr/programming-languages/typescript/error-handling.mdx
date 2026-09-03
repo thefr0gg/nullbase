@@ -1,0 +1,164 @@
+---
+title: Gestion des erreurs
+description: try/catch en TypeScript, pourquoi une erreur interceptée est typée unknown sous les paramètres stricts, et construire des sous-classes Error personnalisées.
+category: Programming Languages
+weight: 7
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Le `try`/`catch`/`finally` de TypeScript s'exécute avec exactement la même
+sémantique que celui de JavaScript — TypeScript n'ajoute aucun nouveau flux
+de contrôle ici. Ce qu'il change est le *type* de la valeur qu'on
+intercepte, ce qui est là où le système de types de TypeScript rencontre
+l'une des vérités les plus difficiles de la gestion des erreurs : une
+instruction `throw` peut lever littéralement n'importe quoi, donc le
+compilateur ne peut pas présumer grand-chose de ce qui atterrit dans
+`catch`.
+
+## try/catch et le type de la valeur interceptée
+
+```ts
+try {
+  JSON.parse("{ invalid json");
+} catch (err) {
+  console.log(err.message); // Type error under strict mode: 'err' is of type 'unknown'
+}
+```
+
+Sous le mode `strict` de TypeScript (spécifiquement
+`useUnknownInCatchVariables`, activé par défaut avec `strict: true`), une
+variable interceptée est typée `unknown`, pas `any` et pas `Error`. C'est
+délibéré : JavaScript permet de `throw` n'importe quelle valeur — une
+chaîne, un nombre, `undefined`, ou une vraie `Error` — donc le compilateur
+n'a aucune base pour supposer que `err` est une `Error` juste parce qu'elle
+est apparue dans un bloc `catch`. Vous devez la rétrécir avant de
+l'utiliser :
+
+```ts
+try {
+  JSON.parse("{ invalid json");
+} catch (err) {
+  if (err instanceof Error) {
+    console.log(err.message); // OK — narrowed to Error
+  } else {
+    console.log("Unknown error:", err);
+  }
+}
+```
+
+C'est une application directe du même rétrécissement couvert dans
+[Flux de contrôle](/fr/programming-languages/typescript/control-flow) —
+`instanceof` rétrécit `unknown` jusqu'à `Error` à l'intérieur de cette
+branche, exactement comme `typeof` rétrécit une union.
+
+## Classes Error personnalisées
+
+Comme `Error` est une vraie classe, vous pouvez la sous-classer pour créer
+des types d'erreur spécifiques au domaine qui transportent des données
+typées supplémentaires :
+
+```ts
+class ValidationError extends Error {
+  constructor(
+    message: string,
+    public readonly field: string,
+  ) {
+    super(message);
+    this.name = "ValidationError";
+  }
+}
+
+function validateAge(age: number) {
+  if (age < 0) {
+    throw new ValidationError("Age cannot be negative", "age");
+  }
+}
+
+try {
+  validateAge(-5);
+} catch (err) {
+  if (err instanceof ValidationError) {
+    console.log(`${err.field}: ${err.message}`); // "age: Age cannot be negative"
+  }
+}
+```
+
+`err instanceof ValidationError` rétrécit `err` jusqu'à la sous-classe
+spécifique, ce qui est ce qui rend `err.field` accessible — une simple
+vérification `err instanceof Error` n'aurait rétréci que jusqu'à l'`Error`
+de base, et `field` n'existe pas là.
+
+## Une erreur de type qu'une classe Error personnalisée aide à attraper
+
+```ts
+class ValidationError extends Error {
+  constructor(message: string, public readonly field: string) {
+    super(message);
+  }
+}
+
+function handle(err: ValidationError) {
+  console.log(err.fieldd); // Type error: Property 'fieldd' does not exist on type 'ValidationError'
+}
+```
+
+Comme `field` est une propriété déclarée et typée sur `ValidationError`
+(pas juste quelque chose attaché dynamiquement à l'exécution, comme ce
+serait le cas en JavaScript ordinaire), une faute de frappe comme `fieldd`
+est attrapée immédiatement — le compilateur connaît l'ensemble exact des
+propriétés que la classe possède.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour rétrécir en toute sécurité une valeur unknown interceptée avec instanceof avant de lire son message."
+  items={[
+    { id: "try-open", label: "try {" },
+    { id: "try-body", label: "  JSON.parse(\"{ invalid json\");" },
+    { id: "catch-open", label: "} catch (err) {", explanation: "Le type de err n'est unknown qu'une fois qu'il atteint la clause catch." },
+    { id: "if-open", label: "  if (err instanceof Error) {" },
+    { id: "if-body", label: "    console.log(err.message);" },
+    { id: "if-close", label: "  }" },
+    { id: "catch-close", label: "}" },
+  ]}
+  correctOrder={["try-open", "try-body", "catch-open", "if-open", "if-body", "if-close", "catch-close"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour définir une sous-classe ValidationError et la lever depuis une fonction de validation."
+  items={[
+    { id: "class-open", label: "class ValidationError extends Error {" },
+    { id: "ctor", label: "  constructor(message: string, public readonly field: string) {" },
+    { id: "super-call", label: "    super(message);", explanation: "super() doit s'exécuter avant que le constructeur de la sous-classe ne termine, et avant que la classe soit utilisable." },
+    { id: "ctor-close", label: "  }" },
+    { id: "class-close", label: "}" },
+    { id: "fn-decl", label: "function validateAge(age: number) {" },
+    { id: "throw-stmt", label: "  if (age < 0) throw new ValidationError(\"bad age\", \"age\");" },
+    { id: "fn-close", label: "}" },
+  ]}
+  correctOrder={["class-open", "ctor", "super-call", "ctor-close", "class-close", "fn-decl", "throw-stmt", "fn-close"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que le vérificateur de type dit ?"
+  code={`try {
+  throw new Error("boom");
+} catch (err) {
+  console.log(err.message);
+}`}
+  options={["\"boom\"", "undefined", "Type error: 'err' is of type 'unknown'", "Runtime crash: cannot read properties of unknown"]}
+  correctIndex={2}
+  explanation="Sous le mode strict, les variables catch sont toujours typées unknown quelle que soit la valeur réellement levée dans le bloc try — le compilateur ne peut pas voir à l'intérieur de l'instruction throw et en inférer Error. Accéder directement à .message, sans d'abord rétrécir avec instanceof, est une erreur à la compilation même si ce throw particulier produirait une vraie Error à l'exécution."
+  actualOutput="Type error: 'err' is of type 'unknown'"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Classes et interfaces](/fr/programming-languages/typescript/oop-or-structs)
+- [Modules et paquets](/fr/programming-languages/typescript/modules-packages)

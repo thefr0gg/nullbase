@@ -1,0 +1,117 @@
+---
+title: TypeScript
+description: Un superconjunto tipado de JavaScript que añade verificación de tipos en tiempo de compilación sobre el mismo runtime que ya conoces.
+category: Programming Languages
+weight: 1
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+**TypeScript** es un lenguaje de tipado estático que compila a JavaScript plano. No introduce un nuevo runtime, un nuevo recolector de basura, ni nueva semántica de ejecución — todo programa JavaScript válido es (casi) TypeScript válido, y todo programa TypeScript eventualmente se convierte en JavaScript que se ejecuta en los mismos motores en los que JavaScript ya se ejecuta (V8, Node, navegadores). Lo que TypeScript añade es un **verificador de tipos**: un paso separado en tiempo de compilación que lee tus anotaciones y tipos inferidos, señala discrepancias, y luego borra toda esa información de tipo antes de que el código se ejecute siquiera.
+
+Esa última parte importa. Los tipos en TypeScript tienen **costo cero en tiempo de ejecución y presencia cero en tiempo de ejecución** — `interface`, `type`, y la mayoría de las anotaciones de tipo desaparecen por completo durante la compilación (`tsc`, o un transpilador como esbuild/SWC). Por eso TypeScript puede detectar toda una categoría de bugs — pasar un `string` donde se espera un `number`, llamar a un método que no existe en un objeto, olvidar manejar `null` — antes incluso de ejecutar el programa, sin cambiar cómo se comporta el programa una vez que se ejecuta.
+
+## Por qué añadir un sistema de tipos a JavaScript
+
+El tipado dinámico de JavaScript es flexible pero significa que muchos errores solo salen a la superficie en tiempo de ejecución, a menudo en producción. El compilador de TypeScript verifica las formas de tus datos mientras escribes código:
+
+```ts
+function greet(name: string) {
+  return `Hello, ${name.toUpperCase()}!`;
+}
+
+greet("Ada");
+greet(42); // Type error: Argument of type 'number' is not assignable to parameter of type 'string'
+```
+
+La segunda llamada habría lanzado un `TypeError` en tiempo de ejecución en JavaScript plano (`42.toUpperCase is not a function`) — pero solo una vez que esa línea realmente se ejecutara, quizás en lo profundo de una ruta de código rara vez alcanzada. TypeScript lo detecta inmediatamente, en el momento en que lo escribes, en tu editor.
+
+## Tipado estructural
+
+A diferencia de lenguajes basados en clases como Java o C#, el sistema de tipos de TypeScript es **estructural**, no nominal: dos tipos son compatibles si tienen la misma forma, sin importar el nombre o la relación declarada.
+
+```ts
+interface Point {
+  x: number;
+  y: number;
+}
+
+function printPoint(p: Point) {
+  console.log(`(${p.x}, ${p.y})`);
+}
+
+const coord = { x: 3, y: 4, label: "origin-ish" };
+printPoint(coord); // OK — coord has at least x and y as numbers
+```
+
+`coord` nunca se declaró como un `Point`, e incluso tiene un campo extra `label`, pero satisface estructuralmente la forma de `Point`, así que la asignación se permite. Esta es una decisión de diseño deliberada que refleja cómo los objetos de JavaScript realmente se pasan de un lado a otro.
+
+## Cómo está organizada esta sección
+
+- **[Sintaxis y Tipos](/es/programming-languages/typescript/syntax-basics)** — declaraciones de variables, tipos primitivos, y alias `type`.
+- **[Flujo de Control](/es/programming-languages/typescript/control-flow)** — `if`/`switch` con estrechamiento de tipos.
+- **[Funciones](/es/programming-languages/typescript/functions)** — parámetros tipados, tipos de retorno, parámetros opcionales y por defecto.
+- **[Estructuras de Datos](/es/programming-languages/typescript/data-structures)** — arrays tipados, tuplas, `Record`, y `Map`.
+- **[Clases e Interfaces](/es/programming-languages/typescript/oop-or-structs)** — modificadores de acceso, `interface` frente a `type`.
+- **[Manejo de Errores](/es/programming-languages/typescript/error-handling)** — `try`/`catch` y subclases personalizadas de `Error`.
+- **[Módulos y Paquetes](/es/programming-languages/typescript/modules-packages)** — módulos ES, npm, `tsconfig.json`, y `@types`.
+- **[Genéricos](/es/programming-languages/typescript/advanced)** — escribir código que funcione a través de tipos sin renunciar a la seguridad de tipos.
+
+TypeScript se construye sobre JavaScript — consulta la guía de [JavaScript](/es/programming-languages/javascript) para el comportamiento subyacente del runtime.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir una función que salude a un nombre tipado y una llamada que dispare un error de tipo."
+  items={[
+    { id: "fn-decl", label: "function greet(name: string) {" },
+    { id: "fn-body", label: "  return `Hello, ${name.toUpperCase()}!`;", explanation: "El cuerpo de la función debe venir después de su firma y antes de la llave de cierre." },
+    { id: "fn-close", label: "}" },
+    { id: "good-call", label: "greet(\"Ada\");" },
+    { id: "bad-call", label: "greet(42); // Type error" },
+  ]}
+  correctOrder={["fn-decl", "fn-body", "fn-close", "good-call", "bad-call"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para declarar una interfaz Point y una función que acepte cualquier objeto que coincida estructuralmente."
+  items={[
+    { id: "iface-open", label: "interface Point {" },
+    { id: "iface-x", label: "  x: number;" },
+    { id: "iface-y", label: "  y: number;", explanation: "Ambos campos deben declararse dentro del cuerpo de la interfaz antes de que se cierre." },
+    { id: "iface-close", label: "}" },
+    { id: "fn-decl", label: "function printPoint(p: Point) {" },
+    { id: "fn-body", label: "  console.log(`(${p.x}, ${p.y})`);" },
+    { id: "fn-close", label: "}" },
+  ]}
+  correctOrder={["iface-open", "iface-x", "iface-y", "iface-close", "fn-decl", "fn-body", "fn-close"]}
+/>
+
+<PredictOutput
+  title="¿Qué dice el verificador de tipos?"
+  code={`interface User {
+  id: number;
+  name: string;
+}
+
+function getId(user: User): number {
+  return user.id;
+}
+
+const raw = { id: "u-1", name: "Ada" };
+getId(raw);`}
+  options={["\"u-1\"", "Type error: Argument of type '{ id: string; name: string; }' is not assignable to parameter of type 'User'", "undefined", "0"]}
+  correctIndex={1}
+  explanation="raw.id es un string, pero User.id se declara como number. La verificación estructural de TypeScript compara el tipo de cada propiedad, no solo su presencia — un tipo de propiedad que no coincide falla la verificación aunque la forma coincida en lo demás."
+  actualOutput="Type error: Argument of type '{ id: string; name: string; }' is not assignable to parameter of type 'User'"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Sintaxis y Tipos](/es/programming-languages/typescript/syntax-basics)
+- [Genéricos](/es/programming-languages/typescript/advanced)

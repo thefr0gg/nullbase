@@ -1,0 +1,113 @@
+---
+title: بنية اللغة والمتغيرات
+description: الروابط (bindings)، والقابلية للتغيير، والتظليل (shadowing)، والأنواع الأساسية التي تبني Rust كل شيء آخر فوقها.
+category: Programming Languages
+weight: 2
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تُعرَّف روابط Rust باستخدام `let`، وكل رابط **غير قابل للتغيير افتراضياً**. هذا هو عكس الافتراضي في معظم اللغات، وهو متعمَّد: يريد المترجم منك اختيار القابلية للتغيير صراحة بـ `mut`، لأن القيمة غير القابلة للتغيير شيء واحد أقل يجب تتبعه عند التفكير في ما يمكن لقطعة كود فعله بها.
+
+```rust
+fn main() {
+    let x = 5;
+    // x = 6; // error: cannot assign twice to immutable variable `x`
+
+    let mut y = 5;
+    y = 6; // fine — y was declared mutable
+    println!("x = {x}, y = {y}");
+}
+```
+
+## التظليل (Shadowing)
+
+تتيح لك Rust أيضاً تعريف رابط جديد بنفس *الاسم* لرابط سابق — يُسمى هذا **التظليل** — وهو مختلف عن التغيير. ينشئ التظليل متغيراً جديداً تماماً (يمكن أن يكون له حتى نوع مختلف)، بينما تغيّر `mut` قيمة المتغير الموجود في مكانه.
+
+```rust
+fn main() {
+    let spaces = "   "; // a &str
+    let spaces = spaces.len(); // now a usize — a new binding, same name
+
+    println!("{spaces}"); // 3
+}
+```
+
+محاولة فعل هذا بـ `mut` بدلاً من ذلك (`let mut spaces = "   "; spaces = spaces.len();`) ستفشل في الترجمة — يحتفظ رابط `mut` بنوعه الأصلي إلى الأبد؛ فقط التظليل يتيح تغيير النوع.
+
+## الأنواع القياسية (Scalar)
+
+أنواع Rust الأولية ثابتة الحجم ومعروفة أثناء الترجمة: أعداد صحيحة موقّعة/غير موقّعة بعدة عروض (`i32`، `u32`، `i64`، `u64`، `usize`، ...)، وأعداد عشرية (`f32`، `f64`)، و`bool`، و`char` (قيمة يونيكود قياسية من 4 بايتات، وليست بايتاً واحداً). تُعامَل حرفيات الأعداد الصحيحة افتراضياً كـ `i32` وحرفيات الأعداد العشرية كـ `f64` ما لم يتطلب السياق غير ذلك.
+
+```rust
+fn main() {
+    let age: u8 = 30;          // explicit type annotation
+    let pi = 3.14159;           // inferred as f64
+    let is_active = true;
+    let grade: char = 'A';
+
+    println!("{age} {pi} {is_active} {grade}");
+}
+```
+
+## استنتاج الأنواع والتصريحات
+
+تستنتج Rust الأنواع في معظم الحالات، لذا فإن `let x = 5;` لا تحتاج إلى تصريح — يستنتج المترجم `x: i32` بمفرده. تصبح التصريحات إلزامية عندما لا يستطيع المترجم فعلياً معرفة النوع، مثل تحليل سلسلة نصية إلى رقم:
+
+```rust
+fn main() {
+    let guess: u32 = "42".parse().expect("not a number");
+    println!("{guess}");
+}
+```
+
+بدون التصريح `: u32` هنا، لا تملك `parse()` طريقة لمعرفة أي نوع رقمي عليها إنتاجه، ويرفض المترجم التخمين — هذا أحد الأماكن القليلة التي يحتاج فيها استنتاج الأنواع إلى تلميح منك.
+
+## طالع أيضاً
+
+- **[التحكم بمسار التنفيذ](/ar/programming-languages/rust/control-flow)** — استخدام هذه الروابط داخل الشروط والحلقات.
+- **[الملكية والاستعارة](/ar/programming-languages/rust/advanced)** — لماذا يمكن نسخ بعض هذه الروابط بحرية بينما لا يمكن نسخ غيرها.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء برنامج يظلّل سلسلة نصية بطولها."
+  items={[
+    { id: "fn-open", label: "fn main() {" },
+    { id: "spaces1", label: "    let spaces = \"   \";", explanation: "يجب أن يكون رابط &str الأصلي موجوداً قبل إمكانية تظليله." },
+    { id: "spaces2", label: "    let spaces = spaces.len();" },
+    { id: "print", label: "    println!(\"{spaces}\");" },
+    { id: "fn-close", label: "}" },
+  ]}
+  correctOrder={["fn-open", "spaces1", "spaces2", "print", "fn-close"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء برنامج يحلّل سلسلة نصية إلى u32 ويطبعها."
+  items={[
+    { id: "fn-open", label: "fn main() {" },
+    { id: "guess", label: "    let guess: u32 = \"42\".parse().expect(\"not a number\");", explanation: "التصريح على guess مطلوب قبل إمكانية استدعاء parse() بهذه الطريقة." },
+    { id: "print", label: "    println!(\"{guess}\");" },
+    { id: "fn-close", label: "}" },
+  ]}
+  correctOrder={["fn-open", "guess", "print", "fn-close"]}
+/>
+
+<PredictOutput
+  title="ماذا تطبع هذه الشيفرة؟"
+  code={`fn main() {
+    let x = 5;
+    let x = x + 1;
+    let x = x * 2;
+    println!("{x}");
+}`}
+  options={["5", "6", "10", "12"]}
+  correctIndex={3}
+  explanation="تعيد كل let تعريف x عبر التظليل: تبدأ عند 5، وتصبح 6 (5 + 1)، ثم تصبح 12 (6 * 2). بما أن هذه روابط جديدة وليست تغييراً، فهذا يُترجَم رغم أن x لم تُعرَّف أبداً بـ mut — هذا بالضبط التمييز الذي يتيحه التظليل."
+  actualOutput="12"
+/>
+</ExerciseTabs>

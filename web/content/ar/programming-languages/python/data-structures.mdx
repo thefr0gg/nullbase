@@ -1,0 +1,89 @@
+---
+title: هياكل البيانات
+description: أوعية Python الأربعة المدمجة — القوائم، والصفوف، والقواميس، والمجموعات — ومتى تختار كلاً منها.
+category: Programming Languages
+weight: 5
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تملك Python أربعة أنواع أوعية مدمجة في اللغة نفسها، دون الحاجة لأي استيراد، واختيار النوع الصحيح هو غالباً مسألة ما إذا كان الترتيب مهماً، وما إذا كانت المحتويات ستتغير، وما إذا كنت تبحث عن العناصر بالموضع أو بالاسم.
+
+**القائمة (list)** تسلسل مرتّب وقابل للتغيير — الخيار الافتراضي عندما تملك مجموعة من الأشياء قد تكبر أو تصغر أو تُعاد ترتيبها.
+
+```python
+numbers = [3, 1, 4, 1, 5, 9]
+numbers.append(2)
+numbers.sort()
+print(numbers)  # [1, 1, 2, 3, 4, 5, 9]
+```
+
+**الصف (tuple)** يشبه القائمة لكنه غير قابل للتغيير — بمجرد إنشائه، لا يمكن الإضافة إليه أو إعادة إسناد عنصر فيه. عدم القابلية للتغيير هذا يجعل الصفوف صالحة كمفاتيح قاموس (لا يمكن للقوائم ذلك) ويوضّح النية: يقول الصف "هذه مجموعة صغيرة وثابتة من القيم"، مثل الإحداثيات.
+
+```python
+point = (10, 20)  # tuples are immutable
+x, y = point       # unpacking works the same as with lists
+print(x, y)  # 10 20
+```
+
+**القاموس (dict)** يخزّن أزواج مفتاح-قيمة ويبحث عن القيم بالمفتاح بدلاً من الموضع، ما يجعله الخيار الطبيعي لأي شيء يمكن وصفه بخلاف ذلك بأنه "سجلّ بحقول مسمّاة".
+
+```python
+user = {"name": "Rae", "age": 29}
+user["email"] = "rae@example.com"
+for key, value in user.items():
+    print(key, value)
+```
+
+**المجموعة (set)** تخزّن قيماً فريدة وغير مرتّبة وتتجاهل التكرارات تلقائياً عند الإدراج — مفيدة لاختبارات العضوية (`x in my_set` سريعة) ولإزالة التكرار من مجموعة.
+
+```python
+unique_ids = {1, 2, 2, 3, 3, 3}
+print(unique_ids)  # {1, 2, 3}
+```
+
+الشيء الوحيد الذي يجب استيعابه بخصوص القوائم (والقواميس، والمجموعات) هو أنها *كائنات* قابلة للتغيير — المتغير الذي يحمل واحدة منها لا يحمل نسخة من محتوياتها، بل مرجعاً إلى نفس القائمة الأساسية التي يشير إليها أيضاً كل من يملك ذلك المتغير.
+
+## طالع أيضاً
+
+- **[الدوال](/ar/programming-languages/python/functions)** — كيف يظهر سلوك التسمية المشتركة (aliasing) نفسه مع الوسائط الافتراضية القابلة للتغيير.
+- **[الفئات والكائنات](/ar/programming-languages/python/oop-or-structs)** — بناء أنواعك المهيكلة الخاصة عندما تتوقف القواميس والصفوف عن كونها معبّرة بما يكفي.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء قاموس مستخدم، وإضافة حقل، ثم طباعة كل مُدخل."
+  items={[
+    { id: "create", label: 'user = {"name": "Rae", "age": 29}' },
+    { id: "add", label: 'user["email"] = "rae@example.com"', explanation: "يجب أن يكون `user` موجوداً كقاموس قبل إمكانية إضافة مفتاح جديد إليه." },
+    { id: "for", label: "for key, value in user.items():", explanation: "يحدث التكرار بعد أن يكتمل مجموع مفاتيح القاموس النهائي." },
+    { id: "print", label: "    print(key, value)" },
+  ]}
+  correctOrder={["create", "add", "for", "print"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء قائمة أرقام وترتيبها وطباعتها."
+  items={[
+    { id: "numbers", label: "numbers = [3, 1, 4, 1, 5, 9]" },
+    { id: "append", label: "numbers.append(2)", explanation: "يجب أن تكون القائمة موجودة قبل استدعاء `.append()` عليها." },
+    { id: "sort", label: "numbers.sort()", explanation: "يحدث الترتيب بعد أن يصبح كل عنصر، بما فيه العنصر المضاف، داخل القائمة." },
+    { id: "print", label: "print(numbers)" },
+  ]}
+  correctOrder={["numbers", "append", "sort", "print"]}
+/>
+
+<PredictOutput
+  title="ماذا تطبع هذه الشيفرة؟"
+  code={`a = [1, 2, 3]\nb = a\nb.append(4)\nprint(a)`}
+  options={["[1, 2, 3]", "[1, 2, 3, 4]", "An error, because a is unchanged", "[4]"]}
+  correctIndex={1}
+  explanation="لا تنسخ b = a القائمة — بل تجعل b تشير إلى نفس كائن القائمة الذي تشير إليه a بالفعل. استدعاء b.append(4) يغيّر تلك القائمة المشتركة الواحدة، لذا يظهر التغيير عبر a أيضاً، رغم أن a نفسها لم تُعَد إسنادها مباشرة أبداً."
+  actualOutput="[1, 2, 3, 4]"
+/>
+</ExerciseTabs>
+

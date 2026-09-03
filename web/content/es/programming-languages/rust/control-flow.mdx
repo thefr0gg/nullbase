@@ -1,0 +1,158 @@
+---
+title: Flujo de Control
+description: Cómo if/else, loop, while, for, y match dirigen la ejecución en Rust — y por qué la mayoría son expresiones, no instrucciones.
+category: Programming Languages
+weight: 3
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Las construcciones de flujo de control de Rust te resultarán familiares viniendo de lenguajes de la familia C, pero con un giro recurrente: `if`, `loop`, y `match` son **expresiones** — producen un valor — en vez de simples instrucciones. Ese valor puede asignarse directamente a una variable, lo cual elimina toda una categoría de código repetitivo del tipo "declara la variable, luego asígnala condicionalmente en cada rama".
+
+## `if`/`else` como expresión
+
+```rust
+fn main() {
+    let temperature = 15;
+
+    let description = if temperature > 25 {
+        "hot"
+    } else if temperature > 10 {
+        "mild"
+    } else {
+        "cold"
+    };
+
+    println!("It's {description} today");
+}
+```
+
+Cada rama debe producir el mismo tipo (aquí, `&str`), y no hay punto y coma final en las expresiones de rama — un punto y coma convertiría `"mild"` en una instrucción que evalúa a `()` (unit), lo cual no coincidiría con el tipo de las otras ramas y no compilaría.
+
+## Bucles: `loop`, `while`, `for`
+
+`loop` se ejecuta para siempre hasta un `break` explícito, y — como `if` — un `loop` también puede producir un valor, pasándoselo a `break`:
+
+```rust
+fn main() {
+    let mut attempts = 0;
+
+    let result = loop {
+        attempts += 1;
+        if attempts == 3 {
+            break attempts * 10; // loop evaluates to this value
+        }
+    };
+
+    println!("Succeeded on attempt {attempts}, result = {result}");
+}
+```
+
+`while` es el bucle condicional que esperarías de cualquier lenguaje de la familia C, y `for` es la forma preferida de Rust para iterar — casi siempre sobre un rango o un iterador, en vez de un índice gestionado manualmente:
+
+```rust
+fn main() {
+    let numbers = [10, 20, 30, 40];
+
+    // while: keep going as long as a condition holds
+    let mut i = 0;
+    while i < numbers.len() {
+        println!("index {i}: {}", numbers[i]);
+        i += 1;
+    }
+
+    // for: iterate directly over the collection, no index bookkeeping
+    for n in numbers.iter() {
+        println!("value: {n}");
+    }
+}
+```
+
+La versión con `for` es Rust idiomático — no puede salirse de los límites porque no hay ningún índice que se pueda equivocar, y se lee como "para cada valor en esta colección" en vez de "cuenta hasta esta longitud e indexa hacia adentro."
+
+## `match`
+
+`match` compara un valor contra una serie de patrones y ejecuta el código del primero que encaje. A diferencia de `switch` en los lenguajes de la familia C, `match` en Rust es **exhaustivo** — el compilador rechaza un `match` que no cubra todos los valores posibles a menos que añadas una rama comodín `_`.
+
+```rust
+fn describe(n: i32) -> &'static str {
+    match n {
+        0 => "zero",
+        1 | 2 | 3 => "small",
+        4..=9 => "medium",
+        n if n < 0 => "negative",
+        _ => "large",
+    }
+}
+
+fn main() {
+    for n in [-5, 0, 2, 7, 100] {
+        println!("{n} is {}", describe(n));
+    }
+}
+```
+
+Este único `match` muestra varias formas de patrón a la vez: un valor exacto (`0`), alternativas (`1 | 2 | 3`), un rango inclusivo (`4..=9`), una condición de guarda (`n if n < 0`), y el comodín `_`. Debido a que `match` es exhaustivo, eliminar la rama `_` aquí sería un error de compilación — el compilador puede demostrar que hay valores `i32` que ninguna de las otras ramas cubre.
+
+## Ver también
+
+- **[Funciones](/es/programming-languages/rust/functions)** — usar estas construcciones dentro de cuerpos de función y como expresiones de retorno.
+- **[Manejo de Errores](/es/programming-languages/rust/error-handling)** — `match` es la forma principal en que el código Rust maneja `Result` y `Option`.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir una función que clasifique la temperatura usando if/else como una expresión."
+  items={[
+    { id: "let-temp", label: "    let temperature = 15;" },
+    { id: "let-desc-open", label: "    let description = if temperature > 25 {" },
+    { id: "hot", label: "        \"hot\"" },
+    { id: "elif", label: "    } else if temperature > 10 {" },
+    { id: "mild", label: "        \"mild\"" },
+    { id: "else", label: "    } else {" },
+    { id: "cold", label: "        \"cold\"" },
+    { id: "close", label: "    };" },
+    { id: "print", label: "    println!(\"It's {description} today\");" },
+  ]}
+  correctOrder={["let-temp", "let-desc-open", "hot", "elif", "mild", "else", "cold", "close", "print"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir un bucle que termine con un valor calculado en el tercer intento."
+  items={[
+    { id: "let-attempts", label: "    let mut attempts = 0;" },
+    { id: "let-result-open", label: "    let result = loop {" },
+    { id: "increment", label: "        attempts += 1;" },
+    { id: "if-open", label: "        if attempts == 3 {" },
+    { id: "break", label: "            break attempts * 10;", explanation: "break debe venir después de la comprobación que decide cuándo parar, y dentro del cuerpo del bucle." },
+    { id: "if-close", label: "        }" },
+    { id: "loop-close", label: "    };" },
+  ]}
+  correctOrder={["let-attempts", "let-result-open", "increment", "if-open", "break", "if-close", "loop-close"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`fn describe(n: i32) -> &'static str {
+    match n {
+        0 => "zero",
+        1 | 2 | 3 => "small",
+        4..=9 => "medium",
+        n if n < 0 => "negative",
+        _ => "large",
+    }
+}
+
+fn main() {
+    println!("{}", describe(7));
+}`}
+  options={["small", "medium", "large", "Compile error"]}
+  correctIndex={1}
+  explanation={`7 cae en el rango inclusivo 4..=9, así que la rama "medium" coincide. Es tentador pensar que 7 cae hasta la rama comodín "large", pero match comprueba las ramas en orden y se detiene en la primera que encaja — la rama del rango viene antes que _.`}
+  actualOutput="medium"
+/>
+</ExerciseTabs>

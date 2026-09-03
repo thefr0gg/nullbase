@@ -1,0 +1,187 @@
+---
+title: Classes et objets
+description: La syntaxe class de JavaScript, l'héritage, et la chaîne de prototypes qui la fait réellement fonctionner en dessous.
+category: Programming Languages
+weight: 6
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+JavaScript a des objets depuis 1995 mais n'a eu la syntaxe `class` qu'avec
+ES6 (2015). Il est important de comprendre que `class` est du sucre
+syntaxique : en dessous, JavaScript fait toujours de l'héritage basé sur
+les prototypes, le même mécanisme qu'il a toujours eu. Connaître les deux
+couches — la syntaxe `class` conviviale et la chaîne de prototypes vers
+laquelle elle compile — explique beaucoup de comportements qui
+sembleraient sinon magiques.
+
+## Syntaxe class
+
+```js
+class Animal {
+  constructor(name) {
+    this.name = name;
+  }
+
+  speak() {
+    return `${this.name} makes a sound.`;
+  }
+}
+
+class Dog extends Animal {
+  speak() {
+    return `${this.name} barks.`;
+  }
+}
+
+const generic = new Animal("Creature");
+const rex = new Dog("Rex");
+
+console.log(generic.speak()); // "Creature makes a sound."
+console.log(rex.speak());     // "Rex barks."
+```
+
+`extends` met en place l'héritage, et `super(...)` à l'intérieur du
+constructeur d'une sous-classe appelle le constructeur parent — requis
+avant de pouvoir utiliser `this` dans le constructeur d'une classe
+dérivée.
+
+```js
+class Employee extends Animal {
+  constructor(name, role) {
+    super(name);       // doit s'exécuter avant que `this` ne soit utilisé ci-dessous
+    this.role = role;
+  }
+
+  speak() {
+    return `${super.speak()} ${this.name} works as ${this.role}.`;
+  }
+}
+
+const e = new Employee("Sam", "an engineer");
+console.log(e.speak());
+// "Sam makes a sound. Sam works as an engineer."
+```
+
+Les classes prennent aussi en charge les membres `static` (attachés à la
+classe elle-même, pas aux instances), les champs privés avec un préfixe
+`#` (véritablement inaccessibles depuis l'extérieur de la classe, à la
+différence d'une convention `_prefix`), et les getters/setters.
+
+```js
+class Counter {
+  #count = 0; // champ privé — ni visible ni modifiable depuis l'extérieur de la classe
+
+  static description = "A simple counter";
+
+  increment() {
+    this.#count += 1;
+    return this.#count;
+  }
+
+  get value() {
+    return this.#count;
+  }
+}
+
+const c = new Counter();
+c.increment();
+c.increment();
+console.log(c.value);       // 2
+console.log(Counter.description); // "A simple counter"
+// console.log(c.#count);   // SyntaxError — #count n'est pas accessible ici
+```
+
+## Ce qui se passe réellement : la chaîne de prototypes
+
+Chaque objet en JavaScript a un lien interne vers un autre objet appelé
+son prototype, formant une chaîne. Quand vous accédez à une propriété, le
+moteur regarde d'abord sur l'objet lui-même, puis remonte la chaîne de
+prototypes jusqu'à trouver la propriété ou épuiser la chaîne. Les méthodes
+`class` ne sont que des fonctions ordinaires attachées à
+`SomeClass.prototype`, partagées par chaque instance plutôt que copiées
+sur chacune d'elles.
+
+```js
+function Animal(name) { // une ancienne « fonction constructeur » — équivalent pré-ES6 d'une classe
+  this.name = name;
+}
+
+Animal.prototype.speak = function () {
+  return `${this.name} makes a sound.`;
+};
+
+const a = new Animal("Creature");
+console.log(a.speak()); // "Creature makes a sound."
+
+// C'est exactement ce vers quoi `class Animal { speak() {...} }` compile.
+console.log(Object.getPrototypeOf(a) === Animal.prototype); // true
+console.log(a.hasOwnProperty("speak"));                       // false — speak vit sur le prototype, pas sur `a` lui-même
+```
+
+C'est pourquoi ajouter une méthode à `Animal.prototype` après avoir créé
+des instances la rend quand même disponible sur ces instances existantes —
+elles ne détiennent pas leur propre copie de la méthode, elles la
+recherchent à travers la chaîne à chaque appel.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire une sous-classe qui appelle le constructeur de son parent avec super()."
+  items={[
+    { id: "base", label: "class Shape {" },
+    { id: "baseCtor", label: "  constructor(color) { this.color = color; }" },
+    { id: "baseClose", label: "}" },
+    { id: "sub", label: "class Circle extends Shape {" },
+    { id: "subCtor", label: "  constructor(color, radius) {" },
+    { id: "superCall", label: "    super(color);", explanation: "super() doit s'exécuter avant que `this` ne soit utilisé, et avant que le constructeur de la sous-classe ne puisse se terminer." },
+    { id: "field", label: "    this.radius = radius;" },
+    { id: "subCtorClose", label: "  }" },
+    { id: "subClose", label: "}" },
+  ]}
+  correctOrder={["base", "baseCtor", "baseClose", "sub", "subCtor", "superCall", "field", "subCtorClose", "subClose"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Mettez ces lignes dans l'ordre pour attacher une méthode au prototype d'une fonction constructeur à l'ancienne, pré-ES6."
+  items={[
+    { id: "ctor", label: "function Robot(id) {" },
+    { id: "assign", label: "  this.id = id;" },
+    { id: "ctorClose", label: "}" },
+    { id: "proto", label: "Robot.prototype.announce = function () {" },
+    { id: "protoBody", label: "  return `Unit ${this.id} reporting.`;" },
+    { id: "protoClose", label: "};" },
+    { id: "instance", label: "const r2 = new Robot(2);" },
+  ]}
+  correctOrder={["ctor", "assign", "ctorClose", "proto", "protoBody", "protoClose", "instance"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que ce code affiche ?"
+  code={`class Base {
+  greet() {
+    return "base";
+  }
+}
+
+const b = new Base();
+Base.prototype.greet = function () {
+  return "overridden";
+};
+
+console.log(b.greet());`}
+  options={["\"base\"", "\"overridden\"", "TypeError", "undefined"]}
+  correctIndex={1}
+  explanation="Les méthodes d'instance ne sont pas copiées sur chaque objet — b détient juste un lien vers Base.prototype et y recherche greet à chaque appel. Puisque Base.prototype.greet a été réassignée après la création de b, b.greet() trouve la nouvelle version, pas celle qui existait au moment de la construction."
+  actualOutput="overridden"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Structures de données](/fr/programming-languages/javascript/data-structures)
+- [Gestion des erreurs](/fr/programming-languages/javascript/error-handling)

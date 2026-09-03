@@ -1,0 +1,164 @@
+---
+title: التوابع
+description: لا تملك Java دوالاً حرة قائمة بذاتها — كل كتلة كود قابلة لإعادة الاستخدام هي تابع في صنف، بما في ذلك النسخ المُحمَّلة زيادةً (overloaded).
+category: Programming Languages
+weight: 4
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+لا تملك Java دوالاً حرة. كل قطعة من الكود القابل لإعادة الاستخدام
+والاستدعاء هي **تابع (method)**، مُصرَّح داخل صنف أو واجهة. حتى نقطة دخول
+البرنامج، `main`، هي تابع `static` على صنف ما — لا سبيل لكتابة دالة تعوم
+خارج جسم صنف.
+
+## تصريح تابع
+
+يسرد تصريح التابع (بالترتيب) مُعدِّل وصول، ومُعدِّلات اختيارية مثل
+`static`، ونوع إرجاع، واسماً، وقائمة معاملات:
+
+```java
+public class MathUtils {
+    public static int square(int n) {
+        return n * n;
+    }
+
+    public static void printSquare(int n) {
+        System.out.println(square(n));
+    }
+}
+```
+
+تنتمي توابع `static` إلى الصنف نفسه ويمكن استدعاؤها دون إنشاء نسخة
+(`MathUtils.square(5)`). توابع النسخة (بلا `static`) تعمل على كائن معيّن
+وتُستدعى عبر إحالة إليه (`someObject.someMethod()`).
+
+## void مقابل إرجاع قيمة
+
+يُصرِّح التابع الذي لا ينتج قيمة `void` كنوع إرجاعه ولا يستخدم ببساطة
+`return` مع تعبير:
+
+```java
+public static void greet(String name) {
+    System.out.println("Hello, " + name);
+    return; // اختياري هنا — الوصول إلى نهاية تابع void يعمل أيضاً
+}
+```
+
+يجب أن يُعيد التابع بنوع إرجاع حقيقي قيمة في كل مسار ممكن، وإلا رفضه
+المصرّف:
+
+```java
+public static String describe(int n) {
+    if (n < 0) {
+        return "negative";
+    } else {
+        return "non-negative";
+    }
+    // لا حاجة إلى return نهائية — كل مسار أعلاه يُعيد بالفعل
+}
+```
+
+## التحميل الزائد للتوابع (Overloading)
+
+تسمح Java بتوابع متعددة بـ**نفس الاسم** في نفس الصنف طالما تختلف قوائم
+معاملاتها في العدد أو النوع — هذا هو **التحميل الزائد (overloading)**،
+ويُحَل بالكامل وقت التصريف بناءً على أنواع الوسائط في موقع الاستدعاء:
+
+```java
+public class Printer {
+    public static void print(int value) {
+        System.out.println("int: " + value);
+    }
+
+    public static void print(double value) {
+        System.out.println("double: " + value);
+    }
+
+    public static void print(String value) {
+        System.out.println("String: " + value);
+    }
+}
+```
+
+استدعاء `Printer.print(5)` يختار نسخة `int`، و`Printer.print(5.0)` يختار
+نسخة `double`، و`Printer.print("five")` يختار نسخة `String` — يختار
+المصرّف بناءً على الأنواع الساكنة للوسائط، وليس بأي فحص وقت التشغيل.
+التحميل الزائد مختلف عن **التجاوز (overriding)** (يُغطَّى في صفحة
+[الأصناف والواجهات](/ar/programming-languages/java/oop-or-structs))، الذي
+يستبدل سلوك تابع في صنف فرعي بنفس التوقيع *تماماً*.
+
+## المعاملات متغيرة العدد (Varargs)
+
+يمكن لتابع أن يقبل عدداً متغيراً من الوسائط الأخيرة بـ`...`، يراها جسم
+التابع كمصفوفة:
+
+```java
+public static int sum(int... numbers) {
+    int total = 0;
+    for (int n : numbers) {
+        total += n;
+    }
+    return total;
+}
+
+// sum(1, 2, 3) وsum() كلاهما استدعاء صحيح
+```
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء تابع static يضاعف رقماً ودالة main تستدعيه."
+  items={[
+    { id: "f1", label: "public class Main {" },
+    { id: "f2", label: "    public static int doubleIt(int n) {" },
+    { id: "f3", label: "        return n * 2;", explanation: "يجب أن تكون عبارة return داخل جسم التابع الذي تنتمي إليه." },
+    { id: "f4", label: "    }" },
+    { id: "f5", label: "    public static void main(String[] args) {" },
+    { id: "f6", label: "        System.out.println(doubleIt(21));" },
+    { id: "f7", label: "    }" },
+    { id: "f8", label: "}" },
+  ]}
+  correctOrder={["f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="رتّب هذه الأسطر لتصريح تابعي describe محمَّلين زيادةً (int وString) واستدعاء كليهما من main."
+  items={[
+    { id: "g1", label: "public class Main {" },
+    { id: "g2", label: "    public static void describe(int n) { System.out.println(\"number \" + n); }" },
+    { id: "g3", label: "    public static void describe(String s) { System.out.println(\"text \" + s); }", explanation: "يجب تصريح كلا النسختين قبل استدعاء main لأي منهما." },
+    { id: "g4", label: "    public static void main(String[] args) {" },
+    { id: "g5", label: "        describe(7);" },
+    { id: "g6", label: "        describe(\"hi\");" },
+    { id: "g7", label: "    }" },
+    { id: "g8", label: "}" },
+  ]}
+  correctOrder={["g1", "g2", "g3", "g4", "g5", "g6", "g7", "g8"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا الكود؟"
+  code={`public class Main {
+    static void show(long n) { System.out.println("long: " + n); }
+    static void show(int n) { System.out.println("int: " + n); }
+
+    public static void main(String[] args) {
+        show(5);
+    }
+}`}
+  options={["long: 5", "int: 5", "خطأ تصريف: استدعاء تابع غامض", "يطبع كلتيهما"]}
+  correctIndex={1}
+  explanation="يفضِّل حل التحميل الزائد أكثر مطابقة محدَّدة قابلة للتطبيق دون تحويل توسيعي. الحرفية 5 هي بالفعل int، فتطابق نسخة int تماماً وتُختار على long، التي تتطلب توسيعاً."
+  actualOutput="int: 5"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [التحكم بمسار التنفيذ](/ar/programming-languages/java/control-flow)
+- [الأصناف والواجهات](/ar/programming-languages/java/oop-or-structs)

@@ -1,0 +1,35 @@
+---
+title: Monolitos
+description: Una única unidad desplegable que contiene toda la lógica de una aplicación — por qué casi todo proyecto empieza aquí, y qué sale realmente mal cuando crece.
+category: Software Architecture
+weight: 2
+---
+
+Un **monolito** es una aplicación construida y desplegada como una única unidad — un codebase, un artefacto de compilación, un proceso en ejecución (o un conjunto de réplicas idénticas de ese proceso) que contiene toda la lógica de la aplicación: la API, las reglas de negocio, a menudo también los trabajos en segundo plano, todo compilado o empaquetado junto y enviado como una sola cosa. "Monolito" se usa como insulto en mucho del discurso sobre arquitectura, pero el término en sí solo describe una estructura, y vale la pena ser honesto sobre eso: una enorme cantidad de sistemas exitosos y rentables han funcionado como monolito durante toda su vida y nunca necesitaron ser otra cosa.
+
+## Por qué los equipos empiezan ahí
+
+Casi todo proyecto que después se convierte en algo más elaborado empezó como un monolito, y no por accidente. Un solo codebase significa que una llamada a función es simplemente una llamada a función — sin red, sin serialización, sin fallo parcial en qué pensar. Un solo despliegue significa que hay exactamente una cosa que compilar, probar, y enviar, y exactamente un lugar donde mirar cuando algo se rompe. El desarrollo local es simple: clona un repositorio, ejecuta un proceso, y toda la aplicación está frente a ti. Ninguna de las sobrecargas de coordinación que requieren los sistemas distribuidos — descubrimiento de servicios, reintentos de red, trazado distribuido — existe todavía, porque no hay nada distribuido que coordinar.
+
+Esto no es una concesión de kit inicial de la que avergonzarse. Para un equipo de un puñado de ingenieros, o un producto cuyas distintas partes en realidad no tienen necesidades de escalado o de lanzamiento radicalmente diferentes, un monolito es muy a menudo la elección *correcta* a largo plazo, no solo la fácil al principio.
+
+## Dónde realmente empieza a doler
+
+El dolor aparece específicamente a medida que crecen tanto el codebase como el equipo, y se agrupa en torno a unas pocas formas recurrentes:
+
+- **Despliegues acoplados.** Si toda la aplicación se envía como un solo artefacto, entonces enviar un arreglo de una línea al flujo de pago requiere redesplegar (y re-probar, y re-verificar) toda la aplicación, incluyendo partes que nadie tocó. A medida que crece el codebase, el radio de impacto de cada despliegue crece con él.
+- **Dominio de fallo compartido.** Una fuga de memoria, un bucle infinito, o una excepción sin manejar en una funcionalidad puede tumbar también el proceso que sirve a cada *otra* funcionalidad, ya que todas se ejecutan dentro del mismo proceso y comparten los mismos recursos (memoria, CPU, pool de conexiones a la base de datos).
+- **Escalar todo para escalar una parte.** Si solo el endpoint de procesamiento de imágenes está bajo carga pesada, la respuesta de un monolito sigue siendo "ejecutar más copias de toda la aplicación" — no puedes escalar solo la ruta caliente sin pagar por escalar todo lo demás empaquetado junto a ella.
+- **Fricción organizacional.** Múltiples equipos haciendo commit al mismo codebase y al mismo pipeline de despliegue inevitablemente empiezan a estorbarse mutuamente — conflictos de fusión, un build roto de un equipo bloqueando el lanzamiento de todos los demás, y una suite de pruebas cada vez más larga cuyo costo paga cada equipo en cada cambio, sin importar de quién sea el código que realmente se está probando.
+
+## La compensación honesta
+
+Nada de esto significa que construir un monolito esté mal, ni que mantenerlo lo esté. Significa que los puntos de dolor de arriba tienen que ver específicamente con la independencia de despliegue, el aislamiento de fallos, y la escala organizacional — problemas que solo muerden una vez que un sistema y un equipo son lo suficientemente grandes como para sentirlos. Un equipo de cinco personas atendiendo una cantidad modesta de tráfico no gana nada pagando por adelantado el impuesto operacional de los [microservicios](/es/software-architecture/microservices); un **monolito modular** — una única unidad desplegable organizada internamente en módulos bien separados con fronteras claras — a menudo captura la mayor parte del beneficio de mantenibilidad que la gente realmente quiere de "dividir las cosas", sin ninguna de las llamadas de red, sin renunciar a la simplicidad de un solo despliegue, y sin cerrar la puerta a una división posterior si y cuando el dolor realmente llega.
+
+La decisión de dividir un monolito generalmente debería seguir un problema real y sentido — un equipo específico bloqueado por el ritmo de lanzamiento de otro equipo, un componente específico que necesita escalar de forma independiente — en lugar de tomarse preventivamente asumiendo que un sistema más grande eventualmente lo necesitará. Dividir demasiado pronto compra todos los costos de los microservicios antes de que la organización sea lo suficientemente grande como para necesitar ninguno de sus beneficios.
+
+## Ver también
+
+- **[Microservicios](/es/software-architecture/microservices)** — el siguiente paso habitual, y lo que realmente cuesta darlo.
+- **[Arquitectura Cliente-Servidor](/es/software-architecture/client-server-architecture)** — el patrón base sobre el que un monolito todavía se sienta, en el lado servidor de la división.
+- **[Servidores de Aplicación](/es/backend/application-servers)** — el proceso que un monolito típicamente ejecuta.

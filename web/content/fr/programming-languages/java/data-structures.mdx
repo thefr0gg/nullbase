@@ -1,0 +1,143 @@
+---
+title: Structures de données
+description: Les tableaux à taille fixe de Java aux côtés des collections redimensionnables ArrayList et HashMap du Collections Framework.
+category: Programming Languages
+weight: 5
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Java vous offre deux niveaux de conteneur : les **tableaux** intégrés, qui
+sont de taille fixe une fois créés, et le **Collections Framework**
+(`java.util`), dont les types génériques redimensionnables comme
+`ArrayList` et `HashMap` sont ce vers quoi la plupart du code quotidien se
+tourne réellement.
+
+## Tableaux
+
+Un tableau contient un nombre fixe d'éléments d'un seul type, alloué à
+l'avance :
+
+```java
+int[] scores = new int[3];
+scores[0] = 70;
+scores[1] = 85;
+scores[2] = 92;
+
+int[] literal = {70, 85, 92}; // littéral de tableau, taille inférée
+
+System.out.println(scores.length); // 3, un champ, pas un appel de méthode
+```
+
+Les tableaux sont indexés à partir de zéro, et lire ou écrire en dehors de
+`[0, length)` lève une `ArrayIndexOutOfBoundsException` à l'exécution
+plutôt que de corrompre silencieusement la mémoire. `length` est un champ
+`final` sur l'objet tableau, pas une méthode — à la différence de
+`String.length()` ou `List.size()`, qui sont des méthodes.
+
+## ArrayList
+
+`ArrayList<T>` est une liste redimensionnable adossée à un tableau, issue
+de `java.util`. Parce que les génériques Java ne peuvent pas contenir de
+primitifs directement, `T` doit être un type référence — utilisez la
+classe wrapper (`Integer`, pas `int`) pour des types d'éléments primitifs :
+
+```java
+import java.util.ArrayList;
+import java.util.List;
+
+List<String> names = new ArrayList<>();
+names.add("Ada");
+names.add("Linus");
+names.add(1, "Grace"); // insertion à l'index 1, décalant les éléments suivants vers la droite
+
+System.out.println(names);       // [Ada, Grace, Linus]
+System.out.println(names.get(0)); // Ada
+System.out.println(names.size()); // 3
+
+names.remove("Linus");
+System.out.println(names); // [Ada, Grace]
+```
+
+Déclarer la variable comme `List<String>` (l'interface) plutôt que
+`ArrayList<String>` (la classe concrète) est idiomatique — cela vous
+permet d'échanger plus tard une autre implémentation de `List` sans
+toucher au code qui n'appelle que des méthodes de l'interface.
+
+## HashMap
+
+`HashMap<K, V>` stocke des paires clé-valeur avec une recherche, une
+insertion, et une suppression en O(1) en moyenne, adossée à une table de
+hachage. Elle ne garantit aucun ordre d'itération :
+
+```java
+import java.util.HashMap;
+import java.util.Map;
+
+Map<String, Integer> ages = new HashMap<>();
+ages.put("Ada", 36);
+ages.put("Linus", 54);
+
+System.out.println(ages.get("Ada"));          // 36
+System.out.println(ages.get("Grace"));         // null : clé absente
+System.out.println(ages.getOrDefault("Grace", 0)); // 0 : valeur par défaut sûre
+System.out.println(ages.containsKey("Linus")); // true
+
+for (Map.Entry<String, Integer> entry : ages.entrySet()) {
+    System.out.println(entry.getKey() + " is " + entry.getValue());
+}
+```
+
+`get` sur une clé manquante renvoie `null` plutôt que de lever une
+exception, ce qui est une source courante de bugs `NullPointerException`
+si le résultat est utilisé sans vérification de nullité ou
+`getOrDefault`. Si vous avez besoin d'un ordre d'itération prévisible,
+`LinkedHashMap` préserve l'ordre d'insertion et `TreeMap` garde les clés
+triées.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour créer un tableau de taille fixe, le remplir, et afficher sa longueur."
+  items={[
+    { id: "d1", label: "int[] scores = new int[3];" },
+    { id: "d2", label: "scores[0] = 70;" },
+    { id: "d3", label: "scores[1] = 85;" },
+    { id: "d4", label: "scores[2] = 92;", explanation: "Chaque index doit être assigné avant que length ne soit affiché, même si la valeur affichée ne changerait pas dans les deux cas." },
+    { id: "d5", label: "System.out.println(scores.length);" },
+  ]}
+  correctOrder={["d1", "d2", "d3", "d4", "d5"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Ordonnez ces lignes pour construire une HashMap, ajouter une entrée, et lire en toute sécurité une clé manquante avec une valeur par défaut."
+  items={[
+    { id: "e1", label: "Map<String, Integer> ages = new HashMap<>();" },
+    { id: "e2", label: "ages.put(\"Ada\", 36);" },
+    { id: "e3", label: "int grace = ages.getOrDefault(\"Grace\", 0);", explanation: "getOrDefault a besoin que la map soit d'abord peuplée, même si \"Grace\" elle-même n'est jamais ajoutée." },
+    { id: "e4", label: "System.out.println(grace);" },
+  ]}
+  correctOrder={["e1", "e2", "e3", "e4"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que ce code affiche ?"
+  code={`Map<String, Integer> ages = new HashMap<>();
+ages.put("Ada", 36);
+Integer result = ages.get("Linus");
+System.out.println(result);`}
+  options={["0", "null", "NullPointerException", "Erreur de compilation"]}
+  correctIndex={1}
+  explanation="HashMap.get renvoie null quand la clé n'est pas présente plutôt que de lever une exception — result est un Integer (un type référence), donc il peut légalement contenir null et l'afficher affiche la chaîne 'null'. C'est un piège classique : déballer ce null vers un int primitif plus tard lèverait une exception, mais afficher la référence Integer elle-même ne le fait pas."
+  actualOutput="null"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Méthodes](/fr/programming-languages/java/functions)
+- [Classes et interfaces](/fr/programming-languages/java/oop-or-structs)

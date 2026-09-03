@@ -1,0 +1,141 @@
+---
+title: Estructuras de Datos
+description: Los arrays de tamaño fijo de Java junto con las colecciones redimensionables ArrayList y HashMap del Collections Framework.
+category: Programming Languages
+weight: 5
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Java te ofrece dos niveles de contenedor: los **arrays** integrados, que
+tienen un tamaño fijo una vez creados, y el **Collections Framework**
+(`java.util`), cuyos tipos genéricos y redimensionables como `ArrayList` y
+`HashMap` son a los que la mayoría del código cotidiano realmente recurre.
+
+## Arrays
+
+Un array contiene un número fijo de elementos de un único tipo, asignado por
+adelantado:
+
+```java
+int[] scores = new int[3];
+scores[0] = 70;
+scores[1] = 85;
+scores[2] = 92;
+
+int[] literal = {70, 85, 92}; // literal de array, tamaño inferido
+
+System.out.println(scores.length); // 3, un campo, no una llamada a método
+```
+
+Los arrays se indexan desde cero, y leer o escribir fuera de `[0, length)`
+lanza `ArrayIndexOutOfBoundsException` en tiempo de ejecución en vez de
+corromper la memoria silenciosamente. `length` es un campo `final` en el
+objeto array, no un método — a diferencia de `String.length()` o
+`List.size()`, que son métodos.
+
+## ArrayList
+
+`ArrayList<T>` es una lista redimensionable respaldada por un array, de
+`java.util`. Como los genéricos de Java no pueden contener primitivos
+directamente, `T` debe ser un tipo de referencia — usa la clase envoltorio
+(`Integer`, no `int`) para tipos de elemento primitivos:
+
+```java
+import java.util.ArrayList;
+import java.util.List;
+
+List<String> names = new ArrayList<>();
+names.add("Ada");
+names.add("Linus");
+names.add(1, "Grace"); // insertar en el índice 1, desplazando los elementos posteriores a la derecha
+
+System.out.println(names);       // [Ada, Grace, Linus]
+System.out.println(names.get(0)); // Ada
+System.out.println(names.size()); // 3
+
+names.remove("Linus");
+System.out.println(names); // [Ada, Grace]
+```
+
+Declarar la variable como `List<String>` (la interfaz) en vez de
+`ArrayList<String>` (la clase concreta) es idiomático — te permite
+intercambiar más adelante una implementación de `List` distinta sin tocar
+código que solo llama a métodos de la interfaz.
+
+## HashMap
+
+`HashMap<K, V>` almacena pares clave-valor con búsqueda, inserción, y
+eliminación de O(1) en promedio, respaldado por una tabla hash. No garantiza
+nada sobre el orden de iteración:
+
+```java
+import java.util.HashMap;
+import java.util.Map;
+
+Map<String, Integer> ages = new HashMap<>();
+ages.put("Ada", 36);
+ages.put("Linus", 54);
+
+System.out.println(ages.get("Ada"));          // 36
+System.out.println(ages.get("Grace"));         // null: la clave no existe
+System.out.println(ages.getOrDefault("Grace", 0)); // 0: valor por defecto seguro
+System.out.println(ages.containsKey("Linus")); // true
+
+for (Map.Entry<String, Integer> entry : ages.entrySet()) {
+    System.out.println(entry.getKey() + " is " + entry.getValue());
+}
+```
+
+`get` sobre una clave ausente devuelve `null` en vez de lanzar una
+excepción, lo cual es una fuente común de bugs de `NullPointerException` si
+el resultado se usa sin una comprobación de null o `getOrDefault`. Si
+necesitas un orden de iteración predecible, `LinkedHashMap` conserva el
+orden de inserción y `TreeMap` mantiene las claves ordenadas.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para crear un array de tamaño fijo, rellenarlo, e imprimir su longitud."
+  items={[
+    { id: "d1", label: "int[] scores = new int[3];" },
+    { id: "d2", label: "scores[0] = 70;" },
+    { id: "d3", label: "scores[1] = 85;" },
+    { id: "d4", label: "scores[2] = 92;", explanation: "Cada índice debe asignarse antes de imprimir length, aunque el valor impreso no cambiaría de todas formas." },
+    { id: "d5", label: "System.out.println(scores.length);" },
+  ]}
+  correctOrder={["d1", "d2", "d3", "d4", "d5"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Ordena estas líneas para construir un HashMap, añadir una entrada, y leer de forma segura una clave ausente con un valor por defecto."
+  items={[
+    { id: "e1", label: "Map<String, Integer> ages = new HashMap<>();" },
+    { id: "e2", label: "ages.put(\"Ada\", 36);" },
+    { id: "e3", label: "int grace = ages.getOrDefault(\"Grace\", 0);", explanation: "getOrDefault necesita el map ya poblado, aunque \"Grace\" en sí nunca se añada." },
+    { id: "e4", label: "System.out.println(grace);" },
+  ]}
+  correctOrder={["e1", "e2", "e3", "e4"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`Map<String, Integer> ages = new HashMap<>();
+ages.put("Ada", 36);
+Integer result = ages.get("Linus");
+System.out.println(result);`}
+  options={["0", "null", "NullPointerException", "Compile error"]}
+  correctIndex={1}
+  explanation="HashMap.get devuelve null cuando la clave no está presente en vez de lanzar una excepción — result es un Integer (un tipo de referencia), así que puede contener legalmente null, y al imprimirlo se imprime la cadena 'null'. Este es un gotcha clásico: desempaquetar ese null en un int primitivo más adelante lanzaría una excepción, pero imprimir la referencia Integer en sí no lo hace."
+  actualOutput="null"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Métodos](/es/programming-languages/java/functions)
+- [Clases e Interfaces](/es/programming-languages/java/oop-or-structs)

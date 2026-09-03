@@ -1,0 +1,113 @@
+---
+title: Sintaxis y Variables
+description: Bindings, mutabilidad, shadowing, y los tipos primitivos sobre los que Rust construye todo lo demás.
+category: Programming Languages
+weight: 2
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Los bindings de Rust se declaran con `let`, y cada binding es **inmutable por defecto**. Este es el valor por defecto opuesto al de la mayoría de los lenguajes, y es deliberado: el compilador quiere que optes explícitamente por la mutabilidad con `mut`, porque un valor inmutable es una cosa menos que rastrear al razonar sobre lo que un fragmento de código puede hacerle.
+
+```rust
+fn main() {
+    let x = 5;
+    // x = 6; // error: cannot assign twice to immutable variable `x`
+
+    let mut y = 5;
+    y = 6; // fine — y was declared mutable
+    println!("x = {x}, y = {y}");
+}
+```
+
+## Shadowing
+
+Rust también te permite declarar un nuevo binding con el *mismo nombre* que uno anterior — llamado **shadowing** — que es diferente de la mutación. El shadowing crea una variable completamente nueva (que incluso puede tener un tipo diferente), mientras que `mut` cambia el valor de la existente en el mismo lugar.
+
+```rust
+fn main() {
+    let spaces = "   "; // a &str
+    let spaces = spaces.len(); // now a usize — a new binding, same name
+
+    println!("{spaces}"); // 3
+}
+```
+
+Intentar hacer esto con `mut` en su lugar (`let mut spaces = "   "; spaces = spaces.len();`) no compilaría — un binding `mut` mantiene su tipo original para siempre; solo el shadowing permite que el tipo cambie.
+
+## Tipos escalares
+
+Los tipos primitivos de Rust son de tamaño fijo y conocidos en tiempo de compilación: enteros con/sin signo de varios anchos (`i32`, `u32`, `i64`, `u64`, `usize`, …), punto flotante (`f32`, `f64`), `bool`, y `char` (un valor escalar Unicode de 4 bytes, no un byte). Los literales enteros por defecto son `i32` y los literales de punto flotante `f64` a menos que el contexto exija otra cosa.
+
+```rust
+fn main() {
+    let age: u8 = 30;          // explicit type annotation
+    let pi = 3.14159;           // inferred as f64
+    let is_active = true;
+    let grade: char = 'A';
+
+    println!("{age} {pi} {is_active} {grade}");
+}
+```
+
+## Inferencia de tipos y anotaciones
+
+Rust infiere tipos en la mayoría de los casos, así que `let x = 5;` no necesita una anotación — el compilador deduce `x: i32` por su cuenta. Las anotaciones se vuelven obligatorias cuando el compilador genuinamente no puede saberlo, como parsear una cadena a un número:
+
+```rust
+fn main() {
+    let guess: u32 = "42".parse().expect("not a number");
+    println!("{guess}");
+}
+```
+
+Sin la anotación `: u32` aquí, `parse()` no tiene forma de saber qué tipo numérico producir, y el compilador se negaría a adivinar — este es uno de los pocos lugares donde la inferencia de tipos necesita una pista tuya.
+
+## Ver también
+
+- **[Flujo de Control](/es/programming-languages/rust/control-flow)** — usar estos bindings dentro de condicionales y bucles.
+- **[Ownership y Borrowing](/es/programming-languages/rust/advanced)** — por qué algunos de estos bindings pueden copiarse libremente y otros no.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir un programa que haga shadowing de una cadena con su longitud."
+  items={[
+    { id: "fn-open", label: "fn main() {" },
+    { id: "spaces1", label: "    let spaces = \"   \";", explanation: "El binding &str original debe existir antes de poder hacerle shadowing." },
+    { id: "spaces2", label: "    let spaces = spaces.len();" },
+    { id: "print", label: "    println!(\"{spaces}\");" },
+    { id: "fn-close", label: "}" },
+  ]}
+  correctOrder={["fn-open", "spaces1", "spaces2", "print", "fn-close"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir un programa que parsee una cadena a un u32 y la imprima."
+  items={[
+    { id: "fn-open", label: "fn main() {" },
+    { id: "guess", label: "    let guess: u32 = \"42\".parse().expect(\"not a number\");", explanation: "La anotación en guess es necesaria antes de que parse() pueda llamarse de esta manera." },
+    { id: "print", label: "    println!(\"{guess}\");" },
+    { id: "fn-close", label: "}" },
+  ]}
+  correctOrder={["fn-open", "guess", "print", "fn-close"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`fn main() {
+    let x = 5;
+    let x = x + 1;
+    let x = x * 2;
+    println!("{x}");
+}`}
+  options={["5", "6", "10", "12"]}
+  correctIndex={3}
+  explanation="Cada let vuelve a declarar x mediante shadowing: empieza en 5, se convierte en 6 (5 + 1), luego en 12 (6 * 2). Debido a que son bindings nuevos en vez de mutación, esto compila aunque x nunca se declaró mut — esa es exactamente la distinción que el shadowing hace posible."
+  actualOutput="12"
+/>
+</ExerciseTabs>

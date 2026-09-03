@@ -1,0 +1,203 @@
+---
+title: Paquets et outils de build
+description: Organiser le code Java avec package et import, et construire des projets avec Maven et Gradle.
+category: Programming Languages
+weight: 8
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Java organise le code en **paquets** — un mécanisme d'espacement de noms
+qui se superpose aussi directement au système de fichiers — et s'appuie
+sur des outils de build externes (Maven, Gradle) plutôt qu'un gestionnaire
+de paquets intégré pour récupérer les dépendances et orchestrer la
+compilation.
+
+## package et import
+
+La première ligne non-commentaire d'un fichier `.java` (si présente)
+déclare à quel paquet il appartient. Le nom du paquet doit correspondre au
+chemin de répertoire du fichier relatif à la racine source du projet :
+
+```java
+// src/main/java/com/example/billing/Invoice.java
+package com.example.billing;
+
+public class Invoice {
+    public double total() {
+        return 42.0;
+    }
+}
+```
+
+Du code dans un autre paquet met une classe en portée avec `import` :
+
+```java
+package com.example.app;
+
+import com.example.billing.Invoice;
+
+public class Main {
+    public static void main(String[] args) {
+        Invoice invoice = new Invoice();
+        System.out.println(invoice.total());
+    }
+}
+```
+
+Sans `import`, vous pouvez toujours faire référence à la classe par son
+**nom pleinement qualifié** (`com.example.billing.Invoice`) — `import` est
+purement une commodité pour utiliser le nom court. Les classes du même
+paquet n'ont jamais besoin d'un import pour se voir entre elles, et tout
+ce qui est dans `java.lang` (`String`, `Object`, `System`, etc.) est
+importé implicitement dans chaque fichier.
+
+## Modificateurs d'accès et paquets
+
+L'appartenance à un paquet n'est pas qu'une question de nommage — c'est
+aussi une frontière de visibilité. Un membre sans aucun modificateur
+d'accès (**package-private**) n'est visible que par les autres classes du
+même paquet :
+
+```java
+package com.example.billing;
+
+class InternalHelper { // package-private : pas de `public`
+    static void log(String message) {
+        System.out.println("[billing] " + message);
+    }
+}
+```
+
+`public` rend une classe ou un membre visible partout ; `private` le
+restreint à la classe déclarante ; `protected` permet l'accès depuis le
+même paquet plus les sous-classes dans n'importe quel paquet.
+
+## Maven
+
+Maven décrit les dépendances, plugins, et étapes de build d'un projet dans
+un fichier XML, `pom.xml`, et télécharge les dépendances depuis un dépôt
+partagé (Maven Central par défaut) :
+
+```xml
+<project>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.example</groupId>
+    <artifactId>billing-app</artifactId>
+    <version>1.0.0</version>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.10.0</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>
+```
+
+Commandes courantes : `mvn compile` construit le projet, `mvn test` lance
+les tests, et `mvn package` produit un JAR distribuable. Maven impose une
+disposition de répertoire « convention plutôt que configuration »
+(`src/main/java`, `src/test/java`) donc un `pom.xml` minimal suffit
+souvent pour démarrer.
+
+## Gradle
+
+Gradle résout le même problème — résolution de dépendances et
+orchestration de build — avec une configuration plus flexible, basée sur
+des scripts (Groovy ou DSL Kotlin) au lieu du schéma XML fixe de Maven :
+
+```kotlin
+// build.gradle.kts
+plugins {
+    java
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
+}
+```
+
+`./gradlew build` compile, teste, et empaquette le projet en une seule
+étape. Le graphe de build incrémental de Gradle a tendance à le rendre
+plus rapide que Maven sur les grands projets multi-modules, ce qui explique
+en partie pourquoi c'est l'outil de build par défaut pour le développement
+Android ; le modèle plus simple et plus rigide de Maven reste courant dans
+les entreprises Java qui privilégient la prévisibilité à la
+configurabilité.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour déclarer une classe dans un paquet et l'importer depuis un autre fichier."
+  items={[
+    { id: "j1", label: "package com.example.billing;" },
+    { id: "j2", label: "public class Invoice {" },
+    { id: "j3", label: "    public double total() { return 42.0; }" },
+    { id: "j4", label: "}" },
+    { id: "j5", label: "package com.example.app;", explanation: "La déclaration de package de chaque fichier doit être sa première ligne, avant les imports de ce fichier." },
+    { id: "j6", label: "import com.example.billing.Invoice;" },
+    { id: "j7", label: "public class Main {" },
+    { id: "j8", label: "    public static void main(String[] args) { System.out.println(new Invoice().total()); }" },
+    { id: "j9", label: "}" },
+  ]}
+  correctOrder={["j1", "j2", "j3", "j4", "j5", "j6", "j7", "j8", "j9"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Ordonnez ces lignes pour construire un pom.xml minimal déclarant les coordonnées d'un projet et une dépendance."
+  items={[
+    { id: "k1", label: "<project>" },
+    { id: "k2", label: "    <modelVersion>4.0.0</modelVersion>" },
+    { id: "k3", label: "    <groupId>com.example</groupId>" },
+    { id: "k4", label: "    <artifactId>billing-app</artifactId>", explanation: "Les coordonnées du projet viennent avant la section des dépendances." },
+    { id: "k5", label: "    <version>1.0.0</version>" },
+    { id: "k6", label: "    <dependencies>" },
+    { id: "k7", label: "        <dependency>" },
+    { id: "k8", label: "            <groupId>org.junit.jupiter</groupId>" },
+    { id: "k9", label: "            <artifactId>junit-jupiter</artifactId>" },
+    { id: "k10", label: "        </dependency>" },
+    { id: "k11", label: "    </dependencies>" },
+    { id: "k12", label: "</project>" },
+  ]}
+  correctOrder={["k1", "k2", "k3", "k4", "k5", "k6", "k7", "k8", "k9", "k10", "k11", "k12"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que ce code affiche ?"
+  code={`// File A: src/main/java/com/example/a/Helper.java
+package com.example.a;
+
+class Helper {
+    static String greet() { return "hi from Helper"; }
+}
+
+// File B: src/main/java/com/example/b/Main.java
+package com.example.b;
+
+public class Main {
+    public static void main(String[] args) {
+        System.out.println(Helper.greet());
+    }
+}`}
+  options={["hi from Helper", "Erreur de compilation : Helper cannot be resolved to a type", "Erreur de compilation : Helper has private access", "null"]}
+  correctIndex={1}
+  explanation="Helper n'a aucun modificateur d'accès, donc elle est package-private — visible seulement à l'intérieur de com.example.a. Main vit dans com.example.b et n'importe pas Helper (et ne pourrait pas le faire avec succès, puisqu'elle n'est pas public), donc le compilateur ne peut pas du tout résoudre le nom."
+  actualOutput="error: cannot find symbol: class Helper"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Gestion des erreurs](/fr/programming-languages/java/error-handling)
+- [Threads et concurrence](/fr/programming-languages/java/advanced)

@@ -1,0 +1,43 @@
+---
+title: Arquitectura en Capas
+description: Organizar el código en capas horizontales — presentación, lógica de negocio, acceso a datos — donde cada capa solo habla con la que está directamente debajo de ella.
+category: Software Architecture
+weight: 7
+interactive: true
+interactiveType: ["MermaidDiagram"]
+---
+
+La **arquitectura en capas** organiza un codebase en capas horizontales apiladas por responsabilidad — típicamente presentación, lógica de negocio, y acceso a datos — donde cada capa solo llama a la capa inmediatamente debajo de ella y no sabe nada de las capas de arriba. Es la forma por defecto a la que recurren la mayoría de los desarrolladores sin nombrarla: un manejador de ruta que llama a un servicio, que llama a un repositorio, que habla con una base de datos, ya es una arquitectura en capas, hayan dibujado o no el diagrama primero.
+
+<MermaidDiagram title="Una pila típica de tres capas" chart={`graph TD
+    A[Presentation layer<br/>HTTP routes, controllers, UI] --> B[Business logic layer<br/>services, domain rules]
+    B --> C[Data access layer<br/>repositories, queries]
+    C --> D[(Database)]
+`} />
+
+## La regla
+
+La regla central es direccional: una capa puede depender hacia abajo, nunca hacia arriba, y (en la versión estricta) solo de la capa directamente debajo, no de capas más abajo aún. La capa de presentación sabe que existe la capa de lógica de negocio y la llama; la capa de lógica de negocio no tiene idea de que la capa de presentación existe en absoluto. Esta dependencia unidireccional es lo que hace que cada capa sea intercambiable en principio — reemplaza una API REST con una CLI y las capas de lógica de negocio y de datos no necesitan cambiar, porque nunca dependieron de la capa de presentación para empezar.
+
+## Por qué los equipos recurren a ella
+
+- **Separación de responsabilidades.** El parseo de HTTP, la validación, y el moldeado de respuestas viven en un lugar; las reglas reales del dominio (¿puede cancelarse este pedido?, ¿es válido este descuento?) viven en otro; el SQL y la construcción de consultas viven en un tercero. Nadie tiene que mantener las tres preocupaciones en su cabeza para cambiar una de ellas.
+- **Capacidad de prueba independiente.** La capa de lógica de negocio puede probarse unitariamente sin levantar un servidor HTTP o una base de datos real, porque depende de una abstracción de la capa de datos en lugar de la capa de datos misma. Sustituye un repositorio falso y las reglas de negocio son comprobables de forma aislada.
+- **Reemplazabilidad independiente.** Un equipo puede cambiar el motor de base de datos, o agregar una segunda superficie de API (GraphQL junto a REST), tocando solo la capa que realmente cambió, mientras las fronteras entre capas se hayan respetado desde el principio.
+- **Un modelo mental compartido.** Como es un patrón tan común, un desarrollador nuevo puede adivinar dónde vive una pieza dada de lógica — "¿dónde va la validación de cancelación de pedido?" tiene una respuesta obvia en un codebase en capas bien mantenido, lo cual reduce el costo de incorporación.
+
+## Dónde se rompe
+
+El modo de fallo clásico es la **capa hundida** (a veces llamada capa anémica o de simple traspaso): una capa que existe en el diagrama pero no hace ningún trabajo real, simplemente reenviando llamadas directamente a la capa de abajo sin transformación, validación, o toma de decisiones propia. Un método de "servicio" que no hace nada más que llamar a un único método de repositorio y devolver su resultado tal cual no está agregando separación de responsabilidades — está agregando una llamada a función sin razón. Esto tiende a suceder cuando un equipo adopta el patrón de forma mecánica para cada funcionalidad sin importar si esa funcionalidad tiene alguna lógica de negocio real que separar, y es el principal argumento contra recurrir reflexivamente a la arquitectura en capas en pantallas CRUD genuinamente simples, donde "listar, crear, leer, actualizar, eliminar sin reglas adjuntas" no tiene una capa de lógica de negocio que valga la pena escribir — la frontera de capa es pura indirección sin nada detrás.
+
+El otro costo común es que el aislamiento estricto de capas puede empujar la lógica al lugar equivocado para satisfacer el diagrama en lugar del problema. Una regla de validación que en realidad tiene que ver con la forma de una solicitud HTTP (¿está presente este campo en el cuerpo?) termina reubicada torpemente en "lógica de negocio" porque se supone que ahí es donde vive la validación, aunque no tenga nada que ver con el dominio y todo que ver con el transporte. La arquitectura en capas describe *dónde van las cosas por preocupación técnica* — no dice nada sobre *por qué debería o no existir una dependencia*, que es la brecha que la [Arquitectura Limpia](/es/software-architecture/clean-architecture) intenta específicamente cerrar.
+
+## Un punto medio práctico
+
+La mayoría de los codebases en producción que se llaman a sí mismos "en capas" son más laxos que la definición estricta — una capa de servicio puede llamar a dos repositorios en lugar de exactamente una capa hacia abajo, o un controlador puede alcanzar directamente un helper de consulta ligero para una lectura trivial. Esa es una compensación razonable mientras se mantenga la regla central (la lógica de negocio no sabe sobre HTTP, el acceso a datos no sabe sobre las reglas de negocio); la versión estricta de "solo la capa directamente debajo" es más útil como disciplina para razonar que como regla para imponer con análisis estático en cada punto de llamada.
+
+## Ver también
+
+- **[Arquitectura Limpia](/es/software-architecture/clean-architecture)** — organiza por dirección de dependencia en lugar de por preocupación técnica, específicamente para evitar que la lógica de negocio dependa de la infraestructura.
+- **[Diseño Guiado por el Dominio](/es/software-architecture/domain-driven-design)** — una forma de decidir qué pertenece realmente a la capa de lógica de negocio una vez que tienes una.
+- **[Middleware](/es/backend/middleware)** — una instancia concreta del pensamiento por capas aplicado a la ruta de una sola solicitud a través de un backend.

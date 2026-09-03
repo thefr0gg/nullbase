@@ -1,0 +1,30 @@
+---
+title: Concurrence
+description: Structurer un programme pour gérer plus d'une chose en cours à la fois — threads, verrous, conditions de concurrence, et pourquoi la concurrence est un problème de structure de programme distinct du parallélisme.
+category: Computer Science
+weight: 8
+---
+
+La **concurrence** concerne la *structure* : un programme capable d'avoir plus d'une unité de travail logiquement indépendante en cours à la fois, progressant sur chacune en les entrelaçant, sans nécessairement en exécuter deux au même instant précis. Cette dernière clause est ce qui la sépare du [parallélisme](/fr/computer-science/parallelism) — une machine monocœur peut exécuter parfaitement un programme concurrent en basculant rapidement entre les tâches, de la même façon qu'un seul cœur de [CPU](/fr/computer-science/cpu) bascule entre les processus.
+
+## Threads et mémoire partagée
+
+Un **thread** est l'unité de concurrence la plus directe : une séquence d'instructions qui peut être planifiée indépendamment, mais qui partage la mémoire de son processus parent avec chaque autre thread de ce processus — voir [Threads](/fr/operating-systems/threads) pour la mécanique au niveau de l'OS. Partager la mémoire est ce qui rend les threads bon marché (pas de copie, pas de surcoût de passage de messages pour communiquer), et c'est aussi exactement ce qui rend la programmation concurrente difficile : deux threads lisant et écrivant la même variable sans coordination produisent une **condition de concurrence** (race condition) — le résultat dépend de l'ordre imprévisible dans lequel l'ordonnanceur entrelace leurs instructions, si bien que le même code peut se comporter correctement mille fois en test puis corrompre des données en production la fois où le timing s'aligne différemment.
+
+## Verrous et le coût de la coordination
+
+Un **mutex** (verrou d'exclusion mutuelle) est la solution standard : un thread doit acquérir le verrou avant de toucher une donnée partagée, et tout autre thread qui la veut doit attendre qu'elle soit libérée. Cela élimine la condition de concurrence, mais introduit ses propres modes d'échec — un **interblocage** (deadlock), où deux threads détiennent chacun un verrou dont l'autre a besoin et où aucun ne le libérera jamais, et une simple contention de verrou, où les threads passent tant de temps à s'attendre mutuellement qu'ajouter davantage de threads cesse d'aider, voire ralentit activement les choses. Les primitives de plus haut niveau — sémaphores, variables de condition, verrous lecture-écriture — sont toutes des variations sur le même compromis sous-jacent : sérialiser l'accès à l'état partagé juste assez pour rester correct, sans le sérialiser au point que la concurrence ne rapporte plus rien.
+
+## Alternatives au verrouillage
+
+Parce que le verrouillage manuel est facile à mal faire subtilement, plusieurs modèles existent spécifiquement pour l'éviter :
+
+- **Le passage de messages** — au lieu de partager de la mémoire, des unités de travail indépendantes (souvent appelées acteurs, ou goroutines communiquant via des canaux) s'envoient des messages ; rien n'est muté par plus d'un thread, donc il n'y a rien sur quoi il puisse y avoir concurrence. Les canaux de Go et le modèle d'acteurs d'Erlang sont construits directement autour de cela.
+- **L'immuabilité** — si une donnée n'est jamais mutée après sa création, aucune condition de concurrence n'est possible peu importe combien de threads la lisent en même temps ; plusieurs langages fonctionnels s'appuient là-dessus comme principale garantie de sécurité en concurrence.
+- **La boucle d'événements** — un seul thread prend répétitivement le prochain callback prêt dans une file et l'exécute jusqu'à sa fin avant de prendre le suivant, si bien que le code applicatif ne s'exécute jamais en concurrence avec lui-même même si des E/S peuvent être en cours pour de nombreuses opérations à la fois. C'est le modèle derrière Node.js et la plupart des runtimes JavaScript — voir [Application Servers](/fr/backend/application-servers) pour la comparaison pratique avec un modèle thread-par-requête.
+
+## Voir aussi
+
+- **[Threads](/fr/operating-systems/threads)** — le mécanisme de l'OS sur lequel la plupart des modèles de programmation concurrente sont finalement construits.
+- **[Parallélisme](/fr/computer-science/parallelism)** — exécuter réellement du travail concurrent au même instant, ce qui nécessite plus d'un cœur pour être physiquement possible.
+- **[Application Servers](/fr/backend/application-servers)** — thread par requête vs boucle d'événements, une application pratique directe des compromis de cette page.

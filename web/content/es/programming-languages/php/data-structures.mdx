@@ -1,0 +1,166 @@
+---
+title: Arrays
+description: El único tipo array de PHP haciendo doble función como lista indexada y como mapa hash asociativo, además de las funciones de array más comunes.
+category: Programming Languages
+weight: 5
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+PHP tiene exactamente una estructura de datos compuesta integrada: `array`.
+Donde muchos lenguajes te dan un tipo lista separado y un tipo mapa/
+diccionario separado, el array de PHP es ambos a la vez, respaldado
+internamente por un mapa hash ordenado. Esta es una de las cosas más
+específicas de PHP con la que hay que familiarizarse, porque significa que
+"array" en PHP es un concepto mucho más amplio que "array" en C, Java, o
+Rust.
+
+## Arrays indexados
+
+Sin claves explícitas, PHP asigna claves enteras secuenciales empezando en
+0 — este es el caso de uso de "lista":
+
+```php
+<?php
+
+$colors = ["red", "green", "blue"];
+
+echo $colors[0] . "\n";   // red
+echo count($colors) . "\n"; // 3
+
+$colors[] = "yellow"; // append
+foreach ($colors as $color) {
+    echo $color . "\n";
+}
+```
+
+## Arrays asociativos
+
+El mismo tipo `array` acepta claves arbitrarias — cadenas, en este caso —
+convirtiéndolo en un mapa hash:
+
+```php
+<?php
+
+$user = [
+    "name" => "Ada",
+    "role" => "admin",
+    "age"  => 36,
+];
+
+echo $user["name"] . "\n"; // Ada
+
+foreach ($user as $key => $value) {
+    echo "$key: $value\n";
+}
+```
+
+## La rareza: son el mismo tipo, y puedes mezclarlos
+
+Debido a que los arrays indexados y asociativos son la misma estructura
+subyacente, nada te impide mezclar claves enteras y de cadena en un mismo
+array — y el orden de claves de PHP es **orden de inserción**, no ordenado,
+lo cual sorprende a quienes vienen de lenguajes con un tipo hash-map
+separado:
+
+```php
+<?php
+
+$mixed = [
+    "name" => "Grace",
+    0      => "first positional",
+    "role" => "engineer",
+    1      => "second positional",
+];
+
+foreach ($mixed as $key => $value) {
+    echo "$key => $value\n";
+}
+// Prints in insertion order: name, 0, role, 1 — not sorted by key type or value
+```
+
+Esto también significa que una "lista" en PHP es en realidad solo una
+convención (claves enteras secuenciales desde 0), no una garantía —
+`array_filter()` sobre un array indexado preserva las claves originales y
+puede dejar huecos, lo cual es una fuente muy común de bugs cuando el
+código asume que los índices se mantienen contiguos:
+
+```php
+<?php
+
+$numbers = [10, 20, 30, 40];
+$evens = array_filter($numbers, fn($n) => $n % 2 === 0);
+
+print_r($evens);
+// [1 => 20, 3 => 40]  — original keys kept, index 0 and 2 are gone
+echo array_values($evens)[0] . "\n"; // array_values() re-indexes from 0
+```
+
+## Funciones de array comunes
+
+La biblioteca estándar de PHP tiene bastante más de cien funciones
+`array_*`. Algunas que aparecen constantemente:
+
+```php
+<?php
+
+$nums = [5, 3, 8, 1];
+
+sort($nums);                          // [1, 3, 5, 8], sorts in place
+echo implode(", ", $nums) . "\n";      // "1, 3, 5, 8"
+
+$doubled = array_map(fn($n) => $n * 2, $nums);
+$total = array_reduce($nums, fn($carry, $n) => $carry + $n, 0);
+
+echo implode(", ", $doubled) . "\n"; // 2, 6, 10, 16
+echo $total . "\n";                   // 17
+```
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir un array indexado, añadirle un elemento, e imprimir su cantidad."
+  items={[
+    { id: "g1", label: "<?php" },
+    { id: "g2", label: '$tags = ["php", "web"];' },
+    { id: "g3", label: '$tags[] = "arrays";', explanation: "[] añade un nuevo elemento con la siguiente clave entera secuencial." },
+    { id: "g4", label: "echo count($tags) . \"\\n\";" },
+  ]}
+  correctOrder={["g1", "g2", "g3", "g4"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Ordena estas líneas para construir un array asociativo y leer uno de sus valores."
+  items={[
+    { id: "h1", label: "<?php" },
+    { id: "h2", label: "$config = [" },
+    { id: "h3", label: '    "debug" => false,' },
+    { id: "h4", label: '    "env"   => "production",', explanation: "Cada par clave => valor es una entrada del array, separada por comas como cualquier literal de array." },
+    { id: "h5", label: "];" },
+    { id: "h6", label: 'echo $config["env"] . "\\n";' },
+  ]}
+  correctOrder={["h1", "h2", "h3", "h4", "h5", "h6"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`<?php
+
+var_dump("10" == "1e1");
+var_dump(0 == "abc");
+var_dump("abc" == 0);`}
+  options={["true / true / true", "true / false / false", "false / false / false", "true / false / true"]}
+  correctIndex={1}
+  explanation="'10' == '1e1' es true: ambas son cadenas numéricas, así que PHP las compara como números (10 == 10.0). Pero desde PHP 8, una cadena no numérica como 'abc' comparada con un número ya no fuerza la cadena a 0 — en su lugar el número se convierte a cadena, así que 0 == 'abc' compara '0' con 'abc' y es false. Esto cambió respecto a PHP 7, donde ambas líneas habrían sido true — una famosa trampa del malabarismo de tipos de PHP."
+  actualOutput="bool(true)\nbool(false)\nbool(false)"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Funciones](/es/programming-languages/php/functions)
+- [Clases y Traits](/es/programming-languages/php/oop-or-structs)

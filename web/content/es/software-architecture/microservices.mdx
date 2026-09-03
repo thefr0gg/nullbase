@@ -1,0 +1,51 @@
+---
+title: Microservicios
+description: Servicios desplegables de forma independiente que son dueños de sus propios datos y hablan por la red — ganancias reales en autonomía, y el impuesto real de sistemas distribuidos que viene con ellas.
+category: Software Architecture
+weight: 3
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+Los **microservicios** dividen una aplicación en múltiples servicios desplegables de forma independiente, cada uno dueño de sus propios datos y de su propio codebase, comunicándose entre sí por la red en lugar de mediante llamadas a función en el mismo proceso. Donde un [monolito](/es/software-architecture/monoliths) es una única unidad desplegable, un sistema de microservicios puede tener docenas de ellas — un servicio de pedidos, un servicio de facturación, un servicio de notificaciones — cada una de las cuales se puede construir, probar, desplegar, y escalar con su propio calendario.
+
+## Qué compra realmente "desplegable de forma independiente"
+
+La promesa central de los microservicios es desacoplar el *ciclo de vida* de las distintas partes del sistema entre sí. Un equipo puede enviar un arreglo al servicio de notificaciones un martes por la tarde sin coordinarse con, probar contra, o siquiera notificar al equipo que posee la facturación — mientras los dos servicios sigan de acuerdo en la forma de las solicitudes entre ellos. Esa independencia se acumula en unos pocos beneficios concretos:
+
+- **Escalado independiente.** Si el servicio de notificaciones es intensivo en CPU y el servicio de facturación está mayormente inactivo, cada uno puede escalarse para ajustarse a su propia carga, en lugar del "escalar todo junto" de un monolito.
+- **Autonomía de equipo.** Cada servicio puede tener un equipo propietario claro, su propio ritmo de lanzamiento, y su propia rotación de guardia, lo cual escala mucho mejor organizacionalmente que docenas de equipos haciendo commit a un solo codebase y pipeline de despliegue compartido.
+- **Diversidad tecnológica.** Un servicio puede elegir el lenguaje, framework, o base de datos mejor adaptado a su problema específico — un servicio de búsqueda construido en torno a un índice especializado no necesita compartir runtime con un servicio que hace CRUD simple.
+
+## Qué cuesta realmente
+
+Nada de esto es gratis, y los costos son la razón por la que "simplemente divídelo en microservicios" es un mal consejo para un sistema que todavía no está sintiendo el dolor a escala de monolito:
+
+- **Las llamadas de red reemplazan las llamadas a función.** Una llamada que solía ser una invocación de función en el mismo proceso — barata, síncrona, imposible de fallar parcialmente — ahora es una solicitud de red que puede ser lenta, puede expirar, y puede fallar independientemente del llamante, todo lo cual el llamante ahora tiene que manejar explícitamente.
+- **Transacciones distribuidas.** Una sola transacción de base de datos ya no puede abarcar una operación que toca las bases de datos separadas de dos servicios. Mantener los datos consistentes entre servicios generalmente significa adoptar patrones como el [patrón saga](https://microservices.io/patterns/data/saga.html) o la consistencia eventual en lugar del `COMMIT` atómico que un monolito obtiene gratis.
+- **Complejidad operacional.** Cada servicio adicional es otra cosa que desplegar, monitorear, registrar, alertar, y asegurar. Depurar una sola solicitud orientada al usuario ahora a menudo significa rastrearla a través de los logs de varios servicios en lugar de leer un único stack trace.
+- **Descubrimiento de servicios.** Los servicios necesitan una forma confiable de encontrar la dirección de red actual de los demás, especialmente a medida que las instancias son creadas y destruidas por el autoescalado — un problema que simplemente no existe dentro de un solo proceso.
+
+## La trampa del monolito distribuido
+
+El modo de fallo que vale la pena conocer por su nombre es el **monolito distribuido**: un sistema dividido en servicios separados que todavía tienen que desplegarse juntos porque están fuertemente acoplados a través de bases de datos compartidas, cadenas de llamadas síncronas, o una biblioteca compartida de la que todos dependen en sincronía. Tiene todos los costos de los microservicios — llamadas de red, sobrecarga operacional, más piezas móviles que monitorear — y ninguno del beneficio que se suponía que los justificaba, ya que nada puede realmente lanzarse de forma independiente. Esto normalmente sucede cuando un sistema se divide por las costuras equivocadas (por capa técnica en lugar de por capacidad de negocio, digamos) en lugar de fronteras genuinamente independientes.
+
+<ItemExplorer
+  title="Monolito frente a microservicios"
+  layout="table"
+  tableColumns={[{ key: "deploy", label: "Despliegue" }, { key: "scaling", label: "Escalado" }, { key: "complexity", label: "Complejidad operacional" }]}
+  items={[
+    { id: "monolith", label: "Monolito", color: "blue", columns: { deploy: "Un artefacto, un pipeline", scaling: "Escala toda la app junta", complexity: "Baja — una sola cosa que ejecutar y monitorear" } },
+    { id: "microservices", label: "Microservicios", color: "green", columns: { deploy: "Cada servicio se despliega con su propio calendario", scaling: "Escala cada servicio a su propia carga", complexity: "Alta — muchos servicios, llamadas de red, y modos de fallo que gestionar" } },
+  ]}
+/>
+
+## Cuándo vale la pena
+
+Los microservicios tienden a dar frutos una vez que un sistema y su organización son lo suficientemente grandes como para que los despliegues acoplados y el dominio de fallo compartido de un monolito ya estén causando dolor real y recurrente — no como una arquitectura de partida por defecto. Los equipos que obtienen más valor de dividir son normalmente los que fueron forzados a hacerlo por una escala genuina, no los que lo adoptaron preventivamente porque es el patrón del que hablan las empresas más grandes.
+
+## Ver también
+
+- **[Monolitos](/es/software-architecture/monoliths)** — el punto de partida al que los microservicios normalmente son una respuesta.
+- **[Arquitectura Serverless](/es/software-architecture/serverless-architecture)** — otra forma de obtener escalado independiente, sin gestionar servicios tú mismo.
+- **[Arquitectura Orientada a Eventos](/es/software-architecture/event-driven-architecture)** — una forma común en que se comunican los microservicios sin llamarse directamente entre sí.

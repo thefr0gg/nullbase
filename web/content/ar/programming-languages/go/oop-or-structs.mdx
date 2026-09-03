@@ -1,0 +1,191 @@
+---
+title: البُنى والواجهات
+description: كيف تنمذج Go الكائنات دون أصناف أو وراثة، باستخدام البُنى (structs)، والتوابع ذات المستقبِلات، والواجهات الضمنية.
+category: Programming Languages
+weight: 6
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+لا تملك Go أصنافاً (classes) ولا وراثة. بدلاً من ذلك تملك عنصرين أبسط
+يجتمعان ليغطيا معظم ما تستخدم اللغات الكائنية التوجه الأصناف من أجله:
+أنواع `struct` للبيانات، وأنواع `interface` لعقود السلوك. بمجرد أن تعتاد
+عليها، تنتهي هذه الطريقة أبسط من تسلسل هرمي للأصناف — لا استدعاءات
+`super`، ولا مشكلات وراثة الماس، ولا غموض حول أي تابع أصل يعمل.
+
+## البُنى (Structs)
+
+تجمع `struct` حقولاً مسمّاة في نوع واحد:
+
+```go
+type Point struct {
+	X int
+	Y int
+}
+
+func main() {
+	p := Point{X: 3, Y: 4}
+	fmt.Println(p.X, p.Y) // 3 4
+}
+```
+
+الحقول التي تبدأ بحرف كبير مُصدَّرة (مرئية خارج الحزمة)؛ الحقول بحرف صغير
+خاصة بالحزمة. هذا هو نظام الرؤية بأكمله في Go — لا توجد كلمة مفتاحية
+`public`/`private`.
+
+## التوابع ذات المستقبِلات
+
+لا تضع Go التوابع داخل تعريف البُنية. بدلاً من ذلك، تُصرِّح دالة عادية
+بـ**مستقبِل** — معامل إضافي قبل اسم الدالة يربطها بنوع:
+
+```go
+type Rectangle struct {
+	Width, Height float64
+}
+
+func (r Rectangle) Area() float64 {
+	return r.Width * r.Height
+}
+
+func main() {
+	rect := Rectangle{Width: 3, Height: 4}
+	fmt.Println(rect.Area()) // 12
+}
+```
+
+يمكن أن يكون المستقبِل قيمة (`r Rectangle`) أو مؤشراً (`r *Rectangle`).
+مستقبِلات القيمة تحصل على نسخة من البُنية؛ مستقبِلات المؤشر يمكنها تعديل
+الأصل وتفادي نسخ بُنى كبيرة:
+
+```go
+func (r *Rectangle) Scale(factor float64) {
+	r.Width *= factor
+	r.Height *= factor
+}
+
+func main() {
+	rect := Rectangle{Width: 3, Height: 4}
+	rect.Scale(2)
+	fmt.Println(rect) // {6 8}
+}
+```
+
+## التركيب بدلاً من الوراثة
+
+لا تملك Go `extends`. لإعادة استخدام الحقول والتوابع، تُضمِّن (embed) بُنية
+داخل أخرى. تُرقّي البُنية الخارجية حقول وتوابع النوع المضمَّن وكأنها خاصة
+بها:
+
+```go
+type Animal struct {
+	Name string
+}
+
+func (a Animal) Describe() string {
+	return a.Name + " makes a sound"
+}
+
+type Dog struct {
+	Animal // مضمَّن — وليس حقلاً مسمّى
+	Breed  string
+}
+
+func main() {
+	d := Dog{Animal: Animal{Name: "Rex"}, Breed: "Labrador"}
+	fmt.Println(d.Describe()) // Rex makes a sound — مُرقّى من Animal
+	fmt.Println(d.Name)        // Rex — مُرقّى أيضاً
+}
+```
+
+## الواجهات ضمنية
+
+تسرد الواجهة (interface) مجموعة توابع. يستوفيها نوع تلقائياً بمجرد تنفيذ
+تلك التوابع — لا توجد كلمة مفتاحية `implements` ولا علاقة مُعلنة:
+
+```go
+type Shape interface {
+	Area() float64
+}
+
+func printArea(s Shape) {
+	fmt.Println(s.Area())
+}
+
+func main() {
+	rect := Rectangle{Width: 3, Height: 4}
+	printArea(rect) // تستوفي Rectangle واجهة Shape بمجرد امتلاكها تابع ()Area
+}
+```
+
+هذا يعني أنك تستطيع تعريف واجهة لاحقاً، في حزمة مختلفة تماماً، وستستوفيها
+الأنواع الموجودة مسبقاً تلقائياً إذا طابقت مجموعة توابعها. هذا يفصل "ما
+يفعله النوع" عن "ما يُعلن النوع أنه يفعله".
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لتعريف بُنية بتابع ذي مستقبِل قيمة واستدعائه."
+  items={[
+    { id: "o1", label: "type Circle struct {" },
+    { id: "o2", label: "\tRadius float64" },
+    { id: "o3", label: "}" },
+    { id: "o4", label: "func (c Circle) Area() float64 {", explanation: "تصريح التابع يأتي بعد اكتمال تعريف البُنية التي يعمل عليها." },
+    { id: "o5", label: "\treturn 3.14 * c.Radius * c.Radius" },
+    { id: "o6", label: "}" },
+  ]}
+  correctOrder={["o1", "o2", "o3", "o4", "o5", "o6"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="رتّب هذه الأسطر لتضمين بُنية داخل أخرى والوصول إلى حقل مُرقّى."
+  items={[
+    { id: "p1", label: "type Engine struct { Horsepower int }" },
+    { id: "p2", label: "type Car struct {" },
+    { id: "p3", label: "\tEngine", explanation: "يُسرَد النوع المضمَّن بالاسم فقط، دون اسم حقل خاص به." },
+    { id: "p4", label: "\tModel string" },
+    { id: "p5", label: "}" },
+    { id: "p6", label: "c := Car{Engine: Engine{Horsepower: 300}, Model: \"GT\"}" },
+    { id: "p7", label: "fmt.Println(c.Horsepower)" },
+  ]}
+  correctOrder={["p1", "p2", "p3", "p4", "p5", "p6", "p7"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا الكود؟"
+  code={`package main
+
+import "fmt"
+
+type Counter struct {
+	Count int
+}
+
+func (c Counter) IncrementByValue() {
+	c.Count++
+}
+
+func (c *Counter) IncrementByPointer() {
+	c.Count++
+}
+
+func main() {
+	c := Counter{}
+	c.IncrementByValue()
+	c.IncrementByPointer()
+	fmt.Println(c.Count)
+}`}
+  options={["0", "1", "2", "خطأ تصريف: مستقبِلات غير متطابقة"]}
+  correctIndex={1}
+  explanation="لـIncrementByValue مستقبِل قيمة، لذا يعدّل نسخة من c ويُهمَل التغيير. لـIncrementByPointer مستقبِل مؤشر، لذا يعدّل c الحقيقية. يبقى تزايد واحد فقط، فتكون النتيجة 1."
+  actualOutput="1"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [هياكل البيانات](/ar/programming-languages/go/data-structures)
+- [معالجة الأخطاء](/ar/programming-languages/go/error-handling)

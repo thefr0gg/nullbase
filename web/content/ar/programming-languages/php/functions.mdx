@@ -1,0 +1,167 @@
+---
+title: الدوال
+description: تعريف دوال PHP، والوسائط الافتراضية، والدوال متغيرة الوسائط، وتلميحات الأنواع، والإغلاقات.
+category: Programming Languages
+weight: 4
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تُعرَّف الدوال في PHP بالكلمة المفتاحية `function` ويمكن أن تظهر على المستوى الأعلى (لا تشترط PHP أن يعيش الكود داخل فئة). منذ PHP 7، يمكن للوسائط وقيم الإرجاع أن تحمل تلميحات نوع، ينفّذها المحرّك أثناء التشغيل.
+
+## التعريف الأساسي
+
+```php
+<?php
+
+function greet(string $name): string {
+    return "Hello, $name!";
+}
+
+echo greet("Ada") . "\n";
+```
+
+## الوسائط الافتراضية
+
+يمكن لأي وسيطة أن تحمل قيمة افتراضية، ما يتيح للمستدعين حذفها. يجب أن تأتي الوسائط الافتراضية بعد الوسائط بلا قيم افتراضية:
+
+```php
+<?php
+
+function makeGreeting(string $name, string $greeting = "Hello"): string {
+    return "$greeting, $name!";
+}
+
+echo makeGreeting("Grace") . "\n";              // Hello, Grace!
+echo makeGreeting("Grace", "Welcome") . "\n";    // Welcome, Grace!
+```
+
+## الوسائط المسمّاة
+
+أضافت PHP 8.0 الوسائط المسمّاة، التي تتيح للمستدعي تخطي القيم الافتراضية السابقة دون تكرارها موضعياً:
+
+```php
+<?php
+
+function connect(string $host, int $port = 5432, bool $ssl = false): string {
+    return ($ssl ? "ssl://" : "") . "$host:$port";
+}
+
+echo connect("db.internal", ssl: true) . "\n"; // ssl://db.internal:5432
+```
+
+## الدوال متغيرة الوسائط
+
+إضافة `...` قبل الوسيطة الأخيرة يجمع أي عدد من الوسائط اللاحقة في مصفوفة — مكافئ PHP لـ `*args`:
+
+```php
+<?php
+
+function sum(int ...$numbers): int {
+    $total = 0;
+    foreach ($numbers as $n) {
+        $total += $n;
+    }
+    return $total;
+}
+
+echo sum(1, 2, 3, 4) . "\n"; // 10
+echo sum() . "\n";            // 0
+```
+
+يفعل عامل النشر `...` العكس عند استدعاء دالة: فهو يفكّك مصفوفة إلى وسائط موضعية.
+
+```php
+<?php
+
+$values = [3, 6, 9];
+echo sum(...$values) . "\n"; // 18
+```
+
+## التمرير بالمرجع
+
+افتراضياً، تُمرَّر الوسائط بالقيمة — تحصل الدالة على نسخة. إضافة `&` قبل وسيطة تمرّرها بالمرجع بدلاً من ذلك، ما يتيح للدالة تغيير متغير المستدعي:
+
+```php
+<?php
+
+function increment(int &$n): void {
+    $n++;
+}
+
+$counter = 10;
+increment($counter);
+echo $counter . "\n"; // 11
+```
+
+## الدوال المجهولة ودوال السهم
+
+تدعم PHP الإغلاقات عبر `function` (مع جملة `use` صريحة لالتقاط المتغيرات الخارجية) وصياغة `fn` الأكثر إيجازاً لدوال السهم، التي تلتقط تلقائياً بالقيمة:
+
+```php
+<?php
+
+$multiplier = 3;
+
+$classic = function (int $n) use ($multiplier): int {
+    return $n * $multiplier;
+};
+
+$arrow = fn(int $n): int => $n * $multiplier;
+
+echo $classic(5) . " " . $arrow(5) . "\n"; // 15 15
+```
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء دالة بوسيطة افتراضية واستدعائها."
+  items={[
+    { id: "e1", label: "<?php" },
+    { id: "e2", label: "function power(int $base, int $exp = 2): int {" },
+    { id: "e3", label: "    return $base ** $exp;", explanation: "لا تُطبَّق القيمة الافتراضية للأس إلا إذا حذف المستدعي الوسيطة الثانية." },
+    { id: "e4", label: "}" },
+    { id: "e5", label: 'echo power(5) . "\\n";' },
+  ]}
+  correctOrder={["e1", "e2", "e3", "e4", "e5"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="رتّب هذه الأسطر لبناء دالة متغيرة الوسائط تضم وسائطها بفاصلة."
+  items={[
+    { id: "f1", label: "<?php" },
+    { id: "f2", label: "function joinAll(string ...$parts): string {" },
+    { id: "f3", label: "    return implode(\", \", $parts);", explanation: "تصبح $parts مصفوفة عادية داخل جسم الدالة بمجرد جمع الوسائط متغيرة العدد." },
+    { id: "f4", label: "}" },
+    { id: "f5", label: 'echo joinAll("a", "b", "c") . "\\n";' },
+  ]}
+  correctOrder={["f1", "f2", "f3", "f4", "f5"]}
+/>
+
+<PredictOutput
+  title="ماذا تطبع هذه الشيفرة؟"
+  code={`<?php
+
+function addOne(int $n): int {
+    $n = $n + 1;
+    return $n;
+}
+
+$value = 10;
+addOne($value);
+echo $value;`}
+  options={["10", "11", "Fatal error: undefined variable", "10.0"]}
+  correctIndex={0}
+  explanation="بدون & في قائمة الوسائط، تمرّر PHP $n بالقيمة. تغيّر addOne نسختها المحلية الخاصة؛ يبقى $value في نطاق المستدعي دون مساس، لذا تطبع 10 لا تزال."
+  actualOutput="10"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [التحكم بمسار التنفيذ](/ar/programming-languages/php/control-flow)
+- [المصفوفات](/ar/programming-languages/php/data-structures)

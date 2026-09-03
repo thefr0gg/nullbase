@@ -1,0 +1,139 @@
+---
+title: Pointeurs et mémoire
+description: Pointeurs, références, et gestion manuelle de la mémoire avec new/delete en C++, et pourquoi les smart pointers comme unique_ptr remplacent aujourd'hui la plupart du nettoyage manuel.
+category: Programming Languages
+weight: 9
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Le compromis qui définit C++ est l'accès direct aux adresses mémoire — puissant, puisqu'il vous permet de construire des structures de données et de contrôler l'agencement à un niveau que la plupart des langages cachent, et dangereux, puisqu'une erreur ici (non ramassée par un garbage collector, non vérifiée automatiquement) produit des bugs qui peuvent corrompre la mémoire silencieusement plutôt que d'échouer bruyamment.
+
+## Pointeurs et références
+
+```cpp
+#include <iostream>
+
+int main() {
+    int value = 42;
+
+    int* ptr = &value;   // ptr holds the address of value
+    int& ref = value;    // ref is another name for value itself
+
+    std::cout << "value: " << value << "\n";
+    std::cout << "*ptr: " << *ptr << "\n";  // dereference: follow the pointer
+    std::cout << "ref: " << ref << "\n";
+
+    *ptr = 100;  // changes value, through the pointer
+    ref = 200;   // changes value, through the reference
+
+    std::cout << "value is now: " << value << "\n"; // 200
+    return 0;
+}
+```
+
+`&value` prend l'adresse de `value` ; `int* ptr` déclare `ptr` comme une variable qui stocke cette adresse, et `*ptr` la **déréférence** — suivant l'adresse pour lire ou écrire l'`int` réel qu'elle pointe. `int& ref = value` déclare une **référence**, qui se comporte comme un alias pour `value` plutôt que comme une variable séparée contenant une adresse : aucun déréférencement explicite n'est nécessaire, et contrairement à un pointeur, une référence ne peut pas être réassignée pour désigner autre chose après son initialisation, et ne peut pas être nulle. Les pointeurs sont plus flexibles (ils peuvent être réassignés, et un pointeur nul peut représenter « ne pointe vers rien ») ; les références sont plus sûres chaque fois que cette flexibilité n'est pas réellement nécessaire.
+
+## Mémoire manuelle : `new` et `delete`
+
+```cpp
+#include <iostream>
+
+int main() {
+    int* single = new int(10);       // allocate one int on the heap
+    int* array = new int[5]{1,2,3,4,5}; // allocate an array on the heap
+
+    std::cout << *single << "\n";
+    std::cout << array[2] << "\n";
+
+    delete single;      // free the single int
+    delete[] array;      // free the array — note the [] to match new[]
+
+    return 0;
+}
+```
+
+`new` alloue de la mémoire sur le tas qui survit à la fonction dans laquelle elle a été allouée, et rend un pointeur vers celle-ci ; cette mémoire reste allouée jusqu'à ce que quelque chose appelle explicitement `delete` (ou `delete[]` pour un tableau alloué avec `new[]` — les mélanger est un comportement indéfini). Oublier d'appeler `delete` du tout est une **fuite de mémoire** : la mémoire n'est jamais récupérée pour le reste de la vie du programme. Appeler `delete` deux fois sur le même pointeur, ou utiliser un pointeur après qu'il a été supprimé, sont tout aussi dangereux et sont les deux catégories de bugs mémoire les plus courantes dans la gestion manuelle de mémoire de style C.
+
+## Smart pointers : RAII pour le tas
+
+```cpp
+#include <iostream>
+#include <memory>
+
+class Resource {
+public:
+    Resource() { std::cout << "Resource acquired\n"; }
+    ~Resource() { std::cout << "Resource released\n"; }
+    void use() { std::cout << "Using resource\n"; }
+};
+
+int main() {
+    std::unique_ptr<Resource> res = std::make_unique<Resource>();
+    res->use();
+    // no delete needed — res's destructor runs automatically here,
+    // releasing the Resource exactly once, even if an exception
+    // had been thrown between make_unique and this closing brace
+    return 0;
+}
+```
+
+`std::unique_ptr<Resource>` possède une `Resource` allouée sur le tas et la supprime automatiquement dans son propre destructeur quand elle sort de sa portée — le même motif RAII qu'utilisent `std::ofstream` et `std::vector`, appliqué directement à la mémoire dynamique brute. Il n'y a de `delete` nulle part dans cet exemple, et il n'a pas besoin d'y en avoir : la propriété est exactement un `unique_ptr` à la fois (en copier un est une erreur de compilation ; il peut seulement être *déplacé*), ce qui rend structurellement impossible de faire un double free ou d'oublier de libérer la `Resource` sous-jacente. La recommandation du C++ moderne est de recourir à `new`/`delete` directement uniquement dans des cas rares et bas niveau — `std::unique_ptr` (propriété unique) et `std::shared_ptr` (propriété partagée, comptée par référence) couvrent presque tout le reste sans aucune comptabilité manuelle.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Faites glisser les lignes dans le bon ordre pour déclarer un pointeur vers un int, le déréférencer pour changer la valeur, et afficher le résultat."
+  items={[
+    { id: "declare", label: "int number = 5;" },
+    { id: "pointer", label: "int* ptr = &number;", explanation: "ptr doit être initialisé avec l'adresse de number avant de pouvoir être déréférencé." },
+    { id: "modify", label: "*ptr = 10;" },
+    { id: "print", label: "std::cout << number << std::endl;" },
+  ]}
+  correctOrder={["declare", "pointer", "modify", "print"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Faites glisser les lignes dans le bon ordre pour allouer un tableau d'entiers sur le tas, l'utiliser, et le libérer correctement."
+  items={[
+    { id: "allocate", label: "int* data = new int[3]{1, 2, 3};" },
+    { id: "read", label: "std::cout << data[1] << std::endl;", explanation: "Le tableau doit être alloué avant qu'aucun de ses éléments ne puisse être lu." },
+    { id: "free", label: "delete[] data;" },
+  ]}
+  correctOrder={["allocate", "read", "free"]}
+/>
+
+<PredictOutput
+  title="Qu'affiche ceci ?"
+  code={`#include <iostream>
+#include <memory>
+
+class Widget {
+public:
+    Widget() { std::cout << "created "; }
+    ~Widget() { std::cout << "destroyed "; }
+};
+
+int main() {
+    {
+        std::unique_ptr<Widget> w = std::make_unique<Widget>();
+        std::cout << "using ";
+    }
+    std::cout << "done" << std::endl;
+    return 0;
+}`}
+  options={["created using done", "created using destroyed done", "created destroyed using done", "Compile error"]}
+  correctIndex={1}
+  explanation={`Le Widget est créé quand make_unique s'exécute, "using " s'affiche à l'intérieur du bloc interne, puis w sort de sa portée à l'accolade fermante — son destructeur s'exécute automatiquement à ce moment-là, affichant "destroyed ", avant que "done" ne s'affiche. Aucun delete explicite n'est nécessaire pour que tout cela se produise.`}
+  actualOutput="created using destroyed done"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Gestion des erreurs](/fr/programming-languages/cpp/error-handling) — le rôle de RAII dans la sécurité face aux exceptions, appliqué ici spécifiquement à la mémoire du tas.
+- [Classes et objets](/fr/programming-languages/cpp/oop-or-structs) — les constructeurs et destructeurs sur lesquels reposent les smart pointers.

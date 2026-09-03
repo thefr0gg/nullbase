@@ -1,0 +1,190 @@
+---
+title: Async y Promesas
+description: Promises, async/await, y el bucle de eventos que hace que el JavaScript asíncrono se ejecute en un solo hilo.
+category: Programming Languages
+weight: 9
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+La programación asíncrona es el tema intermedio distintivo de JavaScript —
+el punto donde el diseño de un solo hilo y orientado a eventos del lenguaje
+se convierte en algo sobre lo que tienes que razonar activamente en vez de
+algo que permanece invisible. Entender las Promises, `async`/`await`, y más
+o menos cómo el bucle de eventos las programa es lo que separa "puedo
+escribir JavaScript" de "puedo predecir qué hará mi JavaScript".
+
+## Promises
+
+Una `Promise` representa un valor que todavía no está disponible — el
+resultado eventual de una operación asíncrona como una solicitud de red.
+Siempre está en uno de tres estados: pendiente, cumplida (fulfilled, con un
+valor), o rechazada (rejected, con un error), y una vez que se resuelve (se
+cumple o se rechaza), permanece así permanentemente.
+
+```js
+function delay(ms, value) {
+  return new Promise(resolve => {
+    setTimeout(() => resolve(value), ms);
+  });
+}
+
+delay(1000, "done!")
+  .then(result => console.log(result)) // "done!" después de ~1 segundo
+  .catch(err => console.error(err));
+```
+
+`.then()` registra un callback para el cumplimiento, `.catch()` para el
+rechazo, y ambos devuelven una nueva Promise, que es lo que te permite
+encadenarlos:
+
+```js
+delay(500, 5)
+  .then(n => n * 2)
+  .then(n => n + 1)
+  .then(result => console.log(result)) // 11
+  .catch(err => console.error("Something failed:", err));
+```
+
+`Promise.all` ejecuta varias Promises concurrentemente y se resuelve una
+vez que todas lo han hecho, en el orden original — útil cuando las
+operaciones no dependen entre sí y de otro modo estarías esperándolas una a
+la vez sin razón.
+
+```js
+Promise.all([delay(100, "a"), delay(50, "b"), delay(200, "c")]).then(
+  results => console.log(results) // ["a", "b", "c"] después de ~200ms en total, no 350ms
+);
+```
+
+## async/await
+
+`async`/`await` es sintaxis construida sobre las Promises que permite que
+el código asíncrono se lea como código síncrono ordinario. Una función
+`async` siempre devuelve una Promise, y `await` pausa la ejecución *dentro
+de esa función* (no del programa entero) hasta que la Promise a la que se
+le hizo await se resuelve.
+
+```js
+async function getUserSummary(id) {
+  const response = await fetch(`/api/users/${id}`);
+  const user = await response.json();
+  return `${user.name} (${user.email})`;
+}
+
+getUserSummary(1).then(summary => console.log(summary));
+```
+
+Esto es exactamente equivalente a la cadena `.then()`, solo que más fácil
+de leer y de envolver en `try`/`catch` para el manejo de errores. Ejecutar
+`await`s independientes secuencialmente desperdicia tiempo de la misma
+manera que lo haría una cadena `.then()` ingenua — usa `Promise.all` cuando
+las operaciones no dependan entre sí:
+
+```js
+// Secuencial — espera a que la primera solicitud termine completamente antes de iniciar la segunda.
+async function slow() {
+  const a = await delay(100, "a");
+  const b = await delay(100, "b");
+  return [a, b]; // toma ~200ms
+}
+
+// Concurrente — ambas solicitudes están en curso al mismo tiempo.
+async function fast() {
+  const [a, b] = await Promise.all([delay(100, "a"), delay(100, "b")]);
+  return [a, b]; // toma ~100ms
+}
+```
+
+## El bucle de eventos, brevemente
+
+JavaScript se ejecuta en un solo hilo, así que no puede literalmente hacer
+dos cosas a la vez. En su lugar, el runtime (un navegador o Node.js) delega
+las operaciones lentas — temporizadores, E/S de red, acceso a archivos —
+para que se manejen fuera de ese hilo, y el **bucle de eventos** es el
+mecanismo que trae de vuelta sus resultados como callbacks una vez que tu
+código actualmente en ejecución termina. Crucialmente, la pila de llamadas
+siempre se ejecuta hasta completarse antes de que el bucle de eventos
+procese cualquier cosa en cola detrás de ella — por esto `setTimeout(fn,
+0)` no se ejecuta inmediatamente, se ejecuta después de que todo el código
+síncrono actualmente en cola haya terminado.
+
+```js
+console.log("1: start");
+
+setTimeout(() => console.log("2: timeout"), 0);
+
+Promise.resolve().then(() => console.log("3: promise"));
+
+console.log("4: end");
+
+// Orden de salida: 1, 4, 3, 2
+```
+
+El código síncrono (`1` y `4`) siempre se ejecuta primero, en orden. Luego
+los callbacks de Promise en cola (la "cola de microtareas") se ejecutan
+antes que los callbacks de temporizador en cola (la "cola de macrotareas")
+— por lo que `3` se imprime antes que `2` aunque la Promise se haya
+programado después del timeout.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir una función async que obtenga y registre datos JSON con manejo de errores."
+  items={[
+    { id: "fnOpen", label: "async function loadData(url) {" },
+    { id: "tryOpen", label: "  try {" },
+    { id: "fetchLine", label: "    const response = await fetch(url);" },
+    { id: "jsonLine", label: "    const data = await response.json();", explanation: "response debe existir antes de poder llamar a .json() sobre ella." },
+    { id: "log", label: "    console.log(data);" },
+    { id: "catchOpen", label: "  } catch (err) {" },
+    { id: "catchBody", label: "    console.error(\"Load failed:\", err.message);" },
+    { id: "catchClose", label: "  }" },
+    { id: "fnClose", label: "}" },
+  ]}
+  correctOrder={["fnOpen", "tryOpen", "fetchLine", "jsonLine", "log", "catchOpen", "catchBody", "catchClose", "fnClose"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Ordena estas líneas para ejecutar dos valores retrasados independientes concurrentemente con Promise.all."
+  items={[
+    { id: "delayFn", label: "function delay(ms, value) { return new Promise(res => setTimeout(() => res(value), ms)); }" },
+    { id: "asyncOpen", label: "async function run() {" },
+    { id: "allCall", label: "  const [x, y] = await Promise.all([delay(100, 1), delay(100, 2)]);" },
+    { id: "log", label: "  console.log(x + y);" },
+    { id: "asyncClose", label: "}" },
+    { id: "invoke", label: "run();" },
+  ]}
+  correctOrder={["delayFn", "asyncOpen", "allCall", "log", "asyncClose", "invoke"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`console.log("a");
+
+setTimeout(() => console.log("b"), 0);
+
+Promise.resolve()
+  .then(() => console.log("c"))
+  .then(() => console.log("d"));
+
+console.log("e");`}
+  options={["a, b, c, d, e", "a, e, c, d, b", "a, e, b, c, d", "a, c, d, e, b"]}
+  correctIndex={1}
+  explanation="El código síncrono (a, e) siempre se ejecuta primero y en orden, ya que la pila de llamadas debe vaciarse antes de que el bucle de eventos mire cualquier otra cosa. Luego la cola de microtareas (callbacks de Promise) se drena por completo — ambos .then() encadenados, c y luego d — antes de que la cola de macrotareas (el callback de setTimeout, b) tenga su turno, aunque el timeout se haya programado con un retraso de 0ms."
+  actualOutput="a
+e
+c
+d
+b"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Funciones y Closures](/es/programming-languages/javascript/functions)
+- [Manejo de Errores](/es/programming-languages/javascript/error-handling)

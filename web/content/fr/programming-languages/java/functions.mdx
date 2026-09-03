@@ -1,0 +1,170 @@
+---
+title: Méthodes
+description: Java n'a pas de fonctions indépendantes — chaque bloc de code réutilisable est une méthode sur une classe, y compris les variantes surchargées.
+category: Programming Languages
+weight: 4
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Java n'a pas de fonctions libres. Chaque morceau de code réutilisable et
+appelable est une **méthode**, déclarée à l'intérieur d'une classe ou d'une
+interface. Même le point d'entrée d'un programme, `main`, est une méthode
+`static` sur une classe — il n'y a aucun moyen d'écrire une fonction qui
+flotte en dehors du corps d'une classe.
+
+## Déclarer une méthode
+
+Une déclaration de méthode liste (dans l'ordre) un modificateur d'accès,
+des modificateurs optionnels comme `static`, un type de retour, un nom, et
+une liste de paramètres :
+
+```java
+public class MathUtils {
+    public static int square(int n) {
+        return n * n;
+    }
+
+    public static void printSquare(int n) {
+        System.out.println(square(n));
+    }
+}
+```
+
+Les méthodes `static` appartiennent à la classe elle-même et peuvent être
+appelées sans créer d'instance (`MathUtils.square(5)`). Les méthodes
+d'instance (sans `static`) opèrent sur un objet particulier et sont
+appelées via une référence à celui-ci (`someObject.someMethod()`).
+
+## void vs. renvoyer une valeur
+
+Une méthode qui ne produit pas de valeur déclare `void` comme type de
+retour et n'utilise simplement pas `return` avec une expression :
+
+```java
+public static void greet(String name) {
+    System.out.println("Hello, " + name);
+    return; // optionnel ici — arriver en bout de méthode void fonctionne aussi
+}
+```
+
+Une méthode avec un vrai type de retour doit renvoyer une valeur sur
+chaque chemin possible, sinon le compilateur la rejette :
+
+```java
+public static String describe(int n) {
+    if (n < 0) {
+        return "negative";
+    } else {
+        return "non-negative";
+    }
+    // aucun return final nécessaire — chaque chemin ci-dessus retourne déjà
+}
+```
+
+## Surcharge de méthode
+
+Java autorise plusieurs méthodes avec le **même nom** dans la même classe
+tant que leurs listes de paramètres diffèrent en nombre ou en type — c'est
+la **surcharge** (overloading), résolue entièrement à la compilation en
+fonction des types d'arguments au site d'appel :
+
+```java
+public class Printer {
+    public static void print(int value) {
+        System.out.println("int: " + value);
+    }
+
+    public static void print(double value) {
+        System.out.println("double: " + value);
+    }
+
+    public static void print(String value) {
+        System.out.println("String: " + value);
+    }
+}
+```
+
+Appeler `Printer.print(5)` choisit la surcharge `int`, `Printer.print(5.0)`
+choisit la surcharge `double`, et `Printer.print("five")` choisit la
+surcharge `String` — le compilateur choisit en fonction des types statiques
+des arguments, pas d'une inspection à l'exécution. La surcharge est
+différente de la **redéfinition** (overriding, couverte sur la page
+[Classes & Interfaces](/fr/programming-languages/java/oop-or-structs)),
+qui remplace le comportement d'une méthode dans une sous-classe avec la
+*même* signature.
+
+## Varargs
+
+Une méthode peut accepter un nombre variable d'arguments finaux avec
+`...`, que le corps de la méthode voit comme un tableau :
+
+```java
+public static int sum(int... numbers) {
+    int total = 0;
+    for (int n : numbers) {
+        total += n;
+    }
+    return total;
+}
+
+// sum(1, 2, 3) et sum() sont tous deux des appels valides
+```
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire une méthode static qui double un nombre et un main qui l'appelle."
+  items={[
+    { id: "f1", label: "public class Main {" },
+    { id: "f2", label: "    public static int doubleIt(int n) {" },
+    { id: "f3", label: "        return n * 2;", explanation: "L'instruction return doit être à l'intérieur du corps de méthode auquel elle appartient." },
+    { id: "f4", label: "    }" },
+    { id: "f5", label: "    public static void main(String[] args) {" },
+    { id: "f6", label: "        System.out.println(doubleIt(21));" },
+    { id: "f7", label: "    }" },
+    { id: "f8", label: "}" },
+  ]}
+  correctOrder={["f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Ordonnez ces lignes pour déclarer deux méthodes describe surchargées (int et String) et appeler les deux depuis main."
+  items={[
+    { id: "g1", label: "public class Main {" },
+    { id: "g2", label: "    public static void describe(int n) { System.out.println(\"number \" + n); }" },
+    { id: "g3", label: "    public static void describe(String s) { System.out.println(\"text \" + s); }", explanation: "Les deux surcharges doivent être déclarées avant que main n'en appelle une des deux." },
+    { id: "g4", label: "    public static void main(String[] args) {" },
+    { id: "g5", label: "        describe(7);" },
+    { id: "g6", label: "        describe(\"hi\");" },
+    { id: "g7", label: "    }" },
+    { id: "g8", label: "}" },
+  ]}
+  correctOrder={["g1", "g2", "g3", "g4", "g5", "g6", "g7", "g8"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que ce code affiche ?"
+  code={`public class Main {
+    static void show(long n) { System.out.println("long: " + n); }
+    static void show(int n) { System.out.println("int: " + n); }
+
+    public static void main(String[] args) {
+        show(5);
+    }
+}`}
+  options={["long: 5", "int: 5", "Erreur de compilation : appel de méthode ambigu", "Ça affiche les deux"]}
+  correctIndex={1}
+  explanation="La résolution de surcharge préfère la correspondance applicable la plus spécifique sans conversion d'élargissement. Le littéral 5 est déjà un int, donc la surcharge int correspond exactement et est choisie plutôt que long, qui exigerait un élargissement."
+  actualOutput="int: 5"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Flux de contrôle](/fr/programming-languages/java/control-flow)
+- [Classes et interfaces](/fr/programming-languages/java/oop-or-structs)

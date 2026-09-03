@@ -1,0 +1,152 @@
+---
+title: Syntaxe et types
+description: Déclarations de variables avec annotations de type, les types primitifs de TypeScript, et les alias de type.
+category: Programming Languages
+weight: 2
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Chaque forme de déclaration de variable JavaScript — `let`, `const`, `var`
+— fonctionne sans changement en TypeScript. Ce que TypeScript ajoute est une
+**annotation de type** optionnelle après le nom de la variable, et un
+vérificateur de type qui l'impose pour le reste de la vie de la variable.
+
+## Annotations de type
+
+```ts
+let age: number = 36;
+const name: string = "Ada";
+let isAdmin: boolean = false;
+
+age = "thirty-six"; // Type error: Type 'string' is not assignable to type 'number'
+```
+
+Une fois `age` annoté comme `number`, lui assigner une chaîne plus tard est
+une erreur à la compilation — pas une coercion silencieuse, et pas quelque
+chose qu'on découvre seulement quand le code s'exécute. C'est la différence
+centrale avec le JavaScript ordinaire : le type n'est pas juste de la
+documentation, c'est une contrainte que le compilateur vérifie activement à
+chaque assignation et chaque utilisation.
+
+## Inférence de type
+
+Vous avez rarement besoin d'annoter chaque variable. TypeScript infère un
+type à partir de l'initialiseur, et ce type inféré est appliqué tout aussi
+strictement qu'un type explicite :
+
+```ts
+let count = 0; // inferred as number
+count = "zero"; // Type error: Type 'string' is not assignable to type 'number'
+
+const tag = "release"; // inferred as the literal type "release", not just string
+```
+
+Notez la différence entre l'inférence pour `let` et `const` : `let count = 0`
+infère le type général `number` (parce que `count` peut être réassigné),
+tandis que `const tag = "release"` infère le **type littéral** plus étroit
+`"release"`, puisqu'une liaison `const` ne peut jamais contenir une valeur
+différente.
+
+## Types primitifs
+
+Les types primitifs de TypeScript reflètent les primitives d'exécution de
+JavaScript, plus quelques ajouts spécifiques à TypeScript pour décrire des
+valeurs qui ne correspondent à aucun type normal :
+
+| Type | Exemple | Notes |
+|---|---|---|
+| `string` | `"hello"` | N'importe quelle chaîne, littéral de gabarit, ou type de chaîne littérale |
+| `number` | `42`, `3.14` | Pas de int/float séparés — un seul type numérique |
+| `boolean` | `true`, `false` | — |
+| `bigint` | `42n` | Entiers de précision arbitraire |
+| `null` / `undefined` | `null`, `undefined` | Types distincts ; voir ci-dessous |
+| `any` | — | Se retire entièrement de la vérification de type — à éviter |
+| `unknown` | — | Contrepartie type-safe de `any` ; doit être rétréci avant usage |
+| `void` | — | Le type de retour d'une fonction qui ne renvoie rien |
+
+`any` et `unknown` signifient tous deux « pourrait être n'importe quoi »,
+mais `any` désactive la vérification (on peut appeler n'importe quelle
+méthode dessus, l'assigner n'importe où), tandis que `unknown` force à
+rétrécir le type avant de faire quoi que ce soit avec la valeur — voir
+[Flux de contrôle](/fr/programming-languages/typescript/control-flow) pour
+comment fonctionne le rétrécissement.
+
+```ts
+function logLength(value: unknown) {
+  console.log(value.length); // Type error: Object is of type 'unknown'
+}
+```
+
+## Alias de type
+
+Un alias `type` donne un nom à n'importe quel type — une primitive, une
+forme d'objet, une union, n'importe quoi — pour qu'on puisse le réutiliser
+au lieu de répéter la structure partout :
+
+```ts
+type UserId = number;
+
+type User = {
+  id: UserId;
+  name: string;
+  isActive: boolean;
+};
+
+function deactivate(user: User): User {
+  return { ...user, isActive: false };
+}
+
+const ada: User = { id: 1, name: "Ada", isActive: true };
+deactivate(ada);
+```
+
+Les alias sont purement une commodité à la compilation — `UserId` est
+effacé en `number` dans le JavaScript émis, et `User` est effacé
+entièrement. Ils n'existent que pour rendre des signatures comme
+`deactivate(user: User): User` lisibles au lieu d'épeler la forme complète
+de l'objet à chaque site d'appel.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour déclarer une variable age typée, tenter une réassignation invalide, puis l'afficher."
+  items={[
+    { id: "decl", label: "let age: number = 36;" },
+    { id: "bad-assign", label: "age = \"thirty-six\"; // Type error", explanation: "La réassignation invalide doit venir après que age est déclaré avec son type." },
+    { id: "log", label: "console.log(age);" },
+  ]}
+  correctOrder={["decl", "bad-assign", "log"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour définir un alias de type User et construire une valeur de ce type."
+  items={[
+    { id: "type-open", label: "type User = {" },
+    { id: "type-id", label: "  id: number;" },
+    { id: "type-name", label: "  name: string;", explanation: "Chaque champ va à l'intérieur du corps de l'alias de type avant qu'il ne se ferme." },
+    { id: "type-close", label: "};" },
+    { id: "const-decl", label: "const ada: User = { id: 1, name: \"Ada\" };" },
+  ]}
+  correctOrder={["type-open", "type-id", "type-name", "type-close", "const-decl"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que le vérificateur de type dit ?"
+  code={`let count = 0;
+count = "zero";`}
+  options={["\"zero\"", "0", "Type error: Type 'string' is not assignable to type 'number'", "undefined"]}
+  correctIndex={2}
+  explanation="TypeScript infère le type de count comme number à partir de son initialiseur 0, puis impose ce type à chaque assignation ultérieure — même si count n'a jamais été explicitement annoté. L'inférence est tout aussi stricte qu'une annotation explicite."
+  actualOutput="Type error: Type 'string' is not assignable to type 'number'"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [TypeScript](/fr/programming-languages/typescript)
+- [Flux de contrôle](/fr/programming-languages/typescript/control-flow)

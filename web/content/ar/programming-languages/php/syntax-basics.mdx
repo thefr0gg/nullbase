@@ -1,0 +1,147 @@
+---
+title: بنية اللغة والمتغيرات
+description: وسوم <?php ?> في PHP، ورمز $ على كل متغير، والأنواع الفضفاضة مقابل الصارمة، وتضمين السلاسل النصية.
+category: Programming Languages
+weight: 2
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+يعيش كود PHP داخل وسوم `<?php ... ?>`. كل ما خارج تلك الوسوم — حتى في منتصف ملف — يُمرَّر مباشرة كمخرجات، وهذا ما يجعل PHP مناسبة لخلط الترميز والمنطق في نفس الملف.
+
+## وسم `<?php`
+
+```php
+<html>
+<body>
+<?php
+$name = "Ada";
+echo "<p>Hello, $name!</p>";
+?>
+</body>
+</html>
+```
+
+عملياً، ينبغي للملفات التي تحتوي *فقط* على PHP (بلا HTML لاحق) حذف وسم الإغلاق `?>` تماماً. إنه اختياري، وحذفه يتجنب خللاً دقيقاً: أي مسافة بيضاء أو سطر جديد بعد `?>` يُرسَل إلى المخرجات، ما قد يعطّل أشياء مثل ضبط ترويسات HTTP بعد "انتهاء" السكربت.
+
+```php
+<?php
+
+echo "No closing tag needed for a pure-PHP file.\n";
+```
+
+## المتغيرات تبدأ دائماً بـ `$`
+
+كل متغير في PHP مسبوق بعلامة دولار، بلا استثناءات — هذا أحد الأشياء الأكثر تمييزاً على الفور في بنية PHP. المتغيرات أيضاً ذات كتابة ديناميكية: لا تصرّح بنوع مسبقاً، ويمكن للمتغير أن يحمل نوعاً مختلفاً من القيم بعد إسناد لاحق.
+
+```php
+<?php
+
+$age = 30;          // int
+$age = "thirty";     // now a string — perfectly legal
+$isAdmin = true;      // bool
+$price = 19.99;        // float
+```
+
+أسماء المتغيرات حساسة لحالة الأحرف (`$Name` و`$name` متغيران مختلفان) ويجب أن تبدأ بحرف أو شرطة سفلية، وليس أبداً برقم.
+
+## الثوابت
+
+كل من `define()` والأحدث `const` تنشئ قيماً لا يمكن إعادة إسنادها. `const` مفضّلة للقيم القياسية البسيطة وتعمل على المستوى الأعلى وداخل الفئات على حد سواء:
+
+```php
+<?php
+
+const MAX_RETRIES = 3;
+define("APP_NAME", "nullbase");
+
+echo MAX_RETRIES . " retries allowed for " . APP_NAME . "\n";
+```
+
+لاحظ أن الثوابت يُشار إليها *بدون* رمز `$` — نقطة أخرى تحمل استثناء معروفاً لقاعدة الرمز في PHP.
+
+## تضمين السلاسل النصية
+
+السلاسل بعلامات الاقتباس المزدوجة تضمّن المتغيرات مباشرة؛ أما السلاسل بعلامات الاقتباس المفردة فلا تفعل ذلك أبداً. هذا مصدر شائع لأخطاء دقيقة عندما يكون المقصود `$` حرفياً، لذا يستحق معرفته جيداً:
+
+```php
+<?php
+
+$user = "grace";
+echo "Logged in as $user\n";   // Logged in as grace
+echo 'Logged in as $user\n';    // Logged in as $user\n  (literal, no newline)
+```
+
+الأقواس المعقوفة تميّز متغيراً عن النص المحيط، وهي مطلوبة عند تضمين وصول خاصية أو مصفوفة بشكل نظيف:
+
+```php
+<?php
+
+$user = ["name" => "grace"];
+echo "Hello, {$user['name']}!\n";
+```
+
+## الكتابة الفضفاضة وخلط الأنواع
+
+افتراضياً، تحوّل PHP الأنواع فورياً لجعل عملية ما تعمل — يُسمى هذا **خلط الأنواع (type juggling)**. تعطيل `declare(strict_types=1)` في أعلى ملف يعطّل ذلك بالنسبة لفحوصات نوع وسائط الدالة وقيم الإرجاع (رغم أن عوامل المقارنة الفضفاضة مثل `==` تستمر بخلط الأنواع بغض النظر):
+
+```php
+<?php
+declare(strict_types=1);
+
+function double(int $n): int {
+    return $n * 2;
+}
+
+echo double(5) . "\n";   // 10
+// double("5") would now throw a TypeError instead of silently converting
+```
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لتعريف متغير وتضمينه في سلسلة نصية بعلامات اقتباس مزدوجة."
+  items={[
+    { id: "a1", label: "<?php" },
+    { id: "a2", label: '$city = "Berlin";' },
+    { id: "a3", label: 'echo "Welcome to $city!\\n";', explanation: "يجب أن يكون المتغير موجوداً قبل تضمينه." },
+  ]}
+  correctOrder={["a1", "a2", "a3"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="رتّب هذه الأسطر لتعريف دالة ذات كتابة صارمة واستدعائها."
+  items={[
+    { id: "b1", label: "<?php" },
+    { id: "b2", label: "declare(strict_types=1);" },
+    { id: "b3", label: "function triple(int $n): int {", explanation: "يجب أن يكون declare(strict_types=1) أول جملة في الملف تماماً." },
+    { id: "b4", label: "    return $n * 3;" },
+    { id: "b5", label: "}" },
+    { id: "b6", label: "echo triple(4) . \"\\n\";" },
+  ]}
+  correctOrder={["b1", "b2", "b3", "b4", "b5", "b6"]}
+/>
+
+<PredictOutput
+  title="ماذا تطبع هذه الشيفرة؟"
+  code={`<?php
+
+$count = "5";
+$total = $count + 1;
+echo $total;
+echo gettype($total);`}
+  options={["51int", "6int", "6string", "Fatal error: cannot add string and int"]}
+  correctIndex={1}
+  explanation="خارج strict_types، يفعّل عامل الجمع + خلط الأنواع: تُحوَّل السلسلة الرقمية '5' إلى العدد الصحيح 5، لذا فإن $total تساوي 6، وهي int. ضمّ السلاسل النصية كان سيستخدم . بدلاً من +، وهو خلط شائع لدى المبتدئين."
+  actualOutput="6int"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [PHP](/ar/programming-languages/php)
+- [التحكم بمسار التنفيذ](/ar/programming-languages/php/control-flow)

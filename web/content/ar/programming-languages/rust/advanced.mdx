@@ -1,0 +1,212 @@
+---
+title: الملكية والاستعارة
+description: مجموعة القواعد — الملكية، والاستعارة، ومدد الصلاحية (lifetimes) — التي تتيح لـRust ضمان أمان الذاكرة أثناء الترجمة دون جامع قمامة.
+category: Programming Languages
+weight: 9
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+الملكية هي الفكرة التي بُنيت Rust حولها، وكل شيء آخر في اللغة — سبب
+اختلاف سلوك `String` عن `i32`، وسبب "استهلاك" بعض استدعاءات الدوال
+لوسائطها دون غيرها، وسبب رفض المترجم أحياناً لكود يبدو سليماً بوضوح —
+يعود إلى ثلاث قواعد:
+
+1. لكل قيمة **مالك (owner)** واحد بالضبط في أي وقت.
+2. عندما يخرج المالك من النطاق، تُسقَط القيمة (تُحرَّر ذاكرتها).
+3. يمكن نقل الملكية (**move**) أو إقراضها مؤقتاً (**borrow**)، لكن لا يمكن أبداً تكرارها مجاناً.
+
+لا يوجد جامع قمامة يفحص الذاكرة أثناء التشغيل بحثاً عمّا لم يعد قابلاً
+للوصول إليه — يحسب المترجم أثناء الترجمة بالضبط متى يخرج مالك كل قيمة من
+النطاق، ويُدرج كود التنظيف هناك. هذا سبب امتلاك Rust لأداء يمكن التنبؤ به
+دون توقفات جامع القمامة: إدارة الذاكرة حقيقة تُحسَم أثناء الترجمة، وليست
+عملية تجري أثناء التشغيل.
+
+## النقل (Moves)
+
+بعض الأنواع (`i32`، و`bool`، و`char`، وأنواع أخرى ثابتة الحجم تعيش في
+المكدس فقط) تُنفِّذ `Copy`، أي أن الإسناد يُكرِّر القيمة برخص — تماماً
+مثل C. أما الأنواع التي تملك ذاكرة في الكومة، مثل `String` و`Vec<T>`،
+فلا تُنفِّذ `Copy`؛ إسناد إحداها إلى متغيرة أخرى **ينقل** الملكية بدلاً
+من ذلك، ويصبح الربط الأصلي غير صالح.
+
+```rust
+fn main() {
+    let s1 = String::from("hello");
+    let s2 = s1; // ownership of the heap data moves from s1 to s2
+
+    println!("{s2}, world!"); // fine — s2 owns the data now
+    // println!("{s1}"); // would fail — s1 no longer owns anything
+}
+```
+
+السبب ليس تدقيقاً اعتباطياً: لو سُمح لكل من `s1` و`s2` بتحرير نفس تخصيص
+الكومة بشكل مستقل عند خروجهما من النطاق، فهذا تحرير مزدوج (double free)
+— خلل حقيقي في تلف الذاكرة في اللغات التي تفتقر لهذه القاعدة. نقل
+الملكية بدلاً من نسخها يعني أن متغيرة واحدة فقط مسؤولة دائماً عن تحرير
+تلك الذاكرة.
+
+هذا بالضبط الخطأ من عملية ترجمة حقيقية:
+
+```rust
+fn takes_ownership(s: String) {
+    println!("{s}");
+} // s goes out of scope here — its heap memory is freed
+
+fn main() {
+    let s1 = String::from("hello");
+    takes_ownership(s1); // s1 is moved into the function
+    println!("{s1}"); // error: use of moved value
+}
+```
+
+```text
+error[E0382]: borrow of moved value: `s1`
+ --> src/main.rs:8:20
+  |
+6 |     let s1 = String::from("hello");
+  |         -- move occurs because `s1` has type `String`, which does not implement the `Copy` trait
+7 |     takes_ownership(s1); // s1 is moved into the function
+  |                     -- value moved here
+8 |     println!("{s1}"); // error: use of moved value
+  |                ^^ value borrowed here after move
+```
+
+تمرير `s1` بالقيمة ينقلها إلى `takes_ownership`، التي تُسقِطها عند عودة
+الدالة — بحلول الوقت الذي تحاول فيه `main` طباعة `s1` مرة أخرى، تكون تلك
+الذاكرة قد حُرِّرت بالفعل، ويرفض المترجم السماح للبرنامج بالعمل مع مرجع
+إليها.
+
+## الاستعارة: مراجع دون أخذ الملكية
+
+نقل الملكية إلى كل دالة تحتاج إلى قراءة قيمة سيجعل الكود البسيط غير
+عملي — سيتوجب عليك إعادة تمرير القيمة إلى الخارج مجدداً فقط لمواصلة
+استخدامها. **الاستعارة (borrowing)** تحل هذا: المرجع (`&T`) يتيح لدالة
+استخدام قيمة دون أخذ ملكيتها.
+
+```rust
+fn calculate_length(s: &String) -> usize {
+    s.len()
+} // s goes out of scope, but it doesn't own the data, so nothing is dropped
+
+fn main() {
+    let s1 = String::from("hello");
+    let len = calculate_length(&s1); // borrow, don't move
+
+    println!("The length of '{s1}' is {len}"); // s1 is still valid here
+}
+```
+
+تأتي الاستعارة بقاعدتها الخاصة، يفرضها فاحص الاستعارة: في أي لحظة، يمكن
+أن يكون لديك إما **أي عدد من المراجع غير القابلة للتغيير** (`&T`) أو
+**مرجع واحد قابل للتغيير بالضبط** (`&mut T`) لقيمة ما — لا يمكن أن
+يتواجد النوعان معاً أبداً. هذا ما يستبعد سباقات البيانات أثناء الترجمة:
+لا يمكن أبداً أن يتعارض قارئان غير قابلين للتغيير، ولا يمكن أبداً أن
+يُلاحظ كاتب واحد في منتصف الكتابة من قِبل أي طرف آخر.
+
+```rust
+fn main() {
+    let mut s = String::from("hello");
+
+    let r1 = &s;
+    let r2 = &s;
+    println!("{r1} and {r2}"); // fine: multiple immutable borrows
+
+    let r3 = &mut s;
+    r3.push_str(", world");
+    println!("{r3}"); // fine, but only because r1/r2 are no longer used after this point
+}
+```
+
+## مدد الصلاحية (Lifetimes)
+
+**مدة الصلاحية (lifetime)** هي طريقة المترجم لتتبع المدة التي يظل فيها
+المرجع صالحاً، حتى يتمكن من اكتشاف مرجع قد يعيش أطول من البيانات التي
+يشير إليها (مرجع معلَّق). في معظم الأحيان تُستنتَج مدد الصلاحية بصمت، لكن
+الدالة التي تُعيد مرجعاً مشتقاً من أكثر من مدخل واحد تحتاج أحياناً إلى
+توصيف صريح لمدة الصلاحية لإخبار المترجم بكيفية ارتباط المدخلات بالمخرج.
+
+```rust
+// 'a says: the returned reference lives at most as long as
+// the shorter-lived of x and y.
+fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {
+    if x.len() > y.len() { x } else { y }
+}
+
+fn main() {
+    let s1 = String::from("hello");
+    let result;
+    {
+        let s2 = String::from("world!");
+        result = longest(s1.as_str(), s2.as_str());
+        println!("longest: {result}"); // fine, s2 still alive here
+    }
+    // println!("{result}"); // would fail — s2 (and what result might point to) is gone
+}
+```
+
+دون توصيف `'a`، ليس لدى المترجم طريقة لمعرفة ما إذا كانت صلاحية المرجع
+المُعاد مرتبطة بـ`x`، أم بـ`y`، أم بلا واحد منهما — لن تُترجَم `longest`
+إطلاقاً، لأن فاحص الاستعارة يرفض التخمين. لا يغيّر التوصيف مدة بقاء أي
+شيء فعلياً؛ بل يجعل علاقة صحيحة أصلاً مرئية للمترجم حتى يتمكن من فحص
+المستدعين وفقها.
+
+## طالع أيضاً
+
+- **[هياكل البيانات](/ar/programming-languages/rust/data-structures)** — حيث تظهر الاستعارة باستمرار، مثل استعارة `vec.iter()` بدلاً من استهلاك `Vec`.
+- **[نظرة عامة على Rust](/ar/programming-languages/rust)** — مثال الاستخدام-بعد-النقل الذي يقدّم الملكية منذ الصفحة الأولى من هذا القسم.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء دالة تستعير String لحساب طولها، ثم تطبع الأصل والطول معاً."
+  items={[
+    { id: "fn-open", label: "fn calculate_length(s: &String) -> usize {" },
+    { id: "fn-body", label: "    s.len()" },
+    { id: "fn-close", label: "}" },
+    { id: "main-open", label: "fn main() {" },
+    { id: "s1", label: "    let s1 = String::from(\"hello\");" },
+    { id: "len", label: "    let len = calculate_length(&s1);", explanation: "يجب أن توجد s1 قبل إمكانية استعارتها، وتبقى صالحة بعد ذلك لأنها استُعيرت فقط، ولم تُنقَل." },
+    { id: "print", label: "    println!(\"The length of '{s1}' is {len}\");" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["fn-open", "fn-body", "fn-close", "main-open", "s1", "len", "print", "main-close"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء دالة longest بمدة صلاحية صريحة، وموضع استدعاء يستخدمها بينما لا يزال كلا المدخلين ضمن النطاق."
+  items={[
+    { id: "sig", label: "fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {" },
+    { id: "body", label: "    if x.len() > y.len() { x } else { y }" },
+    { id: "close", label: "}" },
+    { id: "main-open", label: "fn main() {" },
+    { id: "s1", label: "    let s1 = String::from(\"hello\");" },
+    { id: "s2", label: "    let s2 = String::from(\"world!\");", explanation: "يجب إنشاء كل من s1 وs2 قبل أن تتمكن longest من الاستعارة من كليهما." },
+    { id: "result", label: "    let result = longest(s1.as_str(), s2.as_str());" },
+    { id: "print", label: "    println!(\"longest: {result}\");" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["sig", "body", "close", "main-open", "s1", "s2", "result", "print", "main-close"]}
+/>
+
+<PredictOutput
+  title="ماذا تطبع هذه الشيفرة؟"
+  code={`fn takes_ownership(s: String) {
+    println!("{s}");
+}
+
+fn main() {
+    let s1 = String::from("hello");
+    takes_ownership(s1);
+    println!("{s1}");
+}`}
+  options={["hello، مرتين", "hello، ثم سطر فارغ", "hello، ثم ذعر أثناء التشغيل", "خطأ ترجمة"]}
+  correctIndex={3}
+  explanation="تمرير s1 بالقيمة ينقل الملكية إلى takes_ownership، التي تُسقِطها عند عودة الدالة. تحاول println! الثانية استخدام s1 بعد نقلها، وهو ما يرفضه فاحص الاستعارة أثناء الترجمة — لا تحصل أبداً على فرصة طباعة سلسلة فارغة أو قيمة قديمة، لأن البرنامج لا يُترجَم إطلاقاً."
+  actualOutput={`error[E0382]: borrow of moved value: \`s1\``}
+/>
+</ExerciseTabs>

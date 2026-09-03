@@ -1,0 +1,94 @@
+---
+title: الدوال
+description: تعريف كود قابل لإعادة الاستخدام باستخدام def — الوسائط الافتراضية، والوسائط المسماة، ونمطا *args/**kwargs لقوائم الوسائط متغيرة الطول.
+category: Programming Languages
+weight: 4
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تُعرَّف الدوال باستخدام `def`، ولا تتطلب Python التصريح بنوع الإرجاع أو أنواع الوسائط — لكن يمكن إعطاء الوسائط قيماً افتراضية، ما يجعلها اختيارية عند نقطة الاستدعاء.
+
+```python
+def greet(name, greeting="Hello"):
+    return f"{greeting}, {name}!"
+
+print(greet("Sam"))                 # Hello, Sam!
+print(greet("Sam", greeting="Hey"))  # Hey, Sam!
+```
+
+يعطي `greeting="Hello"` تلك الوسيطة قيمة افتراضية، بحيث يمكن للمستدعين حذفها تماماً. يمكن أيضاً تمرير الوسائط بالاسم (`greeting="Hey"`) بدلاً من الموضع، وهذا مفيد بمجرد أن تأخذ الدالة عدة وسائط ويصبح موضع الاستدعاء بخلاف ذلك قائمة قيم مجردة مربكة.
+
+أحياناً لا يكون عدد الوسائط التي ينبغي أن تقبلها الدالة ثابتاً مسبقاً. يجمع `*args` أي وسائط موضعية إضافية في صف (tuple)، ويجمع `**kwargs` أي وسائط مسماة إضافية في قاموس — الاسمان `args`/`kwargs` مجرد اصطلاح، بينما البادئتان `*`/`**` هما ما يهم فعلياً.
+
+```python
+def total(*args, **kwargs):
+    print("positional:", args)     # (1, 2, 3)
+    print("keyword:", kwargs)       # {'label': 'sum'}
+    return sum(args)
+
+result = total(1, 2, 3, label="sum")
+print(result)  # 6
+```
+
+يظهر هذا النمط باستمرار في كود المكتبات — دالة غلاف (wrapper) تحتاج إلى قبول "أياً كانت الوسائط التي يقبلها الشيء الذي تغلّفه" دون معرفة توقيعه مسبقاً تستخدم `def wrapper(*args, **kwargs)` وتمررها عبر `wrapped(*args, **kwargs)`.
+
+الدوال أيضاً كائنات عادية: يمكن إسنادها إلى متغيرات، وتمريرها كوسائط، وإرجاعها من دوال أخرى، وهذا ما يجعل الإغلاقات (closures) ممكنة.
+
+```python
+def make_multiplier(factor):
+    def multiplier(x):
+        return x * factor
+    return multiplier
+
+double = make_multiplier(2)
+triple = make_multiplier(3)
+print(double(5), triple(5))  # 10 15
+```
+
+"تتذكر" `multiplier` قيمة `factor` من الاستدعاء الذي أنشأها، حتى بعد أن تكون `make_multiplier` قد أنهت تنفيذها بالفعل — هذا إغلاق (closure)، وهو الآلية وراء مزخرفات (decorators) Python.
+
+## طالع أيضاً
+
+- **[هياكل البيانات](/ar/programming-languages/python/data-structures)** — كيف تتصرف وسيطة افتراضية مجردة مثل `basket=[]` عبر الاستدعاءات.
+- **[المزخرفات والمولدات](/ar/programming-languages/python/advanced)** — إغلاقات مثل `multiplier` تُستخدم لتغليف دوال أخرى.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء دالة تحية بوسيطة افتراضية واستدعائها مرتين."
+  items={[
+    { id: "def", label: 'def greet(name, greeting="Hello"):' },
+    { id: "return", label: '    return f"{greeting}, {name}!"', explanation: "لا معنى لهذا السطر إلا كجسم لتعريف الدالة أعلاه." },
+    { id: "call1", label: 'print(greet("Sam"))' },
+    { id: "call2", label: 'print(greet("Sam", greeting="Hey"))' },
+  ]}
+  correctOrder={["def", "return", "call1", "call2"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء دالة تقبل وسائط موضعية ومسماة متغيرة."
+  items={[
+    { id: "def", label: "def total(*args, **kwargs):" },
+    { id: "printargs", label: '    print("positional:", args)', explanation: "يجب أن يكون هذا داخل جسم الدالة، بعد سطر def." },
+    { id: "printkwargs", label: '    print("keyword:", kwargs)' },
+    { id: "return", label: "    return sum(args)" },
+    { id: "call", label: 'total(1, 2, 3, label="sum")', explanation: "يجب تعريف الدالة قبل أن يمكن استدعاؤها." },
+  ]}
+  correctOrder={["def", "printargs", "printkwargs", "return", "call"]}
+/>
+
+<PredictOutput
+  title="ماذا تطبع هذه الشيفرة؟"
+  code={`def add_item(item, basket=[]):\n    basket.append(item)\n    return basket\n\nprint(add_item("apple"))\nprint(add_item("banana"))`}
+  options={['["apple"] then ["banana"]', '["apple"] then ["apple", "banana"]', 'An error, because basket is never initialized', '["apple"] then ["apple"]']}
+  correctIndex={1}
+  explanation="تُنشأ قيمة الوسيطة الافتراضية مرة واحدة فقط، عند تعريف الدالة — وليس عند كل استدعاء. بما أن basket=[] قائمة قابلة للتغيير، فإن كل استدعاء لا يمرّر سلته الخاصة يشارك ويغيّر نفس القائمة، لذا يرى الاستدعاء الثاني عنصر الاستدعاء الأول لا يزال موجوداً فيها."
+  actualOutput='["apple"] then ["apple", "banana"]'
+/>
+</ExerciseTabs>
+

@@ -1,0 +1,207 @@
+---
+title: Hilos y Concurrencia
+description: Crear hilos, sincronizar estado compartido con synchronized, y concurrencia de más alto nivel desde java.util.concurrent.
+category: Programming Languages
+weight: 9
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Java ha tenido soporte de hilos integrado desde su primera versión —
+inusualmente temprano para un lenguaje principal. `Thread` y la palabra
+clave `synchronized` son las primitivas de bajo nivel; el paquete
+`java.util.concurrent` (añadido en Java 5) añade herramientas más seguras y
+de más alto nivel encima, a las que la mayoría del código moderno debería
+recurrir primero.
+
+## Crear un hilo
+
+La forma más simple es darle a `Thread` un `Runnable` — cualquier objeto con
+un único método `run()`, usualmente escrito como una lambda:
+
+```java
+public class Main {
+    public static void main(String[] args) throws InterruptedException {
+        Thread worker = new Thread(() -> {
+            System.out.println("Running on: " + Thread.currentThread().getName());
+        });
+        worker.start(); // programa el hilo; NO lo ejecuta en línea
+        worker.join();  // bloquea main hasta que worker termine
+    }
+}
+```
+
+`start()` le pide a la JVM que programe un nuevo hilo respaldado por el
+sistema operativo para ejecutar `run()`; llamar a `run()` directamente en
+cambio simplemente lo ejecutaría de forma síncrona en el hilo actual,
+anulando el propósito. `join()` bloquea el hilo que llama hasta que el hilo
+objetivo termine — usado comúnmente para esperar trabajo en segundo plano
+antes de continuar.
+
+## Condiciones de carrera y synchronized
+
+Cuando múltiples hilos leen y escriben estado mutable compartido sin
+coordinación, el resultado es una **condición de carrera** — el resultado
+depende de una planificación de hilos impredecible. Este contador no es
+seguro para hilos:
+
+```java
+public class Counter {
+    private int count = 0;
+
+    public void increment() {
+        count++; // NO es atómico: leer, sumar 1, escribir — tres pasos separados
+    }
+
+    public int get() {
+        return count;
+    }
+}
+```
+
+Si dos hilos llaman a `increment()` casi al mismo tiempo, ambos pueden leer
+el mismo valor inicial antes de que ninguno escriba de vuelta, perdiendo
+silenciosamente una actualización. `synchronized` soluciona esto dejando que
+solo un hilo ejecute un bloque (o método) protegido sobre un objeto dado a
+la vez:
+
+```java
+public class Counter {
+    private int count = 0;
+
+    public synchronized void increment() {
+        count++;
+    }
+
+    public synchronized int get() {
+        return count;
+    }
+}
+```
+
+Cada método `synchronized` aquí bloquea sobre `this`, así que las llamadas a
+`increment()` desde distintos hilos sobre la misma instancia de `Counter`
+ahora se ejecutan una a la vez, eliminando la carrera de actualización
+perdida. El costo es que los hilos que esperan el lock se bloquean hasta que
+esté libre, lo cual puede perjudicar el rendimiento si se mantiene demasiado
+tiempo o con demasiada frecuencia.
+
+## Un vistazo a java.util.concurrent
+
+Escribir código concurrente correcto y eficiente con `Thread` y
+`synchronized` sin procesar es difícil de hacer bien a gran escala.
+`java.util.concurrent` proporciona bloques de construcción de más alto
+nivel. `ExecutorService` gestiona un pool de hilos reutilizables en vez de
+crear un objeto `Thread` por tarea:
+
+```java
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+public class Main {
+    public static void main(String[] args) throws Exception {
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+
+        Future<Integer> result = pool.submit(() -> {
+            return 21 * 2;
+        });
+
+        System.out.println(result.get()); // bloquea hasta que la tarea se complete
+        pool.shutdown();
+    }
+}
+```
+
+`ConcurrentHashMap` es una alternativa directa y segura para hilos a
+`HashMap` que evita bloquear el map entero en cada operación, como sí haría
+envolver un `HashMap` en `synchronized`:
+
+```java
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
+
+Map<String, Integer> hits = new ConcurrentHashMap<>();
+hits.put("home", 0);
+hits.merge("home", 1, Integer::sum); // lectura-modificación-escritura atómica
+System.out.println(hits.get("home")); // 1
+```
+
+`AtomicInteger` y sus hermanos en `java.util.concurrent.atomic` dan
+operaciones atómicas sin lock para valores individuales, lo cual suele ser
+suficiente para arreglar la carrera de `Counter` de arriba sin
+`synchronized` en absoluto:
+
+```java
+import java.util.concurrent.atomic.AtomicInteger;
+
+AtomicInteger count = new AtomicInteger(0);
+count.incrementAndGet(); // atómico, seguro para hilos, sin lock necesario
+System.out.println(count.get());
+```
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para iniciar un hilo que imprima su nombre, y luego esperar a que termine."
+  items={[
+    { id: "l1", label: "Thread worker = new Thread(() -> {" },
+    { id: "l2", label: "    System.out.println(Thread.currentThread().getName());" },
+    { id: "l3", label: "});" },
+    { id: "l4", label: "worker.start();", explanation: "El objeto Thread debe estar completamente construido antes de poder llamar a start() sobre él." },
+    { id: "l5", label: "worker.join();" },
+  ]}
+  correctOrder={["l1", "l2", "l3", "l4", "l5"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Ordena estas líneas para enviar una tarea a un ExecutorService y leer su resultado."
+  items={[
+    { id: "m1", label: "ExecutorService pool = Executors.newFixedThreadPool(2);" },
+    { id: "m2", label: "Future<Integer> result = pool.submit(() -> 21 * 2);", explanation: "El pool debe existir antes de poder enviarle una tarea." },
+    { id: "m3", label: "System.out.println(result.get());" },
+    { id: "m4", label: "pool.shutdown();" },
+  ]}
+  correctOrder={["m1", "m2", "m3", "m4"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`public class Counter {
+    private int count = 0;
+    public void increment() { count++; }
+    public int get() { return count; }
+}
+
+public class Main {
+    public static void main(String[] args) throws InterruptedException {
+        Counter counter = new Counter();
+        Runnable task = () -> {
+            for (int i = 0; i < 100_000; i++) {
+                counter.increment();
+            }
+        };
+        Thread t1 = new Thread(task);
+        Thread t2 = new Thread(task);
+        t1.start();
+        t2.start();
+        t1.join();
+        t2.join();
+        System.out.println(counter.get() == 200_000);
+    }
+}`}
+  options={["true, always", "false, always", "It's not guaranteed — usually false, but not deterministic", "Compile error: count++ is not thread-safe"]}
+  correctIndex={2}
+  explanation="increment() no está sincronizado, así que count++ (una lectura-modificación-escritura de tres pasos separados) puede entrelazarse entre los dos hilos y perder actualizaciones. El conteo final es casi siempre menor a 200,000, pero el valor exacto depende de una planificación de hilos impredecible — es una condición de carrera, no una respuesta incorrecta fija, y el código compila sin problemas."
+  actualOutput="false (typically — the exact value varies between runs)"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Paquetes y Herramientas de Compilación](/es/programming-languages/java/modules-packages)
+- [Clases e Interfaces](/es/programming-languages/java/oop-or-structs)

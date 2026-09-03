@@ -1,0 +1,181 @@
+---
+title: Manejo de Errores
+description: Excepciones de PHP con try/catch/finally, clases de excepción personalizadas, y en qué se diferencia el modelo de reporte de errores más antiguo.
+category: Programming Languages
+weight: 7
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+El PHP moderno maneja los fallos con excepciones, de forma muy parecida a
+Java o Python. Pero la historia de PHP hace que aún te encuentres con un
+mecanismo más antiguo y separado — los "errores" y "advertencias" de PHP —
+especialmente en código heredado o cuando una función integrada falla de una
+manera anterior al modelo de excepciones de PHP. Conocer ambos importa para
+leer bases de código PHP reales.
+
+## try / catch / finally
+
+```php
+<?php
+
+function divide(int $a, int $b): float {
+    if ($b === 0) {
+        throw new InvalidArgumentException("Cannot divide by zero");
+    }
+    return $a / $b;
+}
+
+try {
+    echo divide(10, 0);
+} catch (InvalidArgumentException $e) {
+    echo "Error: " . $e->getMessage() . "\n";
+} finally {
+    echo "Division attempt finished\n";
+}
+```
+
+`finally` se ejecuta se haya lanzado o capturado una excepción o no — útil
+para limpieza como cerrar un descriptor de archivo o una conexión a base de
+datos.
+
+## Capturar múltiples tipos de excepción
+
+Un único bloque `catch` puede listar varios tipos de excepción con `|`, y
+los bloques catch se prueban en orden, así que pon los tipos más específicos
+primero:
+
+```php
+<?php
+
+function parseConfig(string $json): array {
+    $data = json_decode($json, true, flags: JSON_THROW_ON_ERROR);
+    return $data;
+}
+
+try {
+    parseConfig("{not valid json");
+} catch (JsonException | TypeError $e) {
+    echo "Could not parse config: " . $e->getMessage() . "\n";
+}
+```
+
+## Excepciones personalizadas
+
+Las excepciones son clases ordinarias que extienden `Exception` (o una
+subclase integrada más específica como `RuntimeException`). Esto te permite
+llevar datos estructurados y capturar un fallo específico a nivel de
+aplicación por tipo:
+
+```php
+<?php
+
+class InsufficientFundsException extends RuntimeException {
+    public function __construct(public readonly float $shortfall) {
+        parent::__construct("Insufficient funds, short by $shortfall");
+    }
+}
+
+function withdraw(float $balance, float $amount): float {
+    if ($amount > $balance) {
+        throw new InsufficientFundsException($amount - $balance);
+    }
+    return $balance - $amount;
+}
+
+try {
+    withdraw(50.0, 75.0);
+} catch (InsufficientFundsException $e) {
+    echo "Short by: " . $e->shortfall . "\n";
+}
+```
+
+## El modelo de reporte de errores más antiguo, brevemente
+
+Antes de que las excepciones fueran plenamente adoptadas (y aún hoy para
+muchas funciones integradas), PHP reportaba problemas como **errores,
+advertencias, y avisos** — eventos que no son excepciones y que podían
+registrarse, mostrarse en línea en la salida, o ignorarse silenciosamente
+según la configuración de `error_reporting`, en vez de desenrollar la pila
+de llamadas como lo hace una excepción lanzada:
+
+```php
+<?php
+
+$value = @$undefinedArray["missing"]; // @ suppresses the warning
+echo $value === null ? "null, no exception thrown\n" : "found\n";
+```
+
+Ese operador de "supresión de errores" `@` es un patrón heredado que la
+mayoría de las guías de estilo modernas de PHP desaconsejan — oculta bugs
+genuinos junto con el ruido. PHP 8 convirtió muchas de estas antiguas
+advertencias en excepciones `Error` apropiadas (una jerarquía hermana de
+`Exception`, ambas implementando `Throwable`), razón por la cual llamar a
+una función indefinida ahora lanza un `Error` que puedes capturar con
+`catch`, en vez de simplemente emitir una advertencia y continuar con
+`null`.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir un bloque try/catch/finally alrededor de una operación riesgosa."
+  items={[
+    { id: "k1", label: "<?php" },
+    { id: "k2", label: "try {" },
+    { id: "k3", label: '    throw new RuntimeException("boom");' },
+    { id: "k4", label: "} catch (RuntimeException $e) {", explanation: "catch debe seguir directamente a la llave de cierre de try, sin otras instrucciones entre medias." },
+    { id: "k5", label: '    echo "caught: " . $e->getMessage() . "\\n";' },
+    { id: "k6", label: "} finally {" },
+    { id: "k7", label: '    echo "cleanup\\n";' },
+    { id: "k8", label: "}" },
+  ]}
+  correctOrder={["k1", "k2", "k3", "k4", "k5", "k6", "k7", "k8"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Ordena estas líneas para definir y lanzar una excepción personalizada con datos adicionales."
+  items={[
+    { id: "l1", label: "<?php" },
+    { id: "l2", label: "class OutOfStockException extends RuntimeException {" },
+    { id: "l3", label: "    public function __construct(public readonly string $sku) {", explanation: "El constructor debe llamar a parent::__construct() para establecer el mensaje de la excepción antes de que pueda usarse como cualquier otra Exception." },
+    { id: "l4", label: '        parent::__construct("Out of stock: $sku");' },
+    { id: "l5", label: "    }" },
+    { id: "l6", label: "}" },
+    { id: "l7", label: 'throw new OutOfStockException("SKU-42");' },
+  ]}
+  correctOrder={["l1", "l2", "l3", "l4", "l5", "l6", "l7"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`<?php
+
+function risky(): int {
+    try {
+        throw new Exception("fail");
+    } finally {
+        echo "finally ran\\n";
+    }
+    return 1;
+}
+
+try {
+    risky();
+} catch (Exception $e) {
+    echo "caught: " . $e->getMessage() . "\\n";
+}`}
+  options={["finally ran\\ncaught: fail\\n", "caught: fail\\nfinally ran\\n", "finally ran\\n", "caught: fail\\n"]}
+  correctIndex={0}
+  explanation="finally siempre se ejecuta antes de que la excepción se propague más arriba en la pila de llamadas, aunque el bloque try nunca llegue a su instrucción return. Solo después de que finally termina, la excepción continúa desenrollándose hacia el catch exterior."
+  actualOutput="finally ran\ncaught: fail\n"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Clases y Traits](/es/programming-languages/php/oop-or-structs)
+- [Namespaces y Composer](/es/programming-languages/php/modules-packages)

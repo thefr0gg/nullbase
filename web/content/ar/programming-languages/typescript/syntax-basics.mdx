@@ -1,0 +1,125 @@
+---
+title: بنية اللغة والأنواع
+description: تصريحات المتغيرات مع تعليقات نوعية توضيحية، والأنواع الأولية في TypeScript، وأسماء الأنواع (type aliases).
+category: Programming Languages
+weight: 2
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+كل صيغ تصريح المتغيرات في JavaScript — `let`، و`const`، و`var` — تعمل دون تغيير في TypeScript. ما تضيفه TypeScript هو **تعليق توضيحي نوعي (type annotation)** اختياري بعد اسم المتغير، ومُدقِّق أنواع يفرضه طوال ما تبقى من حياة المتغير.
+
+## التعليقات التوضيحية النوعية
+
+```ts
+let age: number = 36;
+const name: string = "Ada";
+let isAdmin: boolean = false;
+
+age = "thirty-six"; // Type error: Type 'string' is not assignable to type 'number'
+```
+
+بمجرد أن يُعلَّق `age` كـ`number`، يصبح إسناد سلسلة نصية إليه لاحقاً خطأ وقت الترجمة — وليس تحويلاً صامتاً، وليس شيئاً تكتشفه فقط عند تشغيل الكود. هذا هو الفرق الجوهري عن JavaScript العادية: النوع ليس مجرد توثيق، بل قيد يفحصه المُصرِّف فعلياً في كل إسناد وكل استخدام.
+
+## استنتاج الأنواع
+
+نادراً ما تحتاج إلى تعليق كل متغير توضيحياً. تستنتج TypeScript نوعاً من قيمة التهيئة، ويُفرَض ذلك النوع المُستنتَج بصرامة كما لو كان صريحاً:
+
+```ts
+let count = 0; // يُستنتَج كـnumber
+count = "zero"; // Type error: Type 'string' is not assignable to type 'number'
+
+const tag = "release"; // يُستنتَج كنوع القيمة الحرفية "release"، وليس string فقط
+```
+
+لاحظ الفرق بين استنتاج `let` و`const`: يستنتج `let count = 0` نوع `number` العام (لأن `count` يمكن إعادة إسنادها)، بينما يستنتج `const tag = "release"` نوع **القيمة الحرفية (literal type)** الأضيق `"release"`، لأن ربط `const` لا يمكن أن يحمل قيمة مختلفة أبداً.
+
+## الأنواع الأولية
+
+تعكس الأنواع الأولية في TypeScript الأنواع الأولية في JavaScript وقت التشغيل، بالإضافة إلى بضع إضافات خاصة بـTypeScript لوصف قيم لا تناسب نوعاً عادياً:
+
+| النوع | مثال | ملاحظات |
+|---|---|---|
+| `string` | `"hello"` | أي سلسلة نصية، أو قالب نصي حرفي، أو نوع سلسلة حرفية |
+| `number` | `42`, `3.14` | لا يوجد نوع صحيح/عشري منفصل — نوع رقمي واحد |
+| `boolean` | `true`, `false` | — |
+| `bigint` | `42n` | أعداد صحيحة بدقة عشوائية |
+| `null` / `undefined` | `null`, `undefined` | نوعان متمايزان؛ انظر أدناه |
+| `any` | — | يُلغي فحص الأنواع كلياً — تجنّبه |
+| `unknown` | — | نظير آمن نوعياً لـ`any`؛ يجب تضييقه قبل الاستخدام |
+| `void` | — | نوع إرجاع الدالة التي لا تُعيد شيئاً |
+
+يعني كل من `any` و`unknown` "يمكن أن يكون أي شيء"، لكن `any` تُعطِّل الفحص (يمكنك استدعاء أي تابع عليها، وإسنادها في أي مكان)، بينما تُجبِرك `unknown` على تضييق النوع قبل فعل أي شيء بالقيمة — راجع [التحكم بمسار التنفيذ](/ar/programming-languages/typescript/control-flow) لمعرفة كيفية عمل التضييق.
+
+```ts
+function logLength(value: unknown) {
+  console.log(value.length); // Type error: Object is of type 'unknown'
+}
+```
+
+## أسماء الأنواع (Type Aliases)
+
+يمنح اسم `type` اسماً لأي نوع — أولي، أو شكل كائن، أو اتحاد (union)، أي شيء — بحيث يمكنك إعادة استخدامه بدلاً من تكرار البنية في كل مكان:
+
+```ts
+type UserId = number;
+
+type User = {
+  id: UserId;
+  name: string;
+  isActive: boolean;
+};
+
+function deactivate(user: User): User {
+  return { ...user, isActive: false };
+}
+
+const ada: User = { id: 1, name: "Ada", isActive: true };
+deactivate(ada);
+```
+
+أسماء الأنواع مجرد راحة وقت الترجمة — تُمحى `UserId` إلى `number` في كود JavaScript المُصدَر، وتُمحى `User` كلياً. توجد فقط لجعل توقيعات مثل `deactivate(user: User): User` قابلة للقراءة بدلاً من كتابة شكل الكائن الكامل في كل موضع استدعاء.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لتصريح متغير عمر ذي نوع، ومحاولة إعادة إسناد غير صحيحة، ثم تسجيله."
+  items={[
+    { id: "decl", label: "let age: number = 36;" },
+    { id: "bad-assign", label: "age = \"thirty-six\"; // Type error", explanation: "يجب أن تأتي إعادة الإسناد غير الصحيحة بعد تصريح age بنوعها." },
+    { id: "log", label: "console.log(age);" },
+  ]}
+  correctOrder={["decl", "bad-assign", "log"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لتعريف اسم نوع User وبناء قيمة من ذلك النوع."
+  items={[
+    { id: "type-open", label: "type User = {" },
+    { id: "type-id", label: "  id: number;" },
+    { id: "type-name", label: "  name: string;", explanation: "يوضَع كل حقل داخل جسم اسم النوع قبل إغلاقه." },
+    { id: "type-close", label: "};" },
+    { id: "const-decl", label: "const ada: User = { id: 1, name: \"Ada\" };" },
+  ]}
+  correctOrder={["type-open", "type-id", "type-name", "type-close", "const-decl"]}
+/>
+
+<PredictOutput
+  title="ماذا يقول مُدقِّق الأنواع؟"
+  code={`let count = 0;
+count = "zero";`}
+  options={["\"zero\"", "0", "Type error: Type 'string' is not assignable to type 'number'", "undefined"]}
+  correctIndex={2}
+  explanation="تستنتج TypeScript نوع count كـnumber من قيمة تهيئتها 0، ثم تفرض ذلك النوع على كل إسناد لاحق — رغم أن count لم تُعلَّق توضيحياً أبداً بشكل صريح. الاستنتاج صارم تماماً كالتعليق التوضيحي الصريح."
+  actualOutput="Type error: Type 'string' is not assignable to type 'number'"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [TypeScript](/ar/programming-languages/typescript)
+- [التحكم بمسار التنفيذ](/ar/programming-languages/typescript/control-flow)

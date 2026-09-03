@@ -1,0 +1,139 @@
+---
+title: المؤشرات والذاكرة
+description: المؤشرات، والمراجع، وإدارة الذاكرة اليدوية بواسطة new/delete في C++، ولماذا تحل المؤشرات الذكية مثل unique_ptr محل معظم التنظيف اليدوي اليوم.
+category: Programming Languages
+weight: 9
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+المقايضة المُميِّزة لـ C++ هي الوصول المباشر إلى عناوين الذاكرة — قوية، لأنها تتيح لك بناء هياكل بيانات والتحكم في التخطيط على مستوى تُخفيه معظم اللغات، وخطيرة، لأن خطأً هنا (لا يُجمَّع كقمامة، ولا يُفحَص تلقائياً) ينتج أخطاءً يمكنها إفساد الذاكرة بصمت بدلاً من الفشل بصوت عالٍ.
+
+## المؤشرات والمراجع
+
+```cpp
+#include <iostream>
+
+int main() {
+    int value = 42;
+
+    int* ptr = &value;   // ptr holds the address of value
+    int& ref = value;    // ref is another name for value itself
+
+    std::cout << "value: " << value << "\n";
+    std::cout << "*ptr: " << *ptr << "\n";  // dereference: follow the pointer
+    std::cout << "ref: " << ref << "\n";
+
+    *ptr = 100;  // changes value, through the pointer
+    ref = 200;   // changes value, through the reference
+
+    std::cout << "value is now: " << value << "\n"; // 200
+    return 0;
+}
+```
+
+يأخذ `&value` عنوان `value`؛ ويُصرّح `int* ptr` عن `ptr` كمتغير يخزّن ذلك العنوان، بينما **تُفكك** `*ptr` المؤشر — تتبع العنوان لقراءة أو كتابة الـ`int` الفعلي الذي يشير إليه. يُصرّح `int& ref = value` عن **مرجع**، الذي يتصرف كاسم بديل لـ `value` بدلاً من متغير منفصل يحمل عنواناً: لا حاجة لتفكيك صريح، وبخلاف المؤشر، لا يمكن إعادة توجيه مرجع للإشارة إلى شيء آخر بعد التهيئة، ولا يمكن أن يكون فارغاً (null). المؤشرات أكثر مرونة (يمكن إعادة إسنادها، ويمكن لمؤشر فارغ أن يمثل "لا يشير إلى شيء")؛ المراجع أكثر أماناً كلما لم تكن تلك المرونة مطلوبة فعلياً.
+
+## الذاكرة اليدوية: `new` و`delete`
+
+```cpp
+#include <iostream>
+
+int main() {
+    int* single = new int(10);       // allocate one int on the heap
+    int* array = new int[5]{1,2,3,4,5}; // allocate an array on the heap
+
+    std::cout << *single << "\n";
+    std::cout << array[2] << "\n";
+
+    delete single;      // free the single int
+    delete[] array;      // free the array — note the [] to match new[]
+
+    return 0;
+}
+```
+
+تُخصِّص `new` ذاكرة في الكومة تبقى بعد انتهاء الدالة التي خُصِّصت فيها، وتُعيد مؤشراً إليها؛ تبقى تلك الذاكرة مخصَّصة حتى يستدعي شيء ما `delete` صراحة (أو `delete[]` لمصفوفة خُصِّصت بـ `new[]` — عدم مطابقتهما سلوك غير معرَّف). نسيان استدعاء `delete` أصلاً **تسريب ذاكرة**: لا تُستعاد الذاكرة أبداً لبقية عمر البرنامج. استدعاء `delete` على المؤشر نفسه مرتين، أو استخدام مؤشر بعد حذفه، خطيران بنفس القدر وهما الفئتان الأكثر شيوعاً لأخطاء الذاكرة في إدارة الذاكرة اليدوية على طراز C.
+
+## المؤشرات الذكية: RAII للكومة
+
+```cpp
+#include <iostream>
+#include <memory>
+
+class Resource {
+public:
+    Resource() { std::cout << "Resource acquired\n"; }
+    ~Resource() { std::cout << "Resource released\n"; }
+    void use() { std::cout << "Using resource\n"; }
+};
+
+int main() {
+    std::unique_ptr<Resource> res = std::make_unique<Resource>();
+    res->use();
+    // no delete needed — res's destructor runs automatically here,
+    // releasing the Resource exactly once, even if an exception
+    // had been thrown between make_unique and this closing brace
+    return 0;
+}
+```
+
+يمتلك `std::unique_ptr<Resource>` كائن `Resource` مخصَّصاً في الكومة ويحذفه تلقائياً في هدّامه الخاص عند خروجه من النطاق — نمط RAII نفسه الذي تستخدمه `std::ofstream` و`std::vector`، مُطبَّقاً مباشرة على الذاكرة الديناميكية الخام. لا يوجد `delete` في هذا المثال في أي مكان، ولا حاجة لوجوده: الملكية دائماً `unique_ptr` واحد في كل مرة (نسخ واحد خطأ ترجمة؛ يمكن فقط *نقله*)، وهذا يجعل التحرير المزدوج أو نسيان تحرير `Resource` الأساسي مستحيلاً بنيوياً. توجيه C++ الحديثة هو اللجوء إلى `new`/`delete` مباشرة فقط في حالات نادرة ومنخفضة المستوى — يغطي `std::unique_ptr` (ملكية فردية) و`std::shared_ptr` (ملكية مشتركة، معدودة المراجع) تقريباً كل شيء آخر دون أي محاسبة يدوية.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="اجمع الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح للتصريح عن مؤشر إلى int، وتفكيكه لتغيير القيمة، وطباعة النتيجة."
+  items={[
+    { id: "declare", label: "int number = 5;" },
+    { id: "pointer", label: "int* ptr = &number;", explanation: "يجب تهيئة ptr بعنوان number قبل أن يمكن تفكيكه." },
+    { id: "modify", label: "*ptr = 10;" },
+    { id: "print", label: "std::cout << number << std::endl;" },
+  ]}
+  correctOrder={["declare", "pointer", "modify", "print"]}
+/>
+
+<OrderingExercise
+  title="اجمع الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لتخصيص مصفوفة int في الكومة، واستخدامها، وتحريرها بشكل صحيح."
+  items={[
+    { id: "allocate", label: "int* data = new int[3]{1, 2, 3};" },
+    { id: "read", label: "std::cout << data[1] << std::endl;", explanation: "يجب تخصيص المصفوفة قبل قراءة أي عنصر منها." },
+    { id: "free", label: "delete[] data;" },
+  ]}
+  correctOrder={["allocate", "read", "free"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا؟"
+  code={`#include <iostream>
+#include <memory>
+
+class Widget {
+public:
+    Widget() { std::cout << "created "; }
+    ~Widget() { std::cout << "destroyed "; }
+};
+
+int main() {
+    {
+        std::unique_ptr<Widget> w = std::make_unique<Widget>();
+        std::cout << "using ";
+    }
+    std::cout << "done" << std::endl;
+    return 0;
+}`}
+  options={["created using done", "created using destroyed done", "created destroyed using done", "خطأ ترجمة"]}
+  correctIndex={1}
+  explanation={`يُنشأ Widget عند تشغيل make_unique، وتُطبع "using " داخل الكتلة الداخلية، ثم تخرج w من النطاق عند القوس المغلق — يعمل هدّامها تلقائياً هناك، فيطبع "destroyed "، قبل طباعة "done". لا حاجة لأي delete صريح لحدوث أي من هذا.`}
+  actualOutput="created using destroyed done"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [معالجة الأخطاء](/ar/programming-languages/cpp/error-handling) — دور RAII في أمان الاستثناءات، مُطبَّقاً هنا على ذاكرة الكومة تحديداً.
+- [الأصناف والكائنات](/ar/programming-languages/cpp/oop-or-structs) — المُنشئات والهدّامات التي تعتمد عليها المؤشرات الذكية.

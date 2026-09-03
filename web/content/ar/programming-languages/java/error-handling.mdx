@@ -1,0 +1,177 @@
+---
+title: معالجة الأخطاء
+description: نموذج الاستثناءات في Java، والتمييز بين المفحوصة (checked) وغير المفحوصة (unchecked) الفريد بين اللغات السائدة، وtry/catch/finally.
+category: Programming Languages
+weight: 7
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تعالج Java الأخطاء بالاستثناءات بدلاً من قيم إرجاع للخطأ. ما يميّز Java
+عن معظم اللغات السائدة الأخرى هو تمييز يفرضه المصرّف بين فئتين من
+الاستثناءات: **مفحوصة (checked)** و**غير مفحوصة (unchecked)**.
+
+## استثناءات مفحوصة مقابل غير مفحوصة
+
+يجب أن يُلتَقَط الاستثناء **المفحوص** (أي صنف فرعي من `Exception` ليس
+`RuntimeException`) أو يُعلَن في عبارة `throws` لتابع — يرفض المصرّف
+كوداً يتجاهل الاحتمال كلياً. `IOException` المثال الكلاسيكي، بما أن أي
+عملية إدخال/إخراج يمكن أن تفشل لأسباب خارج سيطرة برنامجك:
+
+```java
+import java.io.IOException;
+
+public void readConfig() throws IOException {
+    // عملية ما يمكن أن ترمي IOException مفحوصة
+    throw new IOException("config file missing");
+}
+```
+
+يجب على الكود المستدعي معالجتها أو تمريرها، وإلا فلن يُصرَّف الملف:
+
+```java
+public void loadApp() {
+    try {
+        readConfig();
+    } catch (IOException e) {
+        System.out.println("Failed to load config: " + e.getMessage());
+    }
+}
+```
+
+الاستثناء **غير المفحوص** (أي صنف فرعي من `RuntimeException`، مثل
+`NullPointerException` أو `IllegalArgumentException`) لا يفرضه المصرّف —
+يمكنك رمي أو تجاهل واحد دون أن يتطلب المصرّف أبداً `try`/`catch` أو عبارة
+`throws`. تمثّل هذه عادةً أخطاء برمجية (إحالة إلى null، وسيط غير صالح)
+وليس شروطاً خارجية قابلة للاسترجاع:
+
+```java
+public int divide(int a, int b) {
+    if (b == 0) {
+        throw new IllegalArgumentException("divisor cannot be zero");
+    }
+    return a / b;
+}
+```
+
+النية وراء هذا الفصل: تُنمذج الاستثناءات المفحوصة شروطاً يُتوقَّع من
+المستدعي توقعها والتعافي منها (ملف مفقود، مهلة شبكة)؛ تُنمذج الاستثناءات
+غير المفحوصة أخطاء لا يمكن إجبار أي مستدعٍ معقول على التخطيط لها في كل
+موقع استدعاء. عملياً، متطلب الاستثناء المفحوص مثير للجدل — من الشائع رؤية
+استثناءات مفحوصة مُغلَّفة داخل أخرى غير مفحوصة لتجنب انتشار عبارات
+`throws` عبر كود غير ذي صلة.
+
+## try / catch / finally
+
+تُغلِّف `try` كوداً قد يرمي؛ تعالج كتلة `catch` واحدة أو أكثر أنواع
+استثناءات محدَّدة؛ تعمل `finally` دون شرط، سواء حدث استثناء أم لا — المكان
+المعياري لتحرير مورد:
+
+```java
+public void process() {
+    try {
+        int result = 10 / 0;
+        System.out.println(result);
+    } catch (ArithmeticException e) {
+        System.out.println("Caught: " + e.getMessage());
+    } finally {
+        System.out.println("Cleanup runs regardless.");
+    }
+}
+```
+
+تُجرَّب كتل `catch` المتعددة بالترتيب، وتفوز أول كتلة يطابق نوع استثنائها
+(بما في ذلك مطابقة نوع أب) — لذا يجب سرد أنواع الاستثناءات الأكثر تحديداً
+قبل الأكثر عمومية:
+
+```java
+try {
+    Object[] items = new String[3];
+    items[0] = 42; // يرمي ArrayStoreException وقت التشغيل
+} catch (ArrayStoreException e) {
+    System.out.println("Array store violation: " + e.getMessage());
+} catch (RuntimeException e) {
+    System.out.println("Some other runtime exception");
+}
+```
+
+## try-with-resources
+
+منذ Java 7، يُغلِق `try (...)` تلقائياً أي مورد ينفّذ `AutoCloseable` في
+نهاية الكتلة، حتى لو رُمي استثناء — مستبدلاً نمط الإغلاق اليدوي
+`finally { resource.close(); }`:
+
+```java
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+
+public void printFirstLine(String path) throws IOException {
+    try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
+        System.out.println(reader.readLine());
+    } // يُستدعى ()reader.close تلقائياً هنا
+}
+```
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء try/catch/finally يعالج القسمة على صفر."
+  items={[
+    { id: "h1", label: "try {" },
+    { id: "h2", label: "    int result = 10 / 0;" },
+    { id: "h3", label: "    System.out.println(result);" },
+    { id: "h4", label: "} catch (ArithmeticException e) {", explanation: "يجب أن يأتي catch مباشرة بعد القوس المغلق لكتلة try." },
+    { id: "h5", label: "    System.out.println(\"Caught: \" + e.getMessage());" },
+    { id: "h6", label: "} finally {" },
+    { id: "h7", label: "    System.out.println(\"Done.\");" },
+    { id: "h8", label: "}" },
+  ]}
+  correctOrder={["h1", "h2", "h3", "h4", "h5", "h6", "h7", "h8"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="رتّب هذه الأسطر لتصريح تابع يرمي استثناءً مفحوصاً ومُستدعياً يعالجه."
+  items={[
+    { id: "i1", label: "public void readConfig() throws IOException {" },
+    { id: "i2", label: "    throw new IOException(\"config file missing\");" },
+    { id: "i3", label: "}" },
+    { id: "i4", label: "public void loadApp() {", explanation: "جسم loadApp يستدعي readConfig، لذا يجب تصريح readConfig أولاً." },
+    { id: "i5", label: "    try {" },
+    { id: "i6", label: "        readConfig();" },
+    { id: "i7", label: "    } catch (IOException e) {" },
+    { id: "i8", label: "        System.out.println(\"Failed: \" + e.getMessage());" },
+    { id: "i9", label: "    }" },
+    { id: "i10", label: "}" },
+  ]}
+  correctOrder={["i1", "i2", "i3", "i4", "i5", "i6", "i7", "i8", "i9", "i10"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا الكود؟"
+  code={`import java.io.IOException;
+
+public class Main {
+    static void risky() throws IOException {
+        throw new IOException("disk full");
+    }
+
+    public static void main(String[] args) {
+        risky();
+    }
+}`}
+  options={["disk full", "Exception in thread \"main\": disk full", "خطأ تصريف: استثناء IOException غير مُعلَن", "لا شيء — يخرج البرنامج بصمت"]}
+  correctIndex={2}
+  explanation="IOException مفحوصة، ولا تُعلن main عبارة throws ولا يوجد try/catch حول الاستدعاء. يرفض المصرّف بناء كود يمكن أن ينشر استثناءً مفحوصاً غير معالَج عبر تابع لا يُعلنه — هذا يفشل وقت التصريف، وليس وقت التشغيل."
+  actualOutput="error: unreported exception IOException; must be caught or declared to be thrown"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [الأصناف والواجهات](/ar/programming-languages/java/oop-or-structs)
+- [الحزم وأدوات البناء](/ar/programming-languages/java/modules-packages)

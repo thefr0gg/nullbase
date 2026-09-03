@@ -1,0 +1,120 @@
+---
+title: Rust
+description: لغة أنظمة تضمن أمان الذاكرة دون جامع قمامة، تُفرَض بالكامل أثناء الترجمة عبر نموذج الملكية الخاص بها.
+category: Programming Languages
+weight: 1
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+**Rust** لغة أنظمة مترجمة ذات كتابة ساكنة، مبنية حول وعد مركزي واحد: أمان الذاكرة وأمان الخيوط (threads) دون جامع قمامة أثناء التشغيل. تحقق ذلك عبر نظام **الملكية (ownership)** — مجموعة قواعد يفحصها المترجم أثناء الترجمة، بتكلفة صفرية أثناء التشغيل. حيث تترك لغات مثل C وC++ إدارة الذاكرة للمبرمج (وتقبل بين الحين والآخر خطأ استخدام-بعد-التحرير (use-after-free) أو سباق بيانات (data race) كثمن لتلك الحرية)، وتدفع لغات مثل Java أو Go ثمن جامع قمامة يكنس خلفك، يرفض مترجم Rust (وتحديداً مكوّن يسمى **فاحص الاستعارة (borrow checker)**) فئة كاملة من الأخطاء قبل أن يعمل البرنامج على الإطلاق.
+
+هذا سبب أن كود Rust الذي يُترجَم يميل إلى أن يكون موثوقاً بشكل غير معتاد — ليس لأن مبرمجي Rust أكثر حذراً، بل لأن المترجم يرفض إنتاج ملف تنفيذي لكود يحتوي على مؤشرات معلّقة، أو سباقات بيانات، أو إبطال مكرِّرات (iterator invalidation). المقايضة هي منحنى تعلّم أكثر انحداراً: لفاحص الاستعارة آراء حول كيفية مشاركة البيانات وتغييرها، ومصارعته طقس عبور لكل مطوّر Rust جديد.
+
+## لماذا تُستخدم Rust
+
+تظهر Rust حيث كانت C أو C++ تعيشان تقليدياً، بالإضافة إلى أماكن لم تستطع أي منهما الذهاب إليها بارتياح: مكوّنات أنظمة التشغيل، ومحركات المتصفحات (أجزاء من Firefox)، وأدوات سطر الأوامر (`ripgrep`، `fd`)، ووحدات WebAssembly، وبرامج الأجهزة المدمجة (firmware)، وبشكل متزايد خدمات الخلفية حيث يهم الأداء المتوقع دون توقفات جامع القمامة.
+
+## نظرة أولى
+
+```rust
+fn main() {
+    let name = "world";
+    let mut count = 0;
+
+    for _ in 0..3 {
+        count += 1;
+        println!("Hello, {name}! (greeting #{count})");
+    }
+}
+```
+
+تشغيل هذا يطبع التحية ثلاث مرات، مع زيادة `count` في كل مرور. بعض الأشياء المميزة لـ Rust مرئية بالفعل هنا: `let mut` لمتغير يمكن أن يتغير (روابط `let` العادية غير قابلة للتغيير افتراضياً)، وتضمين السلاسل النصية مباشرة داخل سلسلة تنسيق `println!` (`{name}`)، ومدى (`0..3`) كشيء يمكنك التكرار عليه مباشرة دون متغير فهرس.
+
+## الأمان الذي يفرضه المترجم، بمثال
+
+الميزة التي تحدد Rust أكثر من غيرها هي أن هذا النوع من الأخطاء لا يُترجَم:
+
+```rust
+fn main() {
+    let s1 = String::from("hello");
+    let s2 = s1; // s1's value is *moved* into s2, not copied
+
+    println!("{s1}, world!"); // error: use of moved value
+}
+```
+
+```text
+error[E0382]: borrow of moved value: `s1`
+ --> src/main.rs:5:20
+  |
+2 |     let s1 = String::from("hello");
+  |         -- move occurs because `s1` has type `String`, which does not implement the `Copy` trait
+3 |     let s2 = s1; // s1's value is *moved* into s2, not copied
+  |              -- value moved here
+4 |
+5 |     println!("{s1}, world!"); // error: use of moved value
+  |                ^^ value borrowed here after move
+```
+
+يملك `String` تخصيصاً في الكومة (heap)، لذا فإن إسناد `s1` إلى `s2` ينقل ("يحرّك" move) الملكية بدلاً من نسخ البيانات — لم يعد `s1` صالحاً بعد ذلك. هذه ليست حادثة تعطُّل أثناء التشغيل تنتظر الحدوث؛ يلتقطها المترجم قبل أن يُبنى البرنامج أصلاً. تغطي صفحة [الملكية والاستعارة](/ar/programming-languages/rust/advanced) بالضبط سبب وجود هذه القاعدة وما تمنحك إياه.
+
+## كيف يُنظَّم هذا القسم
+
+- **[بنية اللغة والمتغيرات](/ar/programming-languages/rust/syntax-basics)** — الروابط، والقابلية للتغيير، وأنواع Rust الأساسية.
+- **[التحكم بمسار التنفيذ](/ar/programming-languages/rust/control-flow)** — `if`/`else` كتعبيرات، والحلقات، و`match`.
+- **[الدوال](/ar/programming-languages/rust/functions)** — تعريف الدوال، وقيم الإرجاع، والإغلاقات.
+- **[هياكل البيانات](/ar/programming-languages/rust/data-structures)** — المصفوفات، و`Vec`، و`HashMap`.
+- **[البنى والسمات](/ar/programming-languages/rust/oop-or-structs)** — نهج Rust في تجميع البيانات والسلوك المشترك.
+- **[معالجة الأخطاء](/ar/programming-languages/rust/error-handling)** — `Result`، و`Option`، وعامل `?`.
+- **[الوحدات وCargo](/ar/programming-languages/rust/modules-packages)** — تنظيم الكود وجلب الاعتماديات.
+- **[الملكية والاستعارة](/ar/programming-languages/rust/advanced)** — القواعد التي تجعل ضمانات أمان Rust ممكنة.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء برنامج يطبع تحية ثلاث مرات باستخدام عدّاد قابل للتغيير."
+  items={[
+    { id: "fn-open", label: "fn main() {" },
+    { id: "let-name", label: "    let name = \"world\";", explanation: "يُعرَّف الرابط name قبل استخدامه في الحلقة." },
+    { id: "let-mut", label: "    let mut count = 0;", explanation: "يجب أن يكون count موجوداً وقابلاً للتغيير قبل أن تزيده الحلقة." },
+    { id: "for-open", label: "    for _ in 0..3 {" },
+    { id: "increment", label: "        count += 1;" },
+    { id: "print", label: "        println!(\"Hello, {name}! (greeting #{count})\");" },
+    { id: "for-close", label: "    }" },
+    { id: "fn-close", label: "}" },
+  ]}
+  correctOrder={["fn-open", "let-name", "let-mut", "for-open", "increment", "print", "for-close", "fn-close"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء برنامج يوضّح النقل (move) — إسناد String إلى متغير آخر، ثم طباعة الجديد فقط."
+  items={[
+    { id: "fn-open", label: "fn main() {" },
+    { id: "s1", label: "    let s1 = String::from(\"hello\");", explanation: "يجب إنشاء s1 قبل إمكانية نقله إلى s2." },
+    { id: "s2", label: "    let s2 = s1;" },
+    { id: "print", label: "    println!(\"{s2}, world!\");" },
+    { id: "fn-close", label: "}" },
+  ]}
+  correctOrder={["fn-open", "s1", "s2", "print", "fn-close"]}
+/>
+
+<PredictOutput
+  title="ماذا تطبع هذه الشيفرة؟"
+  code={`fn main() {
+    let mut count = 0;
+    for _ in 0..3 {
+        count += 1;
+    }
+    println!("{count}");
+}`}
+  options={["0", "2", "3", "Compile error"]}
+  correctIndex={2}
+  explanation="ينتج المدى 0..3 القيم 0 و1 و2 — ثلاث تكرارات — لذا تُزاد count ثلاث مرات، منتهية عند 3. المدى 0..3 يستثني الحد الأعلى، وهذا ما يخطئ فيه الناس غالباً عند قراءة مدى Rust للمرة الأولى."
+  actualOutput="3"
+/>
+</ExerciseTabs>

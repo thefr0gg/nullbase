@@ -1,0 +1,202 @@
+---
+title: Clases y Traits
+description: Las clases, interfaces, y traits de PHP — su mecanismo de mixin específico de PHP para compartir implementación entre clases no relacionadas.
+category: Programming Languages
+weight: 6
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+PHP ha tenido características orientadas a objetos desde PHP 4, y un modelo
+de clases moderno y bastante convencional desde PHP 5 — herencia simple,
+interfaces, modificadores de visibilidad, clases abstractas. Desde PHP 8, el
+modelo de objetos ha incorporado la promoción de propiedades en el
+constructor, propiedades readonly, y enums, acortando la brecha con
+lenguajes más nuevos.
+
+## Clases
+
+```php
+<?php
+
+class User {
+    public function __construct(
+        public string $name,
+        public string $role = "member",
+    ) {}
+
+    public function describe(): string {
+        return "{$this->name} ({$this->role})";
+    }
+}
+
+$user = new User("Ada", "admin");
+echo $user->describe() . "\n"; // Ada (admin)
+```
+
+Ese constructor usa la **promoción de propiedades del constructor** (PHP
+8.0+): escribir un modificador de visibilidad directamente en un parámetro
+del constructor tanto declara la propiedad como la asigna, reemplazando lo
+que solía tomar tres líneas (`public string $name;` más un parámetro más una
+asignación `$this->name = $name;`) por una sola.
+
+## Herencia
+
+Las clases de PHP soportan herencia simple mediante `extends`. `parent::`
+llama explícitamente a la implementación del padre:
+
+```php
+<?php
+
+class Shape {
+    public function area(): float {
+        return 0.0;
+    }
+}
+
+class Circle extends Shape {
+    public function __construct(private float $radius) {}
+
+    public function area(): float {
+        return M_PI * $this->radius ** 2;
+    }
+}
+
+$circle = new Circle(2.0);
+echo round($circle->area(), 2) . "\n"; // 12.57
+```
+
+## Interfaces
+
+Una `interface` declara un contrato sin implementación. Una clase puede
+implementar cualquier número de interfaces, a diferencia de la única clase
+que puede extender:
+
+```php
+<?php
+
+interface Comparable {
+    public function compareTo(self $other): int;
+}
+
+class Money implements Comparable {
+    public function __construct(public int $cents) {}
+
+    public function compareTo(self $other): int {
+        return $this->cents <=> $other->cents;
+    }
+}
+
+$a = new Money(500);
+$b = new Money(300);
+echo $a->compareTo($b) . "\n"; // 1
+```
+
+## Traits — el mecanismo de mixin de PHP
+
+Esta es la pieza específica de PHP: PHP no permite herencia múltiple, pero
+una clase puede `use`ar cualquier número de **traits** para incorporar
+métodos ya implementados directamente, como si estuvieran copiados y pegados
+en la clase. Así es como PHP comparte comportamiento concreto entre
+jerarquías de clases que de otro modo no están relacionadas.
+
+```php
+<?php
+
+trait Loggable {
+    public function log(string $message): void {
+        echo "[" . static::class . "] $message\n";
+    }
+}
+
+trait Timestamped {
+    private ?string $createdAt = null;
+
+    public function touch(): void {
+        $this->createdAt = date("Y-m-d");
+    }
+
+    public function createdAt(): ?string {
+        return $this->createdAt;
+    }
+}
+
+class Order {
+    use Loggable, Timestamped;
+}
+
+$order = new Order();
+$order->touch();
+$order->log("created on " . $order->createdAt());
+```
+
+Una clase que usa varios traits que definen el mismo método debe resolver el
+conflicto explícitamente con `insteadof`/`as` — PHP no elegirá uno
+silenciosamente, lo cual evita la clásica ambigüedad del "problema del
+diamante" en la que cae la herencia múltiple en otros lenguajes.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir una clase con una propiedad de constructor promovida y llamar a un método sobre ella."
+  items={[
+    { id: "i1", label: "<?php" },
+    { id: "i2", label: "class Product {" },
+    { id: "i3", label: "    public function __construct(public string $name, public float $price) {}" },
+    { id: "i4", label: "    public function label(): string {", explanation: "Los métodos se declaran después del constructor, al mismo nivel del cuerpo de la clase." },
+    { id: "i5", label: '        return "{$this->name}: $" . $this->price;' },
+    { id: "i6", label: "    }" },
+    { id: "i7", label: "}" },
+    { id: "i8", label: 'echo (new Product("Mug", 9.99))->label() . "\\n";' },
+  ]}
+  correctOrder={["i1", "i2", "i3", "i4", "i5", "i6", "i7", "i8"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Ordena estas líneas para definir un trait y usarlo dentro de una clase."
+  items={[
+    { id: "j1", label: "<?php" },
+    { id: "j2", label: "trait Greets {" },
+    { id: "j3", label: '    public function greet(): string {', explanation: "El cuerpo del método del trait se define antes de que cualquier clase lo use." },
+    { id: "j4", label: '        return "Hi, I am {$this->name}";' },
+    { id: "j5", label: "    }" },
+    { id: "j6", label: "}" },
+    { id: "j7", label: "class Robot {" },
+    { id: "j8", label: "    use Greets;" },
+    { id: "j9", label: "    public function __construct(public string $name) {}" },
+    { id: "j10", label: "}" },
+  ]}
+  correctOrder={["j1", "j2", "j3", "j4", "j5", "j6", "j7", "j8", "j9", "j10"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`<?php
+
+interface Speaks {
+    public function speak(): string;
+}
+
+class Dog implements Speaks {
+    public function speak(): string {
+        return "Woof";
+    }
+}
+
+$animal = new Dog();
+echo $animal instanceof Speaks ? "yes" : "no";`}
+  options={["yes", "no", "Fatal error: instanceof requires a class", "true"]}
+  correctIndex={0}
+  explanation="Una clase que implementa una interfaz satisface las comprobaciones instanceof contra esa interfaz, no solo contra su propio nombre de clase — así es como PHP te permite tipar contra un contrato en vez de una clase concreta."
+  actualOutput="yes"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Arrays](/es/programming-languages/php/data-structures)
+- [Manejo de Errores](/es/programming-languages/php/error-handling)

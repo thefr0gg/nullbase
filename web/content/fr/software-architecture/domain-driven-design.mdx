@@ -1,0 +1,40 @@
+---
+title: Conception pilotée par le domaine
+description: Modéliser un logiciel autour du domaine métier réel et du langage de ses experts, plutôt qu'autour des tables de base de données ou des couches techniques.
+category: Software Architecture
+weight: 9
+---
+
+La **conception pilotée par le domaine (Domain-Driven Design, DDD)**, un terme forgé par Eric Evans, est une approche de construction de logiciel qui place le domaine métier réel — le problème du monde réel que le logiciel existe pour résoudre, et les personnes qui le comprennent en profondeur — au centre de la conception, plutôt que de laisser la forme de la base de données ou du framework dicter comment le code est organisé. La prémisse centrale est que la majeure partie de la complexité d'un problème métier réellement difficile n'est pas technique (il n'est pas difficile de stocker une ligne dans une base de données) ; elle réside dans le fait de correctement comprendre et modéliser les règles, exceptions et le vocabulaire du domaine lui-même, donc le DDD dépense son effort à bien faire ce modèle avant de se soucier des frameworks ou de l'infrastructure.
+
+## Le langage ubiquitaire
+
+L'idée la plus immédiatement pratique du DDD est le **langage ubiquitaire** : un vocabulaire partagé, mot pour mot, entre développeurs et experts du domaine, et utilisé de façon cohérente dans la conversation, la documentation, et le code lui-même. Si les souscripteurs et les gestionnaires de sinistres d'une compagnie d'assurance parlent d'une « police qui devient caduque », le code devrait avoir une méthode `lapse()` ou un état `Lapsed` — pas un `status = 3` générique qu'un développeur mappe en privé sur « caduque » dans sa tête. Quand le même mot signifie la même chose pour tout le monde dans la pièce, les erreurs de traduction entre « ce que le métier a demandé » et « ce que fait le code » disparaissent presque, parce qu'il n'y a jamais eu d'étape de traduction au départ — l'expert du domaine peut lire un cas d'usage décrit dans le langage ubiquitaire et y reconnaître son propre métier.
+
+Cela ressemble à une pratique de communication plus qu'à un pattern d'architecture, et c'en est une — mais c'est la fondation sur laquelle repose tout le reste du DDD. Sans un vocabulaire partagé et précis, la modélisation qui suit tend à dériver soit vers des abstractions techniques que personne en dehors de l'ingénierie ne comprend, soit vers un jargon métier vague qui ne se traduit dans aucune structure de code réelle.
+
+## Les contextes bornés
+
+Un large domaine métier a rarement un seul sens cohérent pour ses termes centraux. Dans un système de e-commerce, « Produit » dans le contexte du catalogue signifie quelque chose avec une description, des images, et des tags de catégorie ; « Produit » dans le contexte de l'expédition signifie quelque chose avec un poids, des dimensions, et un emplacement d'entrepôt ; « Produit » dans le contexte de la facturation signifie quelque chose avec un prix et un code fiscal. Forcer les trois dans un seul modèle `Product` partagé produit une classe boursouflée pleine de champs qui comptent pour certaines parties du système et sont un bruit sans signification partout ailleurs, et un changement fait pour le bénéfice de l'expédition risque de briser silencieusement les hypothèses de la facturation.
+
+Un **contexte borné** (bounded context) est la réponse du DDD : une frontière explicite (souvent, mais pas nécessairement, une frontière de service ou de module) à l'intérieur de laquelle un terme a exactement un sens cohérent, et en dehors de laquelle ce sens n'a pas besoin de s'appliquer. Les contextes catalogue, expédition et facturation obtiennent chacun leur propre modèle de « Produit », adapté à ce dont ce contexte a réellement besoin, et ils traduisent entre eux à leurs frontières plutôt que de partager un seul modèle qui ne satisfait bien personne. C'est ce qui rend les contextes bornés différents d'un simple « mauvais nommage » — le même mot signifiant légitimement des choses différentes dans des contextes différents est attendu et sain, tant que chaque contexte reste cohérent en interne et que les frontières sont délibérées plutôt qu'accidentelles.
+
+## Entités, objets-valeurs et agrégats — la forme d'un modèle
+
+Au niveau d'un contexte borné individuel, le DDD offre un petit vocabulaire conceptuel pour façonner un modèle de domaine, sans exiger tout le poids de ses patterns tactiques pour en tirer de la valeur :
+
+- Une **entité** a une identité persistante qui compte indépendamment de ses attributs actuels — deux commandes avec des lignes identiques sont tout de même deux commandes différentes, distinguées par leur ID de commande, et une commande qui change d'adresse de livraison est toujours la même commande.
+- Un **objet-valeur** (value object) n'a pas d'identité propre — il est entièrement défini par ses attributs. Deux objets `Money` représentant « 50 USD » sont interchangeables ; rien ne distingue une instance d'une autre, donc ils peuvent être librement comparés, copiés et remplacés.
+- Un **agrégat** est un groupe d'entités et d'objets-valeurs traité comme une seule frontière de cohérence, avec une seule entité (la racine d'agrégat) comme unique point d'entrée que le reste du code peut référencer directement. Un agrégat `Order` pourrait contenir des objets-valeurs `LineItem` en interne, mais le reste du code n'interagit avec la commande qu'à travers la racine `Order`, ce qui garde les invariants (les lignes ne peuvent pas dépasser le stock, une commande annulée ne peut pas gagner de nouvelles lignes) applicables à exactement un endroit plutôt que dispersés à travers chaque appelant.
+
+Rien de tout cela ne nécessite d'aller au fond de toute la boîte à outils tactique du DDD (dépôts, événements de domaine, spécifications) pour être utile — même le simple fait de systématiquement se demander « cette chose a-t-elle une identité, ou n'est-elle qu'une valeur » clarifie un nombre surprenant de décisions de modélisation qui, autrement, seraient prises au coup par coup.
+
+## Quand c'est le mauvais outil
+
+Le DDD est un investissement lourd : il demande une collaboration soutenue avec des experts du domaine, un travail de modélisation délibéré avant d'écrire du code, et la discipline de maintenir les frontières de contextes bornés à mesure qu'un système grandit. Cet investissement est rentable quand le domaine lui-même est réellement complexe — la souscription d'assurance, le routage logistique, les instruments financiers — tout ce où les règles métier sont la partie difficile et où se tromper subtilement a un vrai coût. C'est le mauvais outil pour une application CRUD simple où le « domaine » n'est vraiment que des tables de base de données avec une fine couche de validation ; forcer des entités, des objets-valeurs et des contextes bornés sur une application de liste de tâches ajoute du cérémonial sans rien en dessous pour justifier le coût.
+
+## Voir aussi
+
+- **[Clean Architecture](/fr/software-architecture/clean-architecture)** — un appariement courant, puisque la couche « entités » intérieure de Clean Architecture est exactement là où un modèle de domaine de style DDD trouve naturellement sa place.
+- **[Architecture en couches](/fr/software-architecture/layered-architecture)** — le défaut le plus courant quand un domaine ne justifie pas l'investissement du DDD.
+- **[Architecture REST](/fr/software-architecture/rest-architecture)** — le nommage des ressources dans une API REST bénéficie de la même clarté qu'apporte un langage ubiquitaire, même sans adopter le DDD dans son intégralité.

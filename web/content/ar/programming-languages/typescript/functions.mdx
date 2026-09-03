@@ -1,0 +1,119 @@
+---
+title: الدوال
+description: معاملات وأنواع إرجاع ذات كتابة، بالإضافة إلى المعاملات الاختيارية والافتراضية، في توقيعات الدوال في TypeScript.
+category: Programming Languages
+weight: 4
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تقبل دوال JavaScript أي وسائط تُمرَّرها إليها، واستدعاء بعدد أو نوع خاطئ من الوسائط يفشل عادةً بصمت (الوسائط الزائدة تُتجاهَل، والمفقودة تصبح `undefined`) أو يرمي خطأً في عمق جسم الدالة. تُعلِن توقيعات دوال TypeScript بالضبط ما هو متوقَّع، ويفحص المُصرِّف كل موضع استدعاء مقابل ذلك التصريح قبل أن يعمل الكود مطلقاً.
+
+## معاملات وأنواع إرجاع ذات كتابة
+
+```ts
+function add(a: number, b: number): number {
+  return a + b;
+}
+
+add(2, 3); // 5
+add(2, "3"); // Type error: Argument of type 'string' is not assignable to parameter of type 'number'
+add(2); // Type error: Expected 2 arguments, but got 1
+```
+
+يُقيِّد `a: number` و`b: number` المعاملات؛ و`: number` بعد قائمة المعاملات يُقيِّد ما يُسمَح للدالة بأن تُعيده (`return`). لو حاول جسم الدالة تنفيذ `return a + b + "!"` (سلسلة نصية)، لرفض المُصرِّف ذلك أيضاً — يُفحَص نوع الإرجاع المُصرَّح مقابل عبارات الإرجاع الفعلية، وليس مجرد استنتاجه وتركه دون فحص.
+
+يمكنك أيضاً ترك TypeScript تستنتج نوع الإرجاع بدلاً من كتابته صراحة:
+
+```ts
+function multiply(a: number, b: number) {
+  return a * b; // نوع الإرجاع مُستنتَج كـnumber
+}
+```
+
+لا يزال كتابة أنواع الإرجاع الصريحة يستحق العناء في الدوال المُصدَّرة/العامة — فهي تعمل كعقد لا يتغيّر بصمت إذا عدَّل أحدهم جسم الدالة لاحقاً.
+
+## المعاملات الاختيارية
+
+إلحاق `?` باسم معامل يجعله اختيارياً — يمكن للمستدعين حذفه، وداخل الدالة يشمل نوعه `undefined`:
+
+```ts
+function greet(name: string, title?: string): string {
+  if (title) {
+    return `Hello, ${title} ${name}!`;
+  }
+  return `Hello, ${name}!`;
+}
+
+greet("Ada"); // "Hello, Ada!"
+greet("Ada", "Dr."); // "Hello, Dr. Ada!"
+```
+
+يجب أن تأتي المعاملات الاختيارية بعد كل المعاملات المطلوبة في قائمة المعاملات — `function f(a?: string, b: string)` خطأ وقت الترجمة، لأنه لن توجد طريقة لمعرفة أي وسيط كان استدعاء بقيمة واحدة يقصد ملأه.
+
+## المعاملات الافتراضية
+
+تجعل القيمة الافتراضية المعامل اختيارياً عند موضع الاستدعاء مع منحه قيمة ملموسة داخل جسم الدالة — دون حاجة لفحص `undefined`:
+
+```ts
+function createUser(name: string, role: string = "member") {
+  return { name, role };
+}
+
+createUser("Ada"); // { name: "Ada", role: "member" }
+createUser("Ada", "admin"); // { name: "Ada", role: "admin" }
+```
+
+بما أن نوع `role` مُستنتَج من قيمته الافتراضية (`string`)، فإن تمرير أي شيء آخر غير `string | undefined` يفشل في الترجمة رغم كل شيء — `createUser("Ada", 1)` خطأ نوع، حتى لو كانت لـ`role` قيمة افتراضية.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء دالة add ذات نوع واستدعاء يفشل مُدقِّق الأنواع."
+  items={[
+    { id: "fn-decl", label: "function add(a: number, b: number): number {" },
+    { id: "fn-body", label: "  return a + b;", explanation: "تنتمي عبارة الإرجاع إلى داخل جسم الدالة، بين التوقيع وقوسها المغلِق." },
+    { id: "fn-close", label: "}" },
+    { id: "good-call", label: "add(2, 3);" },
+    { id: "bad-call", label: "add(2, \"3\"); // Type error" },
+  ]}
+  correctOrder={["fn-decl", "fn-body", "fn-close", "good-call", "bad-call"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء دالة createUser بمعامل role افتراضي."
+  items={[
+    { id: "fn-decl", label: "function createUser(name: string, role: string = \"member\") {" },
+    { id: "fn-body", label: "  return { name, role };", explanation: "تُعاد قيمة الكائن الحرفية من داخل جسم الدالة." },
+    { id: "fn-close", label: "}" },
+    { id: "call-one-arg", label: "createUser(\"Ada\");" },
+    { id: "call-two-args", label: "createUser(\"Ada\", \"admin\");" },
+  ]}
+  correctOrder={["fn-decl", "fn-body", "fn-close", "call-one-arg", "call-two-args"]}
+/>
+
+<PredictOutput
+  title="ماذا يقول مُدقِّق الأنواع؟"
+  code={`function greet(name: string, title?: string): string {
+  if (title) {
+    return \`Hello, \${title} \${name}!\`;
+  }
+  return \`Hello, \${name}!\`;
+}
+
+greet("Ada", 5);`}
+  options={["\"Hello, 5 Ada!\"", "\"Hello, Ada!\"", "Type error: Argument of type 'number' is not assignable to parameter of type 'string | undefined'", "undefined"]}
+  correctIndex={2}
+  explanation="title اختيارية، لذا تقبل سلسلة نصية أو أن تُحذَف كلياً — لكنها لا تتّسع لقبول أي نوع كيفما اتفق. تمرير رقم لمعامل سلسلة نصية اختياري يبقى عدم تطابق نوع، تماماً كما لو كان معاملاً مطلوباً."
+  actualOutput="Type error: Argument of type 'number' is not assignable to parameter of type 'string | undefined'"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [التحكم بمسار التنفيذ](/ar/programming-languages/typescript/control-flow)
+- [الأنواع العامة (Generics)](/ar/programming-languages/typescript/advanced)

@@ -1,0 +1,33 @@
+---
+title: Intérpretes
+description: Cómo se ejecuta el código fuente (o el bytecode) directamente, un paso a la vez, mientras el programa se ejecuta — intérpretes que recorren el árbol frente a intérpretes de bytecode, y las compensaciones frente a la compilación por adelantado.
+category: Computer Science
+weight: 7
+---
+
+Un **intérprete** ejecuta la lógica de un programa directamente, un paso a la vez, en el momento en que el programa se ejecuta — en lugar de traducir todo a código máquina de antemano como hace un [compilador](/es/computer-science/compilers). Las mismas etapas de lexing y parsing que usa un compilador siguen ocurriendo (el texto fuente todavía tiene que convertirse en un [AST](/es/computer-science/compilers) o estructura similar antes de que nada pueda ejecutarlo), pero el último paso difiere: en lugar de generar código máquina a partir de esa estructura, un intérprete la recorre y *realiza* las operaciones que describe justo en ese momento.
+
+## Intérpretes que recorren el árbol
+
+El diseño más simple recorre directamente el AST que produjo un parser: un nodo "suma" hace que el intérprete evalúe sus dos hijos y sume los resultados, ahí mismo, recursivamente, para todo el árbol. Esto es sencillo de construir y fácil de razonar, pero lento — cada ejecución individual vuelve a recorrer la estructura del árbol y vuelve a despachar según el tipo de nodo, un trabajo que un compilador habría hecho exactamente una vez y horneado en el código máquina de salida.
+
+## Intérpretes de bytecode
+
+La mayoría de los runtimes reales de lenguajes interpretados toman un camino intermedio: compilar el AST una vez en un **bytecode** compacto y plano — una secuencia de instrucciones simples para una máquina virtual hipotética, no la forma de árbol original del AST — y luego interpretar *eso* en su lugar. Las instrucciones de bytecode son más simples y uniformes de despachar que nodos de árbol arbitrarios, así que esto es notablemente más rápido que recorrer el árbol incluso sin tocar nunca código máquina real. CPython (la implementación de referencia de Python), la JVM, y YARV de Ruby funcionan todos así: un paso de compilación sigue ocurriendo, pero su salida es bytecode para su propia máquina virtual en lugar de instrucciones nativas para una CPU real.
+
+## Por qué interpretar en absoluto
+
+Dado que el código compilado se ejecuta más rápido, la interpretación se gana su lugar en otros ejes:
+
+- **Tiempo de arranque** — no hay un paso de compilación separado entre editar un archivo y ejecutarlo, que es la mayor parte de por qué los lenguajes de scripting (Python, Ruby, JavaScript en un navegador) usan este modelo por defecto — nadie quiere compilar un script de una línea.
+- **Portabilidad** — el mismo bytecode (o código fuente) se ejecuta en cualquier lugar donde exista un intérprete compatible, sin recompilar por arquitectura objetivo — "escribe una vez, ejecuta en cualquier parte" realmente es "escribe una vez, interpreta en todas partes".
+- **Comportamiento dinámico** — funcionalidades como `eval`, la generación de código en tiempo de ejecución, o tipos que no se conocen del todo hasta que el programa ya se está ejecutando encajan naturalmente en un modelo que sigue ejecutándose activamente en lugar de uno que terminó de traducir todo por adelantado.
+
+## Dónde encaja la compilación JIT
+
+La brecha de rendimiento entre la interpretación y la compilación por adelantado es exactamente lo que la **compilación JIT (just-in-time)** existe para cerrar, como se cubre en la página de [Compiladores](/es/computer-science/compilers): un runtime empieza interpretando bytecode, perfila qué rutas de código realmente se ejecutan a menudo, y compila justo esas rutas calientes a código máquina nativo a mitad de la ejecución. V8 (JavaScript), la JVM, y PyPy superponen todos esto sobre un intérprete en lugar de elegir un modelo exclusivamente — obteniendo el arranque rápido de un intérprete y la velocidad de estado estable de un compilador para las partes del programa que realmente lo merecen.
+
+## Ver también
+
+- **[Compiladores](/es/computer-science/compilers)** — la alternativa por adelantado, y el front-end compartido (lexing, parsing) que usan ambos enfoques.
+- **[Lenguajes de Programación](/es/programming-languages)** — páginas por lenguaje que cubren cuál de estos modelos usa realmente el runtime mainstream de cada lenguaje.

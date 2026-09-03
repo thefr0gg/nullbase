@@ -1,0 +1,35 @@
+---
+title: Memoria
+description: La jerarquía de almacenamiento por la que realmente se mueven los datos de un programa en ejecución — registros, caché, RAM y disco — y por qué esa jerarquía, no la velocidad de reloj en bruto, es contra lo que realmente lucha la mayoría del trabajo de rendimiento.
+category: Computer Science
+weight: 3
+---
+
+"Memoria" no es una sola cosa que tiene una computadora — es una **jerarquía** de varios tipos de almacenamiento, cada uno más rápido y más pequeño que el que está debajo, y la mayor parte del código sensible al rendimiento se trata en realidad de mantener los datos lo más arriba posible en esa jerarquía durante el mayor tiempo posible.
+
+## La jerarquía
+
+De más rápido/más pequeño a más lento/más grande:
+
+- **Registros** — un puñado de ranuras de almacenamiento integradas directamente en la propia [CPU](/es/computer-science/cpu), que contienen los valores sobre los que está operando una instrucción en este momento. El acceso es prácticamente instantáneo, pero solo hay unas pocas docenas de ellos.
+- **Caché (L1/L2/L3)** — pequeñas reservas de memoria muy rápida que se sitúan entre la CPU y la RAM, conteniendo datos usados recientemente y con probabilidad de volver a usarse. L1 es la más pequeña y rápida (por núcleo, a menudo por debajo de 100KB), L3 es la más grande y lenta de las tres (compartida entre núcleos, varios MB). Un **acierto de caché** cuesta unos pocos ciclos de CPU; un **fallo de caché** que tiene que recurrir a la RAM puede costar cientos.
+- **RAM (memoria principal)** — gigabytes de memoria de trabajo de propósito general, órdenes de magnitud más lenta que la caché pero aún mucho más rápida que el disco. Aquí es donde realmente está respaldado el espacio de direcciones de [memoria virtual](/es/operating-systems/virtual-memory) de un proceso, mapeado por el sistema operativo.
+- **Disco (SSD/HDD)** — almacenamiento persistente, otros dos órdenes de magnitud más lento que la RAM (una lectura de SSD es miles de veces más lenta que un acceso a RAM; un HDD giratorio, todavía más). Se usa para cualquier cosa que tenga que sobrevivir a un reinicio, y como desbordamiento cuando se agota la RAM ([swap](/es/operating-systems/virtual-memory)).
+
+Cada nivel existe porque el nivel más rápido debajo de él es demasiado pequeño y demasiado caro para contener todo, así que el sistema sigue apostando sobre qué necesitarás a continuación.
+
+## La localidad es por lo que la caché funciona en absoluto
+
+La caché solo ayuda porque los programas reales exhiben **localidad de referencia**: **localidad temporal** (un valor accedido una vez tiene probabilidad de ser accedido de nuevo pronto — un contador de bucle, las variables locales de una función activa) y **localidad espacial** (acceder a una dirección de memoria hace probable que se accedan pronto también las direcciones cercanas — el resto de un array sobre el que estás iterando). Las cachés de hardware están construidas específicamente en torno a la localidad espacial: un fallo de caché no recupera un solo byte de la RAM, recupera una **línea de caché** completa (típicamente 64 bytes) que lo rodea, apostando a que los próximos accesos caerán dentro de esa línea de forma gratuita.
+
+Esta es también la razón práctica por la que la iteración basada en [arrays](/es/computer-science/data-structures) tiende a superar en rendimiento a la iteración de una lista enlazada del mismo tamaño en mediciones reales aunque ambas sean O(n): los elementos del array son contiguos, así que un puñado de recuperaciones de línea de caché cubre todo el escaneo, mientras que los nodos de la lista enlazada pueden estar dispersos en cualquier parte de la memoria, convirtiendo casi cada paso en un fallo de caché nuevo.
+
+## Stack frente a heap
+
+Dentro de un solo proceso, la memoria usada en tiempo de ejecución se divide en dos regiones con tiempos de vida muy diferentes. El **stack** contiene las variables locales y la dirección de retorno de cada llamada a función, creciendo y reduciéndose automáticamente a medida que se entra y sale de funciones — la asignación y liberación son ambas simplemente mover un puntero, así que es extremadamente rápido, pero un valor no puede sobrevivir a la llamada de función que lo creó. El **heap** contiene datos cuyo tiempo de vida no está atado a una sola llamada de función — asignados explícitamente (`malloc`/`new`, o implícitamente por el runtime de un lenguaje gestionado) y liberados explícitamente o por un **recolector de basura** que identifica y recupera memoria que ya nada referencia. La asignación en el heap es más lenta y su memoria puede fragmentarse con el tiempo, pero es la única opción para datos que necesitan sobrevivir a la llamada que los creó o cuyo tamaño no se conoce hasta el tiempo de ejecución.
+
+## Ver también
+
+- **[CPU](/es/computer-science/cpu)** — los registros y cachés de arriba se sitúan directamente en el chip del que parte la jerarquía de esta página.
+- **[Memoria Virtual](/es/operating-systems/virtual-memory)** — cómo el sistema operativo le da a cada proceso su propia vista privada de la RAM (y del swap respaldado en disco) sobre esta jerarquía.
+- **[Estructuras de Datos](/es/computer-science/data-structures)** — por qué el diseño de memoria de una estructura, no solo su Big O, determina su velocidad real.

@@ -1,0 +1,153 @@
+---
+title: Rust
+description: Un langage système qui garantit la sécurité mémoire sans ramasse-miettes, imposée entièrement à la compilation par son modèle de possession.
+category: Programming Languages
+weight: 1
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+**Rust** est un langage système compilé, à typage statique, construit autour
+d'une promesse centrale : la sécurité mémoire et la sécurité des threads sans
+ramasse-miettes à l'exécution. Il y parvient grâce au système de
+**possession** (ownership) — un ensemble de règles que le compilateur vérifie
+à la compilation, sans coût à l'exécution. Là où des langages comme C et C++
+laissent la gestion de la mémoire au programmeur (et acceptent l'occasionnel
+use-after-free ou la course de données comme le prix de cette liberté), et
+où des langages comme Java ou Go paient un ramasse-miettes pour nettoyer
+derrière vous, le compilateur de Rust (spécifiquement un composant appelé le
+**borrow checker**) rejette toute une classe de bugs avant même que le
+programme ne s'exécute.
+
+C'est pourquoi le code Rust qui compile a tendance à être exceptionnellement
+fiable — non pas parce que les développeurs Rust sont plus prudents, mais
+parce que le compilateur refuse de produire un binaire pour du code avec des
+pointeurs pendants, des courses de données, ou une invalidation d'itérateur.
+Le compromis est une courbe d'apprentissage plus abrupte : le borrow checker
+a des opinions sur comment les données peuvent être partagées et mutées, et
+lutter contre lui est un rite de passage pour tout nouveau développeur Rust.
+
+## À quoi Rust est utilisé
+
+Rust apparaît partout où C ou C++ vivaient traditionnellement, plus des
+endroits où ni l'un ni l'autre ne pouvait aller confortablement : les
+composants de système d'exploitation, les moteurs de navigateur (des
+parties de Firefox), les outils en ligne de commande (`ripgrep`, `fd`), les
+modules WebAssembly, le firmware embarqué, et de plus en plus les services
+backend où une performance prévisible sans pauses de GC compte.
+
+## Un premier aperçu
+
+```rust
+fn main() {
+    let name = "world";
+    let mut count = 0;
+
+    for _ in 0..3 {
+        count += 1;
+        println!("Hello, {name}! (greeting #{count})");
+    }
+}
+```
+
+Exécuter ceci affiche la salutation trois fois, en incrémentant `count` à
+chaque passage. Plusieurs choses sont déjà visibles ici qui sont
+distinctement Rust : `let mut` pour une variable qui peut changer (les
+liaisons `let` simples sont immuables par défaut), l'interpolation de chaîne
+directement à l'intérieur de la chaîne de format de `println!` (`{name}`),
+et une plage (`0..3`) comme quelque chose sur lequel on peut boucler
+directement sans variable d'index.
+
+## Sécurité imposée par le compilateur, avec un exemple
+
+La fonctionnalité qui définit le plus Rust est que ce genre d'erreur ne
+compile pas :
+
+```rust
+fn main() {
+    let s1 = String::from("hello");
+    let s2 = s1; // s1's value is *moved* into s2, not copied
+
+    println!("{s1}, world!"); // error: use of moved value
+}
+```
+
+```text
+error[E0382]: borrow of moved value: `s1`
+ --> src/main.rs:5:20
+  |
+2 |     let s1 = String::from("hello");
+  |         -- move occurs because `s1` has type `String`, which does not implement the `Copy` trait
+3 |     let s2 = s1; // s1's value is *moved* into s2, not copied
+  |              -- value moved here
+4 |
+5 |     println!("{s1}, world!"); // error: use of moved value
+  |                ^^ value borrowed here after move
+```
+
+`String` possède une allocation sur le tas, donc assigner `s1` à `s2`
+transfère (« déplace ») la possession plutôt que de copier les données —
+`s1` n'est plus valide ensuite. Ce n'est pas un crash à l'exécution en
+attente ; le compilateur l'attrape avant même que le programme soit
+construit. La page [Possession et emprunt](/fr/programming-languages/rust/advanced)
+couvre exactement pourquoi cette règle existe et ce qu'elle vous apporte.
+
+## Comment cette section est organisée
+
+- **[Syntaxe et variables](/fr/programming-languages/rust/syntax-basics)** — liaisons, mutabilité, et les types de base de Rust.
+- **[Flux de contrôle](/fr/programming-languages/rust/control-flow)** — `if`/`else` comme expressions, boucles, et `match`.
+- **[Fonctions](/fr/programming-languages/rust/functions)** — déclarer des fonctions, valeurs de retour, et closures.
+- **[Structures de données](/fr/programming-languages/rust/data-structures)** — tableaux, `Vec`, et `HashMap`.
+- **[Structs et traits](/fr/programming-languages/rust/oop-or-structs)** — l'approche de Rust pour grouper des données et du comportement partagé.
+- **[Gestion des erreurs](/fr/programming-languages/rust/error-handling)** — `Result`, `Option`, et l'opérateur `?`.
+- **[Modules et Cargo](/fr/programming-languages/rust/modules-packages)** — organiser le code et importer des dépendances.
+- **[Possession et emprunt](/fr/programming-languages/rust/advanced)** — les règles qui rendent possibles les garanties de sécurité de Rust.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire un programme qui affiche une salutation trois fois en utilisant un compteur mutable."
+  items={[
+    { id: "fn-open", label: "fn main() {" },
+    { id: "let-name", label: "    let name = \"world\";", explanation: "La liaison name est déclarée avant d'être utilisée dans la boucle." },
+    { id: "let-mut", label: "    let mut count = 0;", explanation: "count doit exister et être mutable avant que la boucle ne l'incrémente." },
+    { id: "for-open", label: "    for _ in 0..3 {" },
+    { id: "increment", label: "        count += 1;" },
+    { id: "print", label: "        println!(\"Hello, {name}! (greeting #{count})\");" },
+    { id: "for-close", label: "    }" },
+    { id: "fn-close", label: "}" },
+  ]}
+  correctOrder={["fn-open", "let-name", "let-mut", "for-open", "increment", "print", "for-close", "fn-close"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire un programme qui démontre un déplacement — assigner un String à une autre variable, puis n'afficher que la nouvelle."
+  items={[
+    { id: "fn-open", label: "fn main() {" },
+    { id: "s1", label: "    let s1 = String::from(\"hello\");", explanation: "s1 doit être créé avant de pouvoir être déplacé dans s2." },
+    { id: "s2", label: "    let s2 = s1;" },
+    { id: "print", label: "    println!(\"{s2}, world!\");" },
+    { id: "fn-close", label: "}" },
+  ]}
+  correctOrder={["fn-open", "s1", "s2", "print", "fn-close"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que ceci affiche ?"
+  code={`fn main() {
+    let mut count = 0;
+    for _ in 0..3 {
+        count += 1;
+    }
+    println!("{count}");
+}`}
+  options={["0", "2", "3", "Compile error"]}
+  correctIndex={2}
+  explanation="La plage 0..3 produit 0, 1, 2 — trois itérations — donc count est incrémenté trois fois, se terminant à 3. 0..3 exclut la borne supérieure, ce qui est la chose que l'on comprend le plus souvent mal en lisant une plage Rust pour la première fois."
+  actualOutput="3"
+/>
+</ExerciseTabs>

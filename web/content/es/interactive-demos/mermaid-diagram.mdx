@@ -1,0 +1,44 @@
+---
+title: Diagrama Mermaid
+description: Un diagrama declarativo, de texto a SVG — diagramas de flujo, diagramas de secuencia, diagramas de estado, y más, con un tema que se ajusta automáticamente al modo claro/oscuro.
+category: Interactive Demos
+weight: 10
+interactive: true
+interactiveType: ["MermaidDiagram"]
+---
+
+`MermaidDiagram` es el otro extremo del espectro frente a `DiagramExplorer`: en lugar de que un autor describa nodos y aristas como datos, escribe una pequeña descripción de texto en sintaxis [Mermaid](https://mermaid.js.org/) y la biblioteca la organiza y la renderiza a SVG en el cliente. Bueno para cualquier cosa para la que Mermaid ya tenga un tipo de diagrama (diagramas de flujo, diagramas de secuencia, diagramas de estado, diagramas ER, diagramas de Gantt) — recurre a `DiagramExplorer` en su lugar cuando necesites que cada nodo sea clicable con su propio panel de explicación, algo que la salida SVG estática de Mermaid no soporta.
+
+## Un diagrama de flujo
+
+<MermaidDiagram
+  title="Una decisión simple"
+  chart={`flowchart TD
+    A[Llega la solicitud] --> B{¿Acierto de caché?}
+    B -->|Sí| C[Devolver respuesta en caché]
+    B -->|No| D[Consultar la base de datos]
+    D --> E[Guardar en caché]
+    E --> C`}
+/>
+
+## Un diagrama de secuencia
+
+<MermaidDiagram
+  title="Dos servicios y una caché compartida"
+  chart={`sequenceDiagram
+    participant Client
+    participant API
+    participant Cache
+    Client->>API: GET /products/42
+    API->>Cache: get("product:42")
+    Cache-->>API: miss
+    API->>API: query database
+    API->>Cache: set("product:42", ...)
+    API-->>Client: 200 OK`}
+/>
+
+La propia biblioteca (~600KB) se importa dinámicamente solo en las páginas que renderizan este componente, y los colores del diagrama se adaptan automáticamente al tema claro/oscuro del sitio.
+
+## Ver también
+
+- **[Anatomía y ciclo de vida de una URL](/es/interactive-demos/url-anatomy-and-lifecycle)** — `DiagramExplorer`, la alternativa clicable a un diagrama Mermaid estático.

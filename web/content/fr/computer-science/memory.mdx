@@ -1,0 +1,35 @@
+---
+title: Mémoire
+description: La hiérarchie de stockage à travers laquelle les données d'un programme en exécution circulent réellement — registres, cache, RAM et disque — et pourquoi cette hiérarchie, et non la vitesse d'horloge brute, est ce contre quoi la plupart du travail de performance se bat réellement.
+category: Computer Science
+weight: 3
+---
+
+La « mémoire » n'est pas une chose unique qu'un ordinateur possède — c'est une **hiérarchie** de plusieurs types de stockage, chacun plus rapide et plus petit que celui en dessous, et la plupart du code sensible à la performance consiste réellement à garder les données aussi haut que possible dans cette hiérarchie, aussi longtemps que possible.
+
+## La hiérarchie
+
+Du plus rapide/petit au plus lent/grand :
+
+- **Les registres** — une poignée d'emplacements de stockage intégrés directement dans le [CPU](/fr/computer-science/cpu) lui-même, contenant les valeurs sur lesquelles une instruction opère en ce moment. L'accès est pratiquement instantané, mais il n'y en a qu'une poignée.
+- **Le cache (L1/L2/L3)** — de petits réservoirs de mémoire très rapide situés entre le CPU et la RAM, contenant les données récemment utilisées et susceptibles de l'être bientôt. L1 est le plus petit et le plus rapide (par cœur, souvent moins de 100 Ko), L3 est le plus grand et le plus lent des trois (partagé entre les cœurs, plusieurs Mo). Un **succès de cache** (cache hit) coûte quelques cycles CPU ; un **défaut de cache** (cache miss) qui doit retomber sur la RAM peut en coûter des centaines.
+- **La RAM (mémoire principale)** — des gigaoctets de mémoire de travail à usage général, plusieurs ordres de grandeur plus lente que le cache mais encore bien plus rapide que le disque. C'est là que l'espace d'adressage de [mémoire virtuelle](/fr/operating-systems/virtual-memory) d'un processus est réellement adossé, mappé par l'OS.
+- **Le disque (SSD/HDD)** — un stockage persistant, encore deux ordres de grandeur plus lent que la RAM (une lecture SSD est des milliers de fois plus lente qu'un accès RAM ; un disque dur à plateaux, encore plus). Utilisé pour tout ce qui doit survivre à un redémarrage, et comme débordement quand la RAM manque ([swap](/fr/operating-systems/virtual-memory)).
+
+Chaque niveau existe parce que le palier plus rapide en dessous de lui est trop petit et trop coûteux pour tout contenir, donc le système parie constamment sur ce dont vous aurez besoin ensuite.
+
+## La localité est la raison pour laquelle la mise en cache fonctionne
+
+La mise en cache n'aide que parce que les programmes réels présentent une **localité de référence** : la **localité temporelle** (une valeur accédée une fois a des chances d'être accédée à nouveau bientôt — un compteur de boucle, les variables locales d'une fonction fréquemment appelée) et la **localité spatiale** (accéder à une adresse mémoire rend probable que des adresses voisines soient accédées bientôt aussi — le reste d'un tableau que vous parcourez). Les caches matériels sont construits spécifiquement autour de la localité spatiale : un défaut de cache ne récupère pas un seul octet depuis la RAM, il récupère une **ligne de cache** entière (généralement 64 octets) qui l'entoure, en pariant que les prochains accès tomberont gratuitement dans cette ligne.
+
+C'est aussi la raison pratique pour laquelle l'itération sur un [tableau](/fr/computer-science/data-structures) tend à surpasser l'itération sur une liste chaînée de même taille dans des mesures réelles, même si les deux sont O(n) : les éléments du tableau sont contigus, donc une poignée de récupérations de ligne de cache couvre tout le balayage, tandis que les nœuds de la liste chaînée peuvent être dispersés n'importe où en mémoire, transformant presque chaque étape en un nouveau défaut de cache.
+
+## Pile vs tas
+
+Au sein d'un seul processus, la mémoire utilisée à l'exécution se divise en deux régions aux durées de vie très différentes. La **pile** (stack) contient les variables locales et l'adresse de retour de chaque appel de fonction, grandissant et rétrécissant automatiquement à mesure que les fonctions sont entrées et quittées — l'allocation et la désallocation ne sont toutes deux que le déplacement d'un pointeur, donc c'est extrêmement rapide, mais une valeur ne peut pas survivre à l'appel de fonction qui l'a créée. Le **tas** (heap) contient des données dont la durée de vie n'est pas liée à un seul appel de fonction — alloué explicitement (`malloc`/`new`, ou implicitement par le runtime d'un langage géré) et libéré soit explicitement, soit par un **ramasse-miettes** (garbage collector) qui identifie et récupère la mémoire à laquelle plus rien ne fait référence. L'allocation sur le tas est plus lente et sa mémoire peut se fragmenter avec le temps, mais c'est la seule option pour des données qui doivent survivre à l'appel qui les a créées ou dont la taille n'est pas connue avant l'exécution.
+
+## Voir aussi
+
+- **[CPU](/fr/computer-science/cpu)** — les registres et caches ci-dessus se trouvent directement sur la puce d'où part la hiérarchie de cette page.
+- **[Mémoire virtuelle](/fr/operating-systems/virtual-memory)** — comment l'OS donne à chaque processus sa propre vue privée de la RAM (et du swap adossé au disque) au-dessus de cette hiérarchie.
+- **[Structures de données](/fr/computer-science/data-structures)** — pourquoi l'agencement mémoire d'une structure, pas seulement son Big O, détermine sa vitesse réelle.

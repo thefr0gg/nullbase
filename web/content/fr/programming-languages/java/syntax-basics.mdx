@@ -1,0 +1,142 @@
+---
+title: Syntaxe et variables
+description: Les déclarations de variables en Java, les types primitifs, les classes wrapper, et l'inférence de type avec var.
+category: Programming Languages
+weight: 2
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Java est statiquement typé : le type de chaque variable est fixé à la
+compilation et vérifié avant que le programme ne s'exécute jamais. À la
+différence des langages dynamiquement typés, vous ne pouvez pas réassigner
+une variable à une valeur d'un type incompatible — le compilateur le
+rejette avant même que vous en ayez l'occasion.
+
+## Déclarer des variables
+
+La forme explicite énonce le type, puis le nom, puis un initialiseur
+optionnel :
+
+```java
+int age = 36;
+double price = 19.99;
+boolean isAdmin = false;
+String name = "Ada";
+```
+
+Depuis Java 10, `var` laisse le compilateur inférer le type à partir de
+l'initialiseur à l'intérieur d'un corps de méthode. Il reste statiquement
+typé — `var` n'est qu'un raccourci pour que le compilateur détermine le
+type à la compilation, pas un type dynamique :
+
+```java
+var age = 36;        // inféré comme int
+var name = "Ada";    // inféré comme String
+var isAdmin = false; // inféré comme boolean
+```
+
+`var` ne peut pas être utilisé pour des champs, des paramètres de méthode,
+ou des types de retour, et il exige un initialiseur pour que le
+compilateur ait quelque chose à partir de quoi inférer — `var x;` ne
+compile pas.
+
+## Types primitifs vs. classes wrapper
+
+Java a huit types **primitifs** intégrés qui ne sont pas des objets et
+contiennent directement leur valeur, sans indirection par pointeur :
+
+| Catégorie | Types |
+|---|---|
+| Entier | `byte`, `short`, `int`, `long` |
+| Virgule flottante | `float`, `double` |
+| Autres | `char` (une unité de code UTF-16), `boolean` |
+
+Chaque primitif a une **classe wrapper** correspondante (`Integer`,
+`Double`, `Boolean`, etc.) qui l'encapsule dans un objet — nécessaire
+chaque fois que vous avez besoin qu'un primitif se comporte comme un
+objet, par exemple pour le stocker dans une collection comme
+`ArrayList<Integer>`, puisque les collections génériques ne peuvent pas
+contenir de primitifs directement :
+
+```java
+int primitive = 42;
+Integer boxed = 42;          // autoboxing : conversion implicite int -> Integer
+int backToPrimitive = boxed; // auto-unboxing : conversion implicite Integer -> int
+```
+
+Cette conversion implicite s'appelle l'autoboxing et l'unboxing. C'est
+pratique mais pas gratuit — le boxing alloue un objet — et un wrapper
+`null` déballé vers un primitif lève une `NullPointerException` à
+l'exécution.
+
+## Constantes avec final
+
+`final` sur une variable locale ou un champ signifie qu'il ne peut être
+assigné qu'une seule fois. C'est ce qui se rapproche le plus d'une
+constante en Java :
+
+```java
+final double PI = 3.14159;
+final int MAX_RETRIES = 3;
+
+// PI = 3.0; // erreur de compilation : cannot assign a value to final variable PI
+```
+
+Par convention, les champs `final` destinés à servir de constantes sont
+nommés en `SCREAMING_SNAKE_CASE`.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour déclarer deux variables int et afficher leur somme."
+  items={[
+    { id: "s1", label: "public class Main {" },
+    { id: "s2", label: "    public static void main(String[] args) {" },
+    { id: "s3", label: "        int a = 4;" },
+    { id: "s4", label: "        int b = 7;", explanation: "Les deux variables doivent être déclarées avant d'être utilisées dans la somme." },
+    { id: "s5", label: "        System.out.println(a + b);" },
+    { id: "s6", label: "    }" },
+    { id: "s7", label: "}" },
+  ]}
+  correctOrder={["s1", "s2", "s3", "s4", "s5", "s6", "s7"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Ordonnez ces lignes pour déclarer une constante final, puis utiliser var pour inférer le type d'une variable et afficher les deux."
+  items={[
+    { id: "t1", label: "public class Main {" },
+    { id: "t2", label: "    static final int MAX_RETRIES = 3;", explanation: "Les champs final sont conventionnellement déclarés en haut de la classe, avant main." },
+    { id: "t3", label: "    public static void main(String[] args) {" },
+    { id: "t4", label: "        var attempt = 1;" },
+    { id: "t5", label: "        System.out.println(attempt + \" of \" + MAX_RETRIES);" },
+    { id: "t6", label: "    }" },
+    { id: "t7", label: "}" },
+  ]}
+  correctOrder={["t1", "t2", "t3", "t4", "t5", "t6", "t7"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que ce code affiche ?"
+  code={`public class Main {
+    public static void main(String[] args) {
+        Integer boxed = null;
+        int value = boxed;
+        System.out.println(value);
+    }
+}`}
+  options={["0", "null", "NullPointerException à l'exécution", "Erreur de compilation"]}
+  correctIndex={2}
+  explanation="Déballer un Integer null vers un int appelle implicitement boxed.intValue(), et appeler une méthode sur null lève une NullPointerException à l'exécution. Ça compile très bien — l'échec n'apparaît que lorsque le code s'exécute réellement."
+  actualOutput="Exception in thread 'main' java.lang.NullPointerException"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Java](/fr/programming-languages/java)
+- [Flux de contrôle](/fr/programming-languages/java/control-flow)

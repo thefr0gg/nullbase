@@ -1,0 +1,125 @@
+---
+title: Sintaxis y Tipos
+description: Declaraciones de variables con anotaciones de tipo, los tipos primitivos de TypeScript, y alias de tipo.
+category: Programming Languages
+weight: 2
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Cada forma de declaración de variable de JavaScript — `let`, `const`, `var` — funciona sin cambios en TypeScript. Lo que TypeScript añade es una **anotación de tipo** opcional después del nombre de la variable, y un verificador de tipos que la aplica durante el resto de la vida de la variable.
+
+## Anotaciones de tipo
+
+```ts
+let age: number = 36;
+const name: string = "Ada";
+let isAdmin: boolean = false;
+
+age = "thirty-six"; // Type error: Type 'string' is not assignable to type 'number'
+```
+
+Una vez que `age` está anotada como `number`, asignarle una cadena más tarde es un error en tiempo de compilación — no una coerción silenciosa, y no algo que descubras solo cuando el código se ejecuta. Esta es la diferencia central con JavaScript plano: el tipo no es solo documentación, es una restricción que el compilador verifica activamente en cada asignación y cada uso.
+
+## Inferencia de tipos
+
+Rara vez necesitas anotar cada variable. TypeScript infiere un tipo a partir del inicializador, y ese tipo inferido se aplica con la misma rigurosidad que uno explícito:
+
+```ts
+let count = 0; // inferred as number
+count = "zero"; // Type error: Type 'string' is not assignable to type 'number'
+
+const tag = "release"; // inferred as the literal type "release", not just string
+```
+
+Nota la diferencia entre la inferencia de `let` y `const`: `let count = 0` infiere el tipo general `number` (porque `count` puede reasignarse), mientras que `const tag = "release"` infiere el **tipo literal** más estrecho `"release"`, ya que un binding `const` nunca puede contener un valor diferente.
+
+## Tipos primitivos
+
+Los tipos primitivos de TypeScript reflejan los primitivos en tiempo de ejecución de JavaScript, más algunas adiciones exclusivas de TypeScript para describir valores que no encajan en un tipo normal:
+
+| Tipo | Ejemplo | Notas |
+|---|---|---|
+| `string` | `"hello"` | Cualquier cadena, literal de plantilla, o tipo de cadena literal |
+| `number` | `42`, `3.14` | Sin int/float separados — un solo tipo numérico |
+| `boolean` | `true`, `false` | — |
+| `bigint` | `42n` | Enteros de precisión arbitraria |
+| `null` / `undefined` | `null`, `undefined` | Tipos distintos; ver más abajo |
+| `any` | — | Se excluye por completo de la verificación de tipos — evítalo |
+| `unknown` | — | Contraparte segura de `any`; debe estrecharse antes de usarse |
+| `void` | — | El tipo de retorno de una función que no devuelve nada |
+
+`any` y `unknown` ambos significan "podría ser cualquier cosa," pero `any` desactiva la verificación (puedes llamar a cualquier método sobre él, asignarlo donde sea), mientras que `unknown` te obliga a estrechar el tipo antes de hacer cualquier cosa con el valor — consulta [Flujo de Control](/es/programming-languages/typescript/control-flow) para ver cómo funciona el estrechamiento.
+
+```ts
+function logLength(value: unknown) {
+  console.log(value.length); // Type error: Object is of type 'unknown'
+}
+```
+
+## Alias de tipo
+
+Un alias `type` le da un nombre a cualquier tipo — un primitivo, la forma de un objeto, una unión, cualquier cosa — así puedes reutilizarlo en vez de repetir la estructura en todas partes:
+
+```ts
+type UserId = number;
+
+type User = {
+  id: UserId;
+  name: string;
+  isActive: boolean;
+};
+
+function deactivate(user: User): User {
+  return { ...user, isActive: false };
+}
+
+const ada: User = { id: 1, name: "Ada", isActive: true };
+deactivate(ada);
+```
+
+Los alias son puramente una conveniencia en tiempo de compilación — `UserId` se borra a `number` en el JavaScript emitido, y `User` se borra por completo. Existen solo para hacer que firmas como `deactivate(user: User): User` sean legibles en vez de deletrear la forma completa del objeto en cada sitio de llamada.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para declarar una variable age tipada, intentar una reasignación inválida, y luego imprimirla."
+  items={[
+    { id: "decl", label: "let age: number = 36;" },
+    { id: "bad-assign", label: "age = \"thirty-six\"; // Type error", explanation: "La reasignación inválida debe venir después de que age se declara con su tipo." },
+    { id: "log", label: "console.log(age);" },
+  ]}
+  correctOrder={["decl", "bad-assign", "log"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para definir un alias de tipo User y construir un valor de ese tipo."
+  items={[
+    { id: "type-open", label: "type User = {" },
+    { id: "type-id", label: "  id: number;" },
+    { id: "type-name", label: "  name: string;", explanation: "Cada campo va dentro del cuerpo del alias de tipo antes de que se cierre." },
+    { id: "type-close", label: "};" },
+    { id: "const-decl", label: "const ada: User = { id: 1, name: \"Ada\" };" },
+  ]}
+  correctOrder={["type-open", "type-id", "type-name", "type-close", "const-decl"]}
+/>
+
+<PredictOutput
+  title="¿Qué dice el verificador de tipos?"
+  code={`let count = 0;
+count = "zero";`}
+  options={["\"zero\"", "0", "Type error: Type 'string' is not assignable to type 'number'", "undefined"]}
+  correctIndex={2}
+  explanation="TypeScript infiere el tipo de count como number a partir de su inicializador 0, luego aplica ese tipo en cada asignación posterior — aunque count nunca se anotó explícitamente. La inferencia es tan estricta como una anotación explícita."
+  actualOutput="Type error: Type 'string' is not assignable to type 'number'"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [TypeScript](/es/programming-languages/typescript)
+- [Flujo de Control](/es/programming-languages/typescript/control-flow)

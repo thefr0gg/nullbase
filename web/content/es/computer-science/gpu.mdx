@@ -1,0 +1,28 @@
+---
+title: GPU
+description: Por qué una unidad de procesamiento gráfico es una máquina distinta a una CPU en lugar de simplemente una más rápida — miles de núcleos simples construidos para trabajo con paralelismo de datos, y por qué esa forma terminó encajando tan bien con el aprendizaje profundo como con el renderizado.
+category: Computer Science
+weight: 5
+---
+
+Una **GPU** (unidad de procesamiento gráfico) es un chip construido en torno a una apuesta distinta a la de una [CPU](/es/computer-science/cpu): en lugar de un puñado de núcleos potentes, cada uno optimizado para ejecutar un flujo de instrucciones lo más rápido posible, una GPU tiene miles de núcleos mucho más simples, todos optimizados para hacer la *misma* operación sobre *distintos* datos al mismo tiempo. No es una CPU más rápida — es una forma distinta de máquina, buena para una clase más estrecha de problemas y mucho mejor en esos problemas de lo que es una CPU.
+
+## SIMD y paralelismo de datos
+
+La idea central es **SIMD** — Instrucción Única, Múltiples Datos: una instrucción (digamos, "multiplica estos dos números") se emite una vez y se aplica simultáneamente a través de un gran lote de carriles de datos. Esto se mapea directamente sobre problemas **paralelos en los datos**, donde el mismo cálculo se ejecuta de forma independiente sobre muchas piezas de datos independientes — exactamente la forma de renderizar un fotograma, donde el mismo cálculo de sombreado se ejecuta una vez por píxel (millones de ellos, todos independientes entre sí) en lugar de en algún orden secuencial que depende de píxeles anteriores.
+
+Un núcleo de CPU, por el contrario, está construido para el **paralelismo de tareas** y el rendimiento de bajo-latencia de un solo hilo — predicción de bifurcaciones, pipelines profundos, cachés grandes, todo dedicado a hacer que *un* flujo de instrucciones termine lo más rápido posible, incluyendo flujos de instrucciones llenos de bifurcaciones impredecibles y pasos dependientes. Entregarle a una GPU una carga de trabajo llena de bifurcaciones y dependencias secuenciales desperdicia casi toda su ventaja, ya que sus núcleos solo son rápidos cuando todos están haciendo lo mismo.
+
+## Por qué esta forma encaja con el aprendizaje profundo
+
+La razón por la que las GPU se volvieron centrales para el aprendizaje automático no tiene nada que ver específicamente con los gráficos: entrenar y ejecutar una red neuronal es abrumadoramente **multiplicación de matrices** — la misma operación de multiplicar-y-sumar repetida sobre enormes cuadrículas independientes de números, que es precisamente la forma paralela en los datos para la que está construida una GPU. Un cálculo que le tomaría minutos a una CPU, haciendo las multiplicaciones en gran parte una a la vez (o en pequeños lotes SIMD), puede completarse en una GPU en una fracción del tiempo repartiéndolo entre miles de núcleos a la vez. Esto también es por lo que las GPU ahora suelen describirse por su ancho de banda de memoria y número de núcleos en lugar de por la velocidad de reloj — para esta carga de trabajo, cuántos datos pueden entrar y salir y cuántos carriles pueden trabajar en ellos a la vez importa más que la velocidad de un carril cualquiera.
+
+## Cómputo en GPU frente a gráficos
+
+Las GPU modernas se usan de dos formas: el **pipeline de gráficos** tradicional (vértices, rasterización, sombreado — impulsado por APIs como Vulkan, Metal o DirectX) y el **cómputo de propósito general en GPU (GPGPU)** — usando el mismo hardware paralelo para trabajo que no es de gráficos, como el entrenamiento de ML, la simulación científica o la minería de criptomonedas, a través de frameworks como CUDA (específico de NVIDIA) o el más portable OpenCL. Ambos caminos están ejercitando el mismo hardware subyacente; la diferencia es simplemente qué está emitiendo las instrucciones y qué representan los datos.
+
+## Ver también
+
+- **[CPU](/es/computer-science/cpu)** — la contraparte de paralelismo de tareas y baja latencia contra la que contrasta esta página.
+- **[Paralelismo](/es/computer-science/parallelism)** — el concepto general de hacer más de una cosa en el mismo instante exacto, del cual una GPU es el ejemplo de hardware más extremo.
+- **[Memoria](/es/computer-science/memory)** — las GPU tienen su propia memoria separada de alto ancho de banda, distinta de la RAM de una CPU, precisamente porque alimentar a miles de núcleos a la vez necesita mucho más ancho de banda del que necesita una carga de trabajo de CPU.

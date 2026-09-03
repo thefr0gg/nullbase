@@ -1,0 +1,127 @@
+---
+title: PHP
+description: Un resumen de PHP, el lenguaje de scripting del lado del servidor que impulsa una gran parte de la web, desde sus orígenes hasta lo que lo hace distintivo hoy.
+category: Programming Languages
+weight: 1
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+PHP comenzó en 1994 como un pequeño conjunto de scripts en Perl que Rasmus
+Lerdorf escribió para rastrear las visitas a su currículum en línea —
+"Personal Home Page Tools." Creció, un poco por accidente, hasta convertirse
+en uno de los lenguajes del lado del servidor más ampliamente desplegados en
+internet. WordPress, gran parte del código base original de Facebook,
+Wikipedia, y una gran parte de los sistemas de gestión de contenido de la web
+están construidos sobre PHP.
+
+A diferencia de Go o Rust, PHP nunca fue diseñado de arriba hacia abajo como
+un lenguaje cohesivo. Creció característica por característica para resolver
+problemas reales que la gente tenía al construir sitios web, y esa historia
+se nota: PHP tiene algunas esquinas genuinamente incómodas (nombres de
+funciones de la biblioteca estándar inconsistentes, comparaciones de tipos
+históricamente laxas) junto a características modernas y bien diseñadas
+añadidas en PHP 7 y 8 (declaraciones de tipo escalar, compilación JIT, enums,
+propiedades readonly). El PHP moderno — el PHP que escribirías hoy con
+Composer, estándares PSR, y un framework como Laravel o Symfony — se ve muy
+diferente del PHP de principios de los 2000, aunque ambos siguen siendo
+compatibles a nivel de código fuente en la mayoría de los aspectos.
+
+## Lo que hace distintivo a PHP
+
+- **Construido para el ciclo de solicitud/respuesta.** Un script PHP se
+  ejecuta una vez por solicitud HTTP y luego todo el estado de su proceso
+  desaparece — no hay un servidor de aplicación de larga duración que
+  mantenga objetos en memoria entre solicitudes como sí ocurre en Node.js o
+  una app JVM, a menos que recurras a algo como Swoole o FrankenPHP.
+- **Se incrusta directamente en HTML.** PHP fue originalmente un lenguaje de
+  plantillas: entras en etiquetas `<?php ?>` dentro de un archivo HTML por
+  lo demás ordinario, y todo lo que está fuera de esas etiquetas se emite tal
+  cual.
+- **Cada variable empieza con `$`.** No hay ambigüedad entre una palabra
+  suelta (un nombre de función, una constante) y una variable — el sigilo lo
+  aclara de un vistazo.
+- **Los arrays hacen doble función.** Un único tipo `array` en PHP sirve
+  tanto de lista como de mapa hash, lo cual es conveniente pero tiene su
+  propia curva de aprendizaje (más sobre esto en
+  [Arrays](/es/programming-languages/php/data-structures)).
+- **Una biblioteca estándar enorme y desigual.** PHP incluye cientos de
+  funciones integradas que cubren cadenas, arrays, fechas, y más — pero el
+  nombrado y el orden de los argumentos son inconsistentes entre ellas
+  (`strpos($haystack, $needle)` frente a `array_search($needle, $haystack)`),
+  una verruga bien conocida del crecimiento orgánico de PHP.
+
+Aquí tienes un script PHP mínimo y completo:
+
+```php
+<?php
+
+echo "Hello, nullbase!\n";
+```
+
+Guarda eso como `hello.php` y ejecútalo con `php hello.php`, o colócalo en un
+servidor con un runtime de PHP y solicítalo por HTTP — ambos funcionan con
+exactamente el mismo archivo.
+
+## Cuándo recurrirías a PHP
+
+PHP sigue siendo una excelente opción para sitios web renderizados en el
+servidor, gestión de contenido, y cualquier cosa donde "llega una solicitud,
+se consulta la base de datos, sale HTML" sea el bucle principal. Su modelo de
+no compartir nada entre solicitudes también lo hace tolerante con las fugas
+de memoria en el código de la aplicación — cada solicitud empieza desde cero.
+Es menos natural para procesos en segundo plano de larga duración o cargas de
+trabajo genuinamente concurrentes, aunque las extensiones y runtimes
+alternativos han ido reduciendo esa limitación a lo largo de los años.
+
+## Qué sigue
+
+Las siguientes páginas recorren PHP desde la sintaxis hasta sus rincones más
+avanzados: variables y etiquetas, flujo de control, funciones, arrays,
+clases y traits, manejo de errores, namespaces y Composer, y finalmente
+generadores y dónde vive realmente la historia async de PHP.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir un script PHP mínimo y funcional que imprima un saludo."
+  items={[
+    { id: "open", label: "<?php" },
+    { id: "blank", label: "" },
+    { id: "echo", label: 'echo "Hello, PHP!\\n";', explanation: "La etiqueta de apertura debe ir primero — el código PHP fuera de <?php ?> se trata como salida literal." },
+  ]}
+  correctOrder={["open", "blank", "echo"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Ordena estas líneas para declarar una variable e imprimirla con interpolación de cadenas."
+  items={[
+    { id: "open2", label: "<?php" },
+    { id: "var2", label: '$name = "nullbase";' },
+    { id: "echo2", label: 'echo "Hello, $name!\\n";', explanation: "La variable debe asignarse antes de interpolarse en la cadena." },
+  ]}
+  correctOrder={["open2", "var2", "echo2"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`<?php
+
+$site = "nullbase";
+echo "Welcome to $site\\n";
+echo 'Welcome to $site\\n';`}
+  options={["Welcome to nullbase\\nWelcome to nullbase\\n", "Welcome to nullbase\\nWelcome to $site\\n", "Welcome to $site\\nWelcome to $site\\n", "Parse error: undefined variable"]}
+  correctIndex={1}
+  explanation="Las cadenas entre comillas dobles interpolan variables; las cadenas entre comillas simples no lo hacen, así que $site se imprime literalmente (y \\n permanece como dos caracteres en vez de un salto de línea) en el segundo echo."
+  actualOutput="Welcome to nullbase\nWelcome to $site\\n"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Sintaxis y Variables](/es/programming-languages/php/syntax-basics)
+- [Generadores y Patrones Async](/es/programming-languages/php/advanced)

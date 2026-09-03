@@ -1,0 +1,102 @@
+---
+title: C#
+description: Una visión general de C#, el lenguaje orientado a objetos y estáticamente tipado detrás de .NET, ASP.NET Core, y Unity.
+category: Programming Languages
+weight: 1
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+C# (pronunciado "C sharp") es un lenguaje orientado a objetos y estáticamente tipado creado por Microsoft en el año 2000, liderado por Anders Hejlsberg (quien también diseñó TypeScript más adelante). Se ejecuta sobre .NET, un runtime gestionado con un modelo de memoria con recolección de basura, un compilador just-in-time (y cada vez más ahead-of-time), y una biblioteca estándar enorme. C# desde entonces ha crecido mucho más allá de Windows: el .NET moderno es multiplataforma, de código abierto, y ejecuta cargas de trabajo de producción en contenedores Linux, en juegos de Unity, y en móviles a través de .NET MAUI.
+
+C# empezó como un primo cercano de Java, pero los dos lenguajes divergieron rápidamente. C# agregó genéricos con soporte real en tiempo de ejecución, propiedades como una construcción de primera clase del lenguaje, LINQ (sintaxis de consulta incorporada al lenguaje), y, más recientemente, `async`/`await` para código asíncrono, tipos de referencia anulables para detectar bugs relacionados con null en tiempo de compilación, y pattern matching que sigue expandiéndose con cada versión.
+
+## Qué hace distintivo a C#
+
+- **Propiedades, no solo campos.** C# incorpora la sintaxis de getter/setter directamente en el lenguaje (`public int Age { get; set; }`), así que el encapsulamiento no requiere escribir el código repetitivo de `getAge()`/`setAge()`.
+- **`async`/`await` como sintaxis de primera clase.** El código asíncrono y no bloqueante se lee como código síncrono, respaldado por `Task` y `Task<T>`.
+- **Genéricos fuertes.** A diferencia de los genéricos con borrado de tipo de Java, los genéricos de C# se reifican en tiempo de ejecución, lo cual los hace más rápidos y te permite hacer cosas como `typeof(T)` dentro de un método genérico.
+- **LINQ.** Consulta y transforma colecciones con sintaxis similar a SQL o cadenas fluidas de métodos (`.Where(...)`, `.Select(...)`) incorporadas directamente al lenguaje y a la biblioteca estándar.
+- **Tipos de referencia anulables.** Desde C# 8, el compilador puede advertirte en tiempo de compilación cuando una referencia que no se supone que sea `null` podría serlo.
+
+Aquí hay un programa mínimo y completo en C#:
+
+```csharp
+Console.WriteLine("Hello, nullbase!");
+```
+
+El C# moderno (desde las sentencias de nivel superior de C# 9) no requiere un envoltorio de `class` y método `Main` para programas simples — el compilador genera uno por ti tras bambalinas. El código más antiguo, y la mayoría de los proyectos reales, todavía lo escriben explícitamente:
+
+```csharp
+using System;
+
+namespace HelloWorld
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            Console.WriteLine("Hello, nullbase!");
+        }
+    }
+}
+```
+
+## Cuándo recurrirías a C#
+
+C# es la elección por defecto para APIs web y backends de ASP.NET Core, software de escritorio y de línea de negocio empresarial en Windows, y — a través del motor de videojuegos Unity — una enorme porción de los juegos comerciales. Su combinación de rendimiento, seguridad de memoria, y una biblioteca estándar rica lo convierten en una fuerte opción de propósito general en cualquier lugar donde de otro modo se consideraría el ecosistema de la JVM.
+
+## Qué sigue
+
+Las siguientes páginas recorren C# desde la sintaxis hasta la programación asíncrona: variables y tipos, flujo de control, métodos, las estructuras de datos incorporadas, clases e interfaces, manejo de errores, y el sistema de espacios de nombres/paquetes, terminando con `async`/`await` y `Task`.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir un programa de consola en C# mínimo y funcional que imprime un saludo."
+  items={[
+    { id: "using", label: "using System;" },
+    { id: "ns", label: "namespace HelloWorld" },
+    { id: "nsopen", label: "{" },
+    { id: "class", label: "    class Program" },
+    { id: "classopen", label: "    {" },
+    { id: "main", label: "        static void Main(string[] args)" },
+    { id: "mainopen", label: "        {" },
+    { id: "print", label: "            Console.WriteLine(\"Hello, C#\");" },
+    { id: "mainclose", label: "        }" },
+    { id: "classclose", label: "    }" },
+    { id: "nsclose", label: "}" },
+  ]}
+  correctOrder={["using", "ns", "nsopen", "class", "classopen", "main", "mainopen", "print", "mainclose", "classclose", "nsclose"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Coloca estas líneas en orden para construir un programa de sentencias de nivel superior (C# 9+) que declara una constante y la imprime."
+  items={[
+    { id: "using2", label: "using System;" },
+    { id: "const2", label: "const string version = \"1.0\";", explanation: "Las sentencias de nivel superior se ejecutan en orden, de arriba a abajo, después de las directivas using." },
+    { id: "print2", label: "Console.WriteLine(version);" },
+  ]}
+  correctOrder={["using2", "const2", "print2"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`using System;
+
+Console.WriteLine("nullbase");`}
+  options={["nullbase", "\"nullbase\"", "Compile error: missing Main", "Hello, nullbase!"]}
+  correctIndex={0}
+  explanation="Console.WriteLine imprime el contenido de la cadena sin las comillas que la rodean, seguido de un salto de línea. Las sentencias de nivel superior (C# 9+) permiten que un archivo omita por completo el envoltorio explícito de class/Main — el compilador igual genera uno."
+  actualOutput="nullbase"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Sintaxis y Variables](/es/programming-languages/csharp/syntax-basics)
+- [Async y Tasks](/es/programming-languages/csharp/advanced)

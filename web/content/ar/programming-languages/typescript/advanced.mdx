@@ -1,0 +1,139 @@
+---
+title: الأنواع العامة (Generics)
+description: كتابة دوال وأنواع تعمل عبر أنواع كثيرة مع الحفاظ على أمان الأنواع الكامل أثناء الترجمة.
+category: Programming Languages
+weight: 9
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+**الأنواع العامة (generics)** هي الميزة المتوسطة المميزة لـTypeScript —
+الأداة لكتابة كود يعمل مع أنواع كثيرة دون اللجوء إلى `any` وفقدان أمان
+الأنواع تماماً. تأخذ الدالة أو النوع العام **معامل نوع (type parameter)**،
+يُسمَّى اصطلاحياً `T`، يعمل كعنصر نائب يُملَأ بنوع محدَّد في كل موضع
+استدعاء.
+
+## المشكلة التي تحلها الأنواع العامة
+
+دون الأنواع العامة، إما أن تكتب دالة لكل نوع على حدة، أو توسّع إلى `any`
+وتفقد كل الفحص:
+
+```ts
+function firstAny(arr: any[]): any {
+  return arr[0];
+}
+
+const num = firstAny([1, 2, 3]); // typed any — no error if you misuse it
+num.toUpperCase(); // no compile error, but this crashes at runtime
+```
+
+تُترجَم `firstAny` بنجاح لأي مصفوفة، لكن قيمة الإرجاع من نوع `any`، لذا
+فإن استدعاء `.toUpperCase()` على رقم يمرّ مباشرة عبر فاحص الأنواع
+وينفجر أثناء التشغيل.
+
+## كتابة دالة عامة
+
+```ts
+function first<T>(arr: T[]): T {
+  return arr[0];
+}
+
+const num = first([1, 2, 3]); // T inferred as number; num: number
+const str = first(["a", "b"]); // T inferred as string; str: string
+
+num.toUpperCase(); // Type error: Property 'toUpperCase' does not exist on type 'number'
+```
+
+لا تزال `first<T>` تعمل مع مصفوفة من أي نوع، تماماً مثل `firstAny` —
+لكن نوع الإرجاع الآن مرتبط بما استُنتِج له `T` في ذلك الاستدعاء المحدَّد.
+تُعيد `first([1, 2, 3])` النوع `number`، لذا يُكتشَف استدعاء
+`.toUpperCase()` على النتيجة فوراً، خلافاً للنسخة المبنية على `any`.
+
+## تقييد معامل النوع
+
+يُقيِّد `extends` ما يمكن أن يكونه معامل النوع، حتى تتمكن من استخدام
+عمليات لا معنى لها إلا لمجموعة فرعية من الأنواع بأمان:
+
+```ts
+function getLength<T extends { length: number }>(value: T): number {
+  return value.length;
+}
+
+getLength("hello"); // 5 — string has .length
+getLength([1, 2, 3]); // 3 — array has .length
+getLength(42); // Type error: Argument of type 'number' is not assignable to parameter of type '{ length: number }'
+```
+
+تعني `T extends { length: number }`: "يمكن أن يكون `T` أي شيء، طالما
+أن له خاصية `.length` من نوع number" — لا تحصر هذه العبارة `T` في نوع
+محدَّد واحد، بل فقط في الأشكال التي تجعل كتابة `value.length` آمنة.
+
+## الأنواع والواجهات العامة
+
+لا تقتصر الأنواع العامة على الدوال — يمكن لـ`type` أو `interface` أيضاً
+أن تأخذ معامل نوع، وهذا ما يتيح لشكل واحد قابل لإعادة الاستخدام مثل
+`Box<T>` أن يصف صندوقاً يحمل أي نوع من المحتوى:
+
+```ts
+interface Box<T> {
+  contents: T;
+}
+
+const numberBox: Box<number> = { contents: 42 };
+const stringBox: Box<string> = { contents: "hello" };
+
+numberBox.contents = "oops"; // Type error: Type 'string' is not assignable to type 'number'
+```
+
+بمجرد إعلان `numberBox` كـ`Box<number>`، يصبح `T` ثابتاً عند `number`
+لذلك الصندوق تحديداً — لا يمكن أن تحمل `contents` أبداً `string`، رغم أن
+`Box<T>` نفسها كُتبت مرة واحدة فقط وتعمل مع أي `T`.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء دالة first عامة واستدعاءين يستنتجان معاملي نوع مختلفين."
+  items={[
+    { id: "fn-decl", label: "function first<T>(arr: T[]): T {" },
+    { id: "fn-body", label: "  return arr[0];", explanation: "يجب أن يقع جسم الدالة بين التوقيع العام والقوس الختامي." },
+    { id: "fn-close", label: "}" },
+    { id: "call-num", label: "const num = first([1, 2, 3]);" },
+    { id: "call-str", label: "const str = first([\"a\", \"b\"]);" },
+  ]}
+  correctOrder={["fn-decl", "fn-body", "fn-close", "call-num", "call-str"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء واجهة Box عامة وصندوقين يحملان نوعين مختلفين."
+  items={[
+    { id: "iface-open", label: "interface Box<T> {" },
+    { id: "iface-field", label: "  contents: T;", explanation: "يجب إعلان الحقل الذي يستخدم T داخل Box قبل إغلاق الواجهة." },
+    { id: "iface-close", label: "}" },
+    { id: "number-box", label: "const numberBox: Box<number> = { contents: 42 };" },
+    { id: "string-box", label: "const stringBox: Box<string> = { contents: \"hello\" };" },
+  ]}
+  correctOrder={["iface-open", "iface-field", "iface-close", "number-box", "string-box"]}
+/>
+
+<PredictOutput
+  title="ماذا يقول فاحص الأنواع؟"
+  code={`function getLength<T extends { length: number }>(value: T): number {
+  return value.length;
+}
+
+getLength(42);`}
+  options={["42", "Type error: Argument of type 'number' is not assignable to parameter of type '{ length: number }'", "undefined", "NaN"]}
+  correctIndex={1}
+  explanation="لا يسمح القيد T extends { length: number } إلا بالأنواع التي تملك فعلاً خاصية length رقمية — تتأهل السلاسل النصية والمصفوفات، لكن number ليس له .length إطلاقاً. يرفض المترجم الاستدعاء قبل أن يُولِّد أصلاً أي كود يحاول قراءة .length من 42."
+  actualOutput="Type error: Argument of type 'number' is not assignable to parameter of type '{ length: number }'"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [الوحدات والحزم](/ar/programming-languages/typescript/modules-packages)
+- [TypeScript](/ar/programming-languages/typescript)

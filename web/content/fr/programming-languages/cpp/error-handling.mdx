@@ -1,0 +1,132 @@
+---
+title: Gestion des erreurs
+description: Signaler et se remettre d'un échec en C++ avec try/catch/throw, et pourquoi RAII remplace souvent entièrement le code de nettoyage explicite.
+category: Programming Languages
+weight: 7
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+C++ a deux façons qui se recoupent de traiter les échecs : les **exceptions**, qui déroulent la pile d'appels jusqu'à ce que quelque chose les intercepte, et **RAII** (Resource Acquisition Is Initialization), un motif de conception qui lie le nettoyage des ressources à la durée de vie d'un objet pour qu'il se produise automatiquement — y compris quand une exception est en vol.
+
+## `try` / `catch` / `throw`
+
+```cpp
+#include <iostream>
+#include <stdexcept>
+
+double divide(double a, double b) {
+    if (b == 0) {
+        throw std::invalid_argument("division by zero");
+    }
+    return a / b;
+}
+
+int main() {
+    try {
+        std::cout << divide(10, 2) << "\n"; // 5
+        std::cout << divide(10, 0) << "\n"; // throws
+        std::cout << "This line never runs\n";
+    } catch (const std::invalid_argument& e) {
+        std::cout << "Caught: " << e.what() << "\n";
+    }
+
+    std::cout << "Program continues normally\n";
+    return 0;
+}
+```
+
+`throw` lève une exception — ici, un `std::invalid_argument` du header `<stdexcept>`, l'un des plusieurs types d'exception standard intégrés à la bibliothèque. Lever une exception arrête immédiatement l'exécution normale et commence à dérouler la pile d'appels, sautant chaque instruction restante dans `divide` et dans le bloc `try` de `main`, jusqu'à atteindre un `catch` correspondant. `catch (const std::invalid_argument& e)` intercepte les exceptions exactement de ce type (ou d'un type qui en dérive) ; `e.what()` retourne le message passé au constructeur. Une fois le bloc `catch` terminé, l'exécution reprend normalement après tout le `try`/`catch` — le programme ne plante pas, et le code qui suit (comme le dernier `std::cout`) s'exécute quand même.
+
+## RAII au lieu du nettoyage manuel
+
+```cpp
+#include <iostream>
+#include <fstream>
+
+void writeLog(const std::string& message) {
+    std::ofstream logFile("app.log", std::ios::app); // resource acquired here
+
+    if (!logFile.is_open()) {
+        throw std::runtime_error("could not open log file");
+    }
+
+    logFile << message << "\n";
+    // no explicit close() call needed — logFile's destructor closes the
+    // file automatically when it goes out of scope, even if an exception
+    // is thrown somewhere after this point
+}
+
+int main() {
+    try {
+        writeLog("Application started");
+    } catch (const std::runtime_error& e) {
+        std::cout << "Logging failed: " << e.what() << "\n";
+    }
+    return 0;
+}
+```
+
+`std::ofstream` acquiert sa ressource (un descripteur de fichier ouvert) dans son constructeur et la libère (ferme le fichier) dans son destructeur. Parce que C++ garantit que le destructeur d'un objet local s'exécute quand il sort de sa portée — que cette portée se termine normalement, via `return`, ou parce qu'une exception se propage à travers elle — `logFile` ne fuit jamais un descripteur de fichier ouvert, sans `try`/`finally` et sans appel explicite à `close()` nulle part. C'est le motif que suit la plupart des types de la bibliothèque standard C++ (`std::vector`, `std::string`, `std::unique_ptr`), et c'est pourquoi le C++ moderne idiomatique n'a presque jamais besoin de code de nettoyage manuel du tout : enveloppez une ressource dans un type dont le destructeur la libère, et la correction suit automatiquement de la portée.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Faites glisser les lignes dans le bon ordre pour construire une fonction qui lève une exception sur une entrée négative, appelée depuis un try/catch."
+  items={[
+    { id: "include", label: "#include <stdexcept>" },
+    { id: "fn-sig", label: "int squareRoot(int n) {" },
+    { id: "check", label: "    if (n < 0) throw std::invalid_argument(\"negative\");", explanation: "La vérification et le throw doivent se produire avant tout code qui suppose que n est valide." },
+    { id: "compute", label: "    return static_cast<int>(n);" },
+    { id: "fn-close", label: "}" },
+    { id: "try-open", label: "try {" },
+    { id: "call", label: "    squareRoot(-4);" },
+    { id: "catch", label: "} catch (const std::invalid_argument& e) {" },
+    { id: "handle", label: "    std::cout << e.what();" },
+    { id: "catch-close", label: "}" },
+  ]}
+  correctOrder={["include", "fn-sig", "check", "compute", "fn-close", "try-open", "call", "catch", "handle", "catch-close"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Faites glisser les lignes dans le bon ordre pour construire une classe qui acquiert une ressource dans son constructeur et la libère dans son destructeur (RAII)."
+  items={[
+    { id: "class-open", label: "class ScopedLock {" },
+    { id: "public", label: "public:" },
+    { id: "ctor", label: "    ScopedLock() { std::cout << \"locked\\n\"; }", explanation: "Le constructeur, qui acquiert la ressource, doit être déclaré avant le destructeur qui la libère." },
+    { id: "dtor", label: "    ~ScopedLock() { std::cout << \"unlocked\\n\"; }" },
+    { id: "class-close", label: "};" },
+  ]}
+  correctOrder={["class-open", "public", "ctor", "dtor", "class-close"]}
+/>
+
+<PredictOutput
+  title="Qu'affiche ceci ?"
+  code={`#include <iostream>
+#include <stdexcept>
+
+int main() {
+    try {
+        std::cout << "before\\n";
+        throw std::runtime_error("failed");
+        std::cout << "after\\n";
+    } catch (const std::runtime_error& e) {
+        std::cout << "caught: " << e.what() << std::endl;
+    }
+    return 0;
+}`}
+  options={["before\\nafter\\ncaught: failed", "before\\ncaught: failed", "caught: failed", "Compile error"]}
+  correctIndex={1}
+  explanation={`"before" s'affiche, puis throw transfère immédiatement le contrôle au bloc catch correspondant — la ligne std::cout << "after" est complètement ignorée car l'exécution ne l'atteint jamais une fois qu'une exception est levée. Seuls "before" et la sortie du bloc catch s'exécutent réellement.`}
+  actualOutput="before\ncaught: failed"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Classes et objets](/fr/programming-languages/cpp/oop-or-structs) — les constructeurs et destructeurs sur lesquels RAII s'appuie.
+- [Pointeurs et mémoire](/fr/programming-languages/cpp/advanced) — comment les smart pointers appliquent RAII à la mémoire dynamique spécifiquement.

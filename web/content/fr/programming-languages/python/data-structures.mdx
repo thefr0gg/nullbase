@@ -1,0 +1,88 @@
+---
+title: Structures de données
+description: Les quatre conteneurs intégrés de Python — listes, tuples, dicts, et sets — et quand privilégier chacun.
+category: Programming Languages
+weight: 5
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Python a quatre types de conteneurs intégrés au langage lui-même, sans import nécessaire, et choisir le bon est surtout une question de savoir si l'ordre compte, si le contenu doit changer, et si on cherche des éléments par position ou par nom.
+
+Une **liste** est une séquence ordonnée et mutable — le choix par défaut quand on a une collection de choses qui pourraient grandir, rétrécir, ou être réordonnées.
+
+```python
+numbers = [3, 1, 4, 1, 5, 9]
+numbers.append(2)
+numbers.sort()
+print(numbers)  # [1, 1, 2, 3, 4, 5, 9]
+```
+
+Un **tuple** ressemble à une liste mais est immuable — une fois créé, on ne peut pas y ajouter d'élément ni en réassigner un. Cette immuabilité rend les tuples utilisables comme clés de dict (les listes ne le peuvent pas) et signale une intention : un tuple dit « ceci est un groupe fixe et petit de valeurs », comme des coordonnées.
+
+```python
+point = (10, 20)  # tuples are immutable
+x, y = point       # unpacking works the same as with lists
+print(x, y)  # 10 20
+```
+
+Un **dict** stocke des paires clé-valeur et recherche les valeurs par clé plutôt que par position, ce qui en fait le choix naturel pour tout ce que l'on décrirait autrement comme « un enregistrement avec des champs nommés ».
+
+```python
+user = {"name": "Rae", "age": 29}
+user["email"] = "rae@example.com"
+for key, value in user.items():
+    print(key, value)
+```
+
+Un **set** stocke des valeurs uniques et non ordonnées et rejette automatiquement les doublons à l'insertion — utile pour les tests d'appartenance (`x in my_set` est rapide) et pour dédupliquer une collection.
+
+```python
+unique_ids = {1, 2, 2, 3, 3, 3}
+print(unique_ids)  # {1, 2, 3}
+```
+
+La seule chose à bien intégrer à propos des listes (et des dicts, et des sets) est qu'ils sont des *objets* mutables — une variable qui en contient un ne détient pas une copie de son contenu, elle détient une référence vers la même liste sous-jacente que tous les autres qui ont cette variable pointent aussi.
+
+## Voir aussi
+
+- **[Fonctions](/fr/programming-languages/python/functions)** — comment ce même comportement d'aliasing apparaît avec les arguments par défaut mutables.
+- **[Classes et objets](/fr/programming-languages/python/oop-or-structs)** — construire vos propres types structurés une fois que les dicts et tuples ne sont plus assez descriptifs.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire un dict utilisateur, ajouter un champ, puis afficher chaque entrée."
+  items={[
+    { id: "create", label: 'user = {"name": "Rae", "age": 29}' },
+    { id: "add", label: 'user["email"] = "rae@example.com"', explanation: "`user` doit exister en tant que dict avant qu'une nouvelle clé puisse y être ajoutée." },
+    { id: "for", label: "for key, value in user.items():", explanation: "L'itération se produit après que le dict a son ensemble final de clés." },
+    { id: "print", label: "    print(key, value)" },
+  ]}
+  correctOrder={["create", "add", "for", "print"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire, trier et afficher une liste de nombres."
+  items={[
+    { id: "numbers", label: "numbers = [3, 1, 4, 1, 5, 9]" },
+    { id: "append", label: "numbers.append(2)", explanation: "La liste doit exister avant que `.append()` puisse être appelée dessus." },
+    { id: "sort", label: "numbers.sort()", explanation: "Le tri se produit après que chaque élément, y compris celui ajouté, est dans la liste." },
+    { id: "print", label: "print(numbers)" },
+  ]}
+  correctOrder={["numbers", "append", "sort", "print"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que ceci affiche ?"
+  code={`a = [1, 2, 3]\nb = a\nb.append(4)\nprint(a)`}
+  options={["[1, 2, 3]", "[1, 2, 3, 4]", "An error, because a is unchanged", "[4]"]}
+  correctIndex={1}
+  explanation="b = a ne copie pas la liste — cela fait pointer b vers exactement le même objet liste que a pointe déjà. Appeler b.append(4) mute cette unique liste partagée, donc le changement est visible aussi via a, même si a lui-même n'a jamais été directement réassigné."
+  actualOutput="[1, 2, 3, 4]"
+/>
+</ExerciseTabs>

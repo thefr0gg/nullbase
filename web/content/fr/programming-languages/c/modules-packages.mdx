@@ -1,0 +1,135 @@
+---
+title: Modules et paquets
+description: "Comment C organise le code à travers les fichiers avec #include et les en-têtes, lie plusieurs fichiers .c en un seul programme, et gère les dépendances sans gestionnaire de paquets officiel."
+category: Programming Languages
+weight: 8
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+C précède de plusieurs décennies l'idée d'un système de modules au niveau du langage. Il n'y a pas d'instruction `import` qui comprend les paquets — à la place, le **préprocesseur** colle textuellement le contenu des fichiers d'en-tête dans votre source avant la compilation, et des fichiers `.c` séparés ne deviennent un seul programme qu'à l'étape de **liaison (linking)**, après que chacun a été compilé indépendamment. La gestion des dépendances est entièrement prise en charge en dehors du langage, par le gestionnaire de paquets du système d'exploitation, un système de build, ou un outil comme vcpkg.
+
+## #include et les fichiers d'en-tête
+
+`#include` est une directive de préprocesseur qui copie le contenu d'un fichier sur place, avant même que le compilateur ne s'exécute. Un fichier d'en-tête `.h` contient généralement des déclarations (prototypes de fonctions, définitions de structs, macros) — pas des implémentations — de sorte que plusieurs fichiers `.c` peuvent partager les mêmes déclarations sans dupliquer de code :
+
+```c
+/* math_utils.h */
+#ifndef MATH_UTILS_H
+#define MATH_UTILS_H
+
+int add(int a, int b);
+int multiply(int a, int b);
+
+#endif
+```
+
+```c
+/* math_utils.c */
+#include "math_utils.h"
+
+int add(int a, int b) {
+    return a + b;
+}
+
+int multiply(int a, int b) {
+    return a * b;
+}
+```
+
+```c
+/* main.c */
+#include <stdio.h>
+#include "math_utils.h"
+
+int main(void) {
+    printf("%d\n", add(2, 3));
+    printf("%d\n", multiply(2, 3));
+    return 0;
+}
+```
+
+`#include <stdio.h>` (chevrons) recherche dans les répertoires système standard du compilateur ; `#include "math_utils.h"` (guillemets) recherche d'abord relativement au fichier actuel. Le motif `#ifndef` / `#define` / `#endif` est une **garde d'inclusion (header guard)** — il empêche le même en-tête d'être collé deux fois si deux fichiers différents l'incluent tous les deux (directement ou indirectement), ce qui provoquerait sinon des erreurs de compilation « redéfinition ».
+
+## Compiler et lier plusieurs fichiers
+
+Chaque fichier `.c` compile indépendamment en un **fichier objet** (`.o`) ; le **linker** combine ensuite les fichiers objets en un seul exécutable, résolvant des appels comme celui de `main.c` vers `add` en le confrontant à la définition de `math_utils.o` :
+
+```bash
+gcc -c math_utils.c -o math_utils.o   # compile only
+gcc -c main.c -o main.o                # compile only
+gcc math_utils.o main.o -o program     # link into one executable
+./program
+```
+
+En pratique, la plupart des projets C évitent de taper tout ceci à la main et utilisent un **Makefile** ou un système de build comme CMake pour décrire comment les fichiers dépendent les uns des autres, de sorte que `make` (ou `cmake --build .`) ne recompile que ce qui a changé et relie automatiquement :
+
+```makefile
+program: main.o math_utils.o
+	gcc main.o math_utils.o -o program
+
+main.o: main.c math_utils.h
+	gcc -c main.c -o main.o
+
+math_utils.o: math_utils.c math_utils.h
+	gcc -c math_utils.c -o math_utils.o
+```
+
+## Gestion des paquets : il n'y a pas de réponse unique
+
+Contrairement à Python (`pip`), JavaScript (`npm`), ou Rust (`cargo`), C n'a pas de gestionnaire de paquets officiel au niveau du langage — il n'y a pas de registre central dont tirerait chaque projet C. À la place, les dépendances sont gérées par quelle que soit la couche d'outillage qu'un projet a choisie :
+
+- **Le gestionnaire de paquets du système d'exploitation** (`apt`, `dnf`, `brew`) installe des bibliothèques à l'échelle du système — `sudo apt install libcurl4-openssl-dev` place les en-têtes et la bibliothèque compilée de curl là où le compilateur et le linker peuvent les trouver.
+- **vcpkg** (Microsoft) et **Conan** sont des gestionnaires de paquets spécifiques à C/C++ qui installent des bibliothèques par projet plutôt qu'à l'échelle du système, plus proches de ce que ressemblent `npm` ou `cargo`.
+- **CMake**, strictement un système de build plutôt qu'un gestionnaire de paquets, est souvent utilisé aux côtés de l'un des précédents — `find_package()` localise une bibliothèque déjà installée, et `FetchContent` peut télécharger et compiler le code source d'une dépendance directement dans le cadre de votre propre build.
+
+Un projet C moderne typique pourrait utiliser CMake pour décrire *comment* construire, et vcpkg (ou le gestionnaire de paquets système) pour fournir *quoi* lier — il n'existe pas d'équivalent à l'exécution d'une seule commande qui « installe simplement tout ce qu'un `Cargo.toml` ou `package.json` liste », car aucun format de manifeste unique de ce type n'est universel en C.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez une garde d'inclusion"
+  prompt="Faites glisser ces lignes dans l'ordre qui déclare add() en toute sécurité dans un fichier d'en-tête, protégé contre une double inclusion."
+  items={[
+    { id: "ifndef", label: "#ifndef MATH_UTILS_H", explanation: "Le #ifndef de la garde doit venir avant le #define et les déclarations qu'il protège." },
+    { id: "define", label: "#define MATH_UTILS_H" },
+    { id: "decl", label: "int add(int a, int b);" },
+    { id: "endif", label: "#endif" },
+  ]}
+  correctOrder={["ifndef", "define", "decl", "endif"]}
+/>
+
+<OrderingExercise
+  title="Ordonnez les étapes de compilation et de liaison"
+  prompt="Faites glisser ces commandes dans l'ordre qui construit un programme à partir de deux fichiers .c séparés."
+  items={[
+    { id: "compile-a", label: "gcc -c math_utils.c -o math_utils.o" },
+    { id: "compile-b", label: "gcc -c main.c -o main.o" },
+    { id: "link", label: "gcc math_utils.o main.o -o program", explanation: "La liaison doit venir après que les deux fichiers ont été compilés en fichiers objets — c'est l'étape qui résout les appels entre eux en un seul exécutable." },
+    { id: "run", label: "./program" },
+  ]}
+  correctOrder={["compile-a", "compile-b", "link", "run"]}
+/>
+
+<PredictOutput
+  title="Que se passe-t-il sans garde d'inclusion ?"
+  code={`/* shape.h, included by both a.c and b.c, WITHOUT a header guard */
+struct Shape {
+    int sides;
+};
+
+/* both a.c and b.c do: #include "shape.h" */
+/* both are compiled together into one program */`}
+  options={["Le programme compile et s'exécute sans problème", "Erreur de compilation : redéfinition de struct Shape", "Plantage à l'exécution", "Le second #include est ignoré silencieusement"]}
+  correctIndex={1}
+  explanation="Sans garde d'inclusion, si shape.h finit par être collé deux fois dans la même unité de traduction (directement ou via une chaîne d'inclusions), le compilateur voit struct Shape défini deux fois et signale une erreur de redéfinition. Les gardes d'inclusion (#ifndef/#define/#endif) existent précisément pour rendre le second collage sans effet."
+  actualOutput="error: redefinition of 'struct Shape'"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- **[Structures et méthodes](/fr/programming-languages/c/oop-or-structs)** — les définitions de struct sont exactement ce qui est typiquement partagé via un en-tête comme dans l'exemple de cette page.
+- **[Gestion des erreurs](/fr/programming-languages/c/error-handling)** — errno et setjmp proviennent tous deux d'en-têtes standard inclus de la même manière.

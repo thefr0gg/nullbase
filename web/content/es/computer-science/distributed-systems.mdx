@@ -1,0 +1,30 @@
+---
+title: Sistemas Distribuidos
+description: Qué cambia una vez que el trabajo paralelo se traslada a máquinas separadas sin memoria compartida y una red de por medio — el teorema CAP, el consenso, y por qué el fallo parcial es la suposición por defecto en lugar de la excepción.
+category: Computer Science
+weight: 10
+---
+
+Un **sistema distribuido** es un conjunto de máquinas independientes que tienen que trabajar juntas y presentar algo parecido a un único sistema coherente a quien lo esté usando, coordinándose solo enviando mensajes por una red — no hay memoria compartida a la que recurrir como la que hay entre hilos en una sola máquina (ver [Concurrencia](/es/computer-science/concurrency)). Esa única restricción cambia casi todo, porque una red es más lenta, menos fiable, y más difícil de razonar de lo que jamás es la memoria.
+
+## El fallo parcial es lo normal
+
+En una sola máquina, un crash tumba todo el programa de una vez — no existe un estado donde "una parte de él" siga ejecutándose y sea alcanzable. En un sistema distribuido, el **fallo parcial** es el caso normal: un nodo puede caerse, o volverse inalcanzable, o funcionar correctamente pero mucho más lento de lo habitual, mientras el resto del sistema sigue funcionando — y lo que es peor, desde el punto de vista de un nodo dado, "el otro nodo se cayó" y "la red hacia él simplemente está lenta ahora mismo" a menudo son indistinguibles. La mayor parte del diseño de sistemas distribuidos consiste en construir software que se mantenga correcto (o falle de forma predecible) a pesar de esa ambigüedad, en lugar de fingir que no existe.
+
+## El teorema CAP
+
+El **teorema CAP** establece que cuando ocurre una partición de red — algunos nodos no pueden comunicarse con otros — un almacén de datos distribuido tiene que elegir entre **Consistencia** (cada lectura ve la escritura más reciente, o un error) y **Disponibilidad** (cada solicitud recibe una respuesta, aunque pueda estar desactualizada). No puedes tener ambas durante una partición: un nodo aislado del resto del sistema puede negarse a responder (protegiendo la consistencia) o responder con lo que tiene, que podría ya estar desactualizado (protegiendo la disponibilidad). Sistemas distintos hacen esta compensación de forma deliberada y diferente — el libro mayor de un banco típicamente favorece la consistencia, un carrito de compras o un feed de redes sociales típicamente favorece la disponibilidad — y es gran parte de por qué "simplemente usa una base de datos" deja de ser una respuesta completa una vez que esa base de datos tiene que ejecutarse en más de una máquina.
+
+## Consenso
+
+Incluso fuera de una partición, lograr que múltiples nodos independientes coincidan en un único valor — quién es el líder actual, cuál debería ser la siguiente entrada en un log compartido — es un problema genuinamente difícil una vez que cualquier nodo puede caerse o los mensajes pueden retrasarse o perderse, y es el tema de **algoritmos de consenso** dedicados como Paxos y Raft. Estos sustentan cosas como la elección de líder en un clúster de base de datos y la coordinación detrás de los locks distribuidos; reimplementar el consenso desde cero para un sistema específico es una forma bien conocida de reintroducir cada bug sutil que los algoritmos existentes fueron construidos específicamente para descartar, que es por lo que la mayoría de los sistemas reales usan una implementación probada en batalla (etcd, ZooKeeper) en lugar de una hecha a medida.
+
+## Dónde conecta esto con el resto del sitio
+
+La teoría de sistemas distribuidos es el razonamiento que subyace a varios patrones cubiertos en otras partes desde un ángulo más práctico: los [Microservicios](/es/software-architecture/microservices) son un sistema distribuido por definición, y heredan el fallo parcial y la falta de fiabilidad de la red como preocupaciones reales y cotidianas en lugar de teóricas; la [Arquitectura Orientada a Eventos](/es/software-architecture/event-driven-architecture) es una forma común de estructurar la comunicación entre nodos que no pueden compartir memoria; y el balanceo de carga y la replicación en [Redes](/es/networking) y [Bases de datos](/es/databases) son ambas aplicaciones directas de intercambiar consistencia por disponibilidad, o viceversa, a favor de un producto específico.
+
+## Ver también
+
+- **[Paralelismo](/es/computer-science/parallelism)** — la versión de una sola máquina de "más de una cosa ejecutándose a la vez", sin una red ni fallo parcial de por medio.
+- **[Microservicios](/es/software-architecture/microservices)** — un sistema distribuido como patrón arquitectónico, desde un ángulo práctico en lugar de teórico.
+- **[Redes](/es/networking)** — el transporte real por el que viajan los mensajes de esta página, y de dónde vienen sus propios límites de fiabilidad.

@@ -1,0 +1,110 @@
+---
+title: Clases y Objetos
+description: Definir clases reales en Python — __init__, atributos de instancia, herencia con super(), y los métodos dunder que hacen que los objetos se comporten como los tipos incorporados.
+category: Programming Languages
+weight: 6
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Una clase de Python se define con `class`, y casi toda clase empieza con un método `__init__` — el constructor, llamado automáticamente cuando se crea una nueva instancia — que configura los atributos de instancia mediante `self`.
+
+```python
+class Dog:
+    def __init__(self, name, breed):
+        self.name = name
+        self.breed = breed
+
+    def bark(self):
+        return f"{self.name} says Woof!"
+
+rex = Dog("Rex", "Labrador")
+print(rex.bark())  # Rex says Woof!
+```
+
+`self` es la instancia sobre la que se llamó al método — Python lo pasa explícitamente como el primer parámetro de cada método de instancia, en vez de convertirlo en una palabra clave implícita como `this` en otros lenguajes. `rex.bark()` es en realidad `Dog.bark(rex)` por debajo.
+
+La herencia permite que una clase reutilice y extienda el comportamiento de otra clase. Una subclase llama a `super().__init__(...)` para ejecutar el constructor de la clase padre antes de añadir su propia configuración, y puede sobrescribir cualquier método, incluidos los que el padre ya define.
+
+```python
+class Puppy(Dog):
+    def __init__(self, name, breed, age_months):
+        super().__init__(name, breed)
+        self.age_months = age_months
+
+    def bark(self):
+        return f"{self.name} says Yip!"
+
+buddy = Puppy("Buddy", "Poodle", 4)
+print(buddy.bark())  # Buddy says Yip!
+```
+
+Los métodos "dunder" (doble guion bajo) son cómo una clase se conecta a los operadores y funciones incorporados de Python en vez de necesitar su propia API a medida. `__repr__` controla lo que `print()` y el REPL muestran para una instancia; `__eq__` controla lo que hace `==` entre dos instancias.
+
+```python
+class Point:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def __repr__(self):
+        return f"Point({self.x}, {self.y})"
+
+    def __eq__(self, other):
+        return self.x == other.x and self.y == other.y
+
+p1 = Point(1, 2)
+p2 = Point(1, 2)
+print(p1 == p2)  # True — because __eq__ compares the coordinates
+print(p1)         # Point(1, 2) — because __repr__ formats it
+```
+
+Sin `__eq__`, `==` recae en la comparación de identidad — si los dos nombres se refieren exactamente al mismo objeto en memoria — que casi nunca es lo que quieres para una clase de tipo valor como `Point`.
+
+## Ver también
+
+- **[Estructuras de Datos](/es/programming-languages/python/data-structures)** — los tipos incorporados a los que métodos dunder como `__eq__` hacen que tus propias clases se parezcan.
+- **[Manejo de Errores](/es/programming-languages/python/error-handling)** — las clases de excepción personalizadas, que en sí mismas son solo clases que heredan de `Exception`.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para definir una clase Dog y llamar a un método sobre una instancia."
+  items={[
+    { id: "class", label: "class Dog:" },
+    { id: "init", label: "    def __init__(self, name, breed):", explanation: "El constructor debe definirse como parte del cuerpo de la clase, justo después de la línea class." },
+    { id: "setname", label: "        self.name = name" },
+    { id: "setbreed", label: "        self.breed = breed" },
+    { id: "bark", label: "    def bark(self):" },
+    { id: "return", label: '        return f"{self.name} says Woof!"' },
+    { id: "instantiate", label: 'rex = Dog("Rex", "Labrador")', explanation: "La clase necesita estar completamente definida antes de que se pueda crear una instancia de ella." },
+    { id: "call", label: "print(rex.bark())" },
+  ]}
+  correctOrder={["class", "init", "setname", "setbreed", "bark", "return", "instantiate", "call"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para definir una subclase Puppy que llame al constructor del padre con super()."
+  items={[
+    { id: "class", label: "class Puppy(Dog):" },
+    { id: "init", label: "    def __init__(self, name, breed, age_months):", explanation: "Este constructor que sobrescribe pertenece directamente debajo de la línea class." },
+    { id: "super", label: "        super().__init__(name, breed)", explanation: "La configuración del padre debería ejecutarse antes de que esta subclase añada su propio atributo." },
+    { id: "setage", label: "        self.age_months = age_months" },
+    { id: "instantiate", label: 'buddy = Puppy("Buddy", "Poodle", 4)' },
+  ]}
+  correctOrder={["class", "init", "super", "setage", "instantiate"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`class Point:\n    def __init__(self, x, y):\n        self.x = x\n        self.y = y\n\np1 = Point(1, 2)\np2 = Point(1, 2)\nprint(p1 == p2)`}
+  options={["True", "False", "An error, because Point has no __eq__", "Point(1, 2) == Point(1, 2)"]}
+  correctIndex={1}
+  explanation="Sin un método __eq__ personalizado, la comprobación de igualdad por defecto de Python compara identidad de objeto — si p1 y p2 son literalmente el mismo objeto en memoria. Son dos instancias de Point separadas que simplemente tienen coordenadas iguales, así que == es False aunque los valores parezcan idénticos."
+  actualOutput="False"
+/>
+</ExerciseTabs>

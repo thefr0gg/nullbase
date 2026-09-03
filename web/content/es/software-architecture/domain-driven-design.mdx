@@ -1,0 +1,40 @@
+---
+title: Diseño Guiado por el Dominio
+description: Modelar el software en torno al dominio de negocio real y el lenguaje que usan sus expertos, en lugar de en torno a las tablas de la base de datos o las capas técnicas.
+category: Software Architecture
+weight: 9
+---
+
+El **Diseño Guiado por el Dominio (DDD)**, un término acuñado por Eric Evans, es un enfoque para construir software que pone al dominio de negocio real — el problema del mundo real que el software existe para resolver, y las personas que lo entienden profundamente — en el centro del diseño, en lugar de dejar que la forma de la base de datos o del framework dicte cómo se organiza el código. La premisa central es que la mayor parte de la complejidad en un problema de negocio genuinamente difícil no es técnica (no es difícil guardar una fila en una base de datos); está en entender y modelar correctamente las reglas, excepciones, y vocabulario del propio dominio, así que DDD dedica su esfuerzo a acertar ese modelo antes de preocuparse por frameworks o infraestructura.
+
+## Lenguaje ubicuo
+
+La idea más inmediatamente práctica en DDD es el **lenguaje ubicuo**: un vocabulario compartido, palabra por palabra, entre desarrolladores y expertos del dominio, y usado consistentemente en la conversación, la documentación, y el propio código. Si los suscriptores y ajustadores de reclamos en una aseguradora hablan de que una "póliza caduca (lapses)", el código debería tener un método `lapse()` o un estado `Lapsed` — no un `status = 3` genérico que un desarrollador mapea privadamente a "caducada" en su cabeza. Cuando la misma palabra significa lo mismo para todos en la sala, los errores de traducción entre "lo que pidió el negocio" y "lo que hace el código" mayormente desaparecen, porque nunca hubo un paso de traducción para empezar — el experto del dominio puede leer un caso de uso descrito en el lenguaje ubicuo y reconocer su propio negocio en él.
+
+Esto suena más a una práctica de comunicación que a un patrón arquitectónico, y lo es — pero es el cimiento sobre el que se sienta todo lo demás en DDD. Sin un vocabulario compartido y preciso, el modelado que sigue tiende a derivar hacia abstracciones técnicas que nadie fuera de ingeniería entiende, o hacia jerga de negocio vaga que no se mapea a ninguna estructura de código real.
+
+## Contextos delimitados
+
+Un dominio de negocio grande rara vez tiene un único significado consistente para sus términos centrales. En un sistema de comercio electrónico, "Producto" en el contexto de catálogo significa algo con una descripción, imágenes, y etiquetas de categoría; "Producto" en el contexto de envío significa algo con un peso, dimensiones, y una ubicación de almacén; "Producto" en el contexto de facturación significa algo con un precio y un código fiscal. Forzar a los tres en un único modelo `Product` compartido produce una clase hinchada llena de campos que importan a algunas partes del sistema y son ruido sin sentido en todas las demás, y un cambio hecho para beneficio de envío arriesga romper silenciosamente las suposiciones de facturación.
+
+Un **contexto delimitado** es la respuesta de DDD: una frontera explícita (a menudo, pero no necesariamente, una frontera de servicio o módulo) dentro de la cual un término tiene exactamente un significado consistente, y fuera de la cual ese significado no necesita aplicar. Los contextos de catálogo, envío, y facturación obtienen cada uno su propio modelo de "Producto", adaptado a lo que ese contexto realmente necesita, y traducen entre sí en sus bordes en lugar de compartir un modelo que no satisface bien a nadie. Esto es lo que hace que los contextos delimitados sean distintos de simplemente "mal naming" — que la misma palabra legítimamente signifique cosas distintas en contextos distintos es esperado y saludable, siempre que cada contexto se mantenga internamente consistente y las fronteras sean deliberadas en lugar de accidentales.
+
+## Entidades, objetos de valor, y agregados — la forma de un modelo
+
+A nivel de un contexto delimitado individual, DDD da un pequeño vocabulario conceptual para cómo darle forma a un modelo de dominio, sin requerir todo el peso de sus patrones tácticos para obtener valor de la idea:
+
+- Una **entidad** tiene una identidad persistente que importa independientemente de sus atributos actuales — dos pedidos con líneas de producto idénticas siguen siendo dos pedidos distintos, distinguidos por su ID de pedido, y un pedido que cambia su dirección de envío sigue siendo el mismo pedido.
+- Un **objeto de valor** no tiene identidad propia — está definido enteramente por sus atributos. Dos objetos `Money` que representan "$50 USD" son intercambiables; nada distingue una instancia de otra, así que pueden compararse, copiarse, y reemplazarse libremente.
+- Un **agregado** es un cúmulo de entidades y objetos de valor tratados como una única frontera de consistencia, con una sola entidad (la raíz del agregado) como el único punto de entrada al que otro código puede referenciar directamente. Un agregado `Order` podría contener objetos de valor `LineItem` internamente, pero otro código interactúa con el pedido solo a través de la raíz `Order`, lo cual mantiene los invariantes (las líneas de producto no pueden exceder el stock, un pedido cancelado no puede ganar artículos nuevos) exigibles en exactamente un lugar en lugar de dispersos por cada llamante.
+
+Nada de esto requiere ir a fondo en todo el kit táctico de DDD (repositorios, eventos de dominio, especificaciones) para ser útil — incluso simplemente preguntar consistentemente "¿esto tiene una identidad, o es solo un valor?" clarifica una sorprendente cantidad de decisiones de modelado que de otro modo se toman de forma ad hoc.
+
+## Cuándo es la herramienta equivocada
+
+DDD es una inversión pesada: pide colaboración sostenida con expertos del dominio, trabajo de modelado deliberado antes de escribir código, y disciplina para mantener las fronteras de los contextos delimitados a medida que crece un sistema. Esa inversión da frutos cuando el dominio en sí es genuinamente complejo — suscripción de seguros, enrutamiento logístico, instrumentos financieros — cualquier cosa donde las reglas de negocio sean la parte difícil y equivocarse sutilmente tenga un costo real. Es la herramienta equivocada para una app CRUD simple donde el "dominio" realmente son solo tablas de base de datos con una capa delgada de validación; forzar entidades, objetos de valor, y contextos delimitados sobre una app de lista de tareas agrega ceremonia sin nada debajo que justifique el costo.
+
+## Ver también
+
+- **[Arquitectura Limpia](/es/software-architecture/clean-architecture)** — un emparejamiento común, ya que la capa interior de "entidades" de la Arquitectura Limpia es exactamente donde se sienta naturalmente un modelo de dominio al estilo DDD.
+- **[Arquitectura en Capas](/es/software-architecture/layered-architecture)** — la opción por defecto más común cuando un dominio no justifica la inversión de DDD.
+- **[Arquitectura REST](/es/software-architecture/rest-architecture)** — el nombrado de recursos en una API REST se beneficia de la misma claridad que provee un lenguaje ubicuo, incluso sin adoptar DDD por completo.

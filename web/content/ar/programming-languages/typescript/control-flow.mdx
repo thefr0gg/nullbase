@@ -1,0 +1,133 @@
+---
+title: التحكم بمسار التنفيذ
+description: كيف تُضيِّق عبارات if/switch أنواع الاتحاد (union types)، والالتفافة الخاصة بفحص الأنواع التي تضيفها TypeScript إلى التحكم بمسار التنفيذ في JavaScript العادية.
+category: Programming Languages
+weight: 3
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تتصرف `if`، و`else`، و`switch`، و`for`، و`while` تماماً كما تتصرف في JavaScript وقت التشغيل — لا تُغيِّر TypeScript دلالات التحكم بمسار التنفيذ. ما تُغيِّره هو ما *يعرفه* المُصرِّف عن أنواع متغيراتك أثناء انتقال التنفيذ عبر كل فرع. يُسمَّى هذا **تضييق الأنواع (type narrowing)**، وهو من أكثر الميزات تمييزاً لـTypeScript في هذه الصفحة.
+
+## أنواع الاتحاد والتضييق
+
+يمكن تصريح متغير ليحمل أحد عدة أنواع بـ**نوع اتحاد (union type)** (`A | B`):
+
+```ts
+function formatId(id: string | number): string {
+  if (typeof id === "string") {
+    return id.toUpperCase(); // id مُضيَّقة هنا إلى string
+  }
+  return id.toFixed(2); // id مُضيَّقة هنا إلى number
+}
+```
+
+داخل فرع `if (typeof id === "string")`، يُضيِّق المُصرِّف نوع `id` من `string | number` إلى `string` فقط، لذا `.toUpperCase()` مسموحة. في فرع `else` (السقوط الضمني هنا)، يُضيِّقه إلى `number`، لذا `.toFixed(2)` مسموحة. جرّب استدعاء `id.toUpperCase()` في الفرع الثاني وسيرفضه المُصرِّف — `toUpperCase` غير موجودة على `number`.
+
+## التضييق باستخدام switch
+
+تُضيِّق `switch` بالطريقة نفسها، فرعاً بفرع، مما يجعلها ملائمة طبيعياً لـ**اتحادات مُميَّزة (discriminated unions)** — أنواع تشترك في حقل حرفي مشترك يُستخدَم للتمييز بينها:
+
+```ts
+type Shape =
+  | { kind: "circle"; radius: number }
+  | { kind: "square"; side: number };
+
+function area(shape: Shape): number {
+  switch (shape.kind) {
+    case "circle":
+      return Math.PI * shape.radius ** 2; // shape مُضيَّقة إلى فرع circle
+    case "square":
+      return shape.side ** 2; // shape مُضيَّقة إلى فرع square
+  }
+}
+```
+
+يُضيِّق كل `case` نوع `shape` بناءً على القيمة الحرفية لـ`kind`، لذا `shape.radius` قابلة للوصول فقط في حالة `"circle"`، و`shape.side` فقط في حالة `"square"` — الوصول إلى `shape.side` داخل حالة `"circle"` سيكون خطأ نوع، لأن المُصرِّف يعرف أن `shape` في ذلك الفرع لا يمكن أن تملك خاصية `side`.
+
+## الالتفافة الخاصة بـTS: فحص الاستيفاء (Exhaustiveness Checking)
+
+لا تعرف `switch` في JavaScript العادية ما إذا كنت قد عالجت كل حالة. يمكن لـTypeScript فرض ذلك، بإسناد قيمة "المتبقي المستحيل" إلى متغير مُصرَّح بنوع `never`:
+
+```ts
+type Shape =
+  | { kind: "circle"; radius: number }
+  | { kind: "square"; side: number }
+  | { kind: "triangle"; base: number; height: number };
+
+function area(shape: Shape): number {
+  switch (shape.kind) {
+    case "circle":
+      return Math.PI * shape.radius ** 2;
+    case "square":
+      return shape.side ** 2;
+    default: {
+      const exhaustiveCheck: never = shape; // Type error إن فاتت إحدى الحالات
+      throw new Error(`Unhandled shape: ${exhaustiveCheck}`);
+    }
+  }
+}
+```
+
+بعد إضافة `"triangle"` إلى `Shape` دون إضافة `case` مطابقة، لم يعد `shape` في فرع `default` مُضيَّقاً إلى لا شيء — لا يزال `{ kind: "triangle"; ... }`، وهو غير قابل للإسناد إلى `never`. يُبلِغ المُصرِّف عن ذلك الإسناد كخطأ في النقطة الدقيقة التي نسيت فيها معالجة حالة، فيلتقط `switch` غير مستوفٍ قبل وقت التشغيل بدلاً من السقوط صامتاً.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء دالة تُضيِّق اتحاد string | number باستخدام typeof."
+  items={[
+    { id: "fn-decl", label: "function formatId(id: string | number): string {" },
+    { id: "if-open", label: "  if (typeof id === \"string\") {" },
+    { id: "if-body", label: "    return id.toUpperCase();", explanation: "لا يُعرَف أن id سلسلة نصية إلا داخل هذا الفرع، بعد فحص typeof." },
+    { id: "if-close", label: "  }" },
+    { id: "else-body", label: "  return id.toFixed(2);" },
+    { id: "fn-close", label: "}" },
+  ]}
+  correctOrder={["fn-decl", "if-open", "if-body", "if-close", "else-body", "fn-close"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء دالة area لاتحاد مُميَّز باستخدام switch."
+  items={[
+    { id: "fn-decl", label: "function area(shape: Shape): number {" },
+    { id: "switch-open", label: "  switch (shape.kind) {" },
+    { id: "case-circle", label: "    case \"circle\":" },
+    { id: "return-circle", label: "      return Math.PI * shape.radius ** 2;", explanation: "لا توجد shape.radius إلا بمجرد أن يُضيِّق الـswitch نوع shape إلى حالة circle." },
+    { id: "case-square", label: "    case \"square\":" },
+    { id: "return-square", label: "      return shape.side ** 2;" },
+    { id: "switch-close", label: "  }" },
+    { id: "fn-close", label: "}" },
+  ]}
+  correctOrder={["fn-decl", "switch-open", "case-circle", "return-circle", "case-square", "return-square", "switch-close", "fn-close"]}
+/>
+
+<PredictOutput
+  title="ماذا يقول مُدقِّق الأنواع؟"
+  code={`type Shape =
+  | { kind: "circle"; radius: number }
+  | { kind: "square"; side: number };
+
+function describe(shape: Shape): string {
+  if (shape.kind === "circle") {
+    return \`circle r=\${shape.radius}\`;
+  }
+  return \`square s=\${shape.side}\`;
+}
+
+const s: Shape = { kind: "circle", radius: 2 };
+describe(s);`}
+  options={["\"circle r=2\"", "\"square s=undefined\"", "Type error: Property 'radius' does not exist on type 'Shape'", "undefined"]}
+  correctIndex={0}
+  explanation={`فحص if (shape.kind === "circle") يُضيِّق shape إلى فرع circle من الاتحاد، لذا shape.radius صالحة هناك وshape.side صالحة في الـelse الضمني. استدعاء describe بقيمة على شكل circle ينفّذ ببساطة ذلك الفرع وينتج "circle r=2".`}
+  actualOutput={`"circle r=2"`}
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [بنية اللغة والأنواع](/ar/programming-languages/typescript/syntax-basics)
+- [الدوال](/ar/programming-languages/typescript/functions)

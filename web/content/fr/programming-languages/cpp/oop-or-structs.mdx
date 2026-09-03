@@ -1,0 +1,155 @@
+---
+title: Classes et objets
+description: Construire de véritables types en C++ avec des constructeurs, des modificateurs d'accès, et l'héritage — le cœur orienté objet du langage.
+category: Programming Languages
+weight: 6
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Une **classe** C++ regroupe des données (variables membres) et du comportement (fonctions membres) dans un seul type. Contrairement à un simple `struct` en C, une classe C++ contrôle exactement quelles parties de ce regroupement le code extérieur est autorisé à toucher — le mécanisme qui rend l'encapsulation possible.
+
+## Constructeurs et modificateurs d'accès
+
+```cpp
+#include <iostream>
+#include <string>
+
+class BankAccount {
+private:
+    std::string owner;
+    double balance;
+
+public:
+    // constructor: runs automatically when a BankAccount is created
+    BankAccount(std::string ownerName, double startingBalance) {
+        owner = ownerName;
+        balance = startingBalance;
+    }
+
+    void deposit(double amount) {
+        balance += amount;
+    }
+
+    double getBalance() const {
+        return balance;
+    }
+};
+
+int main() {
+    BankAccount account("Ada", 100.0);
+    account.deposit(50.0);
+    std::cout << account.getBalance() << "\n"; // 150
+
+    // account.balance = 1000000;  // would fail to compile: balance is private
+    return 0;
+}
+```
+
+Les membres `private` (`owner`, `balance`) ne sont accessibles que depuis l'intérieur des fonctions membres de la classe elle-même ; les membres `public` forment l'interface externe de la classe. C'est pourquoi `account.balance` ne peut pas être touché directement depuis `main` — tout accès doit passer par `deposit()` et `getBalance()`, ce qui permet à la classe d'imposer ses propres règles (par exemple, rejeter un dépôt négatif) au lieu de faire confiance à chaque appelant pour faire la bonne chose. Le **constructeur** — une fonction portant le même nom que la classe et sans type de retour — s'exécute automatiquement chaque fois qu'un objet est créé, garantissant que chaque `BankAccount` démarre dans un état valide plutôt que de dépendre d'un appel `init()` séparé qu'il est facile d'oublier.
+
+## Héritage
+
+```cpp
+#include <iostream>
+#include <string>
+
+class Animal {
+protected:
+    std::string name;
+
+public:
+    Animal(std::string animalName) : name(animalName) {}
+
+    virtual std::string speak() const {
+        return name + " makes a sound.";
+    }
+};
+
+class Dog : public Animal {
+public:
+    Dog(std::string dogName) : Animal(dogName) {}
+
+    std::string speak() const override {
+        return name + " barks.";
+    }
+};
+
+int main() {
+    Animal generic("Creature");
+    Dog rex("Rex");
+
+    std::cout << generic.speak() << "\n"; // Creature makes a sound.
+    std::cout << rex.speak() << "\n";     // Rex barks.
+    return 0;
+}
+```
+
+`class Dog : public Animal` fait hériter `Dog` des membres d'`Animal` — les membres `protected` (comme `name`) sont visibles pour les classes dérivées mais toujours cachés au code extérieur, un intermédiaire entre `private` et `public`. `Animal(dogName)` dans la liste d'initialisation du constructeur de `Dog` appelle explicitement le constructeur de la classe de base, puisqu'une classe dérivée ne sait pas automatiquement comment initialiser la partie base d'elle-même. Marquer `speak()` comme `virtual` dans la classe de base et `override` dans la classe dérivée active le **polymorphisme** : appeler `speak()` via une référence ou un pointeur de classe de base dispatche vers la version du type dérivé réel à l'exécution, plutôt que d'appeler toujours `Animal::speak()`.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Faites glisser les lignes dans le bon ordre pour construire une classe Rectangle avec un constructeur et une méthode area()."
+  items={[
+    { id: "class-open", label: "class Rectangle {" },
+    { id: "private", label: "private:" },
+    { id: "fields", label: "    double width, height;", explanation: "Les membres doivent être déclarés avant que la liste d'initialisation du constructeur ne puisse y faire référence." },
+    { id: "public", label: "public:" },
+    { id: "ctor", label: "    Rectangle(double w, double h) : width(w), height(h) {}" },
+    { id: "area", label: "    double area() const { return width * height; }" },
+    { id: "class-close", label: "};" },
+  ]}
+  correctOrder={["class-open", "private", "fields", "public", "ctor", "area", "class-close"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Faites glisser les lignes dans le bon ordre pour construire une classe de base Shape et une classe dérivée Circle avec une méthode virtuelle describe()."
+  items={[
+    { id: "base-open", label: "class Shape {" },
+    { id: "base-public", label: "public:" },
+    { id: "virtual-fn", label: "    virtual std::string describe() const { return \"a shape\"; }", explanation: "La fonction virtuelle de la classe de base doit exister avant qu'une classe dérivée ne puisse la surcharger." },
+    { id: "base-close", label: "};" },
+    { id: "derived-open", label: "class Circle : public Shape {" },
+    { id: "derived-public", label: "public:" },
+    { id: "override-fn", label: "    std::string describe() const override { return \"a circle\"; }" },
+    { id: "derived-close", label: "};" },
+  ]}
+  correctOrder={["base-open", "base-public", "virtual-fn", "base-close", "derived-open", "derived-public", "override-fn", "derived-close"]}
+/>
+
+<PredictOutput
+  title="Qu'affiche ceci ?"
+  code={`#include <iostream>
+
+class Shape {
+public:
+    virtual std::string name() const { return "Shape"; }
+};
+
+class Square : public Shape {
+public:
+    std::string name() const override { return "Square"; }
+};
+
+int main() {
+    Shape* s = new Square();
+    std::cout << s->name() << std::endl;
+    delete s;
+    return 0;
+}`}
+  options={["Shape", "Square", "Compile error", "Runtime error"]}
+  correctIndex={1}
+  explanation={`Même si s est déclaré comme un Shape*, il pointe en réalité vers un objet Square, et name() est virtuelle. Le dispatch virtuel résout l'appel en fonction du type réel de l'objet à l'exécution, pas du type déclaré du pointeur, donc "Square" est affiché.`}
+  actualOutput="Square"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Structures de données](/fr/programming-languages/cpp/data-structures) — les conteneurs intégrés à partir desquels les membres d'une classe sont souvent construits.
+- [Gestion des erreurs](/fr/programming-languages/cpp/error-handling) — lever une exception depuis un constructeur quand l'initialisation échoue.

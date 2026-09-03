@@ -1,0 +1,166 @@
+---
+title: Manejo de Errores
+description: Rust no tiene excepciones — Result<T, E> y Option<T> hacen del fallo y la ausencia parte de la firma de tipo de una función, verificado en tiempo de compilación.
+category: Programming Languages
+weight: 7
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Rust no tiene `try`/`catch` ni `null`. En su lugar, una función que podría fallar devuelve `Result<T, E>`, y un valor que podría estar ausente se envuelve en `Option<T>`. Ambos son enums ordinarios definidos en la biblioteca estándar — no hay magia especial del lenguaje, solo un tipo que el compilador te obliga a manejar antes de poder acceder al valor de dentro.
+
+```rust
+enum Option<T> {
+    Some(T),
+    None,
+}
+
+enum Result<T, E> {
+    Ok(T),
+    Err(E),
+}
+```
+
+Debido a que el fallo y la ausencia aparecen en la firma de tipo, el compilador puede exigir que los hayas gestionado — no puedes usar accidentalmente un `Result<T, E>` como si fuera un simple `T`, de la forma en que un lenguaje con excepciones te permite llamar a una función y olvidar que podría lanzar una.
+
+## `Option<T>`: sin null
+
+Donde otro lenguaje devolvería `null` o `undefined` para "no hay nada aquí," Rust devuelve `None`. No hay ningún valor que pueda hacerse pasar silenciosamente por "ausente" de la forma en que `null` puede hacerlo en Java o JavaScript — `Option<T>` tiene que desenvolverse explícitamente antes de que se pueda usar el `T` de dentro.
+
+```rust
+fn find_even(numbers: &[i32]) -> Option<i32> {
+    for &n in numbers {
+        if n % 2 == 0 {
+            return Some(n);
+        }
+    }
+    None
+}
+
+fn main() {
+    let numbers = [1, 3, 5, 8, 9];
+
+    match find_even(&numbers) {
+        Some(n) => println!("found an even number: {n}"),
+        None => println!("no even number in the list"),
+    }
+}
+```
+
+## `Result<T, E>`: fallo recuperable
+
+`Result<T, E>` es la contraparte de `Option` para operaciones que fallan *con una razón* en vez de simplemente quedarse vacías. `E` es típicamente un tipo de error que describe qué salió mal.
+
+```rust
+fn divide(a: f64, b: f64) -> Result<f64, String> {
+    if b == 0.0 {
+        Err(String::from("division by zero"))
+    } else {
+        Ok(a / b)
+    }
+}
+
+fn main() {
+    match divide(10.0, 2.0) {
+        Ok(result) => println!("result: {result}"),
+        Err(e) => println!("error: {e}"),
+    }
+
+    match divide(10.0, 0.0) {
+        Ok(result) => println!("result: {result}"),
+        Err(e) => println!("error: {e}"),
+    }
+}
+```
+
+## El operador `?`
+
+Emparejar manualmente cada `Result` que una función produce se vuelve verboso rápidamente, especialmente cuando una función llama a varias operaciones falibles seguidas y simplemente quiere salir en el primer error. El operador `?` hace exactamente eso: aplicado a un `Result`, desenvuelve `Ok(value)` en `value` y, en `Err(e)`, devuelve inmediatamente ese `Err` desde la función contenedora — siempre que el tipo de retorno de la propia función contenedora sea compatible.
+
+```rust
+fn divide(a: f64, b: f64) -> Result<f64, String> {
+    if b == 0.0 {
+        Err(String::from("division by zero"))
+    } else {
+        Ok(a / b)
+    }
+}
+
+fn compute(a: f64, b: f64, c: f64) -> Result<f64, String> {
+    let step1 = divide(a, b)?; // returns early with Err if divide fails
+    let step2 = divide(step1, c)?;
+    Ok(step2 * 100.0)
+}
+
+fn main() {
+    match compute(100.0, 5.0, 0.0) {
+        Ok(result) => println!("result: {result}"),
+        Err(e) => println!("compute failed: {e}"),
+    }
+}
+```
+
+`compute` nunca hace match explícitamente sobre el resultado de `divide` — `?` lo hace en línea. Esto solo compila porque `compute` en sí devuelve `Result<f64, String>`; `?` solo puede usarse dentro de una función cuyo tipo de retorno le permita cortocircuitar hacia afuera.
+
+## ¿Por qué no excepciones?
+
+Los diseñadores de Rust eligieron esto en vez de excepciones deliberadamente: una excepción puede lanzarse desde casi cualquier parte y capturarse en casi cualquier parte, lo cual significa que la firma de una función no te dice qué podría lanzar. `Result<T, E>` pone el fallo en el sistema de tipos, así que el compilador — no la documentación, no las pruebas en tiempo de ejecución — exige que quien llama reconozca que existe un caso de error, aunque todo lo que haga sea propagarlo inmediatamente hacia arriba con `?`.
+
+## Ver también
+
+- **[Funciones](/es/programming-languages/rust/functions)** — cómo el retorno anticipado de `?` interactúa con el tipo de retorno declarado de una función.
+- **[Structs y Traits](/es/programming-languages/rust/oop-or-structs)** — `Option` y `Result` son en sí mismos enums con métodos definidos mediante `impl`, el mismo mecanismo usado para tipos personalizados.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir una función que devuelva Option<i32> y encuentre el primer número par, más un match sobre su resultado."
+  items={[
+    { id: "sig", label: "fn find_even(numbers: &[i32]) -> Option<i32> {" },
+    { id: "for-open", label: "    for &n in numbers {" },
+    { id: "if-open", label: "        if n % 2 == 0 {" },
+    { id: "some", label: "            return Some(n);", explanation: "El retorno anticipado solo tiene sentido una vez que el bucle y la comprobación de paridad que lo activan están en su lugar." },
+    { id: "if-close", label: "        }" },
+    { id: "for-close", label: "    }" },
+    { id: "none", label: "    None" },
+    { id: "fn-close", label: "}" },
+  ]}
+  correctOrder={["sig", "for-open", "if-open", "some", "if-close", "for-close", "none", "fn-close"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir una función compute que encadene dos divisiones falibles con el operador ?."
+  items={[
+    { id: "sig", label: "fn compute(a: f64, b: f64, c: f64) -> Result<f64, String> {" },
+    { id: "step1", label: "    let step1 = divide(a, b)?;" },
+    { id: "step2", label: "    let step2 = divide(step1, c)?;", explanation: "step2 depende del valor de step1, así que step1 debe calcularse primero." },
+    { id: "ok", label: "    Ok(step2 * 100.0)" },
+    { id: "close", label: "}" },
+  ]}
+  correctOrder={["sig", "step1", "step2", "ok", "close"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`fn divide(a: f64, b: f64) -> Result<f64, String> {
+    if b == 0.0 {
+        Err(String::from("division by zero"))
+    } else {
+        Ok(a / b)
+    }
+}
+
+fn main() {
+    let result = divide(10.0, 0.0);
+    println!("{}", result.unwrap());
+}`}
+  options={["division by zero", "0", "inf", "Runtime panic"]}
+  correctIndex={3}
+  explanation="unwrap() sobre un Err no devuelve la cadena de error ni un número de respaldo — hace panic y crashea el programa inmediatamente, imprimiendo el contenido del Err como parte del mensaje de panic. unwrap() está pensado para casos en los que estás seguro de que es Ok; llamarlo sobre un Result que no has verificado es exactamente lo que match o ? existen para evitar."
+  actualOutput={`thread 'main' panicked at 'called Result::unwrap() on an Err value: "division by zero"'`}
+/>
+</ExerciseTabs>

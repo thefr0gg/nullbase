@@ -1,0 +1,170 @@
+---
+title: Métodos
+description: Java no tiene funciones independientes — todo bloque de código reutilizable es un método sobre una clase, incluyendo variantes sobrecargadas.
+category: Programming Languages
+weight: 4
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Java no tiene funciones libres. Todo fragmento de código reutilizable y
+invocable es un **método**, declarado dentro de una clase o interfaz.
+Incluso el punto de entrada de un programa, `main`, es un método `static` de
+alguna clase — no hay forma de escribir una función que flote fuera del
+cuerpo de una clase.
+
+## Declarar un método
+
+Una declaración de método lista (en orden) un modificador de acceso,
+modificadores opcionales como `static`, un tipo de retorno, un nombre, y una
+lista de parámetros:
+
+```java
+public class MathUtils {
+    public static int square(int n) {
+        return n * n;
+    }
+
+    public static void printSquare(int n) {
+        System.out.println(square(n));
+    }
+}
+```
+
+Los métodos `static` pertenecen a la clase misma y pueden llamarse sin crear
+una instancia (`MathUtils.square(5)`). Los métodos de instancia (sin
+`static`) operan sobre un objeto particular y se llaman a través de una
+referencia a uno (`someObject.someMethod()`).
+
+## void frente a devolver un valor
+
+Un método que no produce un valor declara `void` como su tipo de retorno y
+simplemente no usa `return` con una expresión:
+
+```java
+public static void greet(String name) {
+    System.out.println("Hello, " + name);
+    return; // opcional aquí — llegar al final de un método void también funciona
+}
+```
+
+Un método con un tipo de retorno real debe devolver un valor en cada camino
+posible, o el compilador lo rechaza:
+
+```java
+public static String describe(int n) {
+    if (n < 0) {
+        return "negative";
+    } else {
+        return "non-negative";
+    }
+    // no hace falta un return final — cada camino de arriba ya devuelve
+}
+```
+
+## Sobrecarga de métodos
+
+Java permite múltiples métodos con el **mismo nombre** en la misma clase
+siempre que sus listas de parámetros difieran en número o tipo — esto es
+**sobrecarga** (overloading), resuelta enteramente en tiempo de compilación
+según los tipos de los argumentos en el sitio de la llamada:
+
+```java
+public class Printer {
+    public static void print(int value) {
+        System.out.println("int: " + value);
+    }
+
+    public static void print(double value) {
+        System.out.println("double: " + value);
+    }
+
+    public static void print(String value) {
+        System.out.println("String: " + value);
+    }
+}
+```
+
+Llamar a `Printer.print(5)` elige la sobrecarga `int`, `Printer.print(5.0)`
+elige la sobrecarga `double`, y `Printer.print("five")` elige la sobrecarga
+`String` — el compilador elige según los tipos estáticos de los argumentos,
+no mediante ninguna inspección en tiempo de ejecución. La sobrecarga es
+distinta de la **sobreescritura** (overriding) (cubierta en la página
+[Clases e Interfaces](/es/programming-languages/java/oop-or-structs)), que
+reemplaza el comportamiento de un método en una subclase con la *misma*
+firma.
+
+## Varargs
+
+Un método puede aceptar un número variable de argumentos finales con `...`,
+que el cuerpo del método ve como un array:
+
+```java
+public static int sum(int... numbers) {
+    int total = 0;
+    for (int n : numbers) {
+        total += n;
+    }
+    return total;
+}
+
+// sum(1, 2, 3) y sum() son ambas llamadas válidas
+```
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir un método estático que duplique un número y un main que lo llame."
+  items={[
+    { id: "f1", label: "public class Main {" },
+    { id: "f2", label: "    public static int doubleIt(int n) {" },
+    { id: "f3", label: "        return n * 2;", explanation: "La sentencia return debe estar dentro del cuerpo del método al que pertenece." },
+    { id: "f4", label: "    }" },
+    { id: "f5", label: "    public static void main(String[] args) {" },
+    { id: "f6", label: "        System.out.println(doubleIt(21));" },
+    { id: "f7", label: "    }" },
+    { id: "f8", label: "}" },
+  ]}
+  correctOrder={["f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Ordena estas líneas para declarar dos métodos describe sobrecargados (int y String) y llamar a ambos desde main."
+  items={[
+    { id: "g1", label: "public class Main {" },
+    { id: "g2", label: "    public static void describe(int n) { System.out.println(\"number \" + n); }" },
+    { id: "g3", label: "    public static void describe(String s) { System.out.println(\"text \" + s); }", explanation: "Ambas sobrecargas deben declararse antes de que main llame a cualquiera de ellas." },
+    { id: "g4", label: "    public static void main(String[] args) {" },
+    { id: "g5", label: "        describe(7);" },
+    { id: "g6", label: "        describe(\"hi\");" },
+    { id: "g7", label: "    }" },
+    { id: "g8", label: "}" },
+  ]}
+  correctOrder={["g1", "g2", "g3", "g4", "g5", "g6", "g7", "g8"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`public class Main {
+    static void show(long n) { System.out.println("long: " + n); }
+    static void show(int n) { System.out.println("int: " + n); }
+
+    public static void main(String[] args) {
+        show(5);
+    }
+}`}
+  options={["long: 5", "int: 5", "Compile error: ambiguous method call", "It prints both"]}
+  correctIndex={1}
+  explanation="La resolución de sobrecargas prefiere la coincidencia aplicable más específica sin una conversión de ampliación. El literal 5 ya es un int, así que la sobrecarga int coincide exactamente y se elige sobre long, que requeriría ampliación."
+  actualOutput="int: 5"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Flujo de Control](/es/programming-languages/java/control-flow)
+- [Clases e Interfaces](/es/programming-languages/java/oop-or-structs)

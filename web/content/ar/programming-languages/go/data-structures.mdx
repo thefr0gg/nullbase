@@ -1,0 +1,148 @@
+---
+title: هياكل البيانات
+description: المصفوفات والشرائح (slices) والخرائط في Go، بما في ذلك سلوك التسمية المستعارة (aliasing) الدقيق للشرائح المشتركة في مصفوفة أساسية.
+category: Programming Languages
+weight: 5
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تملك Go ثلاثة أنواع مركّبة مدمجة تستحق الفهم الجيد: المصفوفات، والشرائح
+(slices)، والخرائط (maps). الشرائح هي ما ستستخدمه معظم الوقت — المصفوفات
+موجودة أساساً كالشيء الذي تُبنى الشرائح فوقه.
+
+## المصفوفات
+
+للمصفوفة طول ثابت يشكّل جزءاً من نوعها: `[3]int` و`[5]int` نوعان مختلفان
+ولا يمكن إسناد أحدهما إلى الآخر.
+
+```go
+var scores [3]int
+scores[0] = 90
+scores[1] = 85
+scores[2] = 78
+fmt.Println(scores) // [90 85 78]
+
+primes := [5]int{2, 3, 5, 7, 11}
+```
+
+بما أن الحجم ثابت ومعروف وقت التصريف، تُستخدم المصفوفات مباشرةً بالقيمة:
+إسناد مصفوفة إلى أخرى ينسخ كل عنصر فيها.
+
+## الشرائح (Slices)
+
+الشريحة عبارة عن واجهة عرض فوق مصفوفة أساسية: مؤشر، وطول، وسعة. الشرائح
+هي ما تلجأ إليه دائماً تقريباً بدلاً من المصفوفات، لأنها قادرة على النمو.
+
+```go
+nums := []int{1, 2, 3}
+nums = append(nums, 4)
+fmt.Println(nums) // [1 2 3 4]
+```
+
+تُنشئ `make` شريحة بطول معطى (وسعة اختيارية):
+
+```go
+buf := make([]int, 3)    // [0 0 0]
+buf2 := make([]int, 0, 10) // الطول 0، السعة 10
+```
+
+تقطيع شريحة موجودة (`s[low:high]`) **لا** ينسخ — الشريحة الجديدة تشترك في
+نفس المصفوفة الأساسية للشريحة الأصلية. التعديل عبر إحداهما يظهر عبر
+الأخرى، حتى يفرض `append` إعادة تخصيص:
+
+```go
+a := []int{1, 2, 3, 4, 5}
+b := a[1:3] // [2 3]، تشترك في مصفوفة a الأساسية
+b[0] = 99
+fmt.Println(a) // [1 99 3 4 5] — تغيّرت a أيضاً
+```
+
+هذا التشارك في المصفوفة من أكثر مصادر المفاجأة شيوعاً للقادمين من لغات
+حيث يُنسخ التقطيع دائماً. عندما تحتاج نسخة مستقلة، استخدم الدالة المدمجة
+`copy`:
+
+```go
+src := []int{1, 2, 3}
+dst := make([]int, len(src))
+copy(dst, src)
+```
+
+## الخرائط (Maps)
+
+الخريطة هي جدول التجزئة المدمج في Go، تُصرَّح بـ`map[KeyType]ValueType`:
+
+```go
+ages := map[string]int{
+	"ada":  36,
+	"grace": 85,
+}
+
+ages["linus"] = 55
+fmt.Println(ages["ada"]) // 36
+
+value, ok := ages["missing"]
+fmt.Println(value, ok) // 0 false — القيمة الصفرية، وok يفيد بالغياب
+```
+
+حذف مفتاح يستخدم الدالة المدمجة `delete`:
+
+```go
+delete(ages, "grace")
+```
+
+تكرار خريطة بـ`range` يزور المُدخَلات **بترتيب عشوائي** عن قصد — تُعشِّي
+Go ترتيب التكرار عمداً لمنع الكود من الاعتماد عليه دون قصد. رتّب المفاتيح
+بنفسك إذا احتجت ترتيباً ثابتاً.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء شريحة والإضافة إليها."
+  items={[
+    { id: "s1", label: "nums := []int{1, 2, 3}" },
+    { id: "s2", label: "nums = append(nums, 4)", explanation: "تُعيد append رأس شريحة جديداً — يجب إسناده مجدداً إلى nums." },
+    { id: "s3", label: "fmt.Println(nums)" },
+  ]}
+  correctOrder={["s1", "s2", "s3"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="رتّب هذه الأسطر للبحث عن مفتاح في خريطة والتحقق مما إذا كان موجوداً."
+  items={[
+    { id: "m1", label: "ages := map[string]int{\"ada\": 36}" },
+    { id: "m2", label: "value, ok := ages[\"ada\"]", explanation: "صيغة comma-ok يجب أن تأتي بعد تصريح الخريطة." },
+    { id: "m3", label: "if ok {" },
+    { id: "m4", label: "\tfmt.Println(value)" },
+    { id: "m5", label: "}" },
+  ]}
+  correctOrder={["m1", "m2", "m3", "m4", "m5"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا الكود؟"
+  code={`package main
+
+import "fmt"
+
+func main() {
+	original := []int{10, 20, 30, 40}
+	view := original[1:3]
+	view[0] = 999
+	fmt.Println(original)
+}`}
+  options={["[10 20 30 40]", "[10 999 30 40]", "[999 30]", "خطأ تصريف: لا يمكن تعديل الشريحة"]}
+  correctIndex={1}
+  explanation="لا ينسخ view := original[1:3] العناصر — يشترك في مصفوفة original الأساسية بدءاً من الفهرس 1. الكتابة إلى view[0] تكتب مباشرة إلى original[1]، فتصبح original هي [10 999 30 40]."
+  actualOutput="[10 999 30 40]"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [الدوال](/ar/programming-languages/go/functions)
+- [البُنى والواجهات](/ar/programming-languages/go/oop-or-structs)

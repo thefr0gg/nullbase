@@ -1,0 +1,81 @@
+---
+title: Sintaxis y Variables
+description: Bloques definidos por indentación, tipado dinámico, y los tipos incorporados en los que cae cada valor de Python.
+category: Programming Languages
+weight: 2
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Python no tiene llaves, ni palabras clave `end`, ni puntos y coma que terminen instrucciones — un bloque (el cuerpo de un `if`, un bucle, una función) se define enteramente por su nivel de indentación. La indentación consistente no es una elección de estilo impuesta por un linter; es la sintaxis real que el intérprete analiza, y mezclar tabulaciones y espacios o indentar de forma inconsistente es un `SyntaxError` o `IndentationError`.
+
+```python
+# comments start with a hash and run to the end of the line
+count = 10          # int
+price = 3.14         # float
+name = "Nova"         # str
+is_ready = True        # bool
+result = None            # NoneType — Python's "no value" singleton
+
+print(type(count), type(name), type(is_ready))
+```
+
+Las variables en Python son de tipado dinámico: un nombre no declara un tipo por adelantado, simplemente es una etiqueta que apunta a cualquier valor que se le asignó por última vez, y el tipo de ese valor es lo que reporta `type()`. Reasignar `count = "ten"` más tarde es completamente legal — la variable ahora apunta a una cadena en vez de a un int — lo cual es conveniente para scripts rápidos pero significa que los bugs relacionados con tipos surgen en tiempo de ejecución en vez de en tiempo de compilación, a menos que añadas type hints y ejecutes un verificador como `mypy` por separado.
+
+```python
+a, b = 1, 2
+a, b = b, a  # swap without a temporary variable
+print(a, b)  # 2 1
+```
+
+Ese intercambio funciona porque el lado derecho `b, a` se evalúa por completo — construyendo un par temporal `(2, 1)` — antes de que `a` o `b` en el lado izquierdo se reasignen. Este mismo mecanismo de desempaquetado de tuplas es cómo las funciones de Python "devuelven múltiples valores": en realidad devuelven una tupla, que quien llama desempaqueta.
+
+```python
+score = 87
+message = f"You scored {score} points ({score / 100:.0%})"
+print(message)  # You scored 87 points (87%)
+```
+
+Los f-strings (literales de cadena prefijados con `f`) son la forma estándar de construir texto formateado: cualquier cosa dentro de `{}` se evalúa como una expresión Python, y un `:format_spec` opcional después de un `:` controla cómo se renderiza — `.0%` arriba convierte `0.87` en `"87%"`.
+
+## Ver también
+
+- **[Flujo de Control](/es/programming-languages/python/control-flow)** — usar estos valores dentro de `if`, `for`, y `while`.
+- **[Estructuras de Datos](/es/programming-languages/python/data-structures)** — los tipos compuestos (listas, dicts) construidos a partir de estos tipos básicos.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para intercambiar dos variables e imprimir el resultado."
+  items={[
+    { id: "a", label: "a = 1" },
+    { id: "b", label: "b = 2" },
+    { id: "swap", label: "a, b = b, a", explanation: "Tanto `a` como `b` deben tener ya valores antes de que esta línea pueda intercambiarlos." },
+    { id: "print", label: "print(a, b)" },
+  ]}
+  correctOrder={["a", "b", "swap", "print"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir e imprimir un mensaje de puntuación formateado."
+  items={[
+    { id: "score", label: "score = 87" },
+    { id: "message", label: 'message = f"You scored {score} points"', explanation: "El f-string necesita que `score` esté definido primero, ya que lee ese valor en el momento en que esta línea se ejecuta." },
+    { id: "print", label: "print(message)" },
+  ]}
+  correctOrder={["score", "message", "print"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`print(7 // 2)`}
+  options={["3.5", "3", "4", "Error: unsupported operand"]}
+  correctIndex={1}
+  explanation={'"//" es división entera — siempre divide y luego redondea hacia abajo al número entero más cercano, descartando el resto por completo, a diferencia de "/" que siempre devuelve un float (7 / 2 daría 3.5).'}
+  actualOutput="3"
+/>
+</ExerciseTabs>

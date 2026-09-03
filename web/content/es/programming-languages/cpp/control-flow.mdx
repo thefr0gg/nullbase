@@ -1,0 +1,158 @@
+---
+title: Flujo de Control
+description: Dirigir la ejecución en C++ con if/else, switch, y las tres formas de bucle, incluyendo el for basado en rango introducido en C++11.
+category: Programming Languages
+weight: 3
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Las sentencias de flujo de control deciden qué código se ejecuta realmente y cuántas veces — sin ellas, un programa en C++ sería simplemente una secuencia lineal de sentencias ejecutadas una sola vez, de arriba a abajo.
+
+## `if` / `else if` / `else`
+
+```cpp
+#include <iostream>
+
+int main() {
+    int score = 82;
+
+    if (score >= 90) {
+        std::cout << "Grade: A\n";
+    } else if (score >= 80) {
+        std::cout << "Grade: B\n";
+    } else if (score >= 70) {
+        std::cout << "Grade: C\n";
+    } else {
+        std::cout << "Grade: F\n";
+    }
+    return 0;
+}
+```
+
+Las condiciones se evalúan de arriba a abajo, y se ejecuta la primera rama cuya condición sea `true` — el resto se omite, incluso si una condición posterior también hubiera sido `true`. Un `if` sin un `else` correspondiente simplemente no hace nada cuando su condición es `false`.
+
+## `switch`
+
+```cpp
+#include <iostream>
+
+int main() {
+    int day = 3;
+
+    switch (day) {
+        case 1:
+            std::cout << "Monday\n";
+            break;
+        case 2:
+            std::cout << "Tuesday\n";
+            break;
+        case 3:
+            std::cout << "Wednesday\n";
+            break;
+        default:
+            std::cout << "Some other day\n";
+            break;
+    }
+    return 0;
+}
+```
+
+`switch` compara un valor contra un conjunto de casos constantes. Cada `case` necesita un `break` explícito — sin él, la ejecución **cae** hacia el siguiente case sin importar si su valor coincide o no, una peculiaridad de C++ heredada de C que es una fuente común de bugs cuando se olvida.
+
+## Bucles
+
+```cpp
+#include <iostream>
+#include <vector>
+
+int main() {
+    std::vector<int> scores = {70, 85, 90, 60};
+
+    // classic for loop, index-based
+    for (int i = 0; i < scores.size(); i++) {
+        std::cout << "Index " << i << ": " << scores[i] << "\n";
+    }
+
+    // range-based for (C++11), no index needed
+    for (int score : scores) {
+        if (score < 65) continue;
+        std::cout << "Passed with " << score << "\n";
+    }
+
+    // while loop
+    int attempts = 0;
+    while (attempts < 3) {
+        std::cout << "Attempt " << attempts << "\n";
+        attempts++;
+    }
+    return 0;
+}
+```
+
+El clásico `for (init; condición; incremento)` da control total sobre la variable del bucle, lo cual importa cuando necesitas el índice en sí (como arriba, al imprimirlo) o necesitas saltar de más de uno en uno. El **for basado en rango**, agregado en C++11, itera directamente sobre los elementos de un contenedor sin indexado manual — es la forma preferida siempre que no se necesite el índice, ya que no hay margen para un error de desplazamiento por uno. `continue` salta directamente a la siguiente iteración; `break` (no mostrado aquí) saldría del bucle por completo. `while` se ejecuta mientras su condición se cumpla, verificada antes de cada iteración — si la condición es `false` desde el principio, el cuerpo nunca se ejecuta, a diferencia de `do...while`, que siempre ejecuta el cuerpo al menos una vez.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir una cadena if/else que etiquete una temperatura."
+  items={[
+    { id: "declare", label: "int temp = 15;" },
+    { id: "if-cold", label: "if (temp < 0) {" },
+    { id: "print-cold", label: "    std::cout << \"Freezing\";" },
+    { id: "else-if", label: "} else if (temp < 20) {", explanation: "else if debe venir inmediatamente después de la llave de cierre del bloque if anterior." },
+    { id: "print-mild", label: "    std::cout << \"Mild\";" },
+    { id: "else", label: "} else {" },
+    { id: "print-warm", label: "    std::cout << \"Warm\";" },
+    { id: "close", label: "}" },
+  ]}
+  correctOrder={["declare", "if-cold", "print-cold", "else-if", "print-mild", "else", "print-warm", "close"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir un bucle for basado en rango que sume los elementos de un vector."
+  items={[
+    { id: "include", label: "#include <vector>" },
+    { id: "vec", label: "std::vector<int> nums = {1, 2, 3, 4};" },
+    { id: "total", label: "int total = 0;", explanation: "total debe inicializarse antes de que el bucle acumule sobre él." },
+    { id: "for-open", label: "for (int n : nums) {" },
+    { id: "add", label: "    total += n;" },
+    { id: "for-close", label: "}" },
+  ]}
+  correctOrder={["include", "vec", "total", "for-open", "add", "for-close"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`#include <iostream>
+
+int main() {
+    int x = 2;
+    switch (x) {
+        case 1:
+            std::cout << "one";
+        case 2:
+            std::cout << "two";
+        case 3:
+            std::cout << "three";
+            break;
+        default:
+            std::cout << "other";
+    }
+    return 0;
+}`}
+  options={["two", "twothree", "twothreeother", "onetwothree"]}
+  correctIndex={1}
+  explanation={`x coincide con case 2, pero no hay break después, así que la ejecución también cae en case 3, imprimiendo "two" y luego "three" antes de llegar al break. case 1 y default nunca se alcanzan porque switch salta directamente al case que coincide.`}
+  actualOutput="twothree"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Sintaxis y Variables](/es/programming-languages/cpp/syntax-basics) — las variables y expresiones usadas en las condiciones aquí.
+- [Funciones](/es/programming-languages/cpp/functions) — organizar lógica de flujo de control repetida en bloques reutilizables.

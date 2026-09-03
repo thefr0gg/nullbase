@@ -1,0 +1,160 @@
+---
+title: Structures de données
+description: Tableaux, objets, et les collections Map et Set en JavaScript, y compris les pièges courants autour de l'égalité de référence.
+category: Programming Languages
+weight: 5
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+JavaScript a deux structures de données de base intégrées à la syntaxe du
+langage — les tableaux et les objets — plus deux types de collection
+dédiés, `Map` et `Set`, ajoutés en ES6 pour les cas où les objets simples
+ne suffisent pas.
+
+## Tableaux
+
+Les tableaux sont des listes ordonnées et redimensionnables, et chaque
+tableau vient avec un large éventail de méthodes intégrées pour
+transformer des données sans boucles écrites à la main. `map`, `filter`,
+et `reduce` sont les trois vers lesquelles vous vous tournerez
+constamment :
+
+```js
+const prices = [10, 25, 8, 40];
+
+const withTax = prices.map(p => p * 1.08);
+const affordable = prices.filter(p => p < 30);
+const total = prices.reduce((sum, p) => sum + p, 0);
+
+console.log(withTax);   // [10.8, 27, 8.64, 43.2]
+console.log(affordable); // [10, 25, 8]
+console.log(total);      // 83
+```
+
+`map` et `filter` renvoient de nouveaux tableaux plutôt que de muter
+l'original ; `push`, `pop`, `splice`, et `sort`, à l'inverse, mutent le
+tableau sur place — une distinction qui vaut la peine d'être mémorisée
+puisqu'il est facile de muter un tableau que vous ne vouliez pas changer.
+
+## Objets
+
+Les objets sont des collections non ordonnées de paires clé/valeur (en
+pratique, les moteurs modernes préservent l'ordre d'insertion pour les
+clés de type chaîne). L'accès aux propriétés fonctionne avec la notation
+pointée ou les crochets, et la déstructuration extrait des valeurs de
+manière concise.
+
+```js
+const user = {
+  name: "ada",
+  role: "admin",
+  loginCount: 12,
+};
+
+const { name, role } = user; // déstructuration
+console.log(`${name} (${role})`); // "ada (admin)"
+
+const updated = { ...user, loginCount: user.loginCount + 1 }; // spread — une copie superficielle avec un champ changé
+console.log(updated.loginCount); // 13
+console.log(user.loginCount);    // 12 — l'objet original n'est pas touché
+```
+
+## Égalité de référence
+
+Les objets et les tableaux sont comparés par référence, pas par valeur.
+Deux tableaux avec un contenu identique ne sont jamais `===` sauf s'ils
+sont littéralement le même objet en mémoire.
+
+```js
+const a = [1, 2, 3];
+const b = [1, 2, 3];
+const c = a;
+
+console.log(a === b); // false — tableaux différents, contenu identique
+console.log(a === c); // true  — c pointe exactement vers le même tableau que a
+
+c.push(4);
+console.log(a); // [1, 2, 3, 4] — muter c change aussi a, puisque c'est le même objet
+```
+
+## Map et Set
+
+Un objet simple n'autorise que des clés de type chaîne ou symbole, et
+itérer ses entrées dans un ordre garanti est légèrement malcommode. `Map`
+corrige les deux : n'importe quelle valeur peut être une clé, et il itère
+dans l'ordre d'insertion.
+
+```js
+const scores = new Map();
+scores.set("alice", 90);
+scores.set("bob", 85);
+
+console.log(scores.get("alice")); // 90
+console.log(scores.size);          // 2
+
+for (const [player, score] of scores) {
+  console.log(`${player}: ${score}`);
+}
+```
+
+`Set` stocke des valeurs uniques — ajouter un doublon ne fait rien — ce
+qui fait de la déduplication une opération en une ligne :
+
+```js
+const tags = new Set(["js", "web", "js", "frontend"]);
+console.log(tags.size);       // 3
+console.log([...tags]);        // ["js", "web", "frontend"]
+console.log(tags.has("web"));  // true
+```
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour filtrer un tableau de nombres et additionner le résultat."
+  items={[
+    { id: "arr", label: "const nums = [3, 8, 15, 4, 22];" },
+    { id: "big", label: "const big = nums.filter(n => n > 10);" },
+    { id: "total", label: "const total = big.reduce((sum, n) => sum + n, 0);", explanation: "reduce a besoin que `big` existe déjà comme le tableau qu'il additionne." },
+    { id: "log", label: "console.log(total);" },
+  ]}
+  correctOrder={["arr", "big", "total", "log"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Mettez ces lignes dans l'ordre pour construire un Set à partir d'un tableau et vérifier une appartenance."
+  items={[
+    { id: "arr2", label: "const ids = [1, 2, 2, 3, 1];" },
+    { id: "set", label: "const uniqueIds = new Set(ids);" },
+    { id: "size", label: "console.log(uniqueIds.size);" },
+    { id: "has", label: "console.log(uniqueIds.has(2));" },
+  ]}
+  correctOrder={["arr2", "set", "size", "has"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que ce code affiche ?"
+  code={`const original = { count: 1, tags: ["a"] };
+const copy = { ...original };
+
+copy.count = 99;
+copy.tags.push("b");
+
+console.log(original.count);
+console.log(original.tags);`}
+  options={["1 puis [\"a\"]", "99 puis [\"a\", \"b\"]", "1 puis [\"a\", \"b\"]", "99 puis [\"a\"]"]}
+  correctIndex={2}
+  explanation="Étendre avec {...original} fait une copie superficielle : les champs primitifs de premier niveau comme count sont copiés par valeur, donc changer copy.count ne touche pas original.count. Mais tags est un objet (un tableau), donc le spread ne copie que la référence — copy.tags et original.tags pointent vers le même tableau, donc pousser sur l'un affecte les deux."
+  actualOutput="1
+[ 'a', 'b' ]"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Fonctions et closures](/fr/programming-languages/javascript/functions)
+- [Classes et objets](/fr/programming-languages/javascript/oop-or-structs)

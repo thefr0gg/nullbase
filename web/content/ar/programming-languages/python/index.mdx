@@ -1,0 +1,93 @@
+---
+title: Python
+description: لغة مفسَّرة، ذات كتابة ديناميكية، مزوَّدة بكل ما تحتاجه ("batteries-included")، مبنية حول قابلية القراءة — تُستخدم في البرمجة النصية، وخلفيات الويب، والعمل على البيانات، والأتمتة على حد سواء.
+category: Programming Languages
+weight: 1
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Python لغة مفسَّرة ذات كتابة ديناميكية، وسمتها المميزة أنها تجعل قابلية القراءة سمة في اللغة نفسها بدلاً من كونها مجرد تفضيل أسلوبي: تُحدَّد الكتل بالإزاحة (indentation) بدلاً من الأقواس أو كلمات مفتاحية مثل `end`، لذلك لا يمكن للبنية البصرية للسكربت وتدفق التحكم الفعلي فيه أن ينفصلا عن بعضهما. لا توجد خطوة ترجمة (compile) منفصلة لتشغيل الكود — التطبيق المرجعي، CPython، يقرأ ملف `.py` وينفّذه مباشرة — وهذا جزء من سبب ظهور Python في كل مكان بدءاً من السكربتات السريعة وصولاً إلى خلفيات ويب في الإنتاج وخطوط معالجة بيانات وكود تعلّم آلي.
+
+```python
+print("Hello, world!")
+
+name = "Ada"
+age = 36
+print(f"{name} is {age} years old")
+```
+
+يبرز أمران حتى في هذا المثال الصغير. أولاً، لا يوجد أي تصريح بنوع في أي مكان — يحصل `name` و`age` على نوعيهما من القيم المسندة إليهما، ويمكن إعادة إسناد متغير لنوع مختلف لاحقاً دون أي اعتراض. ثانياً، السلسلة `f"..."` هي f-string: سلسلة نصية حرفية تحتوي على عناصر نائبة `{expression}` تُقيَّم مباشرة، وهذه هي الطريقة التي يبني بها معظم كود Python مخرجات منسّقة بدلاً من ضم القطع باستخدام `+`.
+
+تأتي Python أيضاً مع مكتبة قياسية كبيرة ونظام حزم خارجية ضخم يُثبَّت عبر `pip`، لذا فإن قدراً مفاجئاً من العمل الحقيقي — قراءة JSON، إجراء طلبات HTTP، تحليل التواريخ — لا يحتاج إلى أي اعتماديات إضافية غير ما هو مثبّت بالفعل أو أمر واحد من `pip install`.
+
+```python
+def fizzbuzz(n):
+    for i in range(1, n + 1):
+        if i % 15 == 0:
+            print("FizzBuzz")
+        elif i % 3 == 0:
+            print("Fizz")
+        elif i % 5 == 0:
+            print("Buzz")
+        else:
+            print(i)
+
+fizzbuzz(15)
+```
+
+لاحظ عدم وجود أقواس حول شرط `if`، ولا فواصل منقوطة تنهي الجمل، وأن امتداد جسم الدالة يُحدَّد فقط بمقدار إزاحة أسطره — أزل الإزاحة وستحصل على خطأ نحوي، وليس مجرد تنسيق غير مرتب.
+
+## ماذا يوجد في هذا القسم
+
+- **[بنية اللغة والمتغيرات](/ar/programming-languages/python/syntax-basics)** — الإزاحة، والكتابة الديناميكية، والأنواع المدمجة في Python.
+- **[التحكم بمسار التنفيذ](/ar/programming-languages/python/control-flow)** — `if`/`elif`/`else`، والحلقات، وجملة `for...else` الأقل شيوعاً في Python.
+- **[الدوال](/ar/programming-languages/python/functions)** — `def`، والوسائط الافتراضية، ونمطا `*args`/`**kwargs`.
+- **[هياكل البيانات](/ar/programming-languages/python/data-structures)** — القوائم، والصفوف (tuples)، والقواميس، والمجموعات.
+- **[الفئات والكائنات](/ar/programming-languages/python/oop-or-structs)** — `__init__`، والوراثة، والدوال ذات الشرطتين السفليتين.
+- **[معالجة الأخطاء](/ar/programming-languages/python/error-handling)** — `try`/`except`/`finally` والاستثناءات المخصصة.
+- **[الوحدات والحزم](/ar/programming-languages/python/modules-packages)** — `import`، و`pip`، والبيئات الافتراضية.
+- **[المزخرفات والمولدات](/ar/programming-languages/python/advanced)** — الميزات المميزة لمستوى Python المتوسط.
+
+## طالع أيضاً
+
+- **[بنية اللغة والمتغيرات](/ar/programming-languages/python/syntax-basics)** — القواعد الملموسة وراء المتغيرات وجمل الطباعة المستخدمة أعلاه.
+- **[الدوال](/ar/programming-languages/python/functions)** — تحويل سكربت مثل `fizzbuzz` إلى قطعة كود قابلة لإعادة الاستخدام ومُعامَلة.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء سكربت يحيّي مستخدماً باسمه."
+  items={[
+    { id: "input", label: 'name = input("What is your name? ")' },
+    { id: "format", label: 'greeting = f"Hello, {name}!"', explanation: "تحتاج f-string إلى وجود `name` مسبقاً قبل أن يمكن تنسيقها ضمنها." },
+    { id: "print", label: "print(greeting)", explanation: "لا يمكن طباعة أي شيء قبل بناء `greeting`." },
+  ]}
+  correctOrder={["input", "format", "print"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء سكربت يحسب مساحة مستطيل ويطبعها."
+  items={[
+    { id: "width", label: "width = 5" },
+    { id: "height", label: "height = 3" },
+    { id: "area", label: "area = width * height", explanation: "يجب تعريف كل من `width` و`height` قبل أن يتمكن هذا السطر من الإشارة إليهما." },
+    { id: "print", label: "print(area)", explanation: "لا وجود لـ `area` قبل تنفيذ عملية الضرب أعلاه." },
+  ]}
+  correctOrder={["width", "height", "area", "print"]}
+/>
+
+<PredictOutput
+  title="ماذا تطبع هذه الشيفرة؟"
+  code={`print(3 + 4 * 2)`}
+  options={["14", "11", "10", "Error: ambiguous expression"]}
+  correctIndex={1}
+  explanation="تتبع Python أسبقية العمليات القياسية: الضرب أقوى ارتباطاً من الجمع، لذا فهذا يعادل 3 + (4 * 2) = 3 + 8 = 11، وليس (3 + 4) * 2."
+  actualOutput="11"
+/>
+</ExerciseTabs>
+

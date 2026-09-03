@@ -1,0 +1,53 @@
+---
+title: Threads
+description: Comment l'OS ordonnance les threads au sein d'un processus, les compromis entre threading au niveau noyau et au niveau utilisateur, les trois modèles classiques de threading, et pourquoi la mémoire partagée impose la synchronisation.
+category: Operating Systems
+weight: 2
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+Un **thread** est l'unité d'exécution que l'ordonnanceur distribue réellement ; un processus n'est en réalité qu'un conteneur — un espace d'adressage, un ensemble de fichiers ouverts, un contexte de sécurité — dans lequel s'exécutent un ou plusieurs threads. Tout processus a au moins un thread ; un processus *multithreadé* a plusieurs threads partageant ce même espace d'adressage, ce qui rend les threads tellement moins coûteux à créer et entre lesquels basculer que des processus entiers : pas de nouvelle table des pages à construire, pas de nouvelle table de descripteurs de fichiers à copier, juste une nouvelle pile et un nouvel ensemble de registres sauvegardés. [Processes](/fr/devops/processes) couvre déjà le compromis de partage de mémoire entre processus et threads à un niveau pratique, et [Application Servers](/fr/backend/application-servers) couvre comment de vrais serveurs choisissent un modèle de concurrence construit sur des threads (ou les évitent délibérément). Cette page porte sur la mécanique de l'OS sous les deux : qui ordonnance réellement un thread, et pourquoi le partage de mémoire entre threads est une arme à double tranchant.
+
+## Threads noyau vs threads utilisateur
+
+La question critique pour tout thread est : **qui sait qu'il existe ?**
+
+- Les **threads au niveau noyau** sont visibles directement par l'ordonnanceur de l'OS — le noyau a une structure de type PCB (souvent appelée bloc de contrôle de thread, ou TCB) pour chacun, et décide quel thread noyau s'exécute sur quel cœur CPU exactement comme il le fait entre processus. C'est ce qui permet aux threads d'un même processus de réellement s'exécuter en parallèle sur plusieurs cœurs, et c'est ce qui permet au noyau de préempter un thread bloqué dans un appel système bloquant sans arrêter les autres threads du même processus.
+- Les **threads au niveau utilisateur** sont gérés entièrement par une bibliothèque ou un runtime *à l'intérieur* du processus, le noyau ne voyant jamais qu'une seule entité ordonnançable. Basculer entre threads utilisateur est extrêmement bon marché (aucun passage en mode noyau du tout), mais cela comporte un piège sérieux : si un thread utilisateur effectue un appel système bloquant, le noyau n'a aucune idée que le processus a d'autres threads exécutables — il bloque simplement tout le processus, entraînant avec lui chaque thread utilisateur.
+
+## Les trois modèles de threading
+
+La façon dont un runtime mappe ses threads visibles par l'utilisateur sur les threads ordonnançables du noyau détermine lequel de ces compromis vous obtenez réellement :
+
+<ItemExplorer
+  title="Modèles de threading"
+  layout="table"
+  tableColumns={[{ key: "mapping", label: "Mapping" }, { key: "tradeoff", label: "Tradeoff" }]}
+  items={[
+    { id: "many-to-one", label: "Many-to-one", color: "blue", columns: { mapping: "De nombreux threads utilisateur s'exécutent sur un seul thread noyau", tradeoff: "Le basculement de thread est très bon marché et n'implique aucune intervention du noyau, mais un seul appel bloquant ou un seul cœur est tout ce que le processus obtiendra jamais — aucun véritable parallélisme." } },
+    { id: "one-to-one", label: "One-to-one", color: "green", columns: { mapping: "Chaque thread utilisateur correspond directement à son propre thread noyau", tradeoff: "Véritable parallélisme sur plusieurs cœurs et aucun blocage de tout le processus, mais créer et basculer entre threads coûte une réelle transition en mode noyau à chaque fois. C'est ce qu'utilisent réellement la plupart des API de threading modernes des OS (pthreads, threads Windows)." } },
+    { id: "many-to-many", label: "Many-to-many", color: "purple", columns: { mapping: "De nombreux threads utilisateur sont multiplexés sur un pool plus petit (ou égal) de threads noyau", tradeoff: "Tente d'obtenir à la fois un basculement de thread utilisateur bon marché et un véritable parallélisme, au prix d'un ordonnanceur réellement plus complexe devant gérer les deux niveaux." } },
+  ]}
+/>
+
+## États des threads
+
+Un thread traverse essentiellement les mêmes états qu'un processus — nouveau, prêt, en cours, et terminé, plus un état bloqué/en attente chaque fois qu'il est coincé sur une E/S ou une synchronisation — la différence est la portée : l'ordonnanceur choisit parmi des *threads*, pas des processus entiers, et plusieurs threads appartenant au même processus peuvent être dans des états différents simultanément (l'un en cours, l'un bloqué sur une lecture de socket, l'un prêt et attendant qu'un cœur se libère).
+
+## Pourquoi la mémoire partagée nécessite une synchronisation
+
+Ce qui rend les threads bon marché — un espace d'adressage partagé — est exactement ce qui les rend dangereux. Deux threads lisant et écrivant la même variable sans coordination peuvent entrelacer leurs instructions de façons que le programmeur n'a jamais voulues, produisant une **condition de concurrence** (race condition) : le résultat final dépend du timing imprévisible de quelle instruction de quel thread s'exécute en premier, et peut différer d'une exécution à l'autre même avec une entrée identique. Un exemple classique est deux threads exécutant tous deux « lire le solde, ajouter 10, écrire le solde » sur le même compte — si les deux lisent la valeur d'origine avant que l'un ou l'autre n'écrive en retour, l'une des deux additions est silencieusement perdue.
+
+C'est toute la raison d'être des **primitives de synchronisation**, à un niveau conceptuel :
+
+- Un **mutex** (verrou d'exclusion mutuelle) n'autorise qu'un seul thread à la fois dans une section de code marquée — tout autre thread qui essaie d'y entrer en premier doit attendre que le verrou soit libéré, garantissant que la séquence « lire, modifier, écrire » ci-dessus se produit de façon atomique du point de vue de tous les autres threads.
+- Un **sémaphore** généralise cette idée à un compteur plutôt qu'un verrou strict un-à-la-fois — il autorise jusqu'à *N* threads dans une ressource simultanément, ce qui est utile pour quelque chose comme un pool de connexions de taille fixe où une poignée d'utilisateurs concurrents va bien mais une concurrence illimitée ne va pas.
+
+Aucune des deux primitives ne rend les threads plus rapides ; les deux existent purement pour échanger une partie de cette concurrence contre la correction, exactement aux points où deux threads touchant la même mémoire produiraient sinon un résultat indéfini.
+
+## Voir aussi
+
+- **[Processus](/fr/operating-systems/processes)** — les états, le PCB et le cycle de vie que traverse le processus contenant un thread.
+- **[Application Servers](/fr/backend/application-servers)** — comment les pools de threads, les boucles d'événements et les workers multi-processus sont choisis dans la conception réelle de serveurs.
+- **[Processes](/fr/devops/processes)** — la comparaison pratique mémoire processus-vs-thread sur laquelle cette page s'appuie.

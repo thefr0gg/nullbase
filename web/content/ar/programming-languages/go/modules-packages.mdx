@@ -1,0 +1,154 @@
+---
+title: الوحدات والحزم
+description: كيف تنظّم Go الكود في حزم والاعتماديات في وحدات (modules) يتتبعها go.mod وgo.sum.
+category: Programming Languages
+weight: 8
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تنظّم Go الكود على مستويين: تجمع **الحزم** (packages) ملفات مصدر ذات صلة
+داخل مجلد، وتجمع **الوحدات** (modules) الحزم في وحدة مُصدَرة وقابلة
+للتوزيع بقائمة اعتماديات خاصة بها.
+
+## الحزم
+
+يبدأ كل ملف `.go` بتصريح `package`. يجب أن تُصرِّح كل الملفات في نفس
+المجلد بنفس اسم الحزمة، ويصبح ذلك الاسم مساحة الأسماء التي يستوردها كود
+آخر:
+
+```go
+package geometry
+
+func Area(width, height float64) float64 {
+	return width * height
+}
+```
+
+يستوردها ملف آخر في مكان مختلف عبر مسار وحدته ويستدعي الاسم المُصدَّر
+(بحرف كبير):
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"example.com/myapp/geometry"
+)
+
+func main() {
+	fmt.Println(geometry.Area(3, 4)) // 12
+}
+```
+
+يمكن لـ`import` جلب حزم متعددة دفعة واحدة داخل أقواس، كما في المثال
+أعلاه. تُشحَن المكتبة القياسية كحزم عادية تستوردها بنفس الطريقة —
+`"fmt"`, `"strings"`, `"net/http"` — دون خطوة تثبيت منفصلة.
+
+## go.mod ووحدات Go
+
+**الوحدة** (module) هي وحدة الإصدار وإدارة الاعتماديات — عادةً مستودع
+Git واحد. ينشئ `go mod init` ملف `go.mod` يُصرِّح عن مسار الوحدة وإصدار
+Go الذي تستهدفه:
+
+```bash
+go mod init example.com/myapp
+```
+
+```go
+module example.com/myapp
+
+go 1.22
+```
+
+إضافة استيراد لاعتمادية حقيقية وتشغيل `go build` (أو `go mod tidy`) يجلبها
+ويسجّل إصدارها الدقيق في `go.mod`، مع مجموع اختباري (checksum) تشفيري لكل
+اعتمادية في `go.sum`:
+
+```go
+module example.com/myapp
+
+go 1.22
+
+require github.com/google/uuid v1.6.0
+```
+
+`go.sum` ليس مقصوداً للتعديل اليدوي — إنه ملف قفل تحافظ عليه Go لضمان
+بناءات قابلة لإعادة الإنتاج: نفس `go.mod` يُحلَّل دائماً إلى كود اعتماديات
+مطابق تماماً (byte-identical).
+
+## أوامر وحدات مفيدة
+
+```bash
+go mod init example.com/myapp   # بدء وحدة جديدة
+go mod tidy                      # إضافة الاعتماديات الناقصة / إزالة غير المستخدَمة
+go get github.com/some/pkg@v1.2.0  # إضافة أو ترقية اعتمادية واحدة
+go build ./...                    # بناء كل حزمة في الوحدة
+```
+
+## الحزم الداخلية
+
+يقيّد مجلد باسم `internal` ما يمكنه استيراده: الحزم تحت `internal/` قابلة
+للاستيراد فقط من كود داخل شجرة الوحدة المتفرعة من والد `internal`. هذه
+آلية Go المدمجة لتمييز الكود كـ"تفصيل تنفيذي، ليس جزءاً من واجهة برمجة
+تطبيقاتك العامة"، يفرضها المصرّف وليس العُرف وحده.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لإعداد وحدة جديدة وحزمتها الرئيسية."
+  items={[
+    { id: "n1", label: "go mod init example.com/hello" },
+    { id: "n2", label: "package main" },
+    { id: "n3", label: "import \"fmt\"", explanation: "يجب أن توجد الوحدة قبل كتابة ملفات مصدر تنتمي إليها." },
+    { id: "n4", label: "func main() {" },
+    { id: "n5", label: "\tfmt.Println(\"hello\")" },
+    { id: "n6", label: "}" },
+  ]}
+  correctOrder={["n1", "n2", "n3", "n4", "n5", "n6"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="رتّب هذه الأسطر لاستيراد حزمة محلية واستدعاء إحدى دوالها المُصدَّرة."
+  items={[
+    { id: "q1", label: "package main" },
+    { id: "q2", label: "import (" },
+    { id: "q3", label: "\t\"fmt\"" },
+    { id: "q4", label: "\t\"example.com/myapp/geometry\"", explanation: "تُجمَّع الاستيرادات داخل أقواس، للمكتبة القياسية والمسارات المحلية على حد سواء." },
+    { id: "q5", label: ")" },
+    { id: "q6", label: "func main() {" },
+    { id: "q7", label: "\tfmt.Println(geometry.Area(2, 5))" },
+    { id: "q8", label: "}" },
+  ]}
+  correctOrder={["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا الكود؟"
+  code={`package main
+
+import "fmt"
+
+func main() {
+	fmt.Println(add(2, 3))
+}
+
+func add(a, b int) int {
+	return a + b
+}`}
+  options={["خطأ تصريف: add مُستخدَمة قبل تصريحها", "5", "2 3", "خطأ تصريف: add غير مُصدَّرة"]}
+  correctIndex={1}
+  explanation="خلافاً للغة نصية تُقرأ من الأعلى إلى الأسفل، تُصرِّف Go ملفاً (وحزمة) كاملاً قبل تشغيله، لذا ترتيب التصريح داخل الملف لا يهم — يمكن تعريف add بعد main واستدعاؤها منها. الأسماء بحرف صغير قابلة للاستخدام ضمن نفس الحزمة بغض النظر عن حالة التصدير."
+  actualOutput="5"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [معالجة الأخطاء](/ar/programming-languages/go/error-handling)
+- [Goroutines والقنوات](/ar/programming-languages/go/advanced)

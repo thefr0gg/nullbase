@@ -1,0 +1,66 @@
+---
+title: Procesos
+description: Los estados por los que pasa un proceso desde su creación hasta su terminación, qué rastrea realmente el sistema operativo sobre él en el bloque de control de proceso, y qué le hacen fork/exec/wait/exit a la tabla de procesos por debajo.
+category: Operating Systems
+weight: 1
+interactive: true
+interactiveType: ["MermaidDiagram"]
+---
+
+Un **proceso** no simplemente existe o no existe — entre el momento en que se crea y el momento en que termina, el sistema operativo lo rastrea como estando en uno de un pequeño número de estados bien definidos, y lo mueve entre ellos constantemente mientras compite con cada otro proceso por la CPU. Esta página cubre esa teoría: la máquina de estados en la que vive cada proceso, la estructura de contabilidad que el kernel mantiene para cada uno, y qué les hacen realmente a esa contabilidad el puñado de llamadas al sistema que crean y destruyen procesos. Para el lado práctico, orientado a administradores de sistemas, de los procesos — PIDs, señales, descriptores de archivo, árboles padre/hijo — ver [Procesos](/es/devops/processes) en su lugar; esta página asume ese terreno y va por debajo de él.
+
+## Los estados del proceso
+
+En cualquier instante, un proceso está en exactamente uno de cinco estados, y el **planificador** del kernel es lo que decide cuándo pasa de uno al siguiente:
+
+<MermaidDiagram title="Transiciones de estado de un proceso" chart={`stateDiagram-v2
+    [*] --> New
+    New --> Ready: admitted
+    Ready --> Running: scheduler dispatch
+    Running --> Ready: time slice expires / preempted
+    Running --> Waiting: blocks on I/O or event
+    Waiting --> Ready: I/O or event completes
+    Running --> Terminated: exit
+    Terminated --> [*]
+`} />
+
+- **Nuevo (New)** — el proceso se ha creado (su PCB existe) pero todavía no se ha admitido al conjunto que compite por la CPU.
+- **Listo (Ready)** — cargado y capaz de ejecutarse, pero la CPU está actualmente ocupada con otra cosa; simplemente está esperando su turno.
+- **Ejecutando (Running)** — ejecutándose activamente en un núcleo de CPU en este momento. En un solo núcleo, exactamente un proceso está en este estado en cualquier instante; en un sistema multinúcleo, uno por núcleo.
+- **Esperando (Waiting)** (también llamado bloqueado) — el proceso ha solicitado algo que todavía no puede tener — el resultado de una operación de E/S, o un evento de sincronización — y no puede avanzar hasta que llegue. Un proceso en espera se excluye deliberadamente de la planificación, ya que ejecutarlo no lograría nada.
+- **Terminado (Terminated)** — terminado (o matado), y esperando a que su padre recoja su estado de salida.
+
+La transición de Ejecutando a Listo es lo que hace posible la **multitarea preventiva** en absoluto: el planificador puede interrumpir un proceso que no ha terminado y no está bloqueado, simplemente porque su cuanto de tiempo se agotó, y entregar la CPU a otro. Sin esa transición, un proceso limitado por CPU podría retener el procesador para siempre.
+
+## El bloque de control de proceso
+
+Cada proceso que el kernel conoce tiene un **bloque de control de proceso (PCB)** correspondiente — la identidad completa del proceso desde el punto de vista del sistema operativo. Cuando el planificador se aleja de un proceso, todo lo necesario para reanudarlo más tarde tiene que vivir en algún lugar, y el PCB es ese lugar. Típicamente contiene:
+
+- **Estado del proceso** — cuál de los cinco estados de arriba tiene actualmente el proceso.
+- **Contador de programa** — la dirección de la siguiente instrucción a ejecutar cuando este proceso se ejecute de nuevo.
+- **Registros de CPU** — el archivo de registros completo (registros de propósito general, puntero de pila, códigos de condición) tal como estaban en el instante en que el proceso dejó de ejecutarse.
+- **Información de gestión de memoria** — los punteros de tabla de páginas del proceso o los límites de segmento, definiendo exactamente qué regiones de memoria física este proceso tiene permitido tocar. Ver [Memoria Virtual](/es/operating-systems/virtual-memory) para lo que realmente hace ese mapeo.
+- **Lista de archivos abiertos** — la tabla de descriptores de archivo que este proceso tiene actualmente abiertos, y a qué apuntan.
+- **Información de planificación** — prioridad, cuánto tiempo de CPU ya ha usado, y lo que sea que necesite el algoritmo del planificador para decidir quién se ejecuta a continuación.
+- **Contabilidad e identidad** — PID, PID del padre, propietario, y totales de uso de recursos.
+
+La tabla de procesos es, en su núcleo, simplemente la colección de cada PCB actualmente conocido por el kernel — una entrada por proceso, de Nuevo a Terminado.
+
+## fork, exec, wait, exit
+
+Cuatro llamadas al sistema (en sistemas tipo Unix) son responsables de esencialmente todo el ciclo de vida:
+
+- **`fork()`** duplica el proceso llamante: el kernel asigna un nuevo PCB, copia la imagen de memoria del padre (usando copy-on-write, así que las páginas solo se duplican realmente una vez que un lado escribe en ellas) y la tabla de descriptores de archivo, luego inserta el nuevo PCB en la tabla de procesos en el estado Listo. Los dos procesos ahora son idénticos excepto por su PID y el valor de retorno que `fork()` le da a cada uno — cero al hijo, el nuevo PID del hijo al padre.
+- **`exec()`** (una familia de llamadas — `execve` y similares) reemplaza la imagen de memoria del proceso *actual* con un programa nuevo, cargando código y datos frescos y reiniciando el contador de programa, mientras mantiene el mismo PID y PCB. `fork()` seguido de `exec()` juntos es cómo un shell lanza un programa — duplicarse a sí mismo, luego sobrescribir el duplicado con algo completamente distinto.
+- **`wait()`** permite a un padre bloquearse hasta que un hijo específico, o cualquier hijo, termine, y luego recuperar el estado de salida de ese hijo. Esto también es lo que realmente elimina el PCB de un proceso Terminado de la tabla — un hijo que termina antes de que su padre llame a `wait()` se queda como un **zombi**, ocupando todavía una entrada, hasta que se recoge su estado de salida.
+- **`exit()`** termina el proceso llamante: libera los recursos que puede liberar inmediatamente, establece su estado a Terminado, y almacena su código de salida en su PCB para que una futura llamada a `wait()` lo recoja.
+
+## Qué hace realmente un cambio de contexto
+
+Cada vez que el planificador mueve la CPU de un proceso a otro, realiza un **cambio de contexto**: guarda el estado de los registros de CPU, el contador de programa, y el puntero de pila del proceso que se está ejecutando actualmente en el PCB de ese proceso, y luego carga el estado guardado del *siguiente* proceso desde su propio PCB en los registros de hardware reales. La CPU no tiene idea de que acaba de cambiar entre dos programas no relacionados — desde su perspectiva simplemente reanuda la ejecución en un contador de programa con un conjunto particular de valores de registro, porque eso es todo lo que es un cambio de contexto: intercambiar el estado guardado de qué PCB vive actualmente en los registros físicos. Este trabajo de guardar/restaurar es pura sobrecarga — no se ejecutan instrucciones útiles durante él — que es por lo que un intervalo de planificación muy fino intercambia capacidad de respuesta por tiempo real y medible gastado simplemente en cambiar.
+
+## Ver también
+
+- **[Procesos](/es/devops/processes)** — PIDs, señales, descriptores de archivo, y el lado práctico de la gestión de procesos.
+- **[Hilos](/es/operating-systems/threads)** — una unidad de planificación más barata que comparte la memoria de un proceso en lugar de tener la suya propia.
+- **[Llamadas al Sistema](/es/operating-systems/system-calls)** — la frontera entre modo usuario y modo kernel que cruzan `fork`, `exec`, `wait`, y `exit`.

@@ -1,0 +1,122 @@
+---
+title: Syntaxe et variables
+description: Déclarer des variables, choisir des types, et lire/écrire avec les flux — la syntaxe sur laquelle repose chaque autre sujet C++.
+category: Programming Languages
+weight: 2
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+C++ est **typé statiquement** : chaque variable a un type fixé à la compilation, et le compilateur rejette un programme où une valeur ne correspond pas au type auquel elle est assignée. Cela intercepte toute une catégorie de bugs avant même que le programme ne s'exécute, au prix de devoir écrire (ou faire inférer) les types à l'avance plutôt que de les décider à l'exécution.
+
+```cpp
+#include <iostream>
+#include <string>
+
+int main() {
+    int age = 30;
+    double price = 19.99;
+    char grade = 'A';
+    bool isActive = true;
+    std::string name = "Ada";
+
+    std::cout << name << " is " << age << " years old.\n";
+    return 0;
+}
+```
+
+Les types intégrés fondamentaux sont `int` (nombres entiers), `double`/`float` (nombres à virgule flottante), `char` (un seul octet, généralement un caractère), et `bool` (`true`/`false`). `std::string`, du header `<string>`, n'est pas un type intégré mais fait partie de la bibliothèque standard — il gère sa propre mémoire, donc contrairement à un tableau de caractères de style C brut, il grandit et rétrécit en toute sécurité au fur et à mesure que du texte lui est assigné.
+
+## `auto` et `const`
+
+```cpp
+#include <iostream>
+
+int main() {
+    auto count = 42;          // deduced as int
+    auto ratio = 3.14;        // deduced as double
+    const int maxRetries = 5; // cannot be reassigned
+
+    std::cout << "count=" << count << " ratio=" << ratio << " max=" << maxRetries << "\n";
+    return 0;
+}
+```
+
+`auto` demande au compilateur de déduire le type d'une variable à partir de son initialiseur plutôt que de l'écrire explicitement — la variable reste statiquement typée, simplement inférée au lieu d'être écrite explicitement. `const` marque une variable comme non modifiable après son initialisation ; tenter `maxRetries = 10;` plus loin dans la fonction échouerait à la compilation. Utiliser `const` partout où une valeur ne devrait vraiment pas changer documente cette intention pour les lecteurs et permet au compilateur de détecter une réassignation accidentelle.
+
+## Lire une entrée
+
+```cpp
+#include <iostream>
+
+int main() {
+    std::string name;
+    int age;
+
+    std::cout << "Enter your name: ";
+    std::cin >> name;
+    std::cout << "Enter your age: ";
+    std::cin >> age;
+
+    std::cout << name << " is " << age << " years old.\n";
+    return 0;
+}
+```
+
+`std::cin` (déclaré dans `<iostream>`) lit depuis l'entrée standard de la même manière que `std::cout` écrit vers la sortie standard, en utilisant `>>` au lieu de `<<`. Par défaut, `std::cin >> name` lit un seul jeton délimité par des espaces, pas une ligne entière — lire `"Ada Lovelace"` de cette manière ne capturerait que `"Ada"` ; une ligne entière nécessite `std::getline(std::cin, name)` à la place.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Faites glisser les lignes dans le bon ordre pour déclarer deux variables et afficher une phrase les utilisant."
+  items={[
+    { id: "include", label: "#include <iostream>" },
+    { id: "main-open", label: "int main() {" },
+    { id: "declare-name", label: "    std::string city = \"Paris\";", explanation: "La déclaration doit se produire avant que la variable ne soit utilisée dans l'instruction d'affichage." },
+    { id: "declare-pop", label: "    int population = 2100000;" },
+    { id: "print", label: "    std::cout << city << \" has \" << population << \" people.\\n\";" },
+    { id: "return", label: "    return 0;" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["include", "main-open", "declare-name", "declare-pop", "print", "return", "main-close"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Faites glisser les lignes dans le bon ordre pour construire un programme qui lit un entier saisi par l'utilisateur et le double."
+  items={[
+    { id: "include", label: "#include <iostream>" },
+    { id: "main-open", label: "int main() {" },
+    { id: "declare", label: "    int n;", explanation: "n doit exister avant que std::cin ne puisse lire dedans." },
+    { id: "read", label: "    std::cin >> n;" },
+    { id: "print", label: "    std::cout << n * 2 << std::endl;" },
+    { id: "return", label: "    return 0;" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["include", "main-open", "declare", "read", "print", "return", "main-close"]}
+/>
+
+<PredictOutput
+  title="Qu'affiche ceci ?"
+  code={`#include <iostream>
+
+int main() {
+    const int limit = 10;
+    auto ratio = 5 / 2.0;
+    std::cout << limit << " " << ratio << std::endl;
+    return 0;
+}`}
+  options={["10 2", "10 2.5", "10.0 2.5", "Compile error"]}
+  correctIndex={1}
+  explanation="limit s'affiche comme l'entier simple 10. ratio est déduit comme double parce que 2.0 est un littéral à virgule flottante, donc 5 / 2.0 effectue une division en virgule flottante et donne 2.5 — pas de troncature, contrairement à la division entière."
+  actualOutput="10 2.5"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [C++](/fr/programming-languages/cpp) — la vue d'ensemble sur laquelle s'appuie la syntaxe de cette page.
+- [Flux de contrôle](/fr/programming-languages/cpp/control-flow) — utiliser ces variables dans des conditions et des boucles.

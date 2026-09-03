@@ -1,0 +1,175 @@
+---
+title: Espaces de noms et NuGet
+description: Organiser le code C# avec des espaces de noms et des directives using, et gérer les dépendances avec NuGet et .csproj.
+category: Programming Languages
+weight: 8
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+C# organise le code avec des **espaces de noms** (un regroupement logique,
+indépendant de l'agencement des fichiers) et gère les dépendances externes
+avec des paquets **NuGet** déclarés dans le fichier `.csproj` d'un projet.
+Contrairement à certains langages, un espace de noms en C# n'a pas à
+correspondre à la structure de dossiers sur le disque, bien que la plupart
+des projets les alignent par convention.
+
+## Espaces de noms et using
+
+Un espace de noms regroupe des types liés et évite les collisions de noms
+entre des bibliothèques qui définissent par hasard un type portant le même
+nom :
+
+```csharp
+namespace Nullbase.Payments
+{
+    public class Invoice
+    {
+        public decimal Amount { get; set; }
+    }
+}
+
+namespace Nullbase.App
+{
+    using Nullbase.Payments; // brings Invoice into scope unqualified
+
+    class Program
+    {
+        static void Main()
+        {
+            var invoice = new Invoice { Amount = 42.50m };
+            Console.WriteLine(invoice.Amount);
+        }
+    }
+}
+```
+
+Sans la directive `using Nullbase.Payments;`, `Invoice` devrait être écrit
+entièrement comme `Nullbase.Payments.Invoice` partout où il est utilisé.
+
+Le C# moderne (10+) supporte aussi les **espaces de noms à portée de
+fichier**, qui évitent un niveau d'indentation supplémentaire pour le cas
+courant d'un espace de noms par fichier :
+
+```csharp
+namespace Nullbase.Payments; // applies to the rest of the file — no braces
+
+public class Invoice
+{
+    public decimal Amount { get; set; }
+}
+```
+
+## Usings globaux
+
+Un projet peut déclarer des directives `using` une seule fois, à l'échelle
+du projet, plutôt que de les répéter dans chaque fichier — utile pour des
+espaces de noms comme `System` dont presque chaque fichier a besoin :
+
+```csharp
+// GlobalUsings.cs
+global using System;
+global using System.Collections.Generic;
+global using System.Linq;
+```
+
+## .csproj et NuGet
+
+Chaque projet C# est décrit par un fichier XML `.csproj` : framework cible,
+fichiers source (implicitement inclus par dossier dans le format SDK-style),
+et références de paquets. NuGet est le gestionnaire de paquets et le
+registre public pour .NET, jouant le même rôle que `npm` joue pour Node.js :
+
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+</Project>
+```
+
+Ajouter une dépendance se fait généralement depuis la ligne de commande
+plutôt qu'en éditant le XML à la main :
+
+```bash
+dotnet add package Newtonsoft.Json
+dotnet restore
+dotnet build
+dotnet run
+```
+
+`dotnet add package` écrit l'entrée `<PackageReference>` dans `.csproj` et
+`dotnet restore` télécharge le paquet (et ses dépendances transitives) dans
+un cache NuGet local, de façon similaire à la manière dont `npm install`
+remplit `node_modules` à partir de `package.json`.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Faites glisser les lignes dans le bon ordre pour déclarer un espace de noms avec une classe, puis l'utiliser depuis un autre espace de noms."
+  items={[
+    { id: "l1", label: "namespace Shapes" },
+    { id: "l2", label: "{" },
+    { id: "l3", label: "    public class Circle { }" },
+    { id: "l4", label: "}" },
+    { id: "l5", label: "using Shapes;" , explanation: "La directive using pour amener Circle dans la portée appartient avant le code qui y fait référence, typiquement en haut du fichier consommateur."},
+    { id: "l6", label: "var c = new Circle();" },
+  ]}
+  correctOrder={["l1", "l2", "l3", "l4", "l5", "l6"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Mettez ces étapes de la CLI dotnet dans le bon ordre pour ajouter un paquet NuGet et exécuter le projet."
+  items={[
+    { id: "m1", label: "dotnet add package Newtonsoft.Json" },
+    { id: "m2", label: "dotnet restore" },
+    { id: "m3", label: "dotnet build" },
+    { id: "m4", label: "dotnet run" },
+  ]}
+  correctOrder={["m1", "m2", "m3", "m4"]}
+/>
+
+<PredictOutput
+  title="Qu'affiche ceci ?"
+  code={`namespace Nullbase.Payments
+{
+    public class Invoice
+    {
+        public decimal Amount = 10m;
+    }
+}
+
+namespace Nullbase.App
+{
+    class Program
+    {
+        static void Main()
+        {
+            var invoice = new Invoice { Amount = 5m };
+            Console.WriteLine(invoice.Amount);
+        }
+    }
+}`}
+  options={["10", "5", "Compile error: Invoice not found", "0"]}
+  correctIndex={2}
+  explanation="Program se trouve dans l'espace de noms Nullbase.App mais n'ajoute jamais 'using Nullbase.Payments;', donc le nom non qualifié Invoice ne se résout pas — le compilateur ne trouve aucun type nommé Invoice dans la portée. Il faudrait l'écrire comme Nullbase.Payments.Invoice, ou importer l'espace de noms avec using."
+  actualOutput="Compile error: Invoice not found"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Gestion des erreurs](/fr/programming-languages/csharp/error-handling)
+- [Async et Tasks](/fr/programming-languages/csharp/advanced)

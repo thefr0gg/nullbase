@@ -1,0 +1,182 @@
+---
+title: Flux de contrôle
+description: Le if/else de Java, switch (y compris la forme moderne en flèche), et les boucles for/while/do-while.
+category: Programming Languages
+weight: 3
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Les constructions de flux de contrôle de Java vous sembleront familières si
+vous connaissez le C, le C++, ou JavaScript — les accolades délimitent les
+blocs et les conditions doivent être de véritables expressions `boolean`,
+pas des valeurs truthy/falsy converties depuis des nombres ou des objets.
+
+## if / else
+
+```java
+int score = 82;
+
+if (score >= 90) {
+    System.out.println("A");
+} else if (score >= 80) {
+    System.out.println("B");
+} else {
+    System.out.println("C or below");
+}
+```
+
+À la différence du C, `if (score)` ne compile pas quand `score` est un
+`int` — la condition doit être une expression `boolean` comme
+`score != 0`. Cela élimine toute une classe de bugs « assignation au lieu
+de comparaison », puisque `if (score = 0)` est aussi une erreur de
+compilation plutôt qu'une assignation silencieuse.
+
+## switch : forme classique et forme en flèche
+
+Le `switch` classique tombe au cas suivant à moins que vous ne fassiez
+`break` :
+
+```java
+int day = 3;
+String name;
+switch (day) {
+    case 1:
+        name = "Monday";
+        break;
+    case 2:
+        name = "Tuesday";
+        break;
+    case 3:
+        name = "Wednesday";
+        break;
+    default:
+        name = "Unknown";
+}
+System.out.println(name);
+```
+
+Java 14 a introduit la forme en flèche, qui ne tombe pas au cas suivant et
+peut produire une valeur directement avec `yield` (ou comme une
+expression) :
+
+```java
+int day = 3;
+String name = switch (day) {
+    case 1 -> "Monday";
+    case 2 -> "Tuesday";
+    case 3 -> "Wednesday";
+    default -> "Unknown";
+};
+System.out.println(name);
+```
+
+La forme en flèche est généralement préférée en Java moderne : il est plus
+difficile de tomber au cas suivant par accident, et l'utiliser comme
+expression signifie que le compilateur peut vérifier que chaque branche
+produit une valeur du même type.
+
+## Boucles
+
+Java a trois formes de boucle. `for` avec un compteur explicite :
+
+```java
+for (int i = 0; i < 5; i++) {
+    System.out.println(i);
+}
+```
+
+Le `for` amélioré (un « for-each ») pour itérer une collection ou un
+tableau sans indexation manuelle :
+
+```java
+int[] scores = {70, 85, 92};
+for (int score : scores) {
+    System.out.println(score);
+}
+```
+
+`while` et `do-while`, distingués par le moment où la condition est
+vérifiée — `while` vérifie avant la première itération, `do-while`
+exécute toujours le corps au moins une fois :
+
+```java
+int n = 5;
+while (n > 0) {
+    System.out.println(n);
+    n--;
+}
+
+int attempts = 0;
+do {
+    attempts++;
+} while (attempts < 3);
+System.out.println(attempts);
+```
+
+`break` quitte entièrement une boucle ; `continue` passe à l'itération
+suivante. Les deux acceptent une étiquette (`outer:`) pour cibler une
+boucle englobante quand des boucles sont imbriquées.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire une chaîne if/else qui classe un score."
+  items={[
+    { id: "a1", label: "int score = 82;" },
+    { id: "a2", label: "if (score >= 90) {" },
+    { id: "a3", label: "    System.out.println(\"A\");" },
+    { id: "a4", label: "} else if (score >= 80) {", explanation: "else if doit directement suivre l'accolade fermante de la branche précédente." },
+    { id: "a5", label: "    System.out.println(\"B\");" },
+    { id: "a6", label: "} else {" },
+    { id: "a7", label: "    System.out.println(\"C or below\");" },
+    { id: "a8", label: "}" },
+  ]}
+  correctOrder={["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Ordonnez ces lignes pour construire un switch en forme flèche qui assigne un nom de jour et l'affiche."
+  items={[
+    { id: "b1", label: "int day = 2;" },
+    { id: "b2", label: "String name = switch (day) {" },
+    { id: "b3", label: "    case 1 -> \"Monday\";" },
+    { id: "b4", label: "    case 2 -> \"Tuesday\";", explanation: "Le case pour la valeur correspondante peut apparaître n'importe où parmi les branches, mais toutes les branches se trouvent à l'intérieur du bloc switch." },
+    { id: "b5", label: "    default -> \"Unknown\";" },
+    { id: "b6", label: "};" },
+    { id: "b7", label: "System.out.println(name);" },
+  ]}
+  correctOrder={["b1", "b2", "b3", "b4", "b5", "b6", "b7"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que ce code affiche ?"
+  code={`int day = 2;
+String result = "";
+switch (day) {
+    case 1:
+        result += "Mon";
+    case 2:
+        result += "Tue";
+    case 3:
+        result += "Wed";
+        break;
+    default:
+        result += "Other";
+}
+System.out.println(result);`}
+  options={["Tue", "TueWed", "MonTueWed", "Other"]}
+  correctIndex={1}
+  explanation="Le switch classique tombe au cas suivant quand il n'y a pas de break. Correspondre au case 2 exécute son corps puis continue à exécuter le corps du case 3 aussi, puisqu'il n'y a pas de break avant après le case 3, produisant 'Tue' + 'Wed'."
+  actualOutput="TueWed"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Syntaxe et variables](/fr/programming-languages/java/syntax-basics)
+- [Méthodes](/fr/programming-languages/java/functions)

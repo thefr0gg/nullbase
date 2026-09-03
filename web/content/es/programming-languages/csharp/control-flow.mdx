@@ -1,0 +1,173 @@
+---
+title: Flujo de Control
+description: If/else, bucles, y las expresiones switch de pattern matching de C# para ramificar según la forma y el valor.
+category: Programming Languages
+weight: 3
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+El flujo de control de C# empieza de forma familiar — `if`/`else`, `for`, `while` — y luego va más allá que la mayoría de los lenguajes de la familia C con expresiones `switch` que hacen coincidir según tipo y estructura, no solo igualdad.
+
+## if / else y bucles
+
+```csharp
+int score = 82;
+
+if (score >= 90)
+{
+    Console.WriteLine("A");
+}
+else if (score >= 80)
+{
+    Console.WriteLine("B");
+}
+else
+{
+    Console.WriteLine("C or below");
+}
+
+for (int i = 0; i < 3; i++)
+{
+    Console.WriteLine($"Iteration {i}");
+}
+
+int n = 5;
+while (n > 0)
+{
+    Console.WriteLine(n);
+    n--;
+}
+```
+
+`foreach` itera sobre cualquier `IEnumerable<T>` — arrays, listas, diccionarios — sin gestionar un índice:
+
+```csharp
+string[] fruits = { "apple", "banana", "cherry" };
+foreach (string fruit in fruits)
+{
+    Console.WriteLine(fruit);
+}
+```
+
+## switch clásico
+
+La sentencia `switch` tradicional compara un valor contra un conjunto de casos constantes y requiere un `break` explícito (u otra sentencia de salto) por cada case — caer al siguiente case es un error de compilación a menos que el cuerpo del case esté vacío:
+
+```csharp
+int day = 3;
+switch (day)
+{
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+        Console.WriteLine("Weekday");
+        break;
+    case 6:
+    case 7:
+        Console.WriteLine("Weekend");
+        break;
+    default:
+        Console.WriteLine("Invalid day");
+        break;
+}
+```
+
+## Pattern matching con expresiones switch
+
+Desde C# 8, `switch` puede usarse como una *expresión* que devuelve un valor, y sus patrones van mucho más allá de la igualdad: los patrones de tipo, los patrones relacionales, y los patrones de propiedad te permiten ramificar según la forma de un objeto en un solo lugar.
+
+```csharp
+object shape = new { Kind = "circle", Radius = 3.0 };
+
+string Describe(object value) => value switch
+{
+    int n when n < 0 => "negative integer",
+    int n => $"non-negative integer: {n}",
+    string s when s.Length == 0 => "empty string",
+    string s => $"string of length {s.Length}",
+    null => "nothing at all",
+    _ => "something else",
+};
+
+Console.WriteLine(Describe(-5));   // negative integer
+Console.WriteLine(Describe("hi")); // string of length 2
+Console.WriteLine(Describe(null)); // nothing at all
+```
+
+Los patrones de propiedad pueden desestructurar y comparar directamente contra los miembros de un objeto, algo común al trabajar con tipos record:
+
+```csharp
+record Point(int X, int Y);
+
+string Classify(Point p) => p switch
+{
+    { X: 0, Y: 0 } => "origin",
+    { X: 0 } => "on the Y axis",
+    { Y: 0 } => "on the X axis",
+    { X: > 0, Y: > 0 } => "first quadrant",
+    _ => "elsewhere",
+};
+
+Console.WriteLine(Classify(new Point(0, 0))); // origin
+Console.WriteLine(Classify(new Point(3, 5))); // first quadrant
+```
+
+Las expresiones `switch` de pattern matching deben ser exhaustivas desde el punto de vista del compilador — una rama de descarte `_` es la forma habitual de garantizarlo, de forma similar a `default` en una sentencia `switch` clásica.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir un bucle for que imprime los números del 0 al 2."
+  items={[
+    { id: "l1", label: "for (int i = 0; i < 3; i++)" },
+    { id: "l2", label: "{" },
+    { id: "l3", label: "    Console.WriteLine(i);" },
+    { id: "l4", label: "}" },
+  ]}
+  correctOrder={["l1", "l2", "l3", "l4"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Coloca estas líneas en orden para construir una expresión switch que clasifica un entero como negativo, cero, o positivo."
+  items={[
+    { id: "m1", label: "string Classify(int n) => n switch" },
+    { id: "m2", label: "{" },
+    { id: "m3", label: "    < 0 => \"negative\"," },
+    { id: "m4", label: "    0 => \"zero\"," , explanation: "Los patrones relacionales como < 0 se verifican en orden, de arriba a abajo, igual que los casos de un switch."},
+    { id: "m5", label: "    > 0 => \"positive\"," },
+    { id: "m6", label: "};" },
+  ]}
+  correctOrder={["m1", "m2", "m3", "m4", "m5", "m6"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`object value = 42;
+
+string Describe(object v) => v switch
+{
+    string => "a string",
+    int n when n > 100 => "a big int",
+    int n => $"an int: {n}",
+    _ => "unknown",
+};
+
+Console.WriteLine(Describe(value));`}
+  options={["a string", "a big int", "an int: 42", "unknown"]}
+  correctIndex={2}
+  explanation="value se encapsula (boxing) como un int (42). Falla el patrón string, falla la guarda 'when n > 100' ya que 42 no es mayor que 100, y coincide con el patrón simple 'int n', imprimiendo su valor."
+  actualOutput="an int: 42"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Sintaxis y Variables](/es/programming-languages/csharp/syntax-basics)
+- [Métodos](/es/programming-languages/csharp/functions)

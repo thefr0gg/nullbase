@@ -1,0 +1,38 @@
+---
+title: Sistemas de Archivos
+description: Cómo convierte el sistema operativo un dispositivo de bloques crudo en archivos y directorios con nombre, qué almacena realmente un inodo, y cómo el journaling evita que un crash a mitad de escritura corrompa todo el volumen.
+category: Operating Systems
+weight: 4
+---
+
+Un **sistema de archivos** es el esquema que usa el sistema operativo para organizar los bytes crudos e indiferenciados de un dispositivo de bloques — un disco duro, un SSD, una partición — en los archivos y directorios con nombre que todo programa, incluyendo el shell en el que escribes, da completamente por sentado. Un disco por sí solo no sabe nada de "archivos": es simplemente un enorme array de bloques de tamaño fijo que se pueden leer o escribir por número. Todo lo relacionado con que `/home/user/notes.txt` sea algo distinto, con nombre, redimensionable y protegido por permisos es una estructura que el sistema de archivos impone sobre ese array de bloques crudo — y distintos sistemas de archivos (ext4, NTFS, APFS) imponen esa estructura de forma diferente, que es por lo que un disco formateado para uno normalmente no puede simplemente leerse por otro.
+
+## Inodos: metadatos separados del nombre
+
+La idea más importante por debajo de un sistema de archivos al estilo Unix es que el **nombre** de un archivo y los **metadatos** de un archivo se almacenan en dos lugares completamente separados. Cada archivo en disco tiene un **inodo** — una estructura de datos que contiene todo sobre el archivo *excepto* su nombre: su tamaño, permisos, propietario, marcas de tiempo, y, de forma crítica, la lista real de bloques de disco que contienen su contenido. Un directorio, a su vez, es en realidad solo una simple tabla que mapea nombres legibles por humanos a números de inodo — nada más que una lista de pares `(nombre, número de inodo)`.
+
+Esta separación es exactamente por qué un archivo puede tener más de un nombre a la vez. Un **enlace duro (hard link)** es simplemente una segunda entrada de directorio apuntando al *mismo* número de inodo que una existente — no una copia, no un atajo, sino un segundo nombre para el mismo archivo subyacente. Ambos nombres son igualmente "reales"; el contenido real y los metadatos del archivo solo desaparecen una vez que el contador de enlaces del inodo llega a cero, lo que significa que ninguna entrada de directorio en ningún lugar sigue apuntando a él. Esto también explica por qué renombrar un archivo dentro del mismo sistema de archivos es instantáneo sin importar el tamaño del archivo — un renombrado simplemente reescribe un par `(nombre, número de inodo)` en un directorio, y nunca toca los bloques de datos reales del archivo en absoluto.
+
+## El árbol de directorios es un grafo de nombres a inodos
+
+Lo que parece una única jerarquía limpia — `/`, luego `/home`, luego `/home/user` — en realidad son solo directorios (que son archivos en sí mismos, conteniendo mapeos nombre→inodo) apuntando a los inodos de otros directorios, formando un árbol solo porque las convenciones del sistema de archivos (y el hecho de que los enlaces duros a directorios normalmente están prohibidos) lo mantienen alejado de convertirse en un grafo general con ciclos. Elimina esa convención y lo que realmente hay es un grafo: cualquier inodo puede, en principio, ser alcanzable a través de más de una ruta, que es precisamente lo que demuestra un enlace duro — el mismo archivo subyacente alcanzable por dos cadenas de nombres distintas a través de la estructura de directorios.
+
+## Journaling
+
+Escribir un archivo a disco rara vez es una única operación atómica — actualizar el contenido de un archivo, los metadatos de su inodo, y la contabilidad de asignación de bloques que rastrea qué bloques están libres son todas escrituras separadas, y una pérdida de energía o un crash que ocurra entre ellas puede dejar el sistema de archivos en un estado inconsistente: bloques marcados como usados a los que ningún archivo apunta, un inodo que referencia datos escritos a medias, una entrada de directorio apuntando a un inodo parcialmente actualizado. El **journaling** es la solución — antes de hacer un conjunto de cambios relacionados a las estructuras reales del sistema de archivos, el sistema de archivos primero escribe una descripción de los cambios previstos en un log dedicado (el journal). Si ocurre un crash a mitad de escritura, el sistema de archivos no tiene que escanear todo el volumen para averiguar qué podría estar roto; en el siguiente montaje, reproduce el journal, ya sea terminando o descartando limpiamente la operación que fue interrumpida, y el volumen vuelve a estar consistente en una fracción del tiempo que tomaría una comprobación completa del sistema de archivos. Esta es la misma idea de log de escritura anticipada que usa el log de transacciones de una base de datos para sobrevivir a un crash a mitad de escritura, aplicada un nivel más abajo, al sistema de archivos en el que viven los propios archivos de la base de datos.
+
+## Sistemas de archivos comunes, brevemente
+
+La mayoría de los sistemas operativos vienen con (o usan por defecto) un sistema de archivos particular, y las diferencias mayormente se reducen a cómo cada uno implementa las ideas de arriba más las características específicas de plataforma superpuestas encima:
+
+- **ext4** — el predeterminado en la mayoría de las distribuciones de Linux; con journaling, basado en inodos en el sentido clásico de Unix descrito arriba.
+- **NTFS** — el predeterminado de Windows desde Windows NT; también con journaling, con su propia estructura de metadatos (la Tabla Maestra de Archivos) jugando un papel ampliamente análogo a una tabla de inodos.
+- **APFS** — el sistema de archivos de Apple desde 2017, construido en torno a copy-on-write para instantáneas y clonación eficiente en espacio en lugar de journaling in-place del tipo tradicional.
+
+Ninguno de estos es compatible entre sí a nivel de bytes — montar un disco escrito por uno bajo un sistema operativo que espera otro generalmente requiere un driver explícito o una capa de compatibilidad, precisamente porque "sistema de archivos" significa "un esquema específico, mutuamente entendido", no un estándar universal.
+
+## Ver también
+
+- **[Memoria Virtual](/es/operating-systems/virtual-memory)** — el espacio de swap, una de las regiones específicas de disco que lee y escribe un mecanismo adyacente al sistema de archivos.
+- **[Llamadas al Sistema](/es/operating-systems/system-calls)** — `open`, `read`, y `write` son la frontera real que cruza un programa para tocar un archivo en absoluto.
+- **[Linux](/es/devops/linux)** — las herramientas de línea de comandos (`ls`, `df`, `mount`) usadas para interactuar con un sistema de archivos real día a día.

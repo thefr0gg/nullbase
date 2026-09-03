@@ -1,0 +1,180 @@
+---
+title: Espaces de noms et Composer
+description: require/include pour l'inclusion de fichiers, les espaces de noms PHP pour organiser le code, et Composer/composer.json comme gestionnaire de paquets de facto.
+category: Programming Languages
+weight: 8
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+L'histoire des modules de PHP a deux couches faciles à confondre au début :
+les instructions d'inclusion de fichiers de bas niveau (`require`/`include`),
+présentes dans le langage depuis le début, et les espaces de noms plus
+Composer, arrivés plus tard et qui forment maintenant l'ossature de la façon
+dont le code PHP moderne est réellement organisé et partagé.
+
+## require et include
+
+Ces instructions importent le code d'un autre fichier PHP dans le fichier
+actuel, un peu comme `#include` en C mais évalué à l'exécution, pas à la
+compilation :
+
+```php
+<?php
+// math.php
+function square(int $n): int {
+    return $n * $n;
+}
+```
+
+```php
+<?php
+require "math.php";
+
+echo square(5) . "\n"; // 25
+```
+
+`require` lève une erreur fatale si le fichier est manquant ; `include` ne
+lève qu'un avertissement et laisse le script continuer. `require_once`/
+`include_once` ajoutent une vérification qui saute une réinclusion d'un
+fichier déjà chargé — important pour éviter les erreurs « fonction déjà
+déclarée » quand plusieurs fichiers pourraient importer la même dépendance.
+
+```php
+<?php
+require_once "math.php";
+require_once "math.php"; // silently skipped, already loaded
+```
+
+En pratique, les projets PHP modernes écrivent rarement `require` à la main
+pour leur propre code — l'autoloader de Composer (ci-dessous) rend cela
+inutile — mais c'est toujours exactement ce qui s'exécute sous le capot.
+
+## Espaces de noms
+
+Un `namespace` regroupe des classes/fonctions/constantes liées sous un
+préfixe commun, empêchant les collisions de noms entre votre code et celui
+d'une bibliothèque (ou entre deux bibliothèques) comme le font les packages
+Java ou les espaces de noms C++ :
+
+```php
+<?php
+// src/Billing/Invoice.php
+namespace App\Billing;
+
+class Invoice {
+    public function __construct(public float $amount) {}
+}
+```
+
+```php
+<?php
+require "src/Billing/Invoice.php";
+
+use App\Billing\Invoice;
+
+$invoice = new Invoice(150.0);
+echo $invoice->amount . "\n"; // 150
+```
+
+`use` importe un nom d'espace de noms pour qu'on puisse s'y référer sans
+qualification ; sans cela, il faudrait écrire à chaque fois le nom pleinement
+qualifié `App\Billing\Invoice`.
+
+## Composer et composer.json
+
+Composer est le gestionnaire de dépendances standard de facto de PHP —
+presque tous les projets PHP modernes, et tous les frameworks majeurs
+(Laravel, Symfony), le présupposent. Un projet déclare ses dépendances dans
+`composer.json` :
+
+```json
+{
+    "name": "acme/billing-app",
+    "require": {
+        "php": ">=8.2",
+        "monolog/monolog": "^3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    }
+}
+```
+
+`composer require monolog/monolog` ajoute une dépendance et met à jour ce
+fichier automatiquement ; `composer install` le lit (et le fichier de
+verrouillage, `composer.lock`) et télécharge des versions exactes et
+reproductibles dans `vendor/`.
+
+La section `autoload` est ce qui remplace les appels manuels à `require` :
+Composer génère un **autoloader PSR-4** qui fait correspondre un préfixe
+d'espace de noms à un répertoire, si bien que les classes sont chargées à la
+demande la première fois qu'elles sont référencées :
+
+```php
+<?php
+require "vendor/autoload.php"; // the one require you still write by hand
+
+use App\Billing\Invoice;
+use Monolog\Logger;
+
+$invoice = new Invoice(200.0);
+$logger = new Logger("billing");
+```
+
+Avec cette seule ligne `require "vendor/autoload.php"`, à la fois vos
+propres classes d'espace de noms sous `src/` et chaque paquet Composer
+installé deviennent disponibles sans aucune autre inclusion manuelle.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour déclarer une classe avec espace de noms et l'utiliser depuis un autre fichier."
+  items={[
+    { id: "m1", label: "<?php" },
+    { id: "m2", label: "namespace App\\Reports;" },
+    { id: "m3", label: "class Summary {", explanation: "La déclaration d'espace de noms doit être la première instruction du fichier, avant toute classe." },
+    { id: "m4", label: "    public function __construct(public string $title) {}" },
+    { id: "m5", label: "}" },
+  ]}
+  correctOrder={["m1", "m2", "m3", "m4", "m5"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Ordonnez ces lignes pour charger l'autoloader de Composer et utiliser la classe d'un paquet installé."
+  items={[
+    { id: "n1", label: "<?php" },
+    { id: "n2", label: 'require "vendor/autoload.php";', explanation: "L'autoloader doit être requis avant qu'une classe avec espace de noms de vendor/ puisse être résolue." },
+    { id: "n3", label: "use Monolog\\Logger;" },
+    { id: "n4", label: 'use Monolog\\Handler\\StreamHandler;' },
+    { id: "n5", label: '$logger = new Logger("app");' },
+    { id: "n6", label: '$logger->pushHandler(new StreamHandler("php://stdout"));' },
+  ]}
+  correctOrder={["n1", "n2", "n3", "n4", "n5", "n6"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que ceci affiche ?"
+  code={`<?php
+// loaded twice on purpose
+require_once "math.php";
+require_once "math.php";
+
+echo square(4);`}
+  options={["16", "Fatal error: cannot redeclare square()", "1616", "16 (printed twice)"]}
+  correctIndex={0}
+  explanation="require_once garde une trace des fichiers déjà inclus et saute silencieusement une demande répétée pour le même fichier, contrairement à un simple require qui réexécuterait le fichier et causerait une erreur fatale 'cannot redeclare function' la seconde fois."
+  actualOutput="16"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Gestion des erreurs](/fr/programming-languages/php/error-handling)
+- [Générateurs et motifs asynchrones](/fr/programming-languages/php/advanced)

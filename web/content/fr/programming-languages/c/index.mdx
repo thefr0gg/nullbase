@@ -1,0 +1,111 @@
+---
+title: C
+description: Un langage système rapide et non managé datant de 1972, qui sous-tend encore aujourd'hui la plupart des systèmes d'exploitation, des runtimes et des appareils embarqués.
+category: Programming Languages
+weight: 1
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+**C** a été créé par Dennis Ritchie aux Bell Labs au début des années 1970, à l'origine pour réécrire le noyau Unix dans quelque chose de plus portable que l'assembleur. Plus de cinquante ans plus tard, c'est encore le langage dans lequel sont écrits la plupart des noyaux de systèmes d'exploitation, les firmwares embarqués, les runtimes de langages (CPython, le cœur de la JVM, Lua), et les bibliothèques bas niveau (`libc`, SQLite, zlib). C compile directement vers du code machine, n'a pas de ramasse-miettes ni de filet de sécurité à l'exécution, et donne au programmeur un contrôle quasi total sur l'agencement mémoire et le comportement du CPU — ce qui explique à la fois pourquoi il est extrêmement rapide et extrêmement facile à utiliser pour se tirer une balle dans le pied.
+
+Tout ce que ce site couvre sur C découle d'une seule décision de conception : C fait entièrement confiance au programmeur. Il n'y a pas de vérification des limites sur les tableaux, pas de gestion automatique de la mémoire, et pas d'exceptions — juste des fonctions, des pointeurs, et une très petite bibliothèque standard. Des langages modernes comme Rust et Go existent en grande partie comme des réactions au coût réel de cette confiance, mais la franchise de C est aussi la raison pour laquelle il reste la lingua franca dans laquelle le runtime de presque tous les autres langages est implémenté.
+
+## Un programme C minimal
+
+```c
+#include <stdio.h>
+
+int main(void) {
+    printf("Hello, nullbase!\n");
+    return 0;
+}
+```
+
+`#include <stdio.h>` importe les déclarations des fonctions d'E/S standard comme `printf`. `main` est le point d'entrée que tout programme C doit avoir ; retourner `0` indique au système d'exploitation que le programme s'est terminé avec succès (une valeur non nulle signale une erreur à quiconque l'a invoqué — un script shell, un outil de build, etc.).
+
+## Compiler et exécuter
+
+C est compilé en amont, pas interprété — il n'y a pas de runtime C qui lit votre source ligne par ligne. Un compilateur (`gcc` ou `clang`) traduit le code source en exécutable natif *avant* qu'il ne s'exécute :
+
+```c
+#include <stdio.h>
+
+int square(int n) {
+    return n * n;
+}
+
+int main(void) {
+    for (int i = 1; i <= 5; i++) {
+        printf("%d squared is %d\n", i, square(i));
+    }
+    return 0;
+}
+```
+
+Enregistré sous `squares.c`, ceci devient un binaire exécutable avec :
+
+```bash
+gcc squares.c -o squares
+./squares
+```
+
+Il n'y a pas d'étape de gestionnaire de paquets, pas d'interpréteur à invoquer — `gcc` lit le fichier `.c`, résout les `#include`, et produit un exécutable autonome. Cette séparation compilation-puis-exécution (plutôt qu'un JIT ou un interpréteur) explique pourquoi les programmes C démarrent instantanément et pourquoi un bug comme la lecture au-delà de la fin d'un tableau est un plantage à l'exécution, et non une erreur de compilation que le compilateur aurait pu détecter.
+
+## Ce qui vous attend
+
+Le reste de cette section parcourt la syntaxe et les variables de C, le flux de contrôle, les fonctions, les tableaux et chaînes de caractères, les structs (le substitut de C aux classes), la gestion des erreurs par code de retour, la façon dont les programmes multi-fichiers sont construits, et enfin les pointeurs et la gestion manuelle de la mémoire — la partie de C que la plupart des autres langages ont délibérément supprimée.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez un programme minimal"
+  prompt="Faites glisser ces lignes dans l'ordre qui produit un programme C valide affichant un message de bienvenue."
+  items={[
+    { id: "include", label: "#include <stdio.h>", explanation: "Le compilateur doit voir la déclaration de printf avant qu'elle ne soit appelée, donc le #include doit venir en premier." },
+    { id: "main-open", label: "int main(void) {" },
+    { id: "printf", label: "    printf(\"Hello, nullbase!\\n\");" },
+    { id: "return", label: "    return 0;" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["include", "main-open", "printf", "return", "main-close"]}
+/>
+
+<OrderingExercise
+  title="Ordonnez les étapes de build"
+  prompt="Mettez ces étapes dans l'ordre où vous les effectueriez réellement pour passer du code source à un programme en cours d'exécution."
+  items={[
+    { id: "write", label: "Écrire squares.c dans un éditeur de texte" },
+    { id: "compile", label: "Exécuter : gcc squares.c -o squares", explanation: "La compilation doit se produire après l'existence du code source, et avant que vous puissiez exécuter le binaire qu'elle produit." },
+    { id: "run", label: "Exécuter : ./squares" },
+  ]}
+  correctOrder={["write", "compile", "run"]}
+/>
+
+<PredictOutput
+  title="Qu'affiche cette boucle ?"
+  code={`#include <stdio.h>
+
+int square(int n) {
+    return n * n;
+}
+
+int main(void) {
+    for (int i = 1; i <= 3; i++) {
+        printf("%d squared is %d\\n", i, square(i));
+    }
+    return 0;
+}`}
+  options={["1 squared is 1\\n2 squared is 4\\n3 squared is 9", "0 squared is 0\\n1 squared is 1\\n2 squared is 4", "1 squared is 1\\n2 squared is 2\\n3 squared is 3", "Compile error"]}
+  correctIndex={0}
+  explanation="La boucle exécute i = 1, 2, 3 (s'arrêtant quand i <= 3 devient faux), et square(i) retourne n * n à chaque fois, donc elle affiche 1, 4 et 9 — pas i lui-même, ce qui est la mauvaise réponse tentante si l'on survole l'appel de fonction."
+  actualOutput="1 squared is 1\n2 squared is 4\n3 squared is 9"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- **[Syntaxe et variables](/fr/programming-languages/c/syntax-basics)** — types, opérateurs et déclarations plus en profondeur.
+- **[Pointeurs et mémoire](/fr/programming-languages/c/advanced)** — la partie de C qui le distingue le plus des langages de plus haut niveau.

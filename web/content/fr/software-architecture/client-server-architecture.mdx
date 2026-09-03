@@ -1,0 +1,51 @@
+---
+title: Architecture client-serveur
+description: La séparation entre un client qui demande et un serveur qui répond — le pattern sous presque tout le reste de cette référence.
+category: Software Architecture
+weight: 1
+interactive: true
+interactiveType: ["MermaidDiagram"]
+---
+
+L'**architecture client-serveur** divise un système en deux rôles : un **client** qui initie des requêtes, et un **serveur** qui les écoute et renvoie des réponses. Cela paraît presque trop simple pour mériter un nom, mais c'est l'hypothèse structurante sous la section [API Web](/fr/web-apis), la section [Backend](/fr/backend), et la majeure partie de ce que couvre ce site — chaque requête HTTP, chaque requête de base de données, chaque appel d'API est une instance d'un client qui demande et d'un serveur qui répond.
+
+## Ce qui fait qu'une chose est un client vs un serveur
+
+La distinction ne porte pas sur le matériel ou la complexité du code — elle porte sur qui initie. Un **serveur** est un processus qui se lie à une adresse, reste inactif, et attend les connexions entrantes ; il ne sait pas et ne se soucie pas de qui va lui parler avant qu'une requête n'arrive réellement. Un **client** est un processus qui connaît (ou recherche) l'adresse du serveur et initie une connexion quand il a quelque chose à demander. La même machine peut jouer les deux rôles pour des relations différentes — un service backend est un serveur pour le navigateur devant lui et un client pour la base de données derrière lui.
+
+<MermaidDiagram
+  title="Un cycle requête/réponse unique"
+  chart={`sequenceDiagram
+    participant C as Client (browser)
+    participant S as Server (API)
+    C->>S: HTTP request (GET /v1/pages/123)
+    S->>S: look up data, apply business logic
+    S-->>C: HTTP response (200 OK + JSON body)
+`}
+/>
+
+## Pourquoi séparer les rôles du tout
+
+L'alternative évidente est un seul programme qui fait tout localement — pas de réseau, pas de protocole, pas de déploiement séparé. Cela fonctionne bien jusqu'à ce que plus d'une personne ait besoin d'accéder aux mêmes données en même temps. Séparer client et serveur apporte deux choses difficiles à obtenir autrement :
+
+- **La séparation des préoccupations.** Le serveur possède les données et les règles pour les modifier correctement ; le client possède la présentation et l'interaction utilisateur. Aucun des deux côtés n'a besoin de savoir comment l'autre est implémenté, seulement la forme des requêtes et réponses entre eux — ce qu'un contrat d'API formalise exactement.
+- **Un serveur, de nombreux clients.** Un serveur ne se soucie pas de savoir s'il parle à une application mobile, un onglet de navigateur, ou un autre service backend — tant qu'ils parlent le même protocole, ils peuvent tous atteindre les mêmes données partagées et constamment mises à jour. Centraliser les données et la logique en un seul endroit (ou un petit ensemble coordonné d'endroits) est ce qui rend possibles les systèmes multi-utilisateurs et multi-appareils du tout.
+
+## Clients légers vs clients lourds
+
+La quantité de logique qui vit côté client est un vrai choix de conception, pas une loi fixe :
+
+- Un **client léger** (thin client) fait aussi peu que possible — afficher ce que le serveur envoie, transmettre l'entrée utilisateur en retour, garder presque aucun état ou logique local. Un site web multi-pages rendu côté serveur est proche de cette extrémité : presque chaque interaction est une requête fraîche vers le serveur.
+- Un **client lourd** (thick client) (une application monopage moderne, une application mobile native) garde une logique et un état significatifs localement — routage, validation de formulaire, données mises en cache, voire une fonctionnalité hors ligne — et parle au serveur principalement pour synchroniser ou récupérer des données, pas pour rendre chaque pixel.
+
+Aucun n'est strictement meilleur. Un client léger est plus simple à raisonner et plus facile à garder cohérent, puisque le serveur est le seul endroit où vit la logique ; un client lourd peut sembler nettement plus rapide pour l'utilisateur et survivre à une connectivité instable, au prix de dupliquer une partie de la logique (et de certaines décisions de confiance — la validation d'un client lourd est un agrément d'UX, jamais un substitut au serveur appliquant les mêmes règles) des deux côtés.
+
+## La forme qu'elle donne à tout le reste
+
+Une fois que vous voyez client-serveur comme le pattern de base, la majeure partie du reste de ce site en est une élaboration. Un [reverse proxy](/fr/backend/reverse-proxies) se place devant un serveur sans changer quel côté est lequel. Le [caching](/fr/backend/caching) existe pour éviter de faire attendre le client pendant que le serveur refait un travail qu'il a déjà fait. Même les architectures qui semblent avoir dépassé client-serveur — les [microservices](/fr/software-architecture/microservices), les [systèmes événementiels](/fr/software-architecture/event-driven-architecture) — sont construites à partir de nombreuses relations client-serveur reliées entre elles, pas un remplacement du pattern lui-même. Apprendre à repérer « qui est le client ici, qui est le serveur » dans un système inconnu est l'un des moyens les plus rapides de comprendre comment il fonctionne réellement.
+
+## Voir aussi
+
+- **[Monolithes](/fr/software-architecture/monoliths)** — la façon la plus simple de construire le côté serveur de cette séparation.
+- **[Microservices](/fr/software-architecture/microservices)** — ce qui se passe quand le côté serveur est lui-même découpé en de nombreuses relations client-serveur.
+- **[Web Servers](/fr/backend/web-servers)** — le processus qui joue le rôle du serveur dans un échange client-serveur HTTP.

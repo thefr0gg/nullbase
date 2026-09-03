@@ -1,0 +1,172 @@
+---
+title: المساحات الاسمية وNuGet
+description: تنظيم كود C# بالمساحات الاسمية وتوجيهات using، وإدارة التبعيات بواسطة NuGet وملف .csproj.
+category: Programming Languages
+weight: 8
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تنظّم C# الكود بـ**المساحات الاسمية (namespaces)** (تجميع منطقي،
+مستقل عن تخطيط الملفات) وتدير التبعيات الخارجية بحزم **NuGet**
+المُصرَّح عنها في ملف `.csproj` الخاص بمشروع. بخلاف بعض اللغات،
+لا يجب أن تطابق المساحة الاسمية في C# بنية المجلدات على القرص،
+رغم أن معظم المشاريع تبقيها متوافقة كعُرف.
+
+## المساحات الاسمية وusing
+
+تجمّع المساحة الاسمية أنواعاً مرتبطة وتتجنب تصادم الأسماء بين
+مكتبات تعرّف مصادفةً نوعاً بالاسم نفسه:
+
+```csharp
+namespace Nullbase.Payments
+{
+    public class Invoice
+    {
+        public decimal Amount { get; set; }
+    }
+}
+
+namespace Nullbase.App
+{
+    using Nullbase.Payments; // brings Invoice into scope unqualified
+
+    class Program
+    {
+        static void Main()
+        {
+            var invoice = new Invoice { Amount = 42.50m };
+            Console.WriteLine(invoice.Amount);
+        }
+    }
+}
+```
+
+بدون توجيه `using Nullbase.Payments;`، ستحتاج `Invoice` أن تُكتَب
+بالكامل كـ`Nullbase.Payments.Invoice` في كل مكان تُستخدَم فيه.
+
+تدعم C# الحديثة (10+) أيضاً **المساحات الاسمية على مستوى الملف**،
+التي تتجنب مستوى إزاحة إضافياً للحالة الشائعة لمساحة اسمية واحدة
+لكل ملف:
+
+```csharp
+namespace Nullbase.Payments; // applies to the rest of the file — no braces
+
+public class Invoice
+{
+    public decimal Amount { get; set; }
+}
+```
+
+## توجيهات using العامة
+
+يمكن لمشروع التصريح عن توجيهات `using` مرة واحدة، على مستوى
+المشروع بأكمله، بدلاً من تكرارها في كل ملف — مفيد لمساحات اسمية
+مثل `System` التي يحتاجها كل ملف تقريباً:
+
+```csharp
+// GlobalUsings.cs
+global using System;
+global using System.Collections.Generic;
+global using System.Linq;
+```
+
+## .csproj وNuGet
+
+يُوصَف كل مشروع C# بملف `.csproj` بصيغة XML: إطار العمل
+المستهدف، والملفات المصدرية (مُدرَجة ضمنياً بحسب المجلد في تنسيق
+SDK-style)، ومراجع الحزم. NuGet هو مدير الحزم والسجل العام لـ
+.NET، ويلعب الدور نفسه الذي يلعبه `npm` لـNode.js:
+
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+</Project>
+```
+
+عادةً ما تُضاف تبعية من سطر الأوامر بدلاً من تحرير XML يدوياً:
+
+```bash
+dotnet add package Newtonsoft.Json
+dotnet restore
+dotnet build
+dotnet run
+```
+
+يكتب `dotnet add package` مدخل `<PackageReference>` في `.csproj`
+وتُنزِّل `dotnet restore` الحزمة (وتبعياتها العابرة) إلى ذاكرة
+NuGet المحلية المؤقتة، على غرار كيفية ملء `npm install` لـ
+`node_modules` من `package.json`.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="اجمع الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح للتصريح عن مساحة اسمية بصنف، ثم استخدامها من مساحة اسمية أخرى."
+  items={[
+    { id: "l1", label: "namespace Shapes" },
+    { id: "l2", label: "{" },
+    { id: "l3", label: "    public class Circle { }" },
+    { id: "l4", label: "}" },
+    { id: "l5", label: "using Shapes;" , explanation: "يجب أن يأتي توجيه using الذي يُدخِل Circle إلى النطاق قبل الكود الذي يشير إليها، عادة في أعلى الملف المستهلك."},
+    { id: "l6", label: "var c = new Circle();" },
+  ]}
+  correctOrder={["l1", "l2", "l3", "l4", "l5", "l6"]}
+/>
+
+<OrderingExercise
+  title="اجمع الكود"
+  prompt="ضع خطوات dotnet CLI هذه بالترتيب الصحيح لإضافة حزمة NuGet وتشغيل المشروع."
+  items={[
+    { id: "m1", label: "dotnet add package Newtonsoft.Json" },
+    { id: "m2", label: "dotnet restore" },
+    { id: "m3", label: "dotnet build" },
+    { id: "m4", label: "dotnet run" },
+  ]}
+  correctOrder={["m1", "m2", "m3", "m4"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا؟"
+  code={`namespace Nullbase.Payments
+{
+    public class Invoice
+    {
+        public decimal Amount = 10m;
+    }
+}
+
+namespace Nullbase.App
+{
+    class Program
+    {
+        static void Main()
+        {
+            var invoice = new Invoice { Amount = 5m };
+            Console.WriteLine(invoice.Amount);
+        }
+    }
+}`}
+  options={["10", "5", "خطأ ترجمة: Invoice غير موجودة", "0"]}
+  correctIndex={2}
+  explanation="Program في المساحة الاسمية Nullbase.App لكنها لم تضف أبداً 'using Nullbase.Payments;'، لذا فإن الاسم غير المؤهَّل Invoice لا يُحَل — لا يستطيع المترجم إيجاد نوع باسم Invoice في النطاق. يجب كتابته كـNullbase.Payments.Invoice، أو استيراد المساحة الاسمية بـusing."
+  actualOutput="Compile error: Invoice not found"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [معالجة الأخطاء](/ar/programming-languages/csharp/error-handling)
+- [البرمجة غير المتزامنة والمهام](/ar/programming-languages/csharp/advanced)

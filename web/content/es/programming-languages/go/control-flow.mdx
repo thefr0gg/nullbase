@@ -1,0 +1,181 @@
+---
+title: Flujo de Control
+description: El if/else de Go, su único bucle for que reemplaza a while y do-while, y las sentencias switch.
+category: Programming Languages
+weight: 3
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Go mantiene el flujo de control deliberadamente mínimo. No hay `while`, no
+hay `do-while`, no hay operador ternario — `for` cubre toda necesidad de
+bucle, y `switch` es más flexible que en la mayoría de los lenguajes de la
+familia C.
+
+## if / else
+
+Las condiciones nunca necesitan paréntesis, pero la llave de apertura debe
+estar en la misma línea que `if` — la gramática de Go depende de la
+inserción automática de punto y coma, y una llave en su propia línea rompe
+eso.
+
+```go
+func classify(score int) string {
+	if score >= 90 {
+		return "A"
+	} else if score >= 80 {
+		return "B"
+	} else {
+		return "F"
+	}
+}
+```
+
+`if` también acepta una sentencia inicializadora, con alcance limitado a la
+cadena `if`/`else` — usada comúnmente para comprobar un error justo donde se
+produce:
+
+```go
+if value, ok := lookup("key"); ok {
+	fmt.Println("found:", value)
+} else {
+	fmt.Println("not found")
+}
+// value y ok no son visibles aquí — solo existen dentro del if/else
+```
+
+## for — el único bucle de Go
+
+Go tiene una única palabra clave de bucle que cubre lo que otros lenguajes
+dividen en `for`, `while`, y bucles infinitos.
+
+Forma clásica de tres partes:
+
+```go
+for i := 0; i < 5; i++ {
+	fmt.Println(i)
+}
+```
+
+Solo condición — este es el `while` de Go:
+
+```go
+n := 1
+for n < 100 {
+	n *= 2
+}
+```
+
+Sin condición en absoluto — un bucle infinito, típicamente combinado con
+`break`:
+
+```go
+count := 0
+for {
+	count++
+	if count == 3 {
+		break
+	}
+}
+```
+
+`for ... range` itera sobre slices, arrays, maps, strings, y channels:
+
+```go
+names := []string{"Ada", "Grace", "Linus"}
+for i, name := range names {
+	fmt.Println(i, name)
+}
+```
+
+## switch
+
+El `switch` de Go no cae por defecto de un caso al siguiente (lo opuesto a
+C/Java), así que rara vez necesitas `break`. Los casos también pueden listar
+múltiples valores u omitir la expresión del switch por completo para actuar
+como una cadena if/else más limpia:
+
+```go
+func describe(n int) string {
+	switch {
+	case n < 0:
+		return "negative"
+	case n == 0:
+		return "zero"
+	case n%2 == 0:
+		return "positive even"
+	default:
+		return "positive odd"
+	}
+}
+```
+
+Usa `fallthrough` explícitamente en la rara ocasión en que quieras que el
+siguiente caso se ejecute de todas formas:
+
+```go
+switch day := "sat"; day {
+case "sat", "sun":
+	fmt.Println("weekend")
+default:
+	fmt.Println("weekday")
+}
+```
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir un bucle for que imprima los números del 0 al 2."
+  items={[
+    { id: "c1", label: "func main() {" },
+    { id: "c2", label: "\tfor i := 0; i < 3; i++ {" },
+    { id: "c3", label: "\t\tfmt.Println(i)", explanation: "El cuerpo del bucle está indentado un nivel más que la sentencia for." },
+    { id: "c4", label: "\t}" },
+    { id: "c5", label: "}" },
+  ]}
+  correctOrder={["c1", "c2", "c3", "c4", "c5"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Ordena estas líneas para construir una cadena if/else-if/else que clasifique una temperatura."
+  items={[
+    { id: "d1", label: "if temp > 30 {" },
+    { id: "d2", label: "\tfmt.Println(\"hot\")" },
+    { id: "d3", label: "} else if temp > 15 {", explanation: "else if debe seguir directamente a la llave de cierre del bloque anterior, en la misma línea." },
+    { id: "d4", label: "\tfmt.Println(\"mild\")" },
+    { id: "d5", label: "} else {" },
+    { id: "d6", label: "\tfmt.Println(\"cold\")" },
+    { id: "d7", label: "}" },
+  ]}
+  correctOrder={["d1", "d2", "d3", "d4", "d5", "d6", "d7"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`package main
+
+import "fmt"
+
+func main() {
+	switch n := 4; {
+	case n%2 == 0:
+		fmt.Println("even")
+	case n%2 != 0:
+		fmt.Println("odd")
+	}
+}`}
+  options={["even", "odd", "even\\nodd", "Compile error: switch needs a value"]}
+  correctIndex={0}
+  explanation={`Un switch sin expresión después de switch (solo una sentencia de inicialización terminada en punto y coma) evalúa cada case como una condición booleana, como una cadena if/else-if. Se detiene en el primer case verdadero y no cae al siguiente, así que solo se imprime "even".`}
+  actualOutput="even"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Sintaxis y Variables](/es/programming-languages/go/syntax-basics)
+- [Funciones](/es/programming-languages/go/functions)

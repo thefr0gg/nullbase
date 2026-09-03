@@ -1,0 +1,27 @@
+---
+title: Paralelismo
+description: Ejecutar realmente más de una cosa en el mismo instante exacto — por qué eso necesita múltiples núcleos, la diferencia entre paralelismo de datos y de tareas, y la Ley de Amdahl sobre por qué más núcleos no siempre significan proporcionalmente más velocidad.
+category: Computer Science
+weight: 9
+---
+
+**Paralelismo** significa que más de una unidad de trabajo se está ejecutando físicamente en el mismo instante exacto, en hardware separado — núcleos de [CPU](/es/computer-science/cpu) separados, máquinas separadas, o los miles de carriles de una [GPU](/es/computer-science/gpu). Esta es la pieza que la [concurrencia](/es/computer-science/concurrency) no requiere: un programa concurrente intercala trabajo y *puede* ejecutarse en paralelo si el hardware lo permite, pero una máquina de un solo núcleo no puede hacer que dos cosas sean paralelas sin importar cómo esté estructurado el software — solo hay un lugar donde las instrucciones pueden ejecutarse realmente.
+
+## Paralelismo de datos frente a paralelismo de tareas
+
+- El **paralelismo de datos** aplica la misma operación a muchas piezas de datos independientes a la vez — redimensionar cada imagen de una carpeta, o las multiplicaciones de matrices detrás del cómputo en [GPU](/es/computer-science/gpu). Como cada pieza es independiente, dividir el trabajo entre núcleos (o carriles de GPU) es casi mecánico.
+- El **paralelismo de tareas** ejecuta operaciones genuinamente *distintas* al mismo tiempo — un núcleo renderizando una interfaz mientras otro maneja una solicitud de red mientras un tercero ejecuta un cálculo en segundo plano. El trabajo no es idéntico entre unidades, así que dividirlo requiere una estructura de programa más deliberada de lo que requiere el paralelismo de datos.
+
+## La Ley de Amdahl
+
+Agregar núcleos no hace que un programa sea proporcionalmente más rápido a menos que *todo* el programa pueda paralelizarse, y la **Ley de Amdahl** cuantifica exactamente cuánto cuesta ese "a menos que": si una fracción `p` del tiempo de ejecución de un programa se puede paralelizar y el resto, `1 − p`, es estrictamente secuencial, la aceleración máxima posible de cualquier número de núcleos es `1 / (1 − p)`. Un programa que es 90% paralelizable topa en una aceleración de 10x sin importar cuántos núcleos le lances, porque ese 10% restante todavía tiene que ejecutarse en un solo núcleo, en orden, sin importar qué más esté disponible. Esta es la razón teórica por la que "simplemente agrega más núcleos" tiene rendimientos decrecientes, y por qué identificar y reducir el cuello de botella secuencial de un programa normalmente importa más que la cantidad bruta de núcleos una vez que has pasado de un puñado de núcleos.
+
+## Dónde vive realmente la dificultad
+
+Dividir trabajo independiente entre núcleos es la mitad fácil de la programación paralela; la mitad difícil es todo lo que la [concurrencia](/es/computer-science/concurrency) ya cubre — estado compartido, condiciones de carrera, locking — excepto que ahora es genuinamente simultáneo en lugar de meramente intercalado, lo cual elimina la opción de razonar "solo uno de estos se está ejecutando realmente a la vez" como suposición simplificadora. Una condición de carrera que solo aparecía ocasionalmente bajo concurrencia intercalada puede convertirse en el caso común una vez que los dos hilos involucrados realmente se están ejecutando a la vez en núcleos separados.
+
+## Ver también
+
+- **[Concurrencia](/es/computer-science/concurrency)** — la mitad de estructura de programa de "más de una cosa a la vez", distinta de ejecutarlas realmente de forma simultánea.
+- **[CPU](/es/computer-science/cpu)** y **[GPU](/es/computer-science/gpu)** — las dos formas de hardware sobre las que realmente se ejecuta el trabajo paralelo, construidas para el paralelismo de tareas y de datos respectivamente.
+- **[Sistemas Distribuidos](/es/computer-science/distributed-systems)** — el paralelismo llevado más allá de los núcleos de una sola máquina, a máquinas separadas conectadas por una red.

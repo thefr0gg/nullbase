@@ -1,0 +1,130 @@
+---
+title: C#
+description: نظرة عامة على C#، اللغة ثابتة الأنواع كائنية التوجه التي تقف خلف .NET وASP.NET Core وUnity.
+category: Programming Languages
+weight: 1
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+C# (تُنطَق "سي شارب") لغة ثابتة الأنواع كائنية التوجه
+أنشأتها مايكروسوفت عام 2000، بقيادة أندرس هيلسبرغ (الذي صمم أيضاً
+TypeScript لاحقاً). تعمل على .NET، بيئة تشغيل مُدارة بنموذج
+ذاكرة مُجمَّعة القمامة، ومترجم فوري (وبشكل متزايد مسبق)، ومكتبة قياسية
+ضخمة. نمت C# منذ ذلك الحين إلى ما وراء ويندوز بكثير: .NET
+الحديثة عابرة للمنصات، ومفتوحة المصدر، وتشغّل أحمال عمل إنتاجية على حاويات
+لينكس، وفي ألعاب Unity، وعلى الجوال عبر .NET MAUI.
+
+بدأت C# كابنة عم قريبة لـ Java، لكن اللغتين تباعدتا سريعاً.
+أضافت C# الأنواع العامة (generics) بدعم حقيقي في وقت التشغيل، والخصائص
+(properties) كبنية لغوية أصيلة، وLINQ (بنية استعلام مدمجة في اللغة)،
+ومؤخراً أكثر، `async`/`await` للكود غير المتزامن، وأنواع المراجع القابلة
+للإفراغ (nullable reference types) لالتقاط أخطاء ذات صلة بـnull في وقت
+الترجمة، ومطابقة الأنماط التي تستمر بالتوسع مع كل إصدار.
+
+## ما يميّز C#
+
+- **الخصائص، لا الحقول فحسب.** تدمج C# بنية getter/setter في اللغة نفسها
+  (`public int Age { get; set; }`)، لذا لا يتطلب التغليف كتابة
+  `getAge()`/`setAge()` نمطية.
+- **`async`/`await` كبنية أصيلة.** يُقرأ الكود غير المتزامن وغير المُعطِّل
+  مثل الكود المتزامن، مدعوماً بـ`Task` و`Task<T>`.
+- **أنواع عامة قوية.** بخلاف الأنواع العامة في Java التي تُمحى نوعيتها،
+  تُجسَّد أنواع C# العامة في وقت التشغيل، ما يجعلها أسرع ويتيح لك فعل
+  أشياء مثل `typeof(T)` داخل تابع عام.
+- **LINQ.** استعلم عن المجموعات وحوّلها ببنية شبيهة بـSQL أو بسلاسل توابع
+  انسيابية (`.Where(...)`، و`.Select(...)`) مدمجة مباشرة في اللغة والمكتبة
+  القياسية.
+- **أنواع المراجع القابلة للإفراغ.** منذ C# 8، يستطيع المترجم تحذيرك في
+  وقت الترجمة عندما يمكن لمرجع لا يُفترض أن يكون `null` أن يكونه.
+
+إليك برنامج C# بسيط ومكتمل:
+
+```csharp
+Console.WriteLine("Hello, nullbase!");
+```
+
+لا تتطلب C# الحديثة (منذ العبارات على المستوى الأعلى في C# 9) غلاف
+`class` و`Main` للبرامج البسيطة — يُولّد المترجم واحداً لك خلف
+الكواليس. لا يزال الكود الأقدم، ومعظم المشاريع الواقعية، يكتبه صراحة:
+
+```csharp
+using System;
+
+namespace HelloWorld
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            Console.WriteLine("Hello, nullbase!");
+        }
+    }
+}
+```
+
+## متى تختار C#
+
+C# هي الخيار الافتراضي لواجهات برمجة تطبيقات الويب وخلفيات ASP.NET Core،
+وبرمجيات سطح مكتب ويندوز والمهام التجارية للمؤسسات، و — عبر محرك ألعاب
+Unity — حصة ضخمة من الألعاب التجارية. مزيجها من الأداء، وأمان الذاكرة،
+ومكتبة قياسية غنية يجعلها خياراً عاماً قوياً في أي مكان قد يُنظَر فيه
+لبيئة JVM بدلاً منها.
+
+## ما القادم
+
+تشرح الصفحات التالية C# من البنية إلى البرمجة غير المتزامنة:
+المتغيرات والأنواع، والتحكم بمسار التنفيذ، والتوابع، وهياكل البيانات
+المدمجة، والأصناف والواجهات، ومعالجة الأخطاء، ونظام المساحات
+الاسمية/الحزم، وتنتهي بـ`async`/`await` و`Task`.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="اجمع الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء برنامج طرفية C# بسيط وعامل يطبع تحية."
+  items={[
+    { id: "using", label: "using System;" },
+    { id: "ns", label: "namespace HelloWorld" },
+    { id: "nsopen", label: "{" },
+    { id: "class", label: "    class Program" },
+    { id: "classopen", label: "    {" },
+    { id: "main", label: "        static void Main(string[] args)" },
+    { id: "mainopen", label: "        {" },
+    { id: "print", label: "            Console.WriteLine(\"Hello, C#\");" },
+    { id: "mainclose", label: "        }" },
+    { id: "classclose", label: "    }" },
+    { id: "nsclose", label: "}" },
+  ]}
+  correctOrder={["using", "ns", "nsopen", "class", "classopen", "main", "mainopen", "print", "mainclose", "classclose", "nsclose"]}
+/>
+
+<OrderingExercise
+  title="اجمع الكود"
+  prompt="ضع هذه الأسطر بالترتيب لبناء برنامج عبارات على المستوى الأعلى (C# 9+) يصرّح عن ثابت ويطبعه."
+  items={[
+    { id: "using2", label: "using System;" },
+    { id: "const2", label: "const string version = \"1.0\";", explanation: "تعمل العبارات على المستوى الأعلى بالترتيب، من الأعلى إلى الأسفل، بعد توجيهات using." },
+    { id: "print2", label: "Console.WriteLine(version);" },
+  ]}
+  correctOrder={["using2", "const2", "print2"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا؟"
+  code={`using System;
+
+Console.WriteLine("nullbase");`}
+  options={["nullbase", "\"nullbase\"", "خطأ ترجمة: Main مفقودة", "Hello, nullbase!"]}
+  correctIndex={0}
+  explanation="تطبع Console.WriteLine محتوى السلسلة النصية دون علامتَي الاقتباس المحيطتين، متبوعاً بسطر جديد. تتيح العبارات على المستوى الأعلى (C# 9+) لملف تجاوز غلاف class/Main الصريح كلياً — لا يزال المترجم يولّد واحداً."
+  actualOutput="nullbase"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [بنية اللغة والمتغيرات](/ar/programming-languages/csharp/syntax-basics)
+- [البرمجة غير المتزامنة والمهام](/ar/programming-languages/csharp/advanced)

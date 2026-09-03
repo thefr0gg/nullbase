@@ -1,0 +1,155 @@
+---
+title: هياكل البيانات
+description: مصفوفات C والسلاسل النصية المدمجة، وكيفية دمجها مع البُنى (structs) والمؤشرات لبناء هياكل بيانات أكبر مثل القوائم المترابطة.
+category: Programming Languages
+weight: 5
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+لا تشحن مكتبة C القياسية أي هياكل بيانات تقريباً — لا قائمة مدمجة، ولا خريطة، ولا مصفوفة ديناميكية مثل `list` في Python أو `Array` في JavaScript. ما تمنحك إياه بدلاً من ذلك هو مصفوفات ثابتة الحجم وذاكرة خام، وكل ما هو أغنى (المصفوفات الديناميكية، والقوائم المترابطة، وخرائط التجزئة) هو شيء تبنيه بنفسك من مصفوفات وبُنى ومؤشرات، أو تستورده من مكتبة خارجية.
+
+## المصفوفات
+
+المصفوفة في C كتلة ذاكرة متجاورة ثابتة الحجم تحمل عناصر من نوع واحد — يجب معرفة حجمها في وقت الترجمة (أو توفيره عند التخصيص الديناميكي) ولا تنمو أبداً:
+
+```c
+#include <stdio.h>
+
+int main(void) {
+    int scores[5] = {90, 85, 77, 92, 88};
+
+    int total = 0;
+    for (int i = 0; i < 5; i++) {
+        total += scores[i];
+    }
+
+    printf("average: %.1f\n", total / 5.0);
+
+    int grid[2][3] = {{1, 2, 3}, {4, 5, 6}}; /* a 2D array is an array of arrays */
+    printf("grid[1][2] = %d\n", grid[1][2]);
+
+    return 0;
+}
+```
+
+الأهم أن C **لا تفحص الحدود** أبداً: تُترجَم `scores[10]` بلا مشكلة وتقرأ أياً كانت الذاكرة الموجودة بعد نهاية المصفوفة، وهذا سلوك غير معرَّف — قد ينهار، وقد يقرأ قيماً عشوائية بصمت، وقد يبدو أنه يعمل حتى اليوم الذي يتوقف فيه.
+
+## السلاسل النصية مجرد مصفوفات char
+
+لا تملك C نوعاً مخصصاً للسلاسل النصية. "السلسلة النصية" مصفوفة `char` تنتهي ببايت `'\0'` فارغ، وتعتمد جميع دوال السلاسل النصية في المكتبة القياسية (في `<string.h>`) على إيجاد ذلك المنتهي:
+
+```c
+#include <stdio.h>
+#include <string.h>
+
+int main(void) {
+    char name[20] = "Ada"; /* the compiler adds the '\0' terminator automatically */
+
+    printf("length: %zu\n", strlen(name)); /* 3, not counting the '\0' */
+
+    strcat(name, " Lovelace"); /* appends onto the existing buffer */
+    printf("name: %s\n", name);
+
+    if (strcmp(name, "Ada Lovelace") == 0) { /* strcmp, not == */
+        printf("matched\n");
+    }
+
+    return 0;
+}
+```
+
+تقارن `==` بين قيمتَي `char*` *المؤشرات* (عناوين الذاكرة)، لا محتوى السلاسل النصية — خطأ كلاسيكي للمبتدئين — وهذا سبب احتياج مقارنة محتوى السلاسل النصية إلى `strcmp` دائماً. لا تتحقق `strcat` والدوال المشابهة أيضاً من أن مخزن الوجهة كبير بما يكفي، لذا فإن كتابة حروف أكثر مما يتسع له المخزن تُفسد الذاكرة المجاورة بصمت (**فيض المخزن المؤقت**).
+
+## بناء قائمة مترابطة باستخدام البُنى والمؤشرات
+
+بعيداً عن المصفوفات، تُبنى هياكل بيانات C بدمج `struct` (لتجميع الحقول المرتبطة) مع المؤشرات (لربط العُقد ببعضها):
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+struct Node {
+    int value;
+    struct Node *next; /* a struct can point to another instance of itself */
+};
+
+int main(void) {
+    struct Node *head = malloc(sizeof(struct Node));
+    head->value = 10;
+    head->next = malloc(sizeof(struct Node));
+    head->next->value = 20;
+    head->next->next = NULL; /* marks the end of the list */
+
+    for (struct Node *cur = head; cur != NULL; cur = cur->next) {
+        printf("%d -> ", cur->value);
+    }
+    printf("NULL\n");
+
+    /* every malloc needs a matching free, walked node by node */
+    struct Node *cur = head;
+    while (cur != NULL) {
+        struct Node *next = cur->next;
+        free(cur);
+        cur = next;
+    }
+
+    return 0;
+}
+```
+
+`head->value` اختصار لـ `(*head).value` — فكّك المؤشر، ثم ادخل إلى الحقل. هذا النمط للقائمة المترابطة (بُنية تحمل مؤشراً إلى بُنية أخرى من النوع نفسه) هو أساس كل هيكل بيانات C يُبنى يدوياً تقريباً: القوائم المترابطة، والأشجار، والرسوم البيانية تتبعه جميعاً. تغطي صفحة [البُنى والدوال](/ar/programming-languages/c/oop-or-structs) `struct` نفسها بتعمق أكبر.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="اجمع مجموع مصفوفة"
+  prompt="اسحب هذه الأسطر إلى الترتيب الذي يصرّح عن مصفوفة، ويجمع عناصرها، ويطبع النتيجة."
+  items={[
+    { id: "decl", label: "int nums[4] = {2, 4, 6, 8};" },
+    { id: "total", label: "int total = 0;", explanation: "يجب تهيئة المُجمِّع إلى 0 قبل أن تضيف الحلقة إليه." },
+    { id: "for", label: "for (int i = 0; i < 4; i++) {" },
+    { id: "add", label: "    total += nums[i];" },
+    { id: "close", label: "}" },
+    { id: "print", label: "printf(\"%d\\n\", total);" },
+  ]}
+  correctOrder={["decl", "total", "for", "add", "close", "print"]}
+/>
+
+<OrderingExercise
+  title="رتّب مقارنة صحيحة للسلاسل النصية"
+  prompt="اسحب هذه الأسطر إلى الترتيب الذي يتحقق بأمان مما إذا كانت سلسلتان نصيتان تحملان النص نفسه."
+  items={[
+    { id: "include", label: "#include <string.h>" },
+    { id: "decl", label: "char a[] = \"cat\", b[] = \"cat\";" },
+    { id: "if", label: "if (strcmp(a, b) == 0) {", explanation: "تقارن strcmp الأحرف، وتُرجع 0 للسلاسل النصية المتساوية — استخدام == هنا يقارن عناوين المصفوفات بدلاً من ذلك، وهو خاطئ في الغالب دائماً." },
+    { id: "print", label: "    printf(\"equal\\n\");" },
+    { id: "close", label: "}" },
+  ]}
+  correctOrder={["include", "decl", "if", "print", "close"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا؟"
+  code={`#include <stdio.h>
+#include <string.h>
+
+int main(void) {
+    char a[] = "cat";
+    char b[] = "cat";
+    printf("%d %d\\n", a == b, strcmp(a, b) == 0);
+    return 0;
+}`}
+  options={["1 1", "0 1", "1 0", "0 0"]}
+  correctIndex={1}
+  explanation="a وb مصفوفتان منفصلتان تعيشان في عنوانَي ذاكرة مختلفَين، لذا فإن a == b تقارن تلك العناوين وتكون خاطئة (0) رغم أن الأحرف التي تحملانها متطابقة. تفحص strcmp المحتوى فعلياً وتُبلغ بشكل صحيح أنهما متساويتان، مُرجِعةً 0، لذا فإن strcmp(a, b) == 0 صحيحة (1)."
+  actualOutput="0 1"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- **[البُنى والدوال](/ar/programming-languages/c/oop-or-structs)** — نظرة أقرب على struct نفسها، المستخدَمة هنا لبناء القائمة المترابطة.
+- **[المؤشرات والذاكرة](/ar/programming-languages/c/advanced)** — malloc وfree وآليات المؤشرات التي تعتمد عليها هذه الصفحة.

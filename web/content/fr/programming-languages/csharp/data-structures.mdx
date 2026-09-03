@@ -1,0 +1,147 @@
+---
+title: Structures de données
+description: Tableaux, List<T>, et Dictionary<TKey, TValue> — les types de collection intégrés fondamentaux de C#.
+category: Programming Languages
+weight: 5
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+C# fournit un petit ensemble de types de collection qui couvrent la plupart
+des besoins quotidiens : les tableaux de taille fixe, le `List<T>`
+redimensionnable, et le `Dictionary<TKey, TValue>` clé-valeur. Les trois sont
+génériques, donc ils sont sûrs quant aux types sans transtypage.
+
+## Tableaux
+
+Les tableaux ont une taille fixe une fois créés et sont indexés à partir de
+zéro :
+
+```csharp
+int[] numbers = { 1, 2, 3, 4, 5 };
+Console.WriteLine(numbers.Length); // 5
+Console.WriteLine(numbers[0]);     // 1
+
+numbers[0] = 100;
+
+int[] empty = new int[3]; // [0, 0, 0] — value types default to their zero value
+
+int[,] grid = new int[2, 3]; // a 2D array, 2 rows by 3 columns
+grid[0, 1] = 7;
+```
+
+Comme les tableaux ne peuvent ni grandir ni rétrécir, la plupart du code qui
+a besoin d'une collection de taille dynamique se tourne plutôt vers
+`List<T>`.
+
+## List\<T\>
+
+`List<T>` est une collection ordonnée et redimensionnable — le cheval de
+bataille quotidien pour les séquences d'éléments :
+
+```csharp
+using System.Collections.Generic;
+using System.Linq;
+
+List<string> names = new List<string> { "Ada", "Grace" };
+names.Add("Alan");
+names.Remove("Grace");
+
+Console.WriteLine(names.Count);    // 2
+Console.WriteLine(names[0]);       // Ada
+Console.WriteLine(names.Contains("Alan")); // True
+
+foreach (string name in names)
+{
+    Console.WriteLine(name);
+}
+
+// LINQ works directly on List<T> and most other collections
+List<int> evens = new List<int> { 1, 2, 3, 4, 5, 6 }
+    .Where(n => n % 2 == 0)
+    .ToList();
+```
+
+## Dictionary\<TKey, TValue\>
+
+`Dictionary<TKey, TValue>` stocke des paires clé-valeur avec une recherche
+rapide par clé :
+
+```csharp
+using System.Collections.Generic;
+
+Dictionary<string, int> ages = new Dictionary<string, int>
+{
+    ["Ada"] = 36,
+    ["Grace"] = 85,
+};
+
+ages["Alan"] = 41; // adds a new key
+ages["Ada"] = 37;  // updates an existing key
+
+if (ages.TryGetValue("Grace", out int graceAge))
+{
+    Console.WriteLine(graceAge); // 85
+}
+
+foreach (KeyValuePair<string, int> pair in ages)
+{
+    Console.WriteLine($"{pair.Key} is {pair.Value}");
+}
+
+Console.WriteLine(ages.ContainsKey("Nobody")); // False
+```
+
+`TryGetValue` est la façon idiomatique de rechercher une clé qui pourrait ne
+pas exister — indexer avec `ages["Nobody"]` sur une clé manquante lève une
+`KeyNotFoundException` au lieu de retourner `null` ou une valeur par défaut.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Faites glisser les lignes dans le bon ordre pour construire une List<int>, ajouter un élément, et afficher son nombre d'éléments."
+  items={[
+    { id: "l1", label: "List<int> numbers = new List<int> { 1, 2, 3 };" },
+    { id: "l2", label: "numbers.Add(4);" },
+    { id: "l3", label: "Console.WriteLine(numbers.Count);" },
+  ]}
+  correctOrder={["l1", "l2", "l3"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Mettez ces lignes dans l'ordre pour construire un Dictionary, rechercher une clé en toute sécurité avec TryGetValue, et afficher le résultat."
+  items={[
+    { id: "m1", label: "Dictionary<string, int> scores = new Dictionary<string, int> { [\"Sam\"] = 10 };" },
+    { id: "m2", label: "if (scores.TryGetValue(\"Sam\", out int score))" , explanation: "TryGetValue retourne un bool et produit la valeur via un paramètre out, évitant une exception sur une clé manquante."},
+    { id: "m3", label: "{" },
+    { id: "m4", label: "    Console.WriteLine(score);" },
+    { id: "m5", label: "}" },
+  ]}
+  correctOrder={["m1", "m2", "m3", "m4", "m5"]}
+/>
+
+<PredictOutput
+  title="Qu'affiche ceci ?"
+  code={`int[] fixedArr = new int[3];
+List<int> dynamicList = new List<int>();
+
+fixedArr[0] = 1;
+dynamicList.Add(1);
+dynamicList.Add(2);
+
+Console.WriteLine(fixedArr.Length + " " + dynamicList.Count);`}
+  options={["0 2", "3 2", "3 0", "Compile error"]}
+  correctIndex={1}
+  explanation="fixedArr.Length est fixé à la création à 3, peu importe combien d'éléments ont réellement été assignés — les tableaux ne suivent pas de « compte » séparé. dynamicList.Count reflète les deux éléments réellement ajoutés."
+  actualOutput="3 2"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Méthodes](/fr/programming-languages/csharp/functions)
+- [Classes et interfaces](/fr/programming-languages/csharp/oop-or-structs)

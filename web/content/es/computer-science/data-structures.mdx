@@ -1,0 +1,34 @@
+---
+title: Estructuras de Datos
+description: El puñado de formas de organizar datos en memoria — arrays, listas enlazadas, mapas hash, árboles y grafos — y los patrones de acceso y las compensaciones para las que está realmente construida cada una.
+category: Computer Science
+weight: 2
+---
+
+Una **estructura de datos** es una forma de organizar datos para que operaciones específicas — búsqueda, inserción, eliminación, iteración en orden — sean baratas. No existe una única mejor estructura; cada una intercambia la velocidad de una operación por la de otra, y elegir entre ellas es diseño de [algoritmos](/es/computer-science/algorithms) aplicado al almacenamiento en lugar de a la computación.
+
+## Arrays y listas enlazadas
+
+Un **array** almacena elementos de forma contigua en memoria, así que indexar por posición es O(1) — la dirección del elemento `i` es simplemente la dirección base más `i` veces el tamaño del elemento. La inserción o eliminación en el medio es O(n), sin embargo, ya que todo lo que viene después tiene que desplazarse. Una **lista enlazada** almacena elementos como nodos separados, cada uno apuntando al siguiente; la inserción y eliminación en una posición conocida son O(1) ya que solo cambian punteros, pero indexar por posición es O(n) ya que no hay atajo más que recorrer la cadena. Los arrays ganan cuando principalmente lees por índice; las listas enlazadas ganan cuando principalmente insertas y eliminas en puntos conocidos y rara vez necesitas acceso arbitrario.
+
+## Mapas hash
+
+Un **mapa hash** (o tabla hash) almacena pares clave-valor pasando cada clave por una función hash para elegir un "bucket", dando lookup, inserción y eliminación O(1) en promedio sin importar cuántas entradas existan. El costo es que las entradas no tienen un orden inherente, y una mala función hash o demasiadas entradas en un mismo bucket (una **colisión**) degrada hacia O(n) en el peor caso. Esta es la estructura detrás de los tipos objeto/diccionario en casi todos los lenguajes, y detrás de los tipos de índice de base de datos construidos para búsquedas de coincidencia exacta.
+
+## Árboles
+
+Un **árbol** organiza datos jerárquicamente — cada nodo tiene un padre y cierto número de hijos, con una sola raíz y sin ciclos. Un **árbol binario de búsqueda** mantiene cada descendiente izquierdo más pequeño y cada descendiente derecho más grande que su padre, dando búsqueda, inserción y eliminación O(log n) — *si* el árbol se mantiene razonablemente equilibrado; un orden de inserción desafortunado puede degradar un BST ingenuo a una lista enlazada (O(n)). Las variantes autoequilibradas (árboles rojo-negro, árboles AVL) imponen el equilibrio en cada inserción/eliminación para garantizar que O(log n) siga siendo cierto, que es por lo que son lo que usan por debajo los índices de bases de datos reales (B-trees, un pariente ancho y amigable con el disco) y los mapas ordenados de las bibliotecas estándar de los lenguajes.
+
+## Grafos
+
+Un **grafo** son nodos conectados por aristas, sin la restricción de un único padre que tiene un árbol — es la estructura correcta siempre que las relaciones no sean estrictamente jerárquicas: una red social, un mapa de carreteras, un grafo de dependencias entre paquetes u objetivos de compilación. Los grafos normalmente se representan como una **lista de adyacencia** (cada nodo mantiene una lista de sus vecinos — compacta para grafos dispersos) o una **matriz de adyacencia** (una tabla n×n de qué pares están conectados — búsqueda de arista O(1), pero espacio O(n²) incluso cuando la mayoría de los pares no están conectados).
+
+## Elegir una
+
+La pregunta es siempre "qué operación ocurre con más frecuencia, y qué puedo permitirme que sea lenta en su lugar": una caché quiere búsqueda O(1) por clave (mapa hash), una cola de prioridad quiere acceso rápido al mínimo/máximo actual (un heap, un árbol especializado), un conjunto de datos ordenado que cambia con frecuencia quiere inserción O(log n) manteniéndose ordenado (un árbol equilibrado) en lugar de un array que necesitaría un desplazamiento O(n) en cada inserción.
+
+## Ver también
+
+- **[Algoritmos](/es/computer-science/algorithms)** — la notación de complejidad usada a lo largo de esta página.
+- **[Bases de datos](/es/databases)** — los índices B-tree y los índices hash son estas estructuras aplicadas directamente al rendimiento de las consultas.
+- **[Memoria](/es/computer-science/memory)** — por qué el diseño contiguo (array) suele ser más rápido en la práctica de lo que su Big O por sí solo sugeriría, gracias a la caché de la CPU.

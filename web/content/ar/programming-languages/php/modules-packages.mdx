@@ -1,0 +1,152 @@
+---
+title: المساحات الاسمية وComposer
+description: require/include لتضمين الملفات، ومساحات أسماء PHP لتنظيم الكود، وComposer/composer.json بوصفه مدير الحزم المعتمد فعلياً.
+category: Programming Languages
+weight: 8
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تملك قصة الوحدات في PHP طبقتين يسهل خلطهما في البداية: جمل تضمين الملفات منخفضة المستوى (`require`/`include`)، الموجودة في اللغة منذ البداية، والمساحات الاسمية بالإضافة إلى Composer، التي وصلت لاحقاً وتشكّل الآن العمود الفقري لكيفية تنظيم كود PHP الحديث ومشاركته فعلياً.
+
+## require وinclude
+
+تسحب هذه الجمل كود ملف PHP آخر إلى الملف الحالي، بشكل يشبه تقريباً `#include` في C لكنه يُقيَّم أثناء التشغيل، وليس أثناء الترجمة:
+
+```php
+<?php
+// math.php
+function square(int $n): int {
+    return $n * $n;
+}
+```
+
+```php
+<?php
+require "math.php";
+
+echo square(5) . "\n"; // 25
+```
+
+تُطلق `require` خطأً فادحاً إذا كان الملف مفقوداً؛ بينما تُطلق `include` تحذيراً فقط وتترك السكربت يستمر. تضيف `require_once`/`include_once` فحصاً يتخطى إعادة تضمين ملف مُحمَّل بالفعل — مهم لتجنب أخطاء "الدالة معرَّفة مسبقاً" عندما قد تسحب ملفات متعددة نفس الاعتمادية.
+
+```php
+<?php
+require_once "math.php";
+require_once "math.php"; // silently skipped, already loaded
+```
+
+عملياً، نادراً ما تكتب مشاريع PHP الحديثة `require` يدوياً لكودها الخاص — يجعل محمّل التحميل التلقائي لـ Composer (أدناه) ذلك غير ضروري — لكنه لا يزال بالضبط ما يعمل تحت الغطاء.
+
+## المساحات الاسمية
+
+تجمع `namespace` الفئات/الدوال/الثوابت المرتبطة تحت بادئة مشتركة، ما يمنع تصادم الأسماء بين كودك وكود مكتبة (أو بين مكتبتين) بالطريقة التي تفعلها حزم Java أو مساحات أسماء C++:
+
+```php
+<?php
+// src/Billing/Invoice.php
+namespace App\Billing;
+
+class Invoice {
+    public function __construct(public float $amount) {}
+}
+```
+
+```php
+<?php
+require "src/Billing/Invoice.php";
+
+use App\Billing\Invoice;
+
+$invoice = new Invoice(150.0);
+echo $invoice->amount . "\n"; // 150
+```
+
+تستورد `use` اسماً ذا مساحة اسمية بحيث يمكنك الإشارة إليه دون تأهيل؛ بدونها، كان عليك كتابة `App\Billing\Invoice` كاملاً في كل مرة.
+
+## Composer وcomposer.json
+
+Composer هو مدير الاعتماديات المعتمد فعلياً في PHP — تفترضه تقريباً كل مشاريع PHP الحديثة، وكل إطار عمل رئيسي (Laravel، Symfony). يعلن المشروع اعتمادياته في `composer.json`:
+
+```json
+{
+    "name": "acme/billing-app",
+    "require": {
+        "php": ">=8.2",
+        "monolog/monolog": "^3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    }
+}
+```
+
+يضيف `composer require monolog/monolog` اعتمادية ويحدّث هذا الملف تلقائياً؛ ويقرأ `composer install` هذا الملف (وملف القفل، `composer.lock`) ويحمّل إصدارات دقيقة وقابلة لإعادة الإنتاج إلى `vendor/`.
+
+قسم `autoload` هو ما يحل محل استدعاءات `require` اليدوية: يولّد Composer **محمّل تحميل تلقائي وفق PSR-4** يربط بادئة مساحة اسمية بدليل، بحيث تُحمَّل الفئات عند الطلب في أول مرة يُشار إليها فيها:
+
+```php
+<?php
+require "vendor/autoload.php"; // the one require you still write by hand
+
+use App\Billing\Invoice;
+use Monolog\Logger;
+
+$invoice = new Invoice(200.0);
+$logger = new Logger("billing");
+```
+
+بذلك السطر الوحيد `require "vendor/autoload.php"`، تصبح فئاتك الخاصة ذات المساحة الاسمية تحت `src/` وكل حزمة Composer مثبَّتة متاحة دون أي تضمينات يدوية أخرى.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لتعريف فئة ذات مساحة اسمية واستخدامها من ملف آخر."
+  items={[
+    { id: "m1", label: "<?php" },
+    { id: "m2", label: "namespace App\\Reports;" },
+    { id: "m3", label: "class Summary {", explanation: "يجب أن يكون تصريح مساحة الاسم أول جملة في الملف، قبل أي فئة." },
+    { id: "m4", label: "    public function __construct(public string $title) {}" },
+    { id: "m5", label: "}" },
+  ]}
+  correctOrder={["m1", "m2", "m3", "m4", "m5"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="رتّب هذه الأسطر لتحميل محمّل التحميل التلقائي لـ Composer واستخدام فئة من حزمة مثبَّتة."
+  items={[
+    { id: "n1", label: "<?php" },
+    { id: "n2", label: 'require "vendor/autoload.php";', explanation: "يجب تضمين محمّل التحميل التلقائي قبل إمكانية حل أي فئة ذات مساحة اسمية من vendor/." },
+    { id: "n3", label: "use Monolog\\Logger;" },
+    { id: "n4", label: 'use Monolog\\Handler\\StreamHandler;' },
+    { id: "n5", label: '$logger = new Logger("app");' },
+    { id: "n6", label: '$logger->pushHandler(new StreamHandler("php://stdout"));' },
+  ]}
+  correctOrder={["n1", "n2", "n3", "n4", "n5", "n6"]}
+/>
+
+<PredictOutput
+  title="ماذا تطبع هذه الشيفرة؟"
+  code={`<?php
+// loaded twice on purpose
+require_once "math.php";
+require_once "math.php";
+
+echo square(4);`}
+  options={["16", "Fatal error: cannot redeclare square()", "1616", "16 (printed twice)"]}
+  correctIndex={0}
+  explanation="تتبّع require_once أي الملفات ضُمّنت بالفعل وتتخطى بصمت طلباً متكرراً لنفس الملف، بخلاف require العادية التي كانت ستعيد تنفيذ الملف وتسبب خطأ فادحاً 'لا يمكن إعادة تعريف الدالة' في المرة الثانية."
+  actualOutput="16"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [معالجة الأخطاء](/ar/programming-languages/php/error-handling)
+- [المولّدات وأنماط البرمجة غير المتزامنة](/ar/programming-languages/php/advanced)

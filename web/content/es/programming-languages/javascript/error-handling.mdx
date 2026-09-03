@@ -1,0 +1,178 @@
+---
+title: Manejo de Errores
+description: try/catch/finally, lanzar valores, y construir subclases personalizadas de Error en JavaScript.
+category: Programming Languages
+weight: 7
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+JavaScript maneja los errores con excepciones: `throw` lanza una, y
+`try`/`catch`/`finally` la maneja. A diferencia de algunos lenguajes,
+JavaScript te deja `throw` cualquier valor en absoluto — una cadena, un
+número, un objeto simple — pero en la práctica siempre deberías lanzar un
+`Error` (o una subclase suya), porque los objetos `Error` capturan un stack
+trace en el momento en que se crean, lo cual es invaluable para depurar.
+
+## try/catch/finally
+
+```js
+function parseConfig(json) {
+  try {
+    return JSON.parse(json);
+  } catch (err) {
+    console.error("Invalid config JSON:", err.message);
+    return {};
+  } finally {
+    console.log("Parse attempt finished.");
+  }
+}
+
+console.log(parseConfig('{"port": 8080}')); // { port: 8080 }
+console.log(parseConfig("not json"));         // registra el error, devuelve {}
+```
+
+`finally` se ejecuta ocurra o no un error, y ya sea que el bloque `try` o
+`catch` haya retornado antes de tiempo o no — es el lugar correcto para
+limpieza que tiene que ocurrir de todas formas, como cerrar una conexión o
+limpiar un flag de carga.
+
+```js
+function withLogging(fn) {
+  console.log("starting");
+  try {
+    return fn();
+  } finally {
+    console.log("done"); // se ejecuta aunque el bloque try retorne arriba
+  }
+}
+
+withLogging(() => 42);
+// starting
+// done
+```
+
+## Subclases personalizadas de Error
+
+Extender la clase integrada `Error` te permite adjuntar datos adicionales a
+un error y permite a quien lo captura distinguir tipos de error con
+`instanceof`, en vez de analizar mensajes de error como cadenas.
+
+```js
+class ValidationError extends Error {
+  constructor(message, field) {
+    super(message);
+    this.name = "ValidationError"; // aparece en stack traces y logs
+    this.field = field;
+  }
+}
+
+function validateAge(age) {
+  if (typeof age !== "number" || age < 0) {
+    throw new ValidationError("Age must be a non-negative number", "age");
+  }
+  return age;
+}
+
+try {
+  validateAge(-5);
+} catch (err) {
+  if (err instanceof ValidationError) {
+    console.log(`${err.name}: ${err.message} (field: ${err.field})`);
+  } else {
+    throw err; // no es nuestro — deja que se propague en vez de silenciarlo
+  }
+}
+// ValidationError: Age must be a non-negative number (field: age)
+```
+
+Volver a lanzar errores no reconocidos desde un bloque `catch` — en vez de
+silenciarlo todo — es importante: un `catch` que no comprueba qué capturó
+puede ocultar bugs reales (un `TypeError` por un error tipográfico, digamos)
+detrás de cualquier manejo genérico que escribiste para el error que
+esperabas.
+
+## Errores y código async
+
+`try`/`catch` también funciona alrededor de Promises rechazadas a las que
+se les hizo `await`, lo cual es una de las mayores ventajas ergonómicas de
+`async`/`await` sobre las cadenas `.then()`/`.catch()` puras:
+
+```js
+async function fetchUser(id) {
+  try {
+    const response = await fetch(`/api/users/${id}`);
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}`);
+    }
+    return await response.json();
+  } catch (err) {
+    console.error("Could not fetch user:", err.message);
+    return null;
+  }
+}
+```
+
+Una cadena `.then()` simple necesita un `.catch()` al final para manejar
+los rechazos; olvidar uno deja que una Promise rechazada desaparezca
+silenciosamente (o dispare una advertencia de "unhandled rejection") en vez
+de ser manejada en absoluto.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir un bloque try/catch/finally alrededor de un parseo de JSON riesgoso."
+  items={[
+    { id: "tryOpen", label: "try {" },
+    { id: "parse", label: "  const data = JSON.parse(input);" },
+    { id: "return", label: "  console.log(data);" },
+    { id: "catchOpen", label: "} catch (err) {" },
+    { id: "catchBody", label: "  console.error(\"Parse failed:\", err.message);" },
+    { id: "finallyOpen", label: "} finally {" },
+    { id: "finallyBody", label: "  console.log(\"attempt complete\");" },
+    { id: "close", label: "}" },
+  ]}
+  correctOrder={["tryOpen", "parse", "return", "catchOpen", "catchBody", "finallyOpen", "finallyBody", "close"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Ordena estas líneas para definir una subclase personalizada de Error y lanzar una instancia de ella."
+  items={[
+    { id: "classOpen", label: "class NotFoundError extends Error {" },
+    { id: "ctorOpen", label: "  constructor(resource) {" },
+    { id: "superCall", label: "    super(`${resource} was not found`);", explanation: "super() debe ejecutarse primero para que la clase base Error pueda configurar el mensaje y el stack trace." },
+    { id: "name", label: "    this.name = \"NotFoundError\";" },
+    { id: "ctorClose", label: "  }" },
+    { id: "classClose", label: "}" },
+    { id: "throwLine", label: "throw new NotFoundError(\"user\");" },
+  ]}
+  correctOrder={["classOpen", "ctorOpen", "superCall", "name", "ctorClose", "classClose", "throwLine"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`function attempt() {
+  try {
+    return "from try";
+  } finally {
+    console.log("cleanup ran");
+  }
+}
+
+console.log(attempt());`}
+  options={["\"from try\" then \"cleanup ran\"", "\"cleanup ran\" then \"from try\"", "just \"from try\"", "just \"cleanup ran\""]}
+  correctIndex={1}
+  explanation={`Aunque el bloque try llegue primero al return, finally siempre se ejecuta antes de que la función realmente devuelva el control a quien la llamó — así que "cleanup ran" se registra antes de que el console.log(attempt()) exterior siquiera obtenga su valor para imprimir. El valor de retorno se calcula pero se retiene hasta que finally termina.`}
+  actualOutput="cleanup ran
+from try"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Clases y Objetos](/es/programming-languages/javascript/oop-or-structs)
+- [Async y Promesas](/es/programming-languages/javascript/advanced)

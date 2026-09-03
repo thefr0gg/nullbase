@@ -1,0 +1,184 @@
+---
+title: Clases y Objetos
+description: La sintaxis de clases de JavaScript, la herencia, y la cadena de prototipos que realmente la impulsa por debajo.
+category: Programming Languages
+weight: 6
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+JavaScript ha tenido objetos desde 1995 pero no obtuvo sintaxis `class`
+hasta ES6 (2015). Es importante entender que `class` es azúcar sintáctico:
+por debajo, JavaScript sigue haciendo herencia basada en prototipos, el
+mismo mecanismo que siempre ha tenido. Conocer ambas capas — la sintaxis
+`class` amigable y la cadena de prototipos a la que compila — explica mucho
+comportamiento que de otro modo parece magia.
+
+## Sintaxis de clases
+
+```js
+class Animal {
+  constructor(name) {
+    this.name = name;
+  }
+
+  speak() {
+    return `${this.name} makes a sound.`;
+  }
+}
+
+class Dog extends Animal {
+  speak() {
+    return `${this.name} barks.`;
+  }
+}
+
+const generic = new Animal("Creature");
+const rex = new Dog("Rex");
+
+console.log(generic.speak()); // "Creature makes a sound."
+console.log(rex.speak());     // "Rex barks."
+```
+
+`extends` configura la herencia, y `super(...)` dentro del constructor de
+una subclase llama al constructor padre — requerido antes de poder usar
+`this` en el constructor de una clase derivada.
+
+```js
+class Employee extends Animal {
+  constructor(name, role) {
+    super(name);       // debe ejecutarse antes de usar `this` abajo
+    this.role = role;
+  }
+
+  speak() {
+    return `${super.speak()} ${this.name} works as ${this.role}.`;
+  }
+}
+
+const e = new Employee("Sam", "an engineer");
+console.log(e.speak());
+// "Sam makes a sound. Sam works as an engineer."
+```
+
+Las clases también soportan miembros `static` (adjuntos a la clase misma,
+no a las instancias), campos privados con un prefijo `#` (verdaderamente
+inaccesibles desde fuera de la clase, a diferencia de una convención con
+prefijo `_`), y getters/setters.
+
+```js
+class Counter {
+  #count = 0; // campo privado — no visible ni modificable desde fuera de la clase
+
+  static description = "A simple counter";
+
+  increment() {
+    this.#count += 1;
+    return this.#count;
+  }
+
+  get value() {
+    return this.#count;
+  }
+}
+
+const c = new Counter();
+c.increment();
+c.increment();
+console.log(c.value);       // 2
+console.log(Counter.description); // "A simple counter"
+// console.log(c.#count);   // SyntaxError — #count no es accesible aquí
+```
+
+## Lo que realmente ocurre: la cadena de prototipos
+
+Todo objeto en JavaScript tiene un enlace interno a otro objeto llamado su
+prototipo, formando una cadena. Cuando accedes a una propiedad, el motor
+busca primero en el objeto mismo, luego sube por la cadena de prototipos
+hasta encontrar la propiedad o quedarse sin cadena. Los métodos de `class`
+son solo funciones ordinarias adjuntas a `SomeClass.prototype`, compartidas
+por cada instancia en vez de copiadas en cada una.
+
+```js
+function Animal(name) { // una "función constructora" al estilo antiguo — el equivalente pre-ES6 de una clase
+  this.name = name;
+}
+
+Animal.prototype.speak = function () {
+  return `${this.name} makes a sound.`;
+};
+
+const a = new Animal("Creature");
+console.log(a.speak()); // "Creature makes a sound."
+
+// Esto es exactamente a lo que compila `class Animal { speak() {...} }`.
+console.log(Object.getPrototypeOf(a) === Animal.prototype); // true
+console.log(a.hasOwnProperty("speak"));                       // false — speak vive en el prototipo, no en `a` misma
+```
+
+Por esto añadir un método a `Animal.prototype` después de crear instancias
+sigue haciéndolo disponible en esas instancias existentes — no guardan su
+propia copia del método, lo buscan a través de la cadena cada vez que se
+llama.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir una subclase que llame al constructor de su padre con super()."
+  items={[
+    { id: "base", label: "class Shape {" },
+    { id: "baseCtor", label: "  constructor(color) { this.color = color; }" },
+    { id: "baseClose", label: "}" },
+    { id: "sub", label: "class Circle extends Shape {" },
+    { id: "subCtor", label: "  constructor(color, radius) {" },
+    { id: "superCall", label: "    super(color);", explanation: "super() debe ejecutarse antes de usar `this`, y antes de que el constructor de la subclase pueda terminar." },
+    { id: "field", label: "    this.radius = radius;" },
+    { id: "subCtorClose", label: "  }" },
+    { id: "subClose", label: "}" },
+  ]}
+  correctOrder={["base", "baseCtor", "baseClose", "sub", "subCtor", "superCall", "field", "subCtorClose", "subClose"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Ordena estas líneas para adjuntar un método al prototipo de una función constructora a la manera pre-ES6."
+  items={[
+    { id: "ctor", label: "function Robot(id) {" },
+    { id: "assign", label: "  this.id = id;" },
+    { id: "ctorClose", label: "}" },
+    { id: "proto", label: "Robot.prototype.announce = function () {" },
+    { id: "protoBody", label: "  return `Unit ${this.id} reporting.`;" },
+    { id: "protoClose", label: "};" },
+    { id: "instance", label: "const r2 = new Robot(2);" },
+  ]}
+  correctOrder={["ctor", "assign", "ctorClose", "proto", "protoBody", "protoClose", "instance"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`class Base {
+  greet() {
+    return "base";
+  }
+}
+
+const b = new Base();
+Base.prototype.greet = function () {
+  return "overridden";
+};
+
+console.log(b.greet());`}
+  options={["\"base\"", "\"overridden\"", "TypeError", "undefined"]}
+  correctIndex={1}
+  explanation="Los métodos de instancia no se copian en cada objeto — b solo guarda un enlace a Base.prototype y busca greet ahí cada vez que se llama. Como Base.prototype.greet fue reasignado después de crear b, b.greet() encuentra la versión nueva, no la que existía en el momento de la construcción."
+  actualOutput="overridden"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Estructuras de Datos](/es/programming-languages/javascript/data-structures)
+- [Manejo de Errores](/es/programming-languages/javascript/error-handling)

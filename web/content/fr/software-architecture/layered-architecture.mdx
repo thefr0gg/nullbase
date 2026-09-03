@@ -1,0 +1,43 @@
+---
+title: Architecture en couches
+description: Organiser le code en couches horizontales — présentation, logique métier, accès aux données — où chaque couche ne parle qu'à celle directement en dessous d'elle.
+category: Software Architecture
+weight: 7
+interactive: true
+interactiveType: ["MermaidDiagram"]
+---
+
+L'**architecture en couches** organise une base de code en couches horizontales empilées par responsabilité — typiquement présentation, logique métier, et accès aux données — où chaque couche n'appelle que la couche immédiatement en dessous d'elle et ne sait rien des couches au-dessus. C'est la forme par défaut vers laquelle la plupart des développeurs se tournent sans la nommer : un gestionnaire de route qui appelle un service, qui appelle un dépôt, qui parle à une base de données, est déjà une architecture en couches, que quelqu'un ait dessiné le diagramme d'abord ou non.
+
+<MermaidDiagram title="Une pile typique à trois couches" chart={`graph TD
+    A[Presentation layer<br/>HTTP routes, controllers, UI] --> B[Business logic layer<br/>services, domain rules]
+    B --> C[Data access layer<br/>repositories, queries]
+    C --> D[(Database)]
+`} />
+
+## La règle
+
+La règle centrale est directionnelle : une couche peut dépendre vers le bas, jamais vers le haut, et (dans la version stricte) uniquement de la couche directement en dessous d'elle, pas des couches plus bas encore. La couche de présentation sait que la couche de logique métier existe et l'appelle ; la couche de logique métier n'a aucune idée que la couche de présentation existe du tout. Cette dépendance à sens unique est ce qui rend chaque couche interchangeable en principe — remplacer une API REST par une CLI et les couches de logique métier et de données n'ont pas besoin de changer, parce qu'elles n'ont jamais dépendu de la couche de présentation au départ.
+
+## Pourquoi les équipes s'y tournent
+
+- **La séparation des préoccupations.** L'analyse HTTP, la validation, et la mise en forme des réponses vivent à un endroit ; les règles réelles du domaine (cette commande peut-elle être annulée ? cette remise est-elle valide ?) vivent à un autre ; le SQL et la construction de requêtes vivent à un troisième. Personne n'a à garder les trois préoccupations en tête pour en changer une.
+- **La testabilité indépendante.** La couche de logique métier peut être testée unitairement sans démarrer un serveur HTTP ou une vraie base de données, parce qu'elle dépend d'une abstraction de la couche de données plutôt que de la couche de données elle-même. Substituez un faux dépôt et les règles métier sont testables isolément.
+- **Le remplacement indépendant.** Une équipe peut changer le moteur de base de données, ou ajouter une seconde surface d'API (GraphQL aux côtés de REST), en ne touchant que la couche qui a réellement changé, tant que les frontières des couches ont été respectées au départ.
+- **Un modèle mental partagé.** Parce que c'est un pattern si commun, un nouveau développeur peut deviner où vit un morceau de logique donné — « où va la validation d'annulation de commande » a une réponse évidente dans une base de code en couches bien maintenue, ce qui abaisse le coût d'intégration.
+
+## Où ça s'effondre
+
+Le mode d'échec classique est la **couche qui coule** (parfois appelée couche anémique ou de passage) : une couche qui existe dans le diagramme mais ne fait aucun travail réel, se contentant de transmettre les appels directement à la couche en dessous sans transformation, validation, ou prise de décision qui lui soit propre. Une méthode « service » qui ne fait rien d'autre qu'appeler une seule méthode de dépôt et renvoyer son résultat tel quel n'ajoute pas de séparation des préoccupations — elle ajoute un appel de fonction sans raison. Cela a tendance à arriver quand une équipe adopte le pattern mécaniquement pour chaque fonctionnalité, indépendamment du fait que la fonctionnalité ait une réelle logique métier à séparer, et c'est le principal argument contre le fait de se tourner réflexivement vers l'architecture en couches pour des écrans CRUD réellement simples, où « lister, créer, lire, mettre à jour, supprimer sans aucune règle attachée » n'a pas de couche de logique métier qui vaille la peine d'être écrite — la frontière de couche est de l'indirection pure sans rien derrière.
+
+L'autre coût courant est que l'isolation stricte des couches peut pousser la logique au mauvais endroit pour satisfaire le diagramme plutôt que le problème. Une règle de validation qui concerne réellement la forme d'une requête HTTP (ce champ est-il présent dans le corps ?) se retrouve maladroitement relocalisée dans la « logique métier » parce que c'est censé être là que vit la validation, même si elle n'a rien à voir avec le domaine et tout à voir avec le transport. L'architecture en couches décrit *où vont les choses par préoccupation technique* — elle ne dit rien sur *pourquoi une dépendance devrait ou ne devrait pas exister*, ce qui est l'écart que [Clean Architecture](/fr/software-architecture/clean-architecture) essaie spécifiquement de combler.
+
+## Un compromis pratique
+
+La plupart des bases de code en production qui se qualifient de « en couches » sont plus souples que la définition stricte — une couche de service peut appeler deux dépôts au lieu d'exactement une couche en dessous, ou un contrôleur peut atteindre directement un helper de requête léger pour une lecture triviale. C'est un compromis raisonnable tant que la règle centrale (la logique métier ne connaît pas HTTP, l'accès aux données ne connaît pas les règles métier) tient ; la version stricte « seulement la couche directement en dessous » est plus utile comme discipline de raisonnement que comme règle à faire respecter par analyse statique sur chaque site d'appel.
+
+## Voir aussi
+
+- **[Clean Architecture](/fr/software-architecture/clean-architecture)** — organise par direction de dépendance plutôt que par préoccupation technique, spécifiquement pour éviter que la logique métier ne dépende de l'infrastructure.
+- **[Conception pilotée par le domaine](/fr/software-architecture/domain-driven-design)** — une façon de décider ce qui appartient réellement à la couche de logique métier une fois que vous en avez une.
+- **[Middleware](/fr/backend/middleware)** — une instance concrète de la pensée en couches appliquée au chemin d'une seule requête à travers un backend.

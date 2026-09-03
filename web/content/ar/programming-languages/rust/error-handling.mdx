@@ -1,0 +1,166 @@
+---
+title: معالجة الأخطاء
+description: لا تملك Rust استثناءات — يجعل Result<T, E> وOption<T> الفشل والغياب جزءاً من توقيع نوع الدالة، يُفحَص أثناء الترجمة.
+category: Programming Languages
+weight: 7
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+لا تملك Rust `try`/`catch` ولا `null`. بدلاً من ذلك، تُعيد الدالة التي قد تفشل قيمة `Result<T, E>`، وتُغلَّف القيمة التي قد تكون غائبة في `Option<T>`. كلاهما تعداد (enum) عادي مُعرَّف في المكتبة القياسية — لا سحر لغوي خاص، فقط نوع يجبرك المترجم على التعامل معه قبل أن تصل إلى القيمة بداخله.
+
+```rust
+enum Option<T> {
+    Some(T),
+    None,
+}
+
+enum Result<T, E> {
+    Ok(T),
+    Err(E),
+}
+```
+
+لأن الفشل والغياب يظهران في توقيع النوع، يستطيع المترجم فرض تعاملك معهما — لا يمكنك استخدام `Result<T, E>` بالخطأ كما لو كانت `T` عادية، بالطريقة التي تسمح بها لغة تحتوي استثناءات باستدعاء دالة ونسيان أنها قد تطلق استثناء.
+
+## `Option<T>`: لا يوجد null
+
+حيث كانت لغة أخرى ستُعيد `null` أو `undefined` لـ "لا شيء هنا"، تُعيد Rust `None`. لا توجد قيمة يمكن أن تحل بصمت محل "الغياب" بالطريقة التي يفعلها `null` في Java أو JavaScript — يجب فك `Option<T>` صراحة قبل إمكانية استخدام الـ `T` بداخله.
+
+```rust
+fn find_even(numbers: &[i32]) -> Option<i32> {
+    for &n in numbers {
+        if n % 2 == 0 {
+            return Some(n);
+        }
+    }
+    None
+}
+
+fn main() {
+    let numbers = [1, 3, 5, 8, 9];
+
+    match find_even(&numbers) {
+        Some(n) => println!("found an even number: {n}"),
+        None => println!("no even number in the list"),
+    }
+}
+```
+
+## `Result<T, E>`: فشل قابل للاسترداد
+
+`Result<T, E>` هو نظير `Option` للعمليات التي تفشل *بسبب محدد* بدلاً من أن تخرج فارغة ببساطة. `E` عادة نوع خطأ يصف ما حدث خطؤه.
+
+```rust
+fn divide(a: f64, b: f64) -> Result<f64, String> {
+    if b == 0.0 {
+        Err(String::from("division by zero"))
+    } else {
+        Ok(a / b)
+    }
+}
+
+fn main() {
+    match divide(10.0, 2.0) {
+        Ok(result) => println!("result: {result}"),
+        Err(e) => println!("error: {e}"),
+    }
+
+    match divide(10.0, 0.0) {
+        Ok(result) => println!("result: {result}"),
+        Err(e) => println!("error: {e}"),
+    }
+}
+```
+
+## عامل `?`
+
+مطابقة كل `Result` تنتجه دالة يدوياً يصبح مطولاً بسرعة، خاصة عندما تستدعي دالة عدة عمليات قابلة للفشل تباعاً وتريد فقط الخروج عند أول خطأ. يفعل عامل `?` ذلك بالضبط: عند تطبيقه على `Result`، يفكّ `Ok(value)` إلى `value` وعند `Err(e)`، يُعيد تلك الـ `Err` فوراً من الدالة المحيطة — شريطة أن يكون نوع إرجاع الدالة المحيطة متوافقاً.
+
+```rust
+fn divide(a: f64, b: f64) -> Result<f64, String> {
+    if b == 0.0 {
+        Err(String::from("division by zero"))
+    } else {
+        Ok(a / b)
+    }
+}
+
+fn compute(a: f64, b: f64, c: f64) -> Result<f64, String> {
+    let step1 = divide(a, b)?; // returns early with Err if divide fails
+    let step2 = divide(step1, c)?;
+    Ok(step2 * 100.0)
+}
+
+fn main() {
+    match compute(100.0, 5.0, 0.0) {
+        Ok(result) => println!("result: {result}"),
+        Err(e) => println!("compute failed: {e}"),
+    }
+}
+```
+
+لا تطابق `compute` أبداً نتيجة `divide` صراحة — يفعل `?` ذلك مباشرة. هذا يُترجَم فقط لأن `compute` نفسها تُعيد `Result<f64, String>`؛ لا يمكن استخدام `?` إلا داخل دالة يُسمح له بالخروج المختصر منها.
+
+## لماذا ليس استثناءات؟
+
+اختار مصمّمو Rust هذا بدلاً من الاستثناءات عن قصد: يمكن إطلاق استثناء من أي مكان تقريباً والتقاطه من أي مكان تقريباً، ما يعني أن توقيع الدالة لا يخبرك بما قد تطلقه. يضع `Result<T, E>` الفشل في نظام الأنواع، بحيث يفرض المترجم — وليس التوثيق، ولا الاختبار أثناء التشغيل — على المستدعي الإقرار بوجود حالة خطأ، حتى لو كان كل ما يفعله هو تمريرها فوراً بـ `?` إلى الأعلى.
+
+## طالع أيضاً
+
+- **[الدوال](/ar/programming-languages/rust/functions)** — كيف يتفاعل الإرجاع المبكر لـ `?` مع نوع الإرجاع المُعلَن للدالة.
+- **[البنى والسمات](/ar/programming-languages/rust/oop-or-structs)** — `Option` و`Result` نفسهما تعدادان بدوال مُعرَّفة عبر `impl`، نفس الآلية المستخدمة للأنواع المخصصة.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء دالة تُعيد Option<i32> وتجد أول عدد زوجي، بالإضافة إلى match على نتيجتها."
+  items={[
+    { id: "sig", label: "fn find_even(numbers: &[i32]) -> Option<i32> {" },
+    { id: "for-open", label: "    for &n in numbers {" },
+    { id: "if-open", label: "        if n % 2 == 0 {" },
+    { id: "some", label: "            return Some(n);", explanation: "لا معنى للإرجاع المبكر إلا بعد وجود الحلقة وفحص الزوجية اللذين يشغّلانه." },
+    { id: "if-close", label: "        }" },
+    { id: "for-close", label: "    }" },
+    { id: "none", label: "    None" },
+    { id: "fn-close", label: "}" },
+  ]}
+  correctOrder={["sig", "for-open", "if-open", "some", "if-close", "for-close", "none", "fn-close"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء دالة compute تسلسل عمليتي قسمة قابلتين للفشل باستخدام عامل ?."
+  items={[
+    { id: "sig", label: "fn compute(a: f64, b: f64, c: f64) -> Result<f64, String> {" },
+    { id: "step1", label: "    let step1 = divide(a, b)?;" },
+    { id: "step2", label: "    let step2 = divide(step1, c)?;", explanation: "تعتمد step2 على قيمة step1، لذا يجب حساب step1 أولاً." },
+    { id: "ok", label: "    Ok(step2 * 100.0)" },
+    { id: "close", label: "}" },
+  ]}
+  correctOrder={["sig", "step1", "step2", "ok", "close"]}
+/>
+
+<PredictOutput
+  title="ماذا تطبع هذه الشيفرة؟"
+  code={`fn divide(a: f64, b: f64) -> Result<f64, String> {
+    if b == 0.0 {
+        Err(String::from("division by zero"))
+    } else {
+        Ok(a / b)
+    }
+}
+
+fn main() {
+    let result = divide(10.0, 0.0);
+    println!("{}", result.unwrap());
+}`}
+  options={["division by zero", "0", "inf", "Runtime panic"]}
+  correctIndex={3}
+  explanation="لا تُعيد unwrap() على Err سلسلة الخطأ أو رقماً احتياطياً — بل تسبب حالة ذعر وتُعطِّل البرنامج فوراً، طابعة محتويات Err كجزء من رسالة الذعر. صُمِّمت unwrap() للحالات التي تكون متأكداً أنها Ok؛ استدعاؤها على Result لم تفحصه هو بالضبط ما تُوجد match أو ? لتجنبه."
+  actualOutput={`thread 'main' panicked at 'called Result::unwrap() on an Err value: "division by zero"'`}
+/>
+</ExerciseTabs>

@@ -1,0 +1,183 @@
+---
+title: Funciones
+description: Declarar funciones en Go, valores de retorno múltiples, retornos con nombre, y parámetros variádicos.
+category: Programming Languages
+weight: 4
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Las funciones en Go se declaran con `func`, y el tipo de retorno viene
+después de la lista de parámetros, no antes del nombre:
+
+```go
+func add(a int, b int) int {
+	return a + b
+}
+```
+
+Los parámetros consecutivos del mismo tipo pueden compartir una sola
+anotación de tipo:
+
+```go
+func add(a, b int) int {
+	return a + b
+}
+```
+
+## Valores de retorno múltiples
+
+Esta es una de las características más distintivas de Go, y se usa por
+todas partes en la librería estándar. Una función puede devolver más de un
+valor, separados por comas:
+
+```go
+func divide(a, b int) (int, int) {
+	quotient := a / b
+	remainder := a % b
+	return quotient, remainder
+}
+
+func main() {
+	q, r := divide(17, 5)
+	fmt.Println(q, r) // 3 2
+}
+```
+
+El uso más común es emparejar un resultado con un error o un flag "ok", que
+es cómo Go reemplaza las excepciones y la ambigüedad de los retornos
+anulables en un solo idioma:
+
+```go
+func lookup(m map[string]int, key string) (int, bool) {
+	value, ok := m[key]
+	return value, ok
+}
+
+func main() {
+	scores := map[string]int{"ada": 100}
+	if value, ok := lookup(scores, "ada"); ok {
+		fmt.Println("score:", value)
+	}
+}
+```
+
+Si no necesitas uno de los valores de retorno, descártalo con `_`:
+
+```go
+_, remainder := divide(17, 5)
+```
+
+## Valores de retorno con nombre
+
+Los valores de retorno pueden nombrarse en la firma. Un `return` desnudo
+entonces devuelve sus valores actuales — útil para funciones cortas, pero
+fácil de abusar hasta llegar a código ilegible si se usa en exceso:
+
+```go
+func split(sum int) (x, y int) {
+	x = sum * 4 / 9
+	y = sum - x
+	return // returns x, y
+}
+```
+
+## Parámetros variádicos
+
+Un parámetro prefijado con `...` acepta cualquier número de argumentos,
+recogidos en un slice dentro de la función:
+
+```go
+func sum(nums ...int) int {
+	total := 0
+	for _, n := range nums {
+		total += n
+	}
+	return total
+}
+
+func main() {
+	fmt.Println(sum(1, 2, 3))    // 6
+	fmt.Println(sum())            // 0
+}
+```
+
+## Funciones como valores
+
+Las funciones son valores de primera clase en Go — pueden asignarse a
+variables, pasarse como argumentos, y devolverse desde otras funciones:
+
+```go
+func makeMultiplier(factor int) func(int) int {
+	return func(n int) int {
+		return n * factor
+	}
+}
+
+func main() {
+	double := makeMultiplier(2)
+	fmt.Println(double(21)) // 42
+}
+```
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir una función que devuelva dos valores e imprimir ambos."
+  items={[
+    { id: "f1", label: "func minMax(a, b int) (int, int) {" },
+    { id: "f2", label: "\tif a < b {" },
+    { id: "f3", label: "\t\treturn a, b" },
+    { id: "f4", label: "\t}", explanation: "Cierra el bloque if antes del return alternativo." },
+    { id: "f5", label: "\treturn b, a" },
+    { id: "f6", label: "}" },
+    { id: "f7", label: "lo, hi := minMax(9, 3)" },
+    { id: "f8", label: "fmt.Println(lo, hi)" },
+  ]}
+  correctOrder={["f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Ordena estas líneas para construir una función variádica que sume sus argumentos."
+  items={[
+    { id: "g1", label: "func sum(nums ...int) int {" },
+    { id: "g2", label: "\ttotal := 0" },
+    { id: "g3", label: "\tfor _, n := range nums {", explanation: "El bucle debe declararse después de inicializar total en 0." },
+    { id: "g4", label: "\t\ttotal += n" },
+    { id: "g5", label: "\t}" },
+    { id: "g6", label: "\treturn total" },
+    { id: "g7", label: "}" },
+  ]}
+  correctOrder={["g1", "g2", "g3", "g4", "g5", "g6", "g7"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`package main
+
+import "fmt"
+
+func swap(a, b int) (int, int) {
+	return b, a
+}
+
+func main() {
+	x, y := 1, 2
+	x, y = swap(x, y)
+	fmt.Println(x, y)
+}`}
+  options={["1 2", "2 1", "Compile error: too many return values", "0 0"]}
+  correctIndex={1}
+  explanation="swap devuelve sus argumentos en orden inverso mediante un retorno multivalor. Asignar x, y = swap(x, y) reasigna ambas variables a la vez, así que x pasa a ser 2 e y pasa a ser 1."
+  actualOutput="2 1"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Flujo de Control](/es/programming-languages/go/control-flow)
+- [Manejo de Errores](/es/programming-languages/go/error-handling)

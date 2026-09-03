@@ -1,0 +1,45 @@
+---
+title: Arquitectura Limpia
+description: La regla de dependencia de Robert C. Martin — lógica de negocio en el centro, frameworks e infraestructura como detalles reemplazables que apuntan hacia dentro, hacia ella.
+category: Software Architecture
+weight: 8
+interactive: true
+interactiveType: ["MermaidDiagram"]
+---
+
+La **Arquitectura Limpia** es el nombre que le da Robert C. Martin a un estilo arquitectónico organizado enteramente en torno a una regla: las dependencias del código fuente siempre deben apuntar hacia dentro, hacia la lógica de negocio, y nunca hacia fuera, hacia los frameworks, las bases de datos, o la interfaz de usuario. Martin la dibujó como círculos concéntricos — entidades y casos de uso en el centro, infraestructura (frameworks web, bases de datos, servicios externos) en el exterior — pero los círculos en realidad son solo una visualización de una única restricción, la **regla de dependencia**, de la que se sigue todo lo demás.
+
+## La regla de dependencia
+
+Nada en un círculo interior puede saber nada sobre un círculo exterior. Las reglas de negocio en el núcleo no importan un framework web, no importan un driver de base de datos, y ni siquiera saben si están siendo llamadas desde un manejador HTTP, un comando CLI, o un ejecutor de pruebas. Las capas exteriores dependen de las capas interiores, nunca al revés — un controlador puede llamar a lógica de caso de uso, pero la lógica de caso de uso no puede llamar a un controlador.
+
+<MermaidDiagram title="Las dependencias apuntan hacia dentro" chart={`graph TD
+    UI[UI / Web framework] --> Controllers[Controllers / Presenters]
+    DB[Database driver] --> Gateways[Repository implementations]
+    Controllers --> UseCases[Use cases]
+    Gateways -.implements.-> Ports[Repository interfaces / ports]
+    UseCases --> Ports
+    UseCases --> Entities[Entities / core business rules]
+`} />
+
+El truco que hace que esto funcione cuando una capa interior genuinamente necesita algo de una exterior — la capa de casos de uso necesita guardar datos en alguna parte, lo cual suena como si necesitara la base de datos — es la inversión de dependencias: la capa interior define una interfaz (un "port") describiendo lo que necesita, y la capa exterior provee una implementación concreta (un "adapter") que la satisface. El caso de uso solo depende de la interfaz que definió; el código de base de datos también depende de esa misma interfaz, pero desde afuera, implementándola. La flecha del control (el código de base de datos es llamado) y la flecha de dependencia del código fuente (quién importa la interfaz de quién) apuntan en direcciones opuestas, y es la dirección de la dependencia lo que le importa a la Arquitectura Limpia.
+
+## Qué compra esto
+
+El beneficio principal es que las reglas de negocio del núcleo — la razón real por la que existe el software — no tienen ninguna dependencia de ningún framework, base de datos, o mecanismo de entrega específico. Cambia Express por un framework web distinto, cambia Postgres por SQLite, agrega una CLI junto a la API web: nada de eso toca los casos de uso o las entidades, porque nunca dependieron de esas elecciones para empezar. Las pruebas siguen la misma lógica: el núcleo puede ejercitarse con pruebas unitarias simples e implementaciones falsas de sus ports, sin necesitar servidor HTTP ni base de datos real.
+
+Esta es también, notablemente, la misma idea del "port de base de datos" que usa la propia capa de API de nullbase — `services/` y `repositories/` están escritos una vez contra una interfaz `Database`, y la implementación concreta de D1 o SQLite es un detalle enchufable conectado en el borde, no algo que la lógica de negocio importa directamente. Eso es la inversión de dependencias de la Arquitectura Limpia en miniatura, aplicada a una sola frontera en lugar de a todo el codebase.
+
+## Arquitectura Limpia frente a arquitectura en capas simple
+
+Las dos se ven parecidas en un diagrama — ambas dibujan cajas apiladas o anidadas — pero organizan por ejes distintos. La [Arquitectura en Capas](/es/software-architecture/layered-architecture) organiza por **preocupación técnica**: el código de presentación vive aquí, la lógica de negocio allá, el acceso a datos más allá, y la dependencia generalmente fluye de arriba a abajo a través de la pila, incluyendo la lógica de negocio dependiendo de la capa de datos debajo de ella. La Arquitectura Limpia organiza únicamente por **dirección de dependencia**: la lógica de negocio no puede depender del acceso a datos en absoluto, en ninguna dirección — la capa de datos depende de una interfaz que posee la lógica de negocio. Se puede construir una arquitectura en capas donde la capa de servicio importa directamente una clase de repositorio; una Arquitectura Limpia no puede, porque eso es una capa interior dependiendo hacia afuera. La diferencia es sutil en un diagrama y significativa en la práctica: es la diferencia entre "la base de datos es molesta de cambiar" y "la base de datos se puede cambiar sin abrir en absoluto los archivos de lógica de negocio".
+
+## El costo real
+
+Esto no es una mejora gratuita sobre un esquema de capas más simple. Definir ports para cada dependencia externa, escribir adapters que los satisfagan, y mantener la disciplina de que ningún archivo de capa interior importe jamás una preocupación de capa exterior es una sobrecarga real y continua — más archivos, más indirección, más lugares donde mirar antes de encontrar dónde vive realmente una regla. Para una aplicación CRUD pequeña con una base de datos, una superficie de API, y reglas de negocio lo suficientemente delgadas como para caber en un solo archivo de servicio, esta estructura está cerca de ser costo puro: los ports y adapters extra existen para habilitar una flexibilidad (cambiar el framework, cambiar la base de datos, probar sin ninguno de los dos) que un proyecto pequeño probablemente nunca necesitará. La Arquitectura Limpia se gana su sobrecarga en sistemas con lógica de negocio genuinamente compleja, una vida útil esperada larga, o infraestructura que realmente es probable que cambie por debajo de la aplicación — no en cada proyecto por defecto.
+
+## Ver también
+
+- **[Arquitectura en Capas](/es/software-architecture/layered-architecture)** — la prima más simple, basada en preocupación técnica, que esta refina.
+- **[Diseño Guiado por el Dominio](/es/software-architecture/domain-driven-design)** — a menudo emparejado con la Arquitectura Limpia, ya que ambas ponen el dominio de negocio (en lugar de la infraestructura) en el centro del diseño.
+- **[Arquitectura REST](/es/software-architecture/rest-architecture)** — un ejemplo de una frontera (la capa de API) que la Arquitectura Limpia trataría como un detalle exterior y reemplazable en lugar del centro del sistema.

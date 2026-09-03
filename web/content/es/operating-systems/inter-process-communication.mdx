@@ -1,0 +1,48 @@
+---
+title: Comunicación entre Procesos
+description: Por qué los procesos aislados en memoria necesitan la ayuda del kernel para compartir datos a propósito, y las compensaciones entre tuberías, colas de mensajes, memoria compartida, y sockets.
+category: Operating Systems
+weight: 8
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+La **comunicación entre procesos (IPC)** es el conjunto de mecanismos provistos por el kernel que permiten a dos procesos separados intercambiar datos a propósito. Esto tiene que existir como una característica deliberada porque el aislamiento de procesos — cada proceso obteniendo su propio espacio de memoria virtual, exigido por el hardware — es un objetivo de diseño, no un accidente: es lo que evita que un bug o un crash en un proceso corrompa la memoria de otro proceso. Pero muchos sistemas reales están construidos a partir de múltiples procesos que cooperan (un shell canalizando la salida de un programa hacia otro, los procesos de renderizado de un navegador hablando con su proceso principal, los procesos worker de una base de datos coordinando el acceso a búferes compartidos), y el aislamiento por defecto significa que no pueden simplemente meterse en la memoria del otro para colaborar. El kernel tiene que intermediar ese intercambio explícitamente, y ofrece varios mecanismos distintos porque "los procesos necesitan compartir datos" cubre formas de problema genuinamente distintas.
+
+## Tuberías: un flujo de bytes entre procesos
+
+Una **tubería (pipe)** es la forma más simple — un flujo de bytes unidireccional con un extremo de lectura y uno de escritura, más visible en un comando de shell como `productor | consumidor`, donde el shell conecta la salida estándar del productor directamente a la entrada estándar del consumidor. Una tubería anónima como esta solo funciona entre procesos que comparten un ancestro común, porque la tubería se crea como un descriptor de archivo antes de que los dos procesos se separen mediante fork — un proceso no relacionado no tiene forma de obtener ese descriptor. Las **tuberías con nombre (FIFOs)** resuelven esto dándole a la tubería un nombre en el sistema de archivos, así que cualquier proceso que conozca la ruta puede abrirla, esté o no relacionado con el proceso del otro extremo. De cualquier forma, una tubería es solo un flujo de bytes — no hay framing de mensajes incorporado, así que cualquier cosa más allá de "bytes arbitrarios en el orden en que se escribieron" es una convención que los dos extremos acuerdan por sí mismos.
+
+## Colas de mensajes: estructura, no solo bytes
+
+Una **cola de mensajes** es un paso adelante en estructura: en lugar de un flujo de bytes crudo, el kernel almacena mensajes discretos y delimitados, cada uno con un tamaño y (dependiendo de la implementación) un tipo o prioridad. Un lector puede extraer un tipo específico de mensaje de la cola sin tener que consumir primero todo lo que hay antes de él, y los mensajes no se concatenan entre sí de la forma en que pueden hacerlo las escrituras de una tubería. Esto cuesta más que una tubería — el kernel está haciendo más contabilidad por mensaje — pero encaja mejor cuando lo que se intercambia es naturalmente una secuencia de eventos o comandos discretos en lugar de un flujo continuo.
+
+## Memoria compartida: la más rápida, pero estás por tu cuenta
+
+La **memoria compartida** mapea las mismas páginas de memoria física en el espacio de direcciones de más de un proceso, así que escribir un valor en un proceso lo hace visible inmediatamente en el otro sin que ningún dato se copie realmente a través del kernel en absoluto — sin sobrecarga de llamadas al sistema `read()`/`write()`, sin buffering. Esto la convierte en el mecanismo de IPC más rápido por un amplio margen para transferencias grandes o frecuentes. El costo es que el kernel se aparta por completo una vez que existe el mapeo: no hace nada para evitar que ambos procesos escriban en la misma memoria al mismo tiempo y corrompan los datos del otro. Usar memoria compartida correctamente casi siempre significa emparejarla con una primitiva de sincronización separada — comúnmente un semáforo — que los procesos usan para turnarse, así que solo uno de ellos está tocando la región compartida a la vez.
+
+## Sockets: también una primitiva de redes
+
+Un **socket** proporciona un canal de comunicación bidireccional entre dos puntos finales, y — a diferencia de cada mecanismo de arriba — no requiere que los dos procesos estén en la misma máquina. Un socket de dominio Unix es IPC en el sentido clásico, solo en la máquina local, pero la misma API de sockets es lo que usan dos procesos para hablar por una red real vía TCP o UDP; ver [TCP](/es/networking/tcp) para ese lado. Este doble papel es por lo que los sockets tienden a ser la opción por defecto cuando un sistema podría necesitar escalar de "dos procesos en una máquina" a "dos servicios en máquinas distintas" sin una reescritura — la misma interfaz cubre ambos casos.
+
+<ItemExplorer
+  title="Comparación de Mecanismos de IPC"
+  layout="table"
+  tableColumns={[{ key: "speed", label: "Velocidad" }, { key: "complexity", label: "Complejidad" }, { key: "useCase", label: "Caso de uso típico" }]}
+  items={[
+    { id: "pipes", label: "Tuberías / FIFOs", color: "blue", columns: { speed: "Moderada — pasa por el kernel como un flujo de bytes", complexity: "Baja — la más simple de usar correctamente", useCase: "Encadenar comandos, flujo de datos simple entre padre e hijo" } },
+    { id: "message-queues", label: "Colas de mensajes", color: "green", columns: { speed: "Moderada — almacenada en búfer por el kernel, más sobrecarga por mensaje que una tubería", complexity: "Media — framing y tipos de mensaje manejados por ti", useCase: "Comandos/eventos discretos entre procesos, no un flujo continuo" } },
+    { id: "shared-memory", label: "Memoria compartida", color: "orange", columns: { speed: "La más rápida — sin copiar a través del kernel", complexity: "Alta — los procesos deben sincronizar el acceso ellos mismos", useCase: "Transferencia de datos de alta frecuencia o grande donde domina la velocidad" } },
+    { id: "sockets", label: "Sockets", color: "purple", columns: { speed: "La más lenta de las cuatro localmente, pero la única que funciona entre máquinas", complexity: "Media — API bien estandarizada", useCase: "Cualquier cosa que pueda no quedarse en una sola máquina" } },
+  ]}
+/>
+
+## Elegir uno
+
+En la práctica, la elección tiende a reducirse a dos preguntas: ¿esto alguna vez necesita cruzar una frontera de máquina (si es así, son sockets, punto)? y, si no, ¿cuánto importa el throughput bruto frente a cuánta complejidad estás dispuesto a asumir? Un intercambio rápido y puntual entre un proceso padre e hijo recurre por defecto a una tubería; un bucle ajustado empujando grandes búferes entre dos procesos en la misma máquina que genuinamente necesita la velocidad extra recurre a memoria compartida y acepta el trabajo de sincronización que viene con ella.
+
+## Ver también
+
+- **[Señales](/es/operating-systems/signals)** — una forma mucho más estrecha de notificación entre procesos, sin ningún payload más allá del tipo de señal en sí.
+- **[Permisos](/es/operating-systems/permissions)** — las tuberías con nombre y los segmentos de memoria compartida son objetos visibles en el sistema de archivos, sujetos a las mismas comprobaciones de acceso de propietario/grupo que los archivos.
+- **[TCP](/es/networking/tcp)** — el protocolo de red por debajo de una conexión de socket que cruza fronteras de máquina.

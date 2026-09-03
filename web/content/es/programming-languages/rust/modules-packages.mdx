@@ -1,0 +1,146 @@
+---
+title: Módulos y Cargo
+description: Organizar código con mod y use, y cómo Cargo y crates.io manejan dependencias, builds, y publicación.
+category: Programming Languages
+weight: 8
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+El código Rust se organiza en **módulos** (`mod`), que controlan tanto el namespacing como la visibilidad, y los proyectos se gestionan con **Cargo**, la herramienta de build y gestor de paquetes de Rust. Casi nadie invoca directamente al compilador `rustc` para un proyecto real — Cargo lo envuelve, además de la resolución de dependencias, las pruebas, y la publicación.
+
+## `mod`: namespacing y privacidad
+
+Un módulo agrupa elementos relacionados (funciones, structs, otros módulos) y, por defecto, los oculta del código externo — todo en Rust es **privado a menos que se marque `pub`**, el valor por defecto opuesto al de la mayoría de los lenguajes.
+
+```rust
+mod shapes {
+    pub struct Circle {
+        pub radius: f64,
+    }
+
+    impl Circle {
+        pub fn area(&self) -> f64 {
+            std::f64::consts::PI * self.radius * self.radius
+        }
+    }
+
+    fn internal_helper() {
+        // not pub — invisible outside this module, even to code in the same file
+    }
+}
+
+fn main() {
+    let c = shapes::Circle { radius: 2.0 };
+    println!("area: {}", c.area());
+}
+```
+
+Sin `pub` en `Circle`, `radius`, y `area`, ninguno de ellos sería accesible desde `main` — el compilador rechazaría `shapes::Circle { radius: 2.0 }` como acceso a un struct privado. La privacidad en Rust es aplicada por el compilador en cada frontera, no solo una convención de documentación.
+
+## `use`: traer rutas al ámbito
+
+Referirse a algo por su ruta completa (`shapes::Circle`) cada vez se vuelve tedioso. `use` trae una ruta al ámbito actual para que pueda nombrarse directamente:
+
+```rust
+mod shapes {
+    pub struct Circle {
+        pub radius: f64,
+    }
+}
+
+use shapes::Circle;
+
+fn main() {
+    let c = Circle { radius: 3.0 }; // no shapes:: prefix needed
+    println!("radius: {}", c.radius);
+}
+```
+
+En un proyecto multiarchivo real, los módulos típicamente viven en sus propios archivos (`shapes.rs` o `shapes/mod.rs`), y las instrucciones `use` traen elementos de otros módulos en el mismo crate, o de dependencias externas.
+
+## Cargo y crates.io
+
+**Cargo** es la herramienta de build y gestor de paquetes de Rust, inicializado con `cargo new my_project`. Lee las dependencias de `Cargo.toml` y las descarga desde **crates.io**, el registro de paquetes de la comunidad (un "crate" es el término de Rust para una biblioteca o paquete compilado — aproximadamente lo que npm llama un paquete).
+
+```toml
+# Cargo.toml
+[package]
+name = "my_project"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = "1.0"
+rand = "0.8"
+```
+
+Con eso en su lugar, `use serde::Serialize;` o `use rand::Rng;` se vuelve disponible en cualquier parte del proyecto — `cargo build` resuelve y compila el grafo de dependencias automáticamente. Los comandos cotidianos de Cargo cubren todo el ciclo de vida: `cargo build` compila, `cargo run` compila y ejecuta, `cargo test` ejecuta pruebas, y `cargo publish` sube un crate a crates.io para que otros dependan de él.
+
+## Ver también
+
+- **[Structs y Traits](/es/programming-languages/rust/oop-or-structs)** — los tipos que más a menudo se marcan `pub` y se exportan desde un módulo.
+- **[Ownership y Borrowing](/es/programming-languages/rust/advanced)** — un concepto que se aplica de forma idéntica ya sea que el código viva en un solo archivo o esté dividido entre módulos y crates.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para definir un módulo shapes con un struct Circle público y un método area, luego usarlo desde main."
+  items={[
+    { id: "mod-open", label: "mod shapes {" },
+    { id: "struct-open", label: "    pub struct Circle {" },
+    { id: "field", label: "        pub radius: f64," },
+    { id: "struct-close", label: "    }" },
+    { id: "impl-open", label: "    impl Circle {", explanation: "El bloque impl debe venir después del struct para el cual implementa métodos." },
+    { id: "area", label: "        pub fn area(&self) -> f64 { std::f64::consts::PI * self.radius * self.radius }" },
+    { id: "impl-close", label: "    }" },
+    { id: "mod-close", label: "}" },
+    { id: "main-open", label: "fn main() {" },
+    { id: "let-c", label: "    let c = shapes::Circle { radius: 2.0 };" },
+    { id: "print", label: "    println!(\"area: {}\", c.area());" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["mod-open", "struct-open", "field", "struct-close", "impl-open", "area", "impl-close", "mod-close", "main-open", "let-c", "print", "main-close"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para definir un módulo, traer su struct al ámbito con use, y construirlo sin el prefijo del módulo."
+  items={[
+    { id: "mod-open", label: "mod shapes {" },
+    { id: "struct", label: "    pub struct Circle { pub radius: f64 }" },
+    { id: "mod-close", label: "}" },
+    { id: "use", label: "use shapes::Circle;", explanation: "use debe venir después de que el módulo del que importa haya sido declarado." },
+    { id: "main-open", label: "fn main() {" },
+    { id: "let-c", label: "    let c = Circle { radius: 3.0 };" },
+    { id: "print", label: "    println!(\"radius: {}\", c.radius);" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["mod-open", "struct", "mod-close", "use", "main-open", "let-c", "print", "main-close"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`mod shapes {
+    pub struct Circle {
+        pub radius: f64,
+    }
+
+    fn internal_helper() -> f64 {
+        0.0
+    }
+}
+
+fn main() {
+    let c = shapes::Circle { radius: 2.0 };
+    println!("{}", c.radius);
+}`}
+  options={["2", "0", "Compile error naming internal_helper", "No output"]}
+  correctIndex={0}
+  explanation="internal_helper nunca se llama desde main, y que no sea pub solo importa si algo fuera del módulo intenta llamarla — una función privada sin usar es a lo sumo una advertencia de código muerto, no un error. Circle y radius son ambos pub, así que el programa compila e imprime el radio, 2."
+  actualOutput="2"
+/>
+</ExerciseTabs>

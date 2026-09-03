@@ -1,0 +1,51 @@
+---
+title: Arquitectura Cliente-Servidor
+description: La división entre un cliente que pregunta y un servidor que responde — el patrón por debajo de casi todo lo demás en esta referencia.
+category: Software Architecture
+weight: 1
+interactive: true
+interactiveType: ["MermaidDiagram"]
+---
+
+La **arquitectura cliente-servidor** divide un sistema en dos roles: un **cliente** que inicia solicitudes, y un **servidor** que las escucha y devuelve respuestas. Suena casi demasiado simple para nombrarlo, pero es la suposición de carga que sostiene la sección [Web APIs](/es/web-apis), la sección [Backend](/es/backend), y la mayor parte de lo que cubre este sitio — cada solicitud HTTP, cada consulta a la base de datos, cada llamada a una API es una instancia de un cliente preguntando y un servidor respondiendo.
+
+## Qué hace que algo sea un cliente frente a un servidor
+
+La distinción no tiene que ver con el hardware ni con la complejidad del código — tiene que ver con quién inicia. Un **servidor** es un proceso que se vincula a una dirección, se queda inactivo, y espera conexiones entrantes; no sabe ni le importa quién va a hablarle hasta que realmente llega una solicitud. Un **cliente** es un proceso que conoce (o busca) la dirección del servidor e inicia una conexión cuando tiene algo que preguntar. La misma máquina puede desempeñar ambos roles para relaciones distintas — un servicio backend es un servidor para el navegador que tiene delante y un cliente para la base de datos que tiene detrás.
+
+<MermaidDiagram
+  title="Un único ciclo de solicitud/respuesta"
+  chart={`sequenceDiagram
+    participant C as Client (browser)
+    participant S as Server (API)
+    C->>S: HTTP request (GET /v1/pages/123)
+    S->>S: look up data, apply business logic
+    S-->>C: HTTP response (200 OK + JSON body)
+`}
+/>
+
+## Por qué dividir los roles en absoluto
+
+La alternativa obvia es un único programa que hace todo localmente — sin red, sin protocolo, sin despliegue separado. Eso funciona bien hasta que más de una persona necesita acceso a los mismos datos al mismo tiempo. Dividir cliente y servidor compra dos cosas que son difíciles de conseguir de otra forma:
+
+- **Separación de responsabilidades.** El servidor posee los datos y las reglas para cambiarlos correctamente; el cliente posee la presentación y la interacción con el usuario. Ninguno de los dos lados necesita saber cómo está implementado el otro, solo la forma de las solicitudes y respuestas entre ellos — que es exactamente lo que formaliza un contrato de API.
+- **Un servidor, muchos clientes.** A un servidor no le importa si está hablando con una app de teléfono, una pestaña de navegador, u otro servicio backend — mientras hablen el mismo protocolo, todos pueden alcanzar los mismos datos compartidos y actualizados de forma consistente. Centralizar los datos y la lógica en un lugar (o un pequeño conjunto coordinado de lugares) es lo que hace posibles en absoluto los sistemas multiusuario y multidispositivo.
+
+## Clientes delgados frente a clientes gruesos
+
+Cuánta lógica vive en el lado del cliente es una decisión de diseño real, no una ley fija:
+
+- Un **cliente delgado** hace lo menos posible — renderiza lo que envía el servidor, reenvía la entrada del usuario, mantiene casi ningún estado o lógica local. Un sitio web multi-página renderizado en el servidor está cerca de este extremo: casi cada interacción es una solicitud nueva al servidor.
+- Un **cliente grueso** (una aplicación de una sola página moderna, una app móvil nativa) mantiene lógica y estado significativos localmente — enrutamiento, validación de formularios, datos en caché, incluso funcionalidad sin conexión — y habla con el servidor principalmente para sincronizar o buscar datos, no para renderizar cada píxel.
+
+Ninguno es estrictamente mejor. Un cliente delgado es más simple de razonar y más fácil de mantener consistente, ya que el servidor es el único lugar donde vive la lógica; un cliente grueso puede sentirse dramáticamente más rápido para el usuario y sobrevivir a una conectividad inestable, a costa de duplicar algo de lógica (y algunas decisiones de confianza — la validación de un cliente grueso es una comodidad de UX, nunca un sustituto de que el servidor imponga las mismas reglas) en ambos lados.
+
+## La forma que le da a todo lo demás
+
+Una vez que ves cliente-servidor como el patrón base, la mayor parte del resto de este sitio es una elaboración sobre él. Un [proxy inverso](/es/backend/reverse-proxies) se sitúa delante de un servidor sin cambiar cuál lado es cuál. La [caché](/es/backend/caching) existe para evitar que el cliente espere a que el servidor rehaga trabajo que ya hizo. Incluso las arquitecturas que parecen haber superado cliente-servidor — [microservicios](/es/software-architecture/microservices), [sistemas orientados a eventos](/es/software-architecture/event-driven-architecture) — están construidas a partir de muchas relaciones cliente-servidor conectadas entre sí, no un reemplazo del propio patrón. Aprender a identificar "quién es el cliente aquí, quién es el servidor" en un sistema desconocido es una de las formas más rápidas de entender cómo funciona realmente.
+
+## Ver también
+
+- **[Monolitos](/es/software-architecture/monoliths)** — la forma más simple de construir el lado servidor de esta división.
+- **[Microservicios](/es/software-architecture/microservices)** — qué sucede cuando el lado servidor se divide a su vez en muchas relaciones cliente-servidor.
+- **[Servidores Web](/es/backend/web-servers)** — el proceso que desempeña el rol de servidor en un intercambio cliente-servidor HTTP.

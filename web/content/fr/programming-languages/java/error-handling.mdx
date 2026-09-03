@@ -1,0 +1,188 @@
+---
+title: Gestion des erreurs
+description: Le modèle d'exceptions de Java, la distinction checked vs. unchecked unique parmi les langages grand public, et try/catch/finally.
+category: Programming Languages
+weight: 7
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Java gère les erreurs avec des exceptions plutôt que des valeurs de
+retour d'erreur. Ce qui distingue Java de la plupart des autres langages
+grand public est une distinction imposée par le compilateur entre deux
+catégories d'exception : **checked** (vérifiée) et **unchecked** (non
+vérifiée).
+
+## Exceptions checked vs. unchecked
+
+Une exception **checked** (toute sous-classe d'`Exception` qui n'est pas
+une `RuntimeException`) doit être soit interceptée, soit déclarée dans la
+clause `throws` d'une méthode — le compilateur rejette le code qui ignore
+complètement cette possibilité. `IOException` en est l'exemple classique,
+puisque toute opération d'E/S peut échouer pour des raisons hors du
+contrôle de votre programme :
+
+```java
+import java.io.IOException;
+
+public void readConfig() throws IOException {
+    // some operation that can throw a checked IOException
+    throw new IOException("config file missing");
+}
+```
+
+Le code appelant doit la gérer ou la propager, sinon le fichier ne compile
+pas :
+
+```java
+public void loadApp() {
+    try {
+        readConfig();
+    } catch (IOException e) {
+        System.out.println("Failed to load config: " + e.getMessage());
+    }
+}
+```
+
+Une exception **unchecked** (toute sous-classe de `RuntimeException`,
+comme `NullPointerException` ou `IllegalArgumentException`) n'est pas
+imposée par le compilateur — vous pouvez en lever ou en ignorer une sans
+que le compilateur n'exige jamais un `try`/`catch` ou une clause `throws`.
+Celles-ci représentent typiquement des erreurs de programmation (un
+déréférencement null, un argument invalide) plutôt que des conditions
+externes récupérables :
+
+```java
+public int divide(int a, int b) {
+    if (b == 0) {
+        throw new IllegalArgumentException("divisor cannot be zero");
+    }
+    return a / b;
+}
+```
+
+L'intention derrière cette séparation : les exceptions checked modélisent
+des conditions qu'un appelant est censé anticiper et dont il peut se
+remettre (un fichier manquant, un timeout réseau) ; les exceptions
+unchecked modélisent des bugs qu'aucun appelant raisonnable ne pourrait
+être forcé de planifier à chaque site d'appel. En pratique, l'exigence des
+exceptions checked est controversée — il est courant de voir des
+exceptions checked enveloppées dans des unchecked pour éviter que les
+clauses `throws` ne se propagent à travers du code sans rapport.
+
+## try / catch / finally
+
+`try` entoure du code qui pourrait lever une exception ; un ou plusieurs
+blocs `catch` gèrent des types d'exception spécifiques ; `finally`
+s'exécute inconditionnellement, qu'une exception se soit produite ou non —
+l'endroit standard pour libérer une ressource :
+
+```java
+public void process() {
+    try {
+        int result = 10 / 0;
+        System.out.println(result);
+    } catch (ArithmeticException e) {
+        System.out.println("Caught: " + e.getMessage());
+    } finally {
+        System.out.println("Cleanup runs regardless.");
+    }
+}
+```
+
+Plusieurs blocs `catch` sont essayés dans l'ordre, et le premier dont le
+type d'exception correspond (y compris une correspondance de supertype)
+l'emporte — donc les types d'exception plus spécifiques doivent être
+listés avant les plus généraux :
+
+```java
+try {
+    Object[] items = new String[3];
+    items[0] = 42; // throws ArrayStoreException at run time
+} catch (ArrayStoreException e) {
+    System.out.println("Array store violation: " + e.getMessage());
+} catch (RuntimeException e) {
+    System.out.println("Some other runtime exception");
+}
+```
+
+## try-with-resources
+
+Depuis Java 7, `try (...)` ferme automatiquement toute ressource
+implémentant `AutoCloseable` à la fin du bloc, même si une exception est
+levée — remplaçant le boilerplate manuel `finally { resource.close(); }` :
+
+```java
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+
+public void printFirstLine(String path) throws IOException {
+    try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
+        System.out.println(reader.readLine());
+    } // reader.close() is called automatically here
+}
+```
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire un try/catch/finally qui gère une division par zéro."
+  items={[
+    { id: "h1", label: "try {" },
+    { id: "h2", label: "    int result = 10 / 0;" },
+    { id: "h3", label: "    System.out.println(result);" },
+    { id: "h4", label: "} catch (ArithmeticException e) {", explanation: "catch doit directement suivre l'accolade fermante du bloc try." },
+    { id: "h5", label: "    System.out.println(\"Caught: \" + e.getMessage());" },
+    { id: "h6", label: "} finally {" },
+    { id: "h7", label: "    System.out.println(\"Done.\");" },
+    { id: "h8", label: "}" },
+  ]}
+  correctOrder={["h1", "h2", "h3", "h4", "h5", "h6", "h7", "h8"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Ordonnez ces lignes pour déclarer une méthode qui lève une exception checked et un appelant qui la gère."
+  items={[
+    { id: "i1", label: "public void readConfig() throws IOException {" },
+    { id: "i2", label: "    throw new IOException(\"config file missing\");" },
+    { id: "i3", label: "}" },
+    { id: "i4", label: "public void loadApp() {", explanation: "Le corps de loadApp appelle readConfig, donc readConfig doit être déclarée en premier." },
+    { id: "i5", label: "    try {" },
+    { id: "i6", label: "        readConfig();" },
+    { id: "i7", label: "    } catch (IOException e) {" },
+    { id: "i8", label: "        System.out.println(\"Failed: \" + e.getMessage());" },
+    { id: "i9", label: "    }" },
+    { id: "i10", label: "}" },
+  ]}
+  correctOrder={["i1", "i2", "i3", "i4", "i5", "i6", "i7", "i8", "i9", "i10"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que ce code affiche ?"
+  code={`import java.io.IOException;
+
+public class Main {
+    static void risky() throws IOException {
+        throw new IOException("disk full");
+    }
+
+    public static void main(String[] args) {
+        risky();
+    }
+}`}
+  options={["disk full", "Exception in thread \"main\": disk full", "Erreur de compilation : unreported exception IOException", "Rien — le programme se termine silencieusement"]}
+  correctIndex={2}
+  explanation="IOException est checked, et main ne déclare aucune clause throws et n'a aucun try/catch autour de l'appel. Le compilateur refuse de construire du code qui peut propager une exception checked non gérée au-delà d'une méthode qui ne la déclare pas — cela échoue à la compilation, pas à l'exécution."
+  actualOutput="error: unreported exception IOException; must be caught or declared to be thrown"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Classes et interfaces](/fr/programming-languages/java/oop-or-structs)
+- [Paquets et outils de build](/fr/programming-languages/java/modules-packages)

@@ -1,0 +1,150 @@
+---
+title: Sintaxis y Variables
+description: Las declaraciones de variables de Go, tipos básicos, valores cero, y el atajo :=.
+category: Programming Languages
+weight: 2
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Go es de tipado estático: cada variable tiene un tipo fijo conocido en
+tiempo de compilación. Sin embargo, a diferencia de C, Go normalmente te
+permite omitir la escritura explícita del tipo — el compilador lo infiere a
+partir del valor que asignas.
+
+## Declarar variables
+
+La forma detallada usa `var`:
+
+```go
+var name string = "Ada"
+var age int = 36
+var isAdmin bool = false
+```
+
+Puedes omitir el tipo cuando el valor lo hace obvio:
+
+```go
+var name = "Ada"
+var age = 36
+```
+
+Pero dentro del cuerpo de una función, la forma idiomática es `:=`, la
+declaración corta de variable. Declara e inicializa en un solo paso, y solo
+funciona para variables nuevas dentro de una función (no a nivel de
+paquete):
+
+```go
+func main() {
+	name := "Ada"
+	age := 36
+	isAdmin := false
+	fmt.Println(name, age, isAdmin)
+}
+```
+
+`var` y `:=` no son intercambiables en todos los contextos: `var` puede
+aparecer a nivel de paquete y te permite declarar una variable sin un valor
+inicial, mientras que `:=` requiere al menos una variable nueva en el lado
+izquierdo y solo puede aparecer dentro de una función.
+
+## Valores cero
+
+Go no tiene el concepto de variable sin inicializar. Cada tipo tiene un
+**valor cero** que una variable recibe automáticamente si la declaras sin un
+inicializador:
+
+```go
+var count int     // 0
+var price float64 // 0.0
+var label string  // "" (cadena vacía)
+var ready bool    // false
+var list []int    // nil (un slice nil, seguro de leer)
+```
+
+Esto elimina toda una clase de bugs de "variable sin inicializar" que
+existen en lenguajes como C.
+
+## Tipos básicos
+
+Los tipos integrados de Go incluyen:
+
+| Categoría | Tipos |
+|---|---|
+| Enteros | `int`, `int8`, `int16`, `int32`, `int64`, y las variantes sin signo `uint*` |
+| Punto flotante | `float32`, `float64` |
+| Texto | `string`, `rune` (un punto de código Unicode), `byte` (un alias de `uint8`) |
+| Otros | `bool`, `complex64`, `complex128` |
+
+`int` es el tipo entero de propósito general y es de 64 bits en
+prácticamente cualquier plataforma moderna; recurre a un tipo con tamaño
+específico como `int32` solo cuando necesites un ancho concreto (formatos
+binarios, interoperabilidad).
+
+## Constantes
+
+`const` declara una constante en tiempo de compilación. Las constantes no
+pueden usar `:=` y deben tener un valor conocido en tiempo de compilación:
+
+```go
+const MaxRetries = 3
+const Pi = 3.14159
+
+func main() {
+	fmt.Println("Retrying up to", MaxRetries, "times")
+}
+```
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para declarar dos variables con `:=` e imprimir su suma."
+  items={[
+    { id: "s1", label: "func main() {" },
+    { id: "s2", label: "\ta := 4" },
+    { id: "s3", label: "\tb := 7", explanation: "Ambas declaraciones cortas deben venir antes de usarse." },
+    { id: "s4", label: "\tfmt.Println(a + b)" },
+    { id: "s5", label: "}" },
+  ]}
+  correctOrder={["s1", "s2", "s3", "s4", "s5"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Ordena estas líneas para declarar una constante a nivel de paquete con `var`, dándole un tipo explícito, y luego imprimirla."
+  items={[
+    { id: "t1", label: "package main" },
+    { id: "t2", label: "import \"fmt\"" },
+    { id: "t3", label: "var Threshold int = 100", explanation: "Las declaraciones var a nivel de paquete están fuera de cualquier función." },
+    { id: "t4", label: "func main() {" },
+    { id: "t5", label: "\tfmt.Println(Threshold)" },
+    { id: "t6", label: "}" },
+  ]}
+  correctOrder={["t1", "t2", "t3", "t4", "t5", "t6"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`package main
+
+import "fmt"
+
+func main() {
+	var count int
+	var label string
+	fmt.Println(count, label == "")
+}`}
+  options={["0 true", "nil false", "Compile error: uninitialized variable", "0 false"]}
+  correctIndex={0}
+  explanation={`Declarar una variable sin inicializador le da el valor cero de su tipo: 0 para int, una cadena vacía para string. Comparar una cadena vacía con "" es true, no un error ni nil.`}
+  actualOutput="0 true"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Go](/es/programming-languages/go)
+- [Flujo de Control](/es/programming-languages/go/control-flow)

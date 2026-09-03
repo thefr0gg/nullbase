@@ -1,0 +1,198 @@
+---
+title: الخيوط والتزامن
+description: إنشاء الخيوط، ومزامنة الحالة المشتركة بـsynchronized، والتزامن عالي المستوى من java.util.concurrent.
+category: Programming Languages
+weight: 9
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تدعم Java الخيوط (threads) بشكل مدمج منذ إصدارها الأول — أمر مبكر بشكل
+غير معتاد للغة سائدة. `Thread` والكلمة المفتاحية `synchronized` هما
+العنصران الأوليان منخفضا المستوى؛ تُضيف حزمة `java.util.concurrent`
+(المضافة في Java 5) أدوات أعلى مستوى وأكثر أماناً فوقهما، وهي ما ينبغي
+لمعظم الكود الحديث أن يلجأ إليه أولاً.
+
+## إنشاء خيط
+
+أبسط طريقة هي إعطاء `Thread` كائن `Runnable` — أي كائن بتابع واحد
+`run()`، عادةً مكتوب كتعبير لامبدا (lambda):
+
+```java
+public class Main {
+    public static void main(String[] args) throws InterruptedException {
+        Thread worker = new Thread(() -> {
+            System.out.println("Running on: " + Thread.currentThread().getName());
+        });
+        worker.start(); // يُجدوِل الخيط؛ لا يُشغِّله سطرياً (inline)
+        worker.join();  // يحجب main حتى ينتهي worker
+    }
+}
+```
+
+يطلب `start()` من JVM جدولة خيط جديد مدعوم بنظام التشغيل لتشغيل `run()`؛
+استدعاء `run()` مباشرة بدلاً من ذلك سيُنفِّذها فقط بشكل متزامن على الخيط
+الحالي، مُفوِّتاً الغرض. تحجب `join()` الخيط المستدعي حتى ينتهي الخيط
+الهدف — تُستخدم عادةً لانتظار عمل خلفي قبل المتابعة.
+
+## حالات التسابق وsynchronized
+
+عندما تقرأ وتكتب خيوط متعددة حالة قابلة للتغيير مشتركة دون تنسيق، تكون
+النتيجة **حالة تسابق (race condition)** — تعتمد النتيجة على جدولة خيوط
+غير قابلة للتنبؤ. هذا العدّاد ليس آمناً للخيوط:
+
+```java
+public class Counter {
+    private int count = 0;
+
+    public void increment() {
+        count++; // ليست ذرّية: قراءة، إضافة 1، كتابة — ثلاث خطوات منفصلة
+    }
+
+    public int get() {
+        return count;
+    }
+}
+```
+
+إذا استدعى خيطان `increment()` في نفس اللحظة تقريباً، يمكن لكليهما قراءة
+نفس القيمة البدائية قبل أن يكتب أي منهما، فتُفقَد تحديثة بصمت. يُصلِح
+`synchronized` هذا بالسماح لخيط واحد فقط بتنفيذ كتلة (أو تابع) محروسة على
+كائن معطى في وقت واحد:
+
+```java
+public class Counter {
+    private int count = 0;
+
+    public synchronized void increment() {
+        count++;
+    }
+
+    public synchronized int get() {
+        return count;
+    }
+}
+```
+
+كل تابع `synchronized` هنا يقفل على `this`، لذا تُنفَّذ الآن استدعاءات
+`increment()` من خيوط مختلفة على نفس نسخة `Counter` واحداً تلو الآخر،
+مُلغيةً تسابق التحديث المفقود. التكلفة هي أن الخيوط المنتظِرة القفل تُحجَب
+حتى يصبح متاحاً، وهو ما يمكن أن يضر بالإنتاجية إذا احتُفظ به طويلاً أو
+بتكرار كبير.
+
+## لمحة عن java.util.concurrent
+
+كتابة كود متزامن صحيح وفعّال بـ`Thread` و`synchronized` الخام أمر صعب
+تحقيقه بشكل صحيح على نطاق واسع. توفّر `java.util.concurrent` لبنات بناء
+أعلى مستوى. تُدير `ExecutorService` تجمّع خيوط قابلة لإعادة الاستخدام
+بدلاً من إنشاء كائن `Thread` واحد لكل مهمة:
+
+```java
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+public class Main {
+    public static void main(String[] args) throws Exception {
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+
+        Future<Integer> result = pool.submit(() -> {
+            return 21 * 2;
+        });
+
+        System.out.println(result.get()); // يُحجَب حتى تكتمل المهمة
+        pool.shutdown();
+    }
+}
+```
+
+`ConcurrentHashMap` بديل جاهز وآمن للخيوط لـ`HashMap` يتجنب قفل الخريطة
+بأكملها في كل عملية كما يفعل تغليف `HashMap` بـ`synchronized`:
+
+```java
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
+
+Map<String, Integer> hits = new ConcurrentHashMap<>();
+hits.put("home", 0);
+hits.merge("home", 1, Integer::sum); // قراءة-تعديل-كتابة ذرّية
+System.out.println(hits.get("home")); // 1
+```
+
+يمنحك `AtomicInteger` وأشقاؤه في `java.util.concurrent.atomic` عمليات
+ذرّية بلا قفل لقيمة واحدة، وهو غالباً كافٍ لإصلاح تسابق `Counter` أعلاه
+دون `synchronized` إطلاقاً:
+
+```java
+import java.util.concurrent.atomic.AtomicInteger;
+
+AtomicInteger count = new AtomicInteger(0);
+count.incrementAndGet(); // ذرّي، آمن للخيوط، بلا حاجة لقفل
+System.out.println(count.get());
+```
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبدء خيط يطبع اسمه، ثم الانتظار حتى ينتهي."
+  items={[
+    { id: "l1", label: "Thread worker = new Thread(() -> {" },
+    { id: "l2", label: "    System.out.println(Thread.currentThread().getName());" },
+    { id: "l3", label: "});" },
+    { id: "l4", label: "worker.start();", explanation: "يجب بناء كائن Thread بالكامل قبل استدعاء ()start عليه." },
+    { id: "l5", label: "worker.join();" },
+  ]}
+  correctOrder={["l1", "l2", "l3", "l4", "l5"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="رتّب هذه الأسطر لإرسال مهمة إلى ExecutorService وقراءة نتيجتها."
+  items={[
+    { id: "m1", label: "ExecutorService pool = Executors.newFixedThreadPool(2);" },
+    { id: "m2", label: "Future<Integer> result = pool.submit(() -> 21 * 2);", explanation: "يجب أن يوجد التجمّع قبل أن تتمكن من إرسال مهمة إليه." },
+    { id: "m3", label: "System.out.println(result.get());" },
+    { id: "m4", label: "pool.shutdown();" },
+  ]}
+  correctOrder={["m1", "m2", "m3", "m4"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا الكود؟"
+  code={`public class Counter {
+    private int count = 0;
+    public void increment() { count++; }
+    public int get() { return count; }
+}
+
+public class Main {
+    public static void main(String[] args) throws InterruptedException {
+        Counter counter = new Counter();
+        Runnable task = () -> {
+            for (int i = 0; i < 100_000; i++) {
+                counter.increment();
+            }
+        };
+        Thread t1 = new Thread(task);
+        Thread t2 = new Thread(task);
+        t1.start();
+        t2.start();
+        t1.join();
+        t2.join();
+        System.out.println(counter.get() == 200_000);
+    }
+}`}
+  options={["true، دائماً", "false، دائماً", "غير مضمونة — عادةً false، لكن ليست حتمية", "خطأ تصريف: count++ ليست آمنة للخيوط"]}
+  correctIndex={2}
+  explanation="increment() ليست synchronized، لذا يمكن لـ count++ (قراءة-تعديل-كتابة من ثلاث خطوات منفصلة) أن تتشابك بين الخيطين وتُفقِد تحديثات. العدد النهائي أقل من 200,000 دائماً تقريباً، لكن القيمة الدقيقة تعتمد على جدولة خيوط غير قابلة للتنبؤ — إنها حالة تسابق، وليست إجابة خاطئة ثابتة، والكود يُصرَّف دون مشكلة."
+  actualOutput="false (عادةً — القيمة الدقيقة تختلف بين التشغيلات)"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [الحزم وأدوات البناء](/ar/programming-languages/java/modules-packages)
+- [الأصناف والواجهات](/ar/programming-languages/java/oop-or-structs)

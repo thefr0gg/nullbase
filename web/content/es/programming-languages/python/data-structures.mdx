@@ -1,0 +1,88 @@
+---
+title: Estructuras de Datos
+description: Los cuatro contenedores incorporados de Python — listas, tuplas, dicts, y sets — y cuándo recurrir a cada uno.
+category: Programming Languages
+weight: 5
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Python tiene cuatro tipos de contenedor incorporados en el propio lenguaje, sin necesidad de import, y elegir el correcto es sobre todo una cuestión de si el orden importa, si el contenido necesita cambiar, y si estás buscando cosas por posición o por nombre.
+
+Una **lista** es una secuencia ordenada y mutable — la elección por defecto cuando tienes una colección de cosas que podría crecer, encogerse, o reordenarse.
+
+```python
+numbers = [3, 1, 4, 1, 5, 9]
+numbers.append(2)
+numbers.sort()
+print(numbers)  # [1, 1, 2, 3, 4, 5, 9]
+```
+
+Una **tupla** se parece a una lista pero es inmutable — una vez creada, no se le pueden añadir elementos ni reasignar uno. Esa inmutabilidad hace que las tuplas puedan usarse como claves de dict (las listas no pueden) y señala intención: una tupla dice "este es un grupo fijo y pequeño de valores," como coordenadas.
+
+```python
+point = (10, 20)  # tuples are immutable
+x, y = point       # unpacking works the same as with lists
+print(x, y)  # 10 20
+```
+
+Un **dict** almacena pares clave-valor y busca valores por clave en vez de por posición, lo cual lo hace la elección natural para cualquier cosa que de otro modo describirías como "un registro con campos con nombre."
+
+```python
+user = {"name": "Rae", "age": 29}
+user["email"] = "rae@example.com"
+for key, value in user.items():
+    print(key, value)
+```
+
+Un **set** almacena valores únicos y sin orden y descarta automáticamente los duplicados al insertar — útil para pruebas de pertenencia (`x in my_set` es rápido) y para deduplicar una colección.
+
+```python
+unique_ids = {1, 2, 2, 3, 3, 3}
+print(unique_ids)  # {1, 2, 3}
+```
+
+Lo único que hay que internalizar sobre las listas (y los dicts, y los sets) es que son *objetos* mutables — una variable que contiene una de ellas no contiene una copia de su contenido, contiene una referencia a la misma lista subyacente a la que también apunta cualquier otra persona que tenga esa variable.
+
+## Ver también
+
+- **[Funciones](/es/programming-languages/python/functions)** — cómo aparece este mismo comportamiento de alias con argumentos por defecto mutables.
+- **[Clases y Objetos](/es/programming-languages/python/oop-or-structs)** — construir tus propios tipos estructurados una vez que los dicts y las tuplas dejan de ser lo suficientemente descriptivos.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir un dict de usuario, añadir un campo, y luego imprimir cada entrada."
+  items={[
+    { id: "create", label: 'user = {"name": "Rae", "age": 29}' },
+    { id: "add", label: 'user["email"] = "rae@example.com"', explanation: "`user` tiene que existir como dict antes de que se le pueda añadir una nueva clave." },
+    { id: "for", label: "for key, value in user.items():", explanation: "Iterar ocurre después de que el dict tenga su conjunto final de claves." },
+    { id: "print", label: "    print(key, value)" },
+  ]}
+  correctOrder={["create", "add", "for", "print"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir, ordenar, e imprimir una lista de números."
+  items={[
+    { id: "numbers", label: "numbers = [3, 1, 4, 1, 5, 9]" },
+    { id: "append", label: "numbers.append(2)", explanation: "La lista debe existir antes de que se pueda llamar a `.append()` sobre ella." },
+    { id: "sort", label: "numbers.sort()", explanation: "El ordenamiento ocurre después de que cada elemento, incluido el añadido, está en la lista." },
+    { id: "print", label: "print(numbers)" },
+  ]}
+  correctOrder={["numbers", "append", "sort", "print"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`a = [1, 2, 3]\nb = a\nb.append(4)\nprint(a)`}
+  options={["[1, 2, 3]", "[1, 2, 3, 4]", "An error, because a is unchanged", "[4]"]}
+  correctIndex={1}
+  explanation="b = a no copia la lista — hace que b apunte exactamente al mismo objeto lista al que ya apunta a. Llamar a b.append(4) muta esa única lista compartida, así que el cambio también es visible a través de a, aunque a en sí nunca fue reasignada directamente."
+  actualOutput="[1, 2, 3, 4]"
+/>
+</ExerciseTabs>

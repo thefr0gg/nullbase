@@ -1,0 +1,177 @@
+---
+title: الأصناف والواجهات
+description: الأصناف بمُعدِّلات الوصول، وكيف يختلف interface عن type عند وصف أشكال الكائنات.
+category: Programming Languages
+weight: 6
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تدعم أصناف JavaScript `class` و`constructor` والتوابع منذ ES2015، لكن
+لا مفهوم لديها لكون الحقل خاصاً أو عاماً — كل خاصية قابلة للوصول من
+خارج النسخة. تضيف TypeScript **مُعدِّلات الوصول (access modifiers)**
+التي يفرضها المُصرِّف، بالإضافة إلى `interface`، وهو شكل تصريح مخصَّص
+لوصف الأشكال لا مكافئ له إطلاقاً في JavaScript العادية.
+
+## الأصناف بمُعدِّلات الوصول
+
+```ts
+class BankAccount {
+  public owner: string;
+  private balance: number;
+  readonly accountId: string;
+
+  constructor(owner: string, accountId: string, startingBalance: number) {
+    this.owner = owner;
+    this.accountId = accountId;
+    this.balance = startingBalance;
+  }
+
+  deposit(amount: number): void {
+    this.balance += amount;
+  }
+
+  getBalance(): number {
+    return this.balance;
+  }
+}
+
+const acct = new BankAccount("Ada", "acc-1", 100);
+acct.deposit(50); // OK — public method
+console.log(acct.balance); // Type error: Property 'balance' is private and only accessible within class 'BankAccount'
+acct.accountId = "acc-2"; // Type error: Cannot assign to 'accountId' because it is a read-only property
+```
+
+- `public` (الافتراضي) — قابل للوصول من أي مكان.
+- `private` — قابل للوصول فقط داخل جسم الصنف نفسه، وليس من النسخ أو
+  الأصناف الفرعية.
+- `readonly` — قابل للإسناد مرة واحدة فقط، في الباني.
+
+تختفي هذه الفحوصات كلياً من مُخرَج JavaScript المُصرَّف — `private`
+و`readonly` ضمانات في وقت الترجمة فقط. (تدعم TypeScript أيضاً حقولاً
+خاصة حقاً في وقت التشغيل عبر صيغة `#field`، التي تُعرِّفها JavaScript
+نفسها وتفرضها في وقت التشغيل، خلافاً لـ`private`.)
+
+## اختصار خصائص الباني
+
+كتابة حقل، ثم إعادة إسنادها من مُعامِل باني بنفس الاسم، شائعة بما
+يكفي لتتيح لك TypeScript دمج الاثنين في تصريح واحد بإضافة مُعدِّل
+وصول مباشرة إلى مُعامِل الباني:
+
+```ts
+class Point {
+  constructor(
+    public x: number,
+    public y: number,
+  ) {}
+}
+
+const p = new Point(3, 4);
+console.log(p.x, p.y); // 3 4
+```
+
+يُصرِّح هذا عن `x` و`y` كحقلين عامين على الصنف *و*يُسنِدهما من
+وسيطي الباني، دون حاجة إلى تصريحات حقول منفصلة أو أسطر
+`this.x = x`.
+
+## interface مقابل type
+
+يمكن لكل من `interface` و`type` وصف شكل كائن، وغالباً ما يكونان
+قابلين للتبادل عندما يتعلق الأمر بأشكال كائنات عادية:
+
+```ts
+interface UserI {
+  id: number;
+  name: string;
+}
+
+type UserT = {
+  id: number;
+  name: string;
+};
+```
+
+الفروق التي تهم عملياً:
+
+- **دمج التصريحات (Declaration merging)**: يندمج تصريحا `interface`
+  بنفس الاسم في واحد؛ يُشكِّل اسما نوع (`type`) بنفس الاسم خطأً في
+  وقت الترجمة (معرِّف مكرر).
+- **ما يمكنهما وصفه**: يمكن لـ`type` أن يُسمِّي أي شيء — اتحادات،
+  وصفوف (tuples)، وأنواعاً أولية (`type Id = string | number`) —
+  بينما لا يصف `interface` سوى أشكال الكائنات/الأصناف.
+- **التوسيع**: يُوسِّع `interface` واجهة أخرى بـ`extends`؛ يجمع
+  `type` الأشكال بتقاطع (`&`).
+
+```ts
+interface Animal {
+  name: string;
+}
+interface Dog extends Animal {
+  breed: string;
+}
+
+type Vehicle = { wheels: number };
+type Car = Vehicle & { brand: string };
+```
+
+يمكن لصنف أن يُنفِّذ (`implements`) أياً من الشكلين، طالما أن الشكل
+نوع كائن — `class Labrador implements Dog { ... }` يعمل بنفس طريقة
+`class Labrador implements Car { ... }`، بنيوياً.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء صنف BankAccount بحقل رصيد خاص وتابع إيداع."
+  items={[
+    { id: "class-open", label: "class BankAccount {" },
+    { id: "field-private", label: "  private balance: number;" },
+    { id: "ctor", label: "  constructor(startingBalance: number) {", explanation: "يجب أن يأتي الباني بعد تصريح الحقل الذي يُهيِّئه." },
+    { id: "ctor-body", label: "    this.balance = startingBalance;" },
+    { id: "ctor-close", label: "  }" },
+    { id: "deposit", label: "  deposit(amount: number): void {" },
+    { id: "deposit-body", label: "    this.balance += amount;" },
+    { id: "deposit-close", label: "  }" },
+    { id: "class-close", label: "}" },
+  ]}
+  correctOrder={["class-open", "field-private", "ctor", "ctor-body", "ctor-close", "deposit", "deposit-body", "deposit-close", "class-close"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لتوسيع واجهة إلى واجهة أخرى."
+  items={[
+    { id: "animal-open", label: "interface Animal {" },
+    { id: "animal-name", label: "  name: string;" },
+    { id: "animal-close", label: "}" },
+    { id: "dog-open", label: "interface Dog extends Animal {", explanation: "يجب أن تُشير Dog إلى Animal بعد أن تكون Animal قد صُرِّح عنها بالفعل." },
+    { id: "dog-breed", label: "  breed: string;" },
+    { id: "dog-close", label: "}" },
+  ]}
+  correctOrder={["animal-open", "animal-name", "animal-close", "dog-open", "dog-breed", "dog-close"]}
+/>
+
+<PredictOutput
+  title="ماذا يقول مدقّق الأنواع؟"
+  code={`class Point {
+  constructor(
+    public readonly x: number,
+    public readonly y: number,
+  ) {}
+}
+
+const p = new Point(3, 4);
+p.x = 10;`}
+  options={["p.x becomes 10", "10", "Type error: Cannot assign to 'x' because it is a read-only property", "undefined"]}
+  correctIndex={2}
+  explanation="x مُصرَّح عنها readonly عبر اختصار مُعامِل الباني، لذا لا يمكن ضبطها إلا مرة واحدة، أثناء الإنشاء. إسناد قيمة إليها بعد ذلك — حتى قيمة من النوع الصحيح، number — مرفوض في وقت الترجمة قبل أن يعمل الكود إطلاقاً."
+  actualOutput="Type error: Cannot assign to 'x' because it is a read-only property"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [هياكل البيانات](/ar/programming-languages/typescript/data-structures)
+- [معالجة الأخطاء](/ar/programming-languages/typescript/error-handling)

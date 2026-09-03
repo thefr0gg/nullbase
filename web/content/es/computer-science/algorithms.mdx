@@ -1,0 +1,38 @@
+---
+title: Algoritmos
+description: Cómo describir lo que cuesta un fragmento de código usando la notación Big O, las tasas de crecimiento comunes que realmente encontrarás, y por qué el mismo problema puede tener soluciones con un rendimiento radicalmente distinto.
+category: Computer Science
+weight: 1
+---
+
+Un **algoritmo** es simplemente una secuencia finita y bien definida de pasos para resolver un problema — pero el mismo problema normalmente tiene varios algoritmos que lo resuelven correctamente, y elegir el equivocado es cómo una funcionalidad que funciona bien en pruebas se cae en producción en el momento en que la entrada se vuelve grande. La herramienta para razonar sobre esto de antemano, sin ejecutar el código, es la **complejidad asintótica**.
+
+## Notación Big O
+
+**Big O** describe cómo crece el tiempo de ejecución (o el uso de memoria) de un algoritmo a medida que crece el tamaño de la entrada `n`, ignorando factores constantes y términos de orden inferior — responde a "qué pasa cuando esto se hace grande", no a "cuántos milisegundos tarda esto en mi portátil". Unas pocas tasas de crecimiento aparecen constantemente, de mejor a peor:
+
+- **O(1)** — constante. Búsqueda por posición en un array; el costo no depende de cuántos datos haya.
+- **O(log n)** — logarítmica. Búsqueda binaria en un array ordenado: cada paso descarta la mitad de los candidatos restantes.
+- **O(n)** — lineal. Escanear cada elemento una vez, por ejemplo, encontrar el máximo de una lista sin ordenar.
+- **O(n log n)** — el costo de cualquier ordenamiento basado en comparaciones en su mejor caso (merge sort, heapsort) — demostrablemente lo mejor que puede lograr un ordenamiento por comparación general.
+- **O(n²)** — cuadrática. Un bucle anidado comparando cada par de elementos — detección ingenua de duplicados, bubble sort.
+- **O(2ⁿ)** — exponencial. Probar por fuerza bruta cada subconjunto de un conjunto; solo manejable para `n` muy pequeño.
+
+La brecha entre estas no es académica: un algoritmo O(n²) sobre un millón de filas es aproximadamente un billón de operaciones — segundos o minutos se convierten en horas, y el código que "funcionaba en la demo con 50 filas" es exactamente donde esto muerde.
+
+## El mismo problema, algoritmos distintos
+
+El ordenamiento es el ejemplo más claro de por qué importa la elección del algoritmo: bubble sort e insertion sort son ambos O(n²) y fáciles de escribir de memoria, pero merge sort y quicksort son O(n log n) en promedio y son lo que realmente usa cada ordenamiento de biblioteca estándar una vez que un conjunto de datos deja de ser diminuto. La búsqueda muestra el mismo patrón — un escaneo lineal es O(n) en cualquier lista, pero la búsqueda binaria es O(log n) *si los datos ya están ordenados*, que es precisamente por qué las bases de datos construyen [índices](/es/databases) en primer lugar: pagar un costo único de ordenamiento/estructuración por adelantado para hacer que cada búsqueda futura sea drásticamente más barata.
+
+## Dónde aparece esto en la práctica
+
+El análisis de complejidad no es solo una trivia de entrevista — es el razonamiento detrás de:
+
+- Por qué una consulta a la base de datos sin un índice se convierte en un escaneo completo de la tabla (O(n)) en lugar de una búsqueda por índice (O(log n) o mejor).
+- Por qué la [estructura de datos](/es/computer-science/data-structures) correcta para una tarea (mapa hash frente a array frente a árbol) cambia la complejidad de un algoritmo sin cambiar lo que calcula.
+- Por qué la "optimización prematura" es una trampa real también en la otra dirección — un algoritmo O(n) ya es suficientemente rápido para `n` del orden de cientos, y reescribirlo para recortar constantes es esfuerzo desperdiciado en comparación con arreglar uno accidentalmente cuadrático.
+
+## Ver también
+
+- **[Estructuras de Datos](/es/computer-science/data-structures)** — las estructuras cuyos patrones de acceso determinan qué complejidad es siquiera alcanzable para una operación dada.
+- **[Bases de datos](/es/databases)** — la indexación es el razonamiento de Big O aplicado directamente al rendimiento de las consultas.

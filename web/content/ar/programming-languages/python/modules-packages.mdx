@@ -1,0 +1,98 @@
+---
+title: الوحدات والحزم
+description: تنظيم كود Python ومشاركته — import، وتثبيت الحزم عبر pip، والبيئات الافتراضية، وrequirements.txt مقابل pyproject.toml.
+category: Programming Languages
+weight: 8
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+أي ملف `.py` هو **وحدة (module)**، ويصبح الكود على مستواه الأعلى (الدوال، والفئات، والمتغيرات) متاحاً في مكان آخر عبر `import`.
+
+```python
+import math
+from datetime import date
+
+print(math.sqrt(16))   # 4.0
+print(date.today())      # 2026-09-01, for example
+```
+
+يجلب `import math` الوحدة كاملة، ويُصل إلى محتوياتها عبر `math.sqrt(...)`؛ بينما تسحب `from datetime import date` اسماً محدداً واحداً مباشرة إلى النطاق، بحيث يُستخدم كـ `date` بدلاً من `datetime.date`. كل من `math` و`datetime` تأتيان ضمن المكتبة القياسية لـ Python — دون الحاجة لأي تثبيت.
+
+تعمل ملفاتك الخاصة بنفس الطريقة: أي اسم مُعرَّف على المستوى الأعلى من `mymodule.py` يصبح قابلاً للاستيراد كـ `mymodule.name` (أو عبر `from mymodule import name`) من ملف آخر في نفس المشروع.
+
+```python
+# mymodule.py
+def add(a, b):
+    return a + b
+```
+
+```python
+# main.py
+from mymodule import add
+print(add(2, 3))  # 5
+```
+
+بالنسبة للكود خارج المكتبة القياسية، يثبّت `pip` **الحزم (packages)** المنشورة في فهرس حزم Python (PyPI). ولأن مشاريع مختلفة على نفس الجهاز غالباً ما تحتاج إصدارات متضاربة من نفس الحزمة، تستخدم مشاريع Python دائماً تقريباً **بيئة افتراضية (virtual environment)** — مجموعة معزولة ومحلية للمشروع من الحزم المثبَّتة — بدلاً من التثبيت عالمياً.
+
+```bash
+python -m venv .venv
+source .venv/bin/activate   # .venv\Scripts\activate on Windows
+pip install requests
+pip freeze > requirements.txt
+```
+
+ينشئ `python -m venv .venv` البيئة المعزولة في مجلد `.venv`؛ ويجعل `activate` الصدفة (shell) تستخدم بايثون و`pip` الخاصين بتلك البيئة بدلاً من الإصدار العام للنظام؛ ويلتقط `pip freeze > requirements.txt` بالضبط ما هو مثبَّت (بإصدارات محدَّدة) بحيث يمكن إعادة إنشاء البيئة في مكان آخر باستخدام `pip install -r requirements.txt`.
+
+تعلن المشاريع الأحدث بشكل متزايد اعتمادياتها في `pyproject.toml` بدلاً من `requirements.txt` مجردة، لأنها تلتقط أيضاً اسم المشروع، وإصداره، وإعدادات البناء في ملف واحد موحَّد قياسياً:
+
+```toml
+[project]
+name = "my-app"
+version = "0.1.0"
+dependencies = ["requests>=2.31"]
+```
+
+## طالع أيضاً
+
+- **[معالجة الأخطاء](/ar/programming-languages/python/error-handling)** — أنماط مثل `with open(...)` القادمة من المكتبة القياسية المستوردة هنا.
+- **[الدوال](/ar/programming-languages/python/functions)** — الدوال التي تُستورد وتُستدعى عبر حدود الوحدات.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لاستيراد math وdatetime، ثم استخدام كليهما."
+  items={[
+    { id: "importmath", label: "import math" },
+    { id: "importdate", label: "from datetime import date" },
+    { id: "sqrt", label: "print(math.sqrt(16))", explanation: "يجب استيراد math قبل إمكانية استدعاء math.sqrt." },
+    { id: "today", label: "print(date.today())", explanation: "يجب استيراد date قبل إمكانية استخدامها مباشرة (دون بادئة datetime.)." },
+  ]}
+  correctOrder={["importmath", "importdate", "sqrt", "today"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب أوامر الصدفة إلى الترتيب الصحيح لإعداد بيئة افتراضية، وتثبيت حزمة، وتسجيلها."
+  items={[
+    { id: "venv", label: "python -m venv .venv" },
+    { id: "activate", label: "source .venv/bin/activate", explanation: "يجب إنشاء البيئة قبل إمكانية تفعيلها." },
+    { id: "install", label: "pip install requests", explanation: "يجب أن تكون البيئة مفعّلة حتى يثبّت pip هذا داخل .venv، وليس على مستوى النظام." },
+    { id: "freeze", label: "pip freeze > requirements.txt", explanation: "لا يمكن لهذا الأمر التقاط requests إلا بعد تثبيتها فعلياً." },
+  ]}
+  correctOrder={["venv", "activate", "install", "freeze"]}
+/>
+
+<PredictOutput
+  title="ماذا تطبع هذه الشيفرة؟"
+  code={`# greet.py\nprint("greet module loaded")\n\ndef hello():\n    print("hello")\n\n# main.py\nimport greet\nimport greet\ngreet.hello()`}
+  options={['"greet module loaded" printed twice, then "hello"', '"greet module loaded" printed once, then "hello"', 'Just "hello", with no loading message', 'An error: greet cannot be imported twice']}
+  correctIndex={1}
+  explanation="تخزّن Python كل وحدة مؤقتاً في ذاكرة تخزين (cache) عند استيرادها لأول مرة في عملية تشغيل. يجد الاستيراد الثاني import greet الوحدة موجودة بالفعل في تلك الذاكرة المؤقتة ويعيد استخدامها بدلاً من إعادة تنفيذ الملف، لذا تُنفَّذ عبارة print على المستوى الأعلى مرة واحدة فقط بغض النظر عن عدد الأماكن التي تستورد نفس الوحدة."
+  actualOutput='greet module loaded\nhello'
+/>
+</ExerciseTabs>
+

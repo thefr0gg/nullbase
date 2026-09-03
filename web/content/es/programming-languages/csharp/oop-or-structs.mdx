@@ -1,0 +1,191 @@
+---
+title: Clases e Interfaces
+description: Clases, interfaces, herencia, y las propiedades auto-implementadas de C# como alternativa de primera clase a los campos simples.
+category: Programming Languages
+weight: 6
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+C# es profundamente orientado a objetos: las clases soportan herencia simple, las interfaces soportan múltiples contratos de implementación, y el encapsulamiento está integrado en el lenguaje a través de **propiedades** en lugar de dejarse a la convención.
+
+## Clases y campos
+
+Una clase agrupa estado (campos) y comportamiento (métodos):
+
+```csharp
+class Dog
+{
+    private string name;
+
+    public Dog(string name)
+    {
+        this.name = name;
+    }
+
+    public void Bark()
+    {
+        Console.WriteLine($"{name} says Woof!");
+    }
+}
+
+var rex = new Dog("Rex");
+rex.Bark(); // Rex says Woof!
+```
+
+Un campo `private` simple como `name` no tiene validación ni forma de interceptar lecturas o escrituras desde fuera de la clase — para eso están las propiedades.
+
+## Propiedades: una característica del lenguaje, no una convención
+
+A diferencia de Java o C++, donde "campos encapsulados" significa escribir a mano métodos `getName()`/`setName()`, C# incorpora la sintaxis de getter/setter directamente en el lenguaje. Una propiedad luce como un campo para quien la llama pero puede ejecutar código en cada lectura o escritura:
+
+```csharp
+class Person
+{
+    private int age;
+
+    public string Name { get; set; } // auto-implemented property: compiler
+                                      // generates the backing field for you
+
+    public int Age
+    {
+        get => age;
+        set
+        {
+            if (value < 0)
+            {
+                throw new ArgumentException("Age cannot be negative");
+            }
+            age = value;
+        }
+    }
+
+    public string Greeting => $"Hi, I'm {Name}"; // read-only, expression-bodied
+
+    public Person(string name, int age)
+    {
+        Name = name;
+        Age = age;
+    }
+}
+
+var p = new Person("Ada", 36);
+Console.WriteLine(p.Greeting); // Hi, I'm Ada
+p.Age = -5; // throws ArgumentException
+```
+
+Quien llama escribe `p.Age = 30;` exactamente como si `Age` fuera un campo — la lógica de validación en el bloque `set` se ejecuta de forma transparente. Por esto el estilo de C# favorece fuertemente las propiedades públicas sobre los campos públicos: puedes empezar con una propiedad auto-implementada y agregar lógica más adelante sin romper a ningún llamador.
+
+## Interfaces y herencia
+
+Una interfaz declara un contrato sin implementación (dejando de lado los métodos de interfaz por defecto); una clase implementa una o más interfaces y hereda de a lo sumo una clase base:
+
+```csharp
+interface IShape
+{
+    double Area();
+}
+
+class Circle : IShape
+{
+    public double Radius { get; }
+
+    public Circle(double radius) => Radius = radius;
+
+    public double Area() => Math.PI * Radius * Radius;
+}
+
+class Square : IShape
+{
+    public double Side { get; }
+
+    public Square(double side) => Side = side;
+
+    public double Area() => Side * Side;
+}
+
+List<IShape> shapes = new List<IShape> { new Circle(2), new Square(3) };
+foreach (IShape shape in shapes)
+{
+    Console.WriteLine(shape.Area());
+}
+```
+
+La herencia de clase base usa la misma sintaxis `:` y la palabra clave `override` para el polimorfismo:
+
+```csharp
+class Animal
+{
+    public virtual string Speak() => "...";
+}
+
+class Cat : Animal
+{
+    public override string Speak() => "Meow";
+}
+
+Animal a = new Cat();
+Console.WriteLine(a.Speak()); // Meow — resolved at runtime via the actual type
+```
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir una clase con una propiedad auto-implementada y usarla."
+  items={[
+    { id: "l1", label: "class Book" },
+    { id: "l2", label: "{" },
+    { id: "l3", label: "    public string Title { get; set; }" },
+    { id: "l4", label: "}" },
+    { id: "l5", label: "var b = new Book { Title = \"Dune\" };" },
+    { id: "l6", label: "Console.WriteLine(b.Title);" },
+  ]}
+  correctOrder={["l1", "l2", "l3", "l4", "l5", "l6"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Coloca estas líneas en orden para declarar una interfaz y una clase que la implementa."
+  items={[
+    { id: "m1", label: "interface IGreeter" },
+    { id: "m2", label: "{" },
+    { id: "m3", label: "    string Greet();" },
+    { id: "m4", label: "}" , explanation: "El cuerpo de la interfaz debe cerrarse antes de declarar la clase que la implementa."},
+    { id: "m5", label: "class English : IGreeter" },
+    { id: "m6", label: "{" },
+    { id: "m7", label: "    public string Greet() => \"Hello\";" },
+    { id: "m8", label: "}" },
+  ]}
+  correctOrder={["m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`class Account
+{
+    private decimal balance;
+
+    public decimal Balance
+    {
+        get => balance;
+        set => balance = value < 0 ? 0 : value;
+    }
+}
+
+var acc = new Account();
+acc.Balance = -50;
+Console.WriteLine(acc.Balance);`}
+  options={["-50", "0", "null", "Compile error"]}
+  correctIndex={1}
+  explanation="El accesor set de la propiedad limita cualquier valor negativo a 0 antes de almacenarlo en el campo de respaldo, así que leer Balance después devuelve 0, no el -50 que se asignó. Esto es exactamente el tipo de validación que un campo público simple no podría interceptar."
+  actualOutput="0"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Estructuras de Datos](/es/programming-languages/csharp/data-structures)
+- [Manejo de Errores](/es/programming-languages/csharp/error-handling)

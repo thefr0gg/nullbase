@@ -1,0 +1,43 @@
+---
+title: Planificación
+description: Cómo decide el kernel cuál de muchos procesos ejecutables obtiene la CPU a continuación y por cuánto tiempo — FCFS, Round Robin, planificación por prioridad, y colas multinivel de retroalimentación.
+category: Operating Systems
+weight: 9
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+Un **planificador** es la parte del kernel que decide, en cualquier momento dado, qué proceso (o hilo) ejecutable realmente obtiene ejecutarse en un núcleo de CPU a continuación, y por cuánto tiempo. Esto tiene que existir porque casi siempre hay más procesos ejecutables de los que hay núcleos para ejecutarlos — una máquina típica tiene un puñado de núcleos y rutinariamente docenas o cientos de procesos que quieren tiempo de CPU. Algo tiene que arbitrar, y el algoritmo que usa tiene consecuencias reales y percibidas: es la diferencia entre un sistema que se siente responsivo bajo carga y uno donde una tarea pesada hace que todo lo demás se detenga.
+
+## Preventiva frente a cooperativa
+
+La primera decisión de diseño es si un proceso en ejecución puede ser interrumpido antes de que ceda voluntariamente la CPU. Bajo la **planificación cooperativa**, un proceso se ejecuta hasta que elige ceder — bloqueándose en E/S, o llamando explícitamente a algo como `yield()` — lo cual significa que un solo proceso que se comporta mal o simplemente se ejecuta durante mucho tiempo puede congelar todo el sistema, ya que nada lo obliga a devolver la CPU. Bajo la **planificación preventiva**, el kernel puede interrumpir forzosamente un proceso en ejecución — típicamente mediante una interrupción de temporizador de hardware que se dispara a un intervalo fijo — y entregar la CPU a otra cosa sin importar si el proceso interrumpido estaba listo para detenerse. Todo sistema operativo de propósito general ampliamente usado hoy en día (Linux, Windows, macOS) es preventivo; la planificación cooperativa sobrevive principalmente en sistemas embebidos con restricciones y en modelos de concurrencia en espacio de usuario (como un bucle de eventos de un solo hilo) que son algo distinto y de nivel más alto que la planificación de procesos del sistema operativo.
+
+## Algoritmos clásicos y sus compensaciones
+
+- **Primero en Llegar, Primero en Ser Servido (FCFS)** ejecuta los procesos en el orden en que se volvieron ejecutables, sin interrupción una vez que un proceso empieza. Es casi lo más simple que puede ser un planificador, pero tiene un modo de fallo bien conocido llamado el **efecto convoy**: si un proceso se ejecuta durante mucho tiempo, cada otro proceso que llegó después de él — incluso los cortos y rápidos — se sienta esperando detrás de él todo ese tiempo, hundiendo la capacidad de respuesta promedio aunque la mayor parte del trabajo involucrado fuera rápido.
+- **Round Robin** le da a cada proceso un **cuanto de tiempo** fijo y recorre los procesos ejecutables, apropiándose de quien esté ejecutando cuando termina su cuanto y pasando al siguiente en la línea. Esto es justo en un sentido directo — ningún proceso espera indefinidamente detrás de otro — pero la equidad tiene un costo: cada apropiación es un **cambio de contexto**, que en sí mismo toma tiempo real (guardar el estado de CPU de un proceso, cargar el de otro). Configurar el cuanto de tiempo demasiado corto y la CPU gasta una fracción significativa de su tiempo cambiando de contexto en lugar de hacer trabajo útil; configurarlo demasiado largo y Round Robin empieza a comportarse como FCFS.
+- La **planificación por prioridad** siempre ejecuta a continuación el proceso ejecutable de mayor prioridad. Esto permite que un sistema exprese "esto importa más" directamente, pero llevado ingenuamente tiene un modo de fallo obvio: un flujo constante de trabajo de alta prioridad puede **matar de hambre (starve)** a un proceso de baja prioridad indefinidamente, ya que nunca se convierte en lo de mayor prioridad en la cola. La solución estándar es el **envejecimiento (aging)** — elevar gradualmente la prioridad efectiva de un proceso cuanto más tiempo lleve esperando, así que eventualmente incluso el trabajo de más baja prioridad tiene garantizado ejecutarse.
+- Las **colas multinivel de retroalimentación** son menos un único algoritmo que un marco que combina las ideas de arriba: múltiples colas en distintos niveles de prioridad, cada una quizás con su propia longitud de cuanto de tiempo, donde un proceso que usa todo su cuanto (comportándose como una tarea intensiva en CPU) es degradado a una cola de menor prioridad con cuantos más largos, mientras que un proceso que cede rápido (comportándose como una tarea interactiva limitada por E/S) se mantiene en una cola de alta prioridad con cuantos cortos para que siga siendo responsivo. Esta es, aproximadamente, la forma que aproximan los planificadores reales de propósito general — el Planificador Completamente Justo (CFS) de Linux, por ejemplo, no usa colas fijas literales pero persigue el mismo objetivo subyacente: mantener ágil el trabajo interactivo, seguir haciendo progreso en el trabajo intensivo en CPU, y evitar matar de hambre a nada indefinidamente.
+
+<ItemExplorer
+  title="Comparación de Algoritmos de Planificación"
+  layout="table"
+  tableColumns={[{ key: "fairness", label: "Equidad" }, { key: "overhead", label: "Sobrecarga" }, { key: "weakness", label: "Principal debilidad" }]}
+  items={[
+    { id: "fcfs", label: "Primero en Llegar, Primero en Ser Servido", color: "red", columns: { fairness: "Pobre — solo orden de llegada", overhead: "La más baja — no necesita apropiación", weakness: "Efecto convoy: un proceso largo bloquea todo lo que está detrás" } },
+    { id: "round-robin", label: "Round Robin", color: "blue", columns: { fairness: "Alta — cada proceso obtiene turnos regulares", overhead: "Escala según cuán corto sea el cuanto de tiempo", weakness: "Cuantos demasiado cortos desperdician tiempo en cambios de contexto" } },
+    { id: "priority", label: "Planificación por Prioridad", color: "orange", columns: { fairness: "Deliberadamente desigual por diseño", overhead: "Baja, a menos que se implemente envejecimiento", weakness: "Inanición del trabajo de baja prioridad sin envejecimiento" } },
+    { id: "mlfq", label: "Cola Multinivel de Retroalimentación", color: "green", columns: { fairness: "Se adapta a cómo se comporta realmente un proceso", overhead: "La más alta — rastrear y ajustar el comportamiento con el tiempo", weakness: "Genuinamente compleja de ajustar correctamente" } },
+  ]}
+/>
+
+## Por qué esto sigue importando día a día
+
+La mayoría del código de aplicación nunca llama directamente al planificador, pero su comportamiento explica cosas que los desarrolladores ven constantemente: por qué un trabajo en segundo plano intensivo en CPU puede hacer que una solicitud interactiva se sienta lenta en la misma máquina, por qué configurar el valor `nice` de un proceso cambia cuánta CPU obtiene realmente en relación con sus vecinos, y por qué un sistema bajo carga pesada no falla directamente sino que se degrada — cada proceso sigue obteniendo *algo* de tiempo, simplemente menos, que es exactamente lo que está diseñado para garantizar un planificador preventivo orientado a la equidad.
+
+## Ver también
+
+- **[Señales](/es/operating-systems/signals)** — un mecanismo de kernel relacionado pero distinto: las señales interrumpen la *lógica* de un proceso, mientras que la planificación decide cuándo se ejecuta esa lógica en absoluto.
+- **[Procesos](/es/devops/processes)** — la unidad de trabajo entre la que realmente elige el planificador.
+- **[Linux](/es/devops/linux)** — `ps` y herramientas relacionadas para inspeccionar qué se está ejecutando realmente en un sistema real.

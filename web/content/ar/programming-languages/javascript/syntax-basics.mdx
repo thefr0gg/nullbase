@@ -1,0 +1,141 @@
+---
+title: بنية اللغة والمتغيرات
+description: تصريحات المتغيرات، والأنواع الأولية، والقوالب النصية الحرفية (template literals)، والقيم الصحيحة/الزائفة (truthiness) في JavaScript.
+category: Programming Languages
+weight: 2
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تملك JavaScript ثلاث طرق لتصريح متغير — `var` و`let` و`const` — وهي غير
+قابلة للتبادل. `var` محدودة النطاق بالدالة وتسبق تحديد النطاق بالكتلة في
+اللغة؛ `let` و`const`، المضافتان في ES6، محدودتا النطاق بالكتلة وينبغي
+أن تكونا خيارك الافتراضي. استخدم `const` ما لم تعرف أن الربط يحتاج إعادة
+إسناد، ثم استخدم `let`. نادراً ما تستخدم أكواد JavaScript الحديثة `var`
+إطلاقاً.
+
+```js
+const name = "nullbase";
+let count = 0;
+
+count = count + 1; // جيد، تسمح let بإعادة الإسناد
+// name = "other";  // TypeError: Assignment to constant variable.
+
+{
+  let count = 100; // ربط جديد، محصور في هذه الكتلة فقط
+  console.log(count); // 100
+}
+console.log(count); // 1 — الـcount الخارجية لم تُمَس
+```
+
+لاحظ أن `const` تمنع *إعادة إسناد* الربط، وليس تعديل القيمة التي يشير
+إليها. يمكن لمصفوفة أو كائن `const` أن يتغير محتواه مع ذلك.
+
+## الأنواع الأولية والأنواع الديناميكية
+
+تملك JavaScript سبعة أنواع أولية — `string`، `number`، `boolean`،
+`undefined`، `null`، `bigint`، و`symbol` — بالإضافة إلى `object` لكل شيء
+آخر (بما في ذلك المصفوفات والدوال، التي تُبلِغ عنها `typeof` كـ
+`"object"` و`"function"` على التوالي). خلافاً للغات ثابتة الأنواع، لا
+يُحدَّد نوع المتغير عند التصريح؛ بل يُحدَّده أي قيمة موجودة فيه حالياً،
+ويمكن أن يتغير.
+
+```js
+let value = 42;
+console.log(typeof value); // "number"
+
+value = "now a string";
+console.log(typeof value); // "string"
+
+console.log(typeof undefined); // "undefined"
+console.log(typeof null);      // "object" — خطأ شهير وقديم في المواصفة
+```
+
+يوجد نوع رقمي واحد فقط، `number` (قيمة عشرية عائمة 64 بت)، وهذا سبب كون
+`0.1 + 0.2` لا تساوي `0.3` تماماً بشكل مشهور — نفس مشكلة تقريب الفاصلة
+العائمة التي تعانيها كل لغة تستخدم مضاعفات IEEE 754. يوجد `bigint` بشكل
+منفصل للأعداد الصحيحة الأكبر من `Number.MAX_SAFE_INTEGER`.
+
+## القوالب النصية الحرفية
+
+تدعم السلاسل النصية المحاطة بعلامة الاقتباس الخلفية الاستيفاء بـ`${}`
+ويمكنها الامتداد عبر أسطر متعددة دون تسلسلات هروب:
+
+```js
+const user = "ada";
+const attempts = 3;
+
+const message = `User "${user}" has ${attempts} failed login attempt${attempts === 1 ? "" : "s"}.`;
+console.log(message);
+// User "ada" has 3 failed login attempts.
+```
+
+## القيم الصحيحة/الزائفة (Truthiness) والمساواة
+
+كل قيمة إما "صحيحة (truthy)" أو "زائفة (falsy)" عند استخدامها في مكان
+يُتوقَّع فيه قيمة منطقية (شرط `if`، مثلاً). القيم الزائفة هي بالضبط:
+`false`، `0`، `-0`، `0n`، `""`، `null`، `undefined`، و`NaN`. كل شيء آخر —
+بما في ذلك `"0"` و`[]`، اللذان يفاجئان كثيراً من القادمين الجدد — صحيح
+(truthy).
+
+```js
+if ("0") {
+  console.log("truthy!"); // هذا يعمل — السلاسل النصية غير الفارغة صحيحة دائماً
+}
+
+console.log(0 == "0");   // true  — تُحوِّل == الأنواع قبل المقارنة
+console.log(0 === "0");  // false — تقارن === القيمة والنوع معاً، بلا تحويل
+console.log(null == undefined);  // true
+console.log(null === undefined); // false
+```
+
+فضِّل `===` و`!==` على `==` و`!=` في كل مكان تقريباً. قواعد التحويل خلف
+`==` غير متسقة بما يكفي لجعل الاعتماد عليها مصدر أخطاء شائع بدلاً من راحة
+مفيدة.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لتصريح ثابت، وبناء رسالة بقالب نصي حرفي، وتسجيلها."
+  items={[
+    { id: "decl", label: "const item = \"widget\";" },
+    { id: "price", label: "const price = 9.99;" },
+    { id: "msg", label: "const msg = `The ${item} costs $${price}.`;", explanation: "يجب أن يوجد item وprice مسبقاً قبل أن يشير هذا السطر إليهما." },
+    { id: "log", label: "console.log(msg);" },
+  ]}
+  correctOrder={["decl", "price", "msg", "log"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="رتّب هذه الأسطر بحيث يُظلِّل let المحصور بكتلة نظيره الخارجي بشكل صحيح، ثم تُسجَّل كلتاهما."
+  items={[
+    { id: "outer", label: "let level = \"outer\";" },
+    { id: "blockOpen", label: "{" },
+    { id: "inner", label: "  let level = \"inner\";" },
+    { id: "innerLog", label: "  console.log(level);" },
+    { id: "blockClose", label: "}" },
+    { id: "outerLog", label: "console.log(level);" },
+  ]}
+  correctOrder={["outer", "blockOpen", "inner", "innerLog", "blockClose", "outerLog"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا الكود؟"
+  code={`console.log([] == false);
+console.log([] === false);`}
+  options={["true ثم true", "true ثم false", "false ثم false", "false ثم true"]}
+  correctIndex={1}
+  explanation={`مع ==، تُحوَّل [] إلى سلسلة نصية ("")، ثم إلى رقم (0)، وتُحوَّل false أيضاً إلى 0، فتتساوى — true. لا تُحوِّل === أبداً، ولا تكون مصفوفة أبداً === لقيمة منطقية، لذا السطر الثاني false. هذه الفجوة بين == و=== هي بالضبط سبب كون === الخيار الافتراضي الأكثر أماناً.`}
+  actualOutput="true
+false"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [التحكم بمسار التنفيذ](/ar/programming-languages/javascript/control-flow)
+- [هياكل البيانات](/ar/programming-languages/javascript/data-structures)

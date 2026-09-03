@@ -1,0 +1,30 @@
+---
+title: Systèmes distribués
+description: Ce qui change une fois que le travail parallèle passe sur des machines séparées sans mémoire partagée et avec un réseau entre elles — le théorème CAP, le consensus, et pourquoi la défaillance partielle est l'hypothèse par défaut plutôt que l'exception.
+category: Computer Science
+weight: 10
+---
+
+Un **système distribué** est un ensemble de machines indépendantes qui doivent travailler ensemble et présenter quelque chose comme un système cohérent unique à quiconque l'utilise, en se coordonnant uniquement en s'envoyant des messages sur un réseau — il n'y a pas de mémoire partagée sur laquelle se replier comme il en existe entre des threads sur une seule machine (voir [Concurrence](/fr/computer-science/concurrency)). Cette contrainte unique change presque tout, parce qu'un réseau est plus lent, moins fiable, et plus difficile à raisonner que ne l'est la mémoire.
+
+## La défaillance partielle est la norme
+
+Sur une seule machine, un crash fait tomber tout le programme d'un coup — il n'existe pas d'état où « une partie » resterait en cours d'exécution et joignable. Sur un système distribué, la **défaillance partielle** est le cas normal : un nœud peut planter, ou devenir injoignable, ou fonctionner correctement mais bien plus lentement que d'habitude, pendant que le reste du système continue — et pire, du point de vue d'un nœud donné, « l'autre nœud a planté » et « le réseau vers lui est simplement lent en ce moment » sont souvent indiscernables. L'essentiel de la conception des systèmes distribués consiste à construire un logiciel qui reste correct (ou échoue de façon prévisible) malgré cette ambiguïté, plutôt que de prétendre qu'elle n'existe pas.
+
+## Le théorème CAP
+
+Le **théorème CAP** énonce que lorsqu'une partition réseau se produit — certains nœuds ne peuvent plus communiquer avec d'autres — un magasin de données distribué doit choisir entre la **Cohérence** (Consistency : chaque lecture voit la plus récente écriture, ou renvoie une erreur) et la **Disponibilité** (Availability : chaque requête obtient une réponse, même si elle peut être obsolète). Vous ne pouvez pas avoir les deux pendant une partition : un nœud coupé du reste du système peut soit refuser de répondre (protégeant la cohérence), soit répondre avec ce qu'il a, ce qui peut déjà être périmé (protégeant la disponibilité). Différents systèmes font ce compromis délibérément et différemment — le grand livre d'une banque favorise typiquement la cohérence, un panier d'achat ou un fil d'actualité de réseau social favorise typiquement la disponibilité — et c'est une grande partie de la raison pour laquelle « il suffit d'utiliser une base de données » cesse d'être une réponse complète dès que cette base de données doit tourner sur plus d'une machine.
+
+## Le consensus
+
+Même en dehors d'une partition, amener plusieurs nœuds indépendants à s'accorder sur une seule valeur — qui est le leader actuel, quelle devrait être la prochaine entrée dans un journal partagé — est un problème authentiquement difficile dès qu'un nœud quelconque peut planter ou que des messages peuvent être retardés ou perdus, et c'est l'objet d'**algorithmes de consensus** dédiés comme Paxos et Raft. Ils sous-tendent des mécanismes comme l'élection de leader dans un cluster de base de données et la coordination derrière les verrous distribués ; réimplémenter le consensus à partir de zéro pour un système spécifique est une façon bien connue de réintroduire chacun des bugs subtils que les algorithmes existants ont été construits spécifiquement pour exclure, ce qui explique pourquoi la plupart des systèmes réels utilisent une implémentation éprouvée (etcd, ZooKeeper) plutôt qu'une implémentation maison.
+
+## Où cela rejoint le reste du site
+
+La théorie des systèmes distribués est le raisonnement qui sous-tend plusieurs schémas couverts ailleurs sous un angle plus pratique : les [microservices](/fr/software-architecture/microservices) sont par définition un système distribué, et héritent de la défaillance partielle et de la non-fiabilité réseau comme des préoccupations réelles et quotidiennes plutôt que théoriques ; l'[architecture événementielle](/fr/software-architecture/event-driven-architecture) est une façon courante de structurer la communication entre des nœuds qui ne peuvent pas partager de mémoire ; et l'équilibrage de charge et la réplication en [Réseau](/fr/networking) et en [Bases de données](/fr/databases) sont tous deux des applications directes de l'échange de cohérence contre disponibilité, ou l'inverse, en faveur d'un produit spécifique.
+
+## Voir aussi
+
+- **[Parallélisme](/fr/computer-science/parallelism)** — la version « une seule machine » de « plus d'une chose en cours à la fois », sans réseau ni défaillance partielle à gérer.
+- **[Microservices](/fr/software-architecture/microservices)** — un système distribué en tant que modèle architectural, sous un angle pratique plutôt que théorique.
+- **[Réseau](/fr/networking)** — le transport réel sur lequel voyagent les messages de cette page, et d'où viennent ses propres limites de fiabilité.

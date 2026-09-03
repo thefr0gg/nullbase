@@ -1,0 +1,33 @@
+---
+title: Compiladores
+description: Cómo el código fuente se convierte en código máquina antes de que un programa se ejecute siquiera — lexing, parsing, las representaciones intermedias que optimiza un compilador, y qué significa realmente "lenguaje compilado".
+category: Computer Science
+weight: 6
+---
+
+Un **compilador** traduce código fuente escrito en un lenguaje a otra forma — normalmente código máquina que la CPU puede ejecutar directamente — enteramente antes de que el programa se ejecute. Ese "enteramente antes" es la distinción clave frente a un [intérprete](/es/computer-science/interpreters), que hace el trabajo equivalente mientras el programa se está ejecutando en su lugar.
+
+## El pipeline
+
+Un compilador normalmente se organiza como un pipeline de etapas distintas, cada una consumiendo la salida de la etapa anterior:
+
+- **Lexing (tokenización)** — el texto fuente en bruto se divide en un flujo de **tokens**: palabras clave, identificadores, literales, operadores. En esta etapa `x=x+1` y `x = x + 1` producen tokens idénticos; los espacios en blanco ya han dejado de importar.
+- **Parsing** — el flujo de tokens se ensambla en un **árbol de sintaxis abstracta (AST)**, un [árbol](/es/computer-science/data-structures) que representa la estructura gramatical del código — qué subexpresiones pertenecen a qué sentencia, qué está anidado dentro de qué.
+- **Análisis semántico** — el AST se comprueba contra las reglas del lenguaje que el parsing por sí solo no puede hacer cumplir: son los tipos compatibles, está esta variable declarada antes de usarse, coincide esta llamada a función con una firma conocida. Aquí es donde realmente se lanzan la mayoría de los errores de compilación — el parsing solo falla en código gramaticalmente malformado.
+- **Representación intermedia (IR)** — el AST se reduce a una representación más simple y uniforme que es más fácil de analizar y optimizar que el árbol de sintaxis original, y que no está atada ni al lenguaje fuente ni a la máquina objetivo final. El IR de LLVM es un ejemplo ampliamente usado, compartido entre muchos lenguajes de frontend y arquitecturas de backend distintas.
+- **Optimización** — el IR se transforma para ser más rápido o más pequeño sin cambiar lo que calcula el programa: eliminación de código muerto, plegado de constantes (calcular `2 + 2` una vez en tiempo de compilación en lugar de en cada ejecución), inlining de funciones pequeñas en sus puntos de llamada.
+- **Generación de código** — el IR optimizado se traduce finalmente a código máquina real (u otro objetivo, como bytecode) para una arquitectura específica.
+
+## Por qué "lenguaje compilado" es un poco impreciso
+
+Llamar a un lenguaje "compilado" o "interpretado" en realidad describe cómo lo ejecuta típicamente una implementación en particular, no una propiedad inherente del lenguaje — el mismo lenguaje puede tener ambos tipos de implementaciones. C y Rust se compilan por adelantado directamente a código máquina nativo. Java compila a un **bytecode** intermedio que una máquina virtual luego interpreta (o compila aún más, ver abajo) en tiempo de ejecución. La implementación de referencia de Python también compila a bytecode, pero ese bytecode luego se interpreta en lugar de compilarse a código nativo, que es la mayor parte de por qué el código Python se ejecuta más lento que un programa C compilado equivalente para el mismo trabajo limitado por CPU.
+
+## Compilación JIT
+
+Algunos runtimes difuminan la línea deliberadamente con la **compilación just-in-time (JIT)**: el código empieza interpretado (o ejecutándose como bytecode sin optimizar), pero el runtime observa qué partes se ejecutan lo suficientemente a menudo como para que merezca la pena el costo, y compila *esas* rutas calientes a código máquina nativo mientras el programa sigue ejecutándose — combinando el arranque rápido de un intérprete con la velocidad de estado estable de un compilador para el código que importa. La JVM (Java), V8 (JavaScript, en cada navegador basado en Chromium y en Node.js), e implementaciones modernas de Python como PyPy funcionan todas así.
+
+## Ver también
+
+- **[Intérpretes](/es/computer-science/interpreters)** — la alternativa a la compilación por adelantado, y dónde se sitúa el JIT entre ambas.
+- **[Estructuras de Datos](/es/computer-science/data-structures)** — el AST que produce un parser es un árbol, recorrido y transformado en casi cada etapa posterior.
+- **[Lenguajes de Programación](/es/programming-languages)** — el lado práctico, por lenguaje, de lo que realmente producen estos pipelines.

@@ -1,0 +1,121 @@
+---
+title: Java
+description: نظرة عامة على Java، اللغة المبنية على الأصناف، ثابتة الأنواع، والكائنية التوجه المصمَّمة للعمل أينما تعمل الآلة الافتراضية JVM.
+category: Programming Languages
+weight: 1
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+أُصدرت Java عن شركة Sun Microsystems عام 1995 (تديرها الآن Oracle) تحت
+شعار "اكتب مرة واحدة، شغّلها في أي مكان". يُصرَّف الكود المصدري إلى
+**bytecode** مستقلة عن المنصة، تعمل على الآلة الافتراضية لجافا (JVM) بدلاً
+من العمل مباشرة على أي نظام تشغيل بعينه. نفس ملف `.class` يعمل دون تعديل
+على Windows أو Linux أو macOS طالما هناك JVM متوافقة مثبَّتة.
+
+Java ثابتة الأنواع، وتُجمَّع فيها القمامة (garbage collected)، وكائنية
+التوجه بعمق: كل ما تكتبه تقريباً يعيش داخل صنف (class). شغّلت حصة هائلة
+من أنظمة الخلفية المؤسسية، وتطبيقات Android (عبر سلسلة أدوات متوافقة مع
+Java)، وأنظمة موزَّعة واسعة النطاق لثلاثة عقود، ومنظومتها من المكتبات
+والأدوات الناضجة (Maven، Gradle، Spring) واحدة من الأكبر في الصناعة.
+
+## ما الذي يميز Java
+
+- **الآلة الافتراضية JVM.** يُصرَّف الكود إلى bytecode، وليس إلى كود آلة.
+  ثم يحوّل مصرّف JVM الآني (just-in-time) البايت كود الساخن إلى تعليمات
+  أصلية وقت التشغيل، وتعمل نفس البايت كود دون تعديل على أي منصة بها JVM.
+- **كل شيء صنف (تقريباً).** لا توجد دوال حرة عائمة. كل تابع يعيش داخل صنف
+  أو واجهة، حتى نقطة الدخول `main` لبرنامج ما.
+- **الاستثناءات المفحوصة (checked).** تُميّز Java بين الاستثناءات التي
+  يفرض المصرّف عليك معالجتها أو الإعلان عنها (مفحوصة) وتلك التي لا يفرضها
+  (غير مفحوصة) — تمييز تخلّت عنه معظم اللغات السائدة الأخرى.
+- **وراثة أحادية، وواجهات متعددة.** يمتد الصنف من صنف أب واحد كحد أقصى
+  لكن يمكنه تنفيذ أي عدد من الواجهات، متجنباً مشكلة الماس التي تخلقها
+  الوراثة المتعددة الكاملة.
+- **إدارة ذاكرة تلقائية.** يستعيد مُجمِّع قمامة جيلي الكائنات غير القابلة
+  للوصول؛ لا يوجد `free` أو `delete` يدوي.
+- **توافق خلفي قوي.** الكود المكتوب لـJava 1.2 في أواخر التسعينيات لا يزال
+  يُصرَّف إلى حد كبير اليوم — سياسة تطوير لغوي متعمَّدة ومحروسة بشدة.
+
+إليك برنامج Java كامل وبسيط:
+
+```java
+public class Main {
+    public static void main(String[] args) {
+        System.out.println("Hello, nullbase!");
+    }
+}
+```
+
+يجب تسمية الملف `Main.java` ليطابق اسم الصنف العام، ويجب أن يمتلك `main`
+هذا التوقيع بالضبط — `public static void main(String[] args)` — كي تتعرف
+عليه JVM كنقطة دخول.
+
+## متى تلجأ إلى Java
+
+Java خيار افتراضي قوي لأنظمة الخلفية الكبيرة طويلة العمر حيث يهم حجم
+الفريق ونضج الأدوات وقابلية الصيانة طويلة المدى أكثر من زمن الإقلاع
+الأدنى: الخدمات المؤسسية، وتطبيقات Android، وبنية البيانات الضخمة التحتية
+(Hadoop وKafka وSpark جميعها مكتوبة بـJava أو شقيقتها على JVM، سكالا).
+تُستخدم بشكل أقل شيوعاً عندما تريد ملفاً ثنائياً واحداً صغيراً دون بيئة
+تشغيل تُثبَّت، وهو المجال الذي تميل فيه لغات مصرَّفة مثل Go أو Rust
+للفوز.
+
+## ما التالي
+
+تستعرض الصفحات التالية Java من البنية الأساسية إلى التزامن: المتغيرات
+والأنواع، والتحكم بمسار التنفيذ، والتوابع، وأنواع المجموعات المدمجة،
+والأصناف والواجهات، ومعالجة الاستثناءات، ومنظومة الحزم وأدوات البناء،
+لتنتهي بالخيوط وحزمة `java.util.concurrent`.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء برنامج Java بسيط وعامل يطبع تحية."
+  items={[
+    { id: "classopen", label: "public class Main {" },
+    { id: "mainopen", label: "    public static void main(String[] args) {", explanation: "يجب تصريح main داخل جسم الصنف." },
+    { id: "body", label: "        System.out.println(\"Hello, Java\");" },
+    { id: "mainclose", label: "    }" },
+    { id: "classclose", label: "}" },
+  ]}
+  correctOrder={["classopen", "mainopen", "body", "mainclose", "classclose"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="رتّب هذه الأسطر لتصريح حقل صنف، وضبطه في الباني (constructor)، وطباعته من main."
+  items={[
+    { id: "c1", label: "public class Greeter {" },
+    { id: "c2", label: "    private String name;", explanation: "تُصرَّح الحقول قبل استخدام الباني لها." },
+    { id: "c3", label: "    public Greeter(String name) { this.name = name; }" },
+    { id: "c4", label: "    public static void main(String[] args) {" },
+    { id: "c5", label: "        Greeter g = new Greeter(\"Ada\");" },
+    { id: "c6", label: "        System.out.println(g.name);" },
+    { id: "c7", label: "    }" },
+    { id: "c8", label: "}" },
+  ]}
+  correctOrder={["c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا الكود؟"
+  code={`public class Main {
+    public static void main(String[] args) {
+        System.out.println("nullbase");
+    }
+}`}
+  options={["nullbase", "\"nullbase\"", "خطأ تصريف: لا يوجد نوع إرجاع", "Hello, nullbase!"]}
+  correctIndex={0}
+  explanation="تطبع System.out.println محتوى السلسلة النصية دون علامتي الاقتباس المحيطتين، متبوعة بسطر جديد. علامتا الاقتباس تحدّان النص الحرفي في الكود المصدري فقط؛ وليستا جزءاً من القيمة وقت التشغيل."
+  actualOutput="nullbase"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [بنية اللغة والمتغيرات](/ar/programming-languages/java/syntax-basics)
+- [الخيوط والتزامن](/ar/programming-languages/java/advanced)

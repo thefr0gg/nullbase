@@ -1,0 +1,155 @@
+---
+title: Estructuras de Datos
+description: Los arrays y strings incorporados de C, y cómo se combinan con structs y punteros para construir estructuras de datos más grandes como listas enlazadas.
+category: Programming Languages
+weight: 5
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+La biblioteca estándar de C no trae prácticamente ninguna estructura de datos — no hay una lista, mapa, o array dinámico incorporados como el `list` de Python o el `Array` de JavaScript. Lo que te da en su lugar son arrays de tamaño fijo y memoria en bruto, y todo lo demás más elaborado (arrays dinámicos, listas enlazadas, mapas hash) es algo que construyes tú mismo a partir de arrays, structs y punteros, o que traes de una librería de terceros.
+
+## Arrays
+
+Un array en C es un bloque contiguo de memoria de tamaño fijo que contiene elementos de un tipo — su tamaño debe conocerse en tiempo de compilación (o proporcionarse al asignarlo dinámicamente) y nunca crece:
+
+```c
+#include <stdio.h>
+
+int main(void) {
+    int scores[5] = {90, 85, 77, 92, 88};
+
+    int total = 0;
+    for (int i = 0; i < 5; i++) {
+        total += scores[i];
+    }
+
+    printf("average: %.1f\n", total / 5.0);
+
+    int grid[2][3] = {{1, 2, 3}, {4, 5, 6}}; /* a 2D array is an array of arrays */
+    printf("grid[1][2] = %d\n", grid[1][2]);
+
+    return 0;
+}
+```
+
+Crucialmente, C **no realiza verificación de límites**: `scores[10]` compila perfectamente y lee cualquier memoria que se encuentre más allá del final del array, lo cual es comportamiento indefinido — puede fallar, puede leer basura silenciosamente, o puede parecer que funciona hasta el día en que no lo hace.
+
+## Los strings son simplemente arrays de char
+
+C no tiene un tipo de cadena dedicado. Un "string" es un array de `char` terminado por un byte nulo `'\0'`, y las funciones de cadenas de la biblioteca estándar (en `<string.h>`) dependen todas de encontrar ese terminador:
+
+```c
+#include <stdio.h>
+#include <string.h>
+
+int main(void) {
+    char name[20] = "Ada"; /* the compiler adds the '\0' terminator automatically */
+
+    printf("length: %zu\n", strlen(name)); /* 3, not counting the '\0' */
+
+    strcat(name, " Lovelace"); /* appends onto the existing buffer */
+    printf("name: %s\n", name);
+
+    if (strcmp(name, "Ada Lovelace") == 0) { /* strcmp, not == */
+        printf("matched\n");
+    }
+
+    return 0;
+}
+```
+
+`==` sobre dos valores `char*` compara *punteros* (direcciones de memoria), no el contenido de la cadena — un bug clásico de principiante — por lo que comparar el contenido de las cadenas siempre requiere `strcmp`. `strcat` y funciones similares tampoco verifican que el buffer de destino sea suficientemente grande, así que escribir más caracteres de los que un buffer puede contener corrompe silenciosamente la memoria adyacente (un **desbordamiento de buffer**).
+
+## Construir una lista enlazada con structs y punteros
+
+Más allá de los arrays, las estructuras de datos en C se construyen combinando `struct` (agrupando campos relacionados) con punteros (enlazando nodos entre sí):
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+struct Node {
+    int value;
+    struct Node *next; /* a struct can point to another instance of itself */
+};
+
+int main(void) {
+    struct Node *head = malloc(sizeof(struct Node));
+    head->value = 10;
+    head->next = malloc(sizeof(struct Node));
+    head->next->value = 20;
+    head->next->next = NULL; /* marks the end of the list */
+
+    for (struct Node *cur = head; cur != NULL; cur = cur->next) {
+        printf("%d -> ", cur->value);
+    }
+    printf("NULL\n");
+
+    /* every malloc needs a matching free, walked node by node */
+    struct Node *cur = head;
+    while (cur != NULL) {
+        struct Node *next = cur->next;
+        free(cur);
+        cur = next;
+    }
+
+    return 0;
+}
+```
+
+`head->value` es una forma abreviada de `(*head).value` — desreferenciar el puntero, y luego acceder al campo. Este patrón de lista enlazada (un struct que contiene un puntero al siguiente struct del mismo tipo) es la base de casi toda estructura de datos hecha a mano en C: listas enlazadas, árboles y grafos siguen todos este mismo patrón. La página [Structs y Métodos](/es/programming-languages/c/oop-or-structs) cubre el propio `struct` con más profundidad.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla una suma de array"
+  prompt="Arrastra estas líneas al orden que declara un array, suma sus elementos, e imprime el resultado."
+  items={[
+    { id: "decl", label: "int nums[4] = {2, 4, 6, 8};" },
+    { id: "total", label: "int total = 0;", explanation: "El acumulador debe inicializarse a 0 antes de que el bucle sume sobre él." },
+    { id: "for", label: "for (int i = 0; i < 4; i++) {" },
+    { id: "add", label: "    total += nums[i];" },
+    { id: "close", label: "}" },
+    { id: "print", label: "printf(\"%d\\n\", total);" },
+  ]}
+  correctOrder={["decl", "total", "for", "add", "close", "print"]}
+/>
+
+<OrderingExercise
+  title="Ordena una comparación de strings correcta"
+  prompt="Arrastra estas líneas al orden que verifica de forma segura si dos cadenas contienen el mismo texto."
+  items={[
+    { id: "include", label: "#include <string.h>" },
+    { id: "decl", label: "char a[] = \"cat\", b[] = \"cat\";" },
+    { id: "if", label: "if (strcmp(a, b) == 0) {", explanation: "strcmp compara los caracteres, devolviendo 0 para cadenas iguales — usar == aquí compararía las direcciones del array en su lugar, lo cual casi siempre es incorrecto." },
+    { id: "print", label: "    printf(\"equal\\n\");" },
+    { id: "close", label: "}" },
+  ]}
+  correctOrder={["include", "decl", "if", "print", "close"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`#include <stdio.h>
+#include <string.h>
+
+int main(void) {
+    char a[] = "cat";
+    char b[] = "cat";
+    printf("%d %d\\n", a == b, strcmp(a, b) == 0);
+    return 0;
+}`}
+  options={["1 1", "0 1", "1 0", "0 0"]}
+  correctIndex={1}
+  explanation="a y b son dos arrays separados que viven en direcciones de memoria distintas, así que a == b compara esas direcciones y es falso (0) aunque los caracteres que contienen sean idénticos. strcmp sí inspecciona el contenido y correctamente los reporta como iguales, devolviendo 0, así que strcmp(a, b) == 0 es verdadero (1)."
+  actualOutput="0 1"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- **[Structs y Métodos](/es/programming-languages/c/oop-or-structs)** — una mirada más de cerca al propio struct, usado aquí para construir la lista enlazada.
+- **[Punteros y Memoria](/es/programming-languages/c/advanced)** — malloc, free, y la mecánica de punteros de la que depende esta página.

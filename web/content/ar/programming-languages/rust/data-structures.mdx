@@ -1,0 +1,120 @@
+---
+title: هياكل البيانات
+description: المصفوفات ثابتة الحجم، ومجموعات Vec القابلة للنمو، وHashMap لأزواج المفتاح-القيمة — طرق Rust الأساسية المدمجة لحمل قيم متعددة.
+category: Programming Languages
+weight: 5
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تفصل Rust بين "كم عدد العناصر، معروف أثناء الترجمة" وبين "كم عدد العناصر، يُقرَّر أثناء التشغيل" على مستوى النوع. **المصفوفة (array)** ثابتة الحجم وتعيش في المكدس (stack)؛ أما **`Vec`** (المتجه) فقابل للنمو ويملك تخصيصاً في الكومة (heap). اللجوء للنوع الخاطئ خطأ مبكر شائع — لا يمكن للمصفوفات النمو، لذا فإن أي شيء يُبنى عنصراً بعد عنصر يحتاج إلى `Vec`.
+
+## المصفوفات
+
+```rust
+fn main() {
+    let scores: [i32; 3] = [90, 85, 78];
+    println!("first score: {}", scores[0]);
+    println!("total scores: {}", scores.len());
+
+    // scores.push(100); // error: no method named `push` on array [i32; 3]
+}
+```
+
+النوع `[i32; 3]` يضمّن الطول في النوع نفسه — مصفوفة من 3 قيم `i32` نوع مختلف عن مصفوفة من 4، ولا تملك أي منهما دالة `push`، لأن حجمها لا يمكن أن يتغير أبداً بعد الإنشاء.
+
+## `Vec<T>`
+
+`Vec<T>` هو البديل القابل للنمو والمخصَّص في الكومة — المجموعة التي تلجأ إليها افتراضياً عندما لا يكون عدد العناصر ثابتاً مسبقاً.
+
+```rust
+fn main() {
+    let mut scores: Vec<i32> = Vec::new();
+    scores.push(90);
+    scores.push(85);
+    scores.push(78);
+
+    // vec! macro is the more common way to write this
+    let scores = vec![90, 85, 78];
+
+    let average: i32 = scores.iter().sum::<i32>() / scores.len() as i32;
+    println!("average: {average}");
+}
+```
+
+فهرسة `Vec` خارج حدوده (`scores[10]` على متجه من 3 عناصر) تسبب حالة ذعر (panic) أثناء التشغيل بدلاً من إرجاع قمامة بصمت — تفضّل Rust التعطّل بصوت عالٍ على السماح لك بقراءة ذاكرة ليست ملكك. للبحث دون حالة ذعر، تُعيد `scores.get(10)` قيمة `Option<&i32>` — `None` بدلاً من قيمة عندما لا يوجد الفهرس.
+
+## `HashMap<K, V>`
+
+يخزّن `HashMap` أزواج مفتاح-قيمة، مشابه لقاموس في Python أو كائن يُستخدَم كخريطة في JavaScript. يجب استيراده صراحة من `std::collections` — بخلاف `Vec` والمصفوفات، إنه ليس في البرومكس (prelude) الافتراضي.
+
+```rust
+use std::collections::HashMap;
+
+fn main() {
+    let mut inventory: HashMap<String, i32> = HashMap::new();
+    inventory.insert(String::from("apples"), 12);
+    inventory.insert(String::from("bananas"), 6);
+
+    match inventory.get("apples") {
+        Some(count) => println!("apples: {count}"),
+        None => println!("no apples tracked"),
+    }
+
+    // entry API: increment if present, insert 1 if not
+    *inventory.entry(String::from("apples")).or_insert(0) += 1;
+    println!("apples now: {}", inventory["apples"]);
+}
+```
+
+تُعيد `get` قيمة `Option<&V>` بدلاً من القيمة مباشرة، لأن المفتاح قد لا يوجد — هذا نفس نمط `Option` الذي تستخدمه `Vec::get`، وهو محوري في كيفية تجنب Rust لأخطاء المرجع الفارغ (تُغطى بالكامل في صفحة [معالجة الأخطاء](/ar/programming-languages/rust/error-handling)). واجهة `entry` أعلاه هي الطريقة الاصطلاحية لفعل "حدّث إن كان موجوداً، أدرج قيمة افتراضية إن لم يكن" في سطر واحد دون البحث عن المفتاح مرتين.
+
+## طالع أيضاً
+
+- **[البنى والسمات](/ar/programming-languages/rust/oop-or-structs)** — تجميع البيانات المرتبطة في أنواعك المسمّاة الخاصة بدلاً من صفوف أو خرائط سائبة.
+- **[الملكية والاستعارة](/ar/programming-languages/rust/advanced)** — لماذا تستعير `scores.iter()` المتجه بدلاً من استهلاكه.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء Vec من الدرجات وطباعة متوسطها."
+  items={[
+    { id: "let-scores", label: "    let scores = vec![90, 85, 78];" },
+    { id: "let-avg", label: "    let average: i32 = scores.iter().sum::<i32>() / scores.len() as i32;", explanation: "يجب أن توجد scores قبل إمكانية جمعها وحساب متوسطها." },
+    { id: "print", label: "    println!(\"average: {average}\");" },
+  ]}
+  correctOrder={["let-scores", "let-avg", "print"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء HashMap، وإدراج قيمة، وقراءتها مرة أخرى باستخدام match."
+  items={[
+    { id: "use", label: "use std::collections::HashMap;" },
+    { id: "main-open", label: "fn main() {" },
+    { id: "new-map", label: "    let mut inventory: HashMap<String, i32> = HashMap::new();" },
+    { id: "insert", label: "    inventory.insert(String::from(\"apples\"), 12);", explanation: "يجب إنشاء الخريطة قبل إدراج أي شيء فيها." },
+    { id: "match-open", label: "    match inventory.get(\"apples\") {" },
+    { id: "some", label: "        Some(count) => println!(\"apples: {count}\")," },
+    { id: "none", label: "        None => println!(\"no apples tracked\")," },
+    { id: "match-close", label: "    }" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["use", "main-open", "new-map", "insert", "match-open", "some", "none", "match-close", "main-close"]}
+/>
+
+<PredictOutput
+  title="ماذا تطبع هذه الشيفرة؟"
+  code={`fn main() {
+    let scores = [90, 85, 78];
+    println!("{}", scores.get(10).is_some());
+}`}
+  options={["true", "false", "panic!", "Compile error"]}
+  correctIndex={1}
+  explanation="تُعيد get() قيمة Option، ولا تسبب حالة ذعر أبداً على فهرس خارج الحدود — تُعيد None هنا لأن الفهرس 10 غير موجود في مصفوفة من 3 عناصر، لذا is_some() تكون false. الفهرسة المباشرة (scores[10]) هي التي كانت ستسبب حالة ذعر؛ توجد get() خصيصاً لتجنب ذلك."
+  actualOutput="false"
+/>
+</ExerciseTabs>

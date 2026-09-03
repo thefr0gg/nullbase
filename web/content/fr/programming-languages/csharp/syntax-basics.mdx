@@ -1,0 +1,134 @@
+---
+title: Syntaxe et variables
+description: Variables, inférence de type avec var, types valeur vs. types référence, et les types de référence nullables en C#.
+category: Programming Languages
+weight: 2
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+C# est typé statiquement : chaque variable a un type connu à la compilation,
+que vous l'écriviez explicitement ou que vous laissiez le compilateur
+l'inférer. Les instructions se terminent par un point-virgule, les blocs sont
+délimités par `{}`, et les identifiants sont sensibles à la casse.
+
+## Déclarer des variables
+
+Vous pouvez déclarer une variable avec un type explicite ou avec `var`, qui
+demande au compilateur d'inférer le type à partir du membre de droite. Les
+deux produisent exactement la même variable typée statiquement — `var` n'est
+pas du typage dynamique.
+
+```csharp
+int age = 30;
+double price = 19.99;
+string name = "nullbase";
+bool isActive = true;
+
+// var infers the type at compile time — it's still int, not "any"
+var count = 42;        // inferred as int
+var label = "widgets"; // inferred as string
+```
+
+Une fois qu'une variable est déclarée avec un type (explicite ou inféré), ce
+type est fixé — vous ne pouvez pas assigner plus tard une `string` à une
+variable qui a été inférée comme `int`.
+
+## Types valeur vs. types référence
+
+C# distingue les types valeur (`int`, `double`, `bool`, `struct`, et d'autres
+primitifs), qui sont copiés par valeur, des types référence (`class`,
+`string`, les tableaux, et presque tout le reste), qui sont copiés par
+référence.
+
+```csharp
+int a = 5;
+int b = a;   // b gets a copy of a's value
+b = 10;
+Console.WriteLine(a); // still 5
+
+int[] arr1 = { 1, 2, 3 };
+int[] arr2 = arr1;     // arr2 refers to the same array as arr1
+arr2[0] = 99;
+Console.WriteLine(arr1[0]); // 99 — both variables point at the same array
+```
+
+`string` est techniquement un type référence, mais il est immuable, donc il
+se comporte comme une valeur en pratique : aucune méthode sur `string` ne le
+modifie jamais sur place, chaque opération retourne une nouvelle chaîne.
+
+## Constantes et types nullables
+
+`const` déclare une constante compile-time ; `readonly` (couvert avec les
+classes) déclare une valeur qui ne peut être définie qu'une seule fois, à la
+construction. Les types référence sont nullables par défaut sauf si vous
+optez pour la vérification des types de référence nullables
+(`#nullable enable`, ou à l'échelle du projet via `.csproj`), ce qui permet au
+compilateur de signaler les endroits où un `null` pourrait se glisser de
+manière inattendue.
+
+```csharp
+#nullable enable
+
+const double Pi = 3.14159;
+
+string? maybeNull = null;      // explicitly nullable
+string definitelyNotNull = "hi"; // compiler warns if this is ever assigned null
+
+int? maybeNumber = null;       // nullable value type via Nullable<T>
+if (maybeNumber.HasValue)
+{
+    Console.WriteLine(maybeNumber.Value);
+}
+```
+
+`int?` est un raccourci pour `Nullable<int>` — les types valeur ne sont pas
+nullables par défaut, donc C# les enveloppe dans un struct qui ajoute un
+drapeau « a une valeur » quand vous avez besoin d'un type valeur qui puisse
+aussi être `null`.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Faites glisser les lignes dans le bon ordre pour déclarer deux variables — une explicite, une inférée — et afficher leur somme."
+  items={[
+    { id: "l1", label: "int x = 4;" },
+    { id: "l2", label: "var y = 6;", explanation: "var peut apparaître partout où un type le pourrait, tant que le compilateur peut l'inférer à partir de l'initialiseur." },
+    { id: "l3", label: "Console.WriteLine(x + y);" },
+  ]}
+  correctOrder={["l1", "l2", "l3"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Mettez ces lignes dans l'ordre pour déclarer un int nullable, le vérifier, et afficher sa valeur en toute sécurité."
+  items={[
+    { id: "m1", label: "int? maybeNumber = 7;" },
+    { id: "m2", label: "if (maybeNumber.HasValue)" },
+    { id: "m3", label: "{" },
+    { id: "m4", label: "    Console.WriteLine(maybeNumber.Value);" },
+    { id: "m5", label: "}" },
+  ]}
+  correctOrder={["m1", "m2", "m3", "m4", "m5"]}
+/>
+
+<PredictOutput
+  title="Qu'affiche ceci ?"
+  code={`int[] original = { 1, 2, 3 };
+int[] alias = original;
+alias[0] = 100;
+Console.WriteLine(original[0]);`}
+  options={["1", "100", "0", "Compile error"]}
+  correctIndex={1}
+  explanation="Les tableaux sont des types référence en C#. alias ne copie pas le tableau — c'est une seconde référence vers le même objet tableau, donc modifier via alias est aussi visible via original."
+  actualOutput="100"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [C#](/fr/programming-languages/csharp)
+- [Flux de contrôle](/fr/programming-languages/csharp/control-flow)

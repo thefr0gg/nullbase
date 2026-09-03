@@ -1,0 +1,49 @@
+---
+title: Arquitectura REST
+description: Las restricciones arquitectónicas que Roy Fielding realmente definió para REST, y por qué la mayoría de las APIs "RESTful" solo implementan una fracción de ellas.
+category: Software Architecture
+weight: 6
+---
+
+**REST (Representational State Transfer)** es un estilo arquitectónico para sistemas de hipermedia distribuidos, definido por Roy Fielding en su tesis doctoral del año 2000 como una descripción de las restricciones que hicieron que la propia web escalara — no una especificación para construir APIs JSON. Fielding derivó REST partiendo de un estilo nulo y agregando restricciones una a la vez, manteniendo cada una solo si mejoraba alguna propiedad del sistema (escalabilidad, simplicidad, capacidad de evolución). Lo que hoy comúnmente se llama "REST" — un puñado de verbos HTTP mapeados sobre URLs de recursos, ver [REST](/es/web-apis/rest) para esa forma — es un subconjunto pequeño y práctico de un estilo arquitectónico mucho más estricto. Esta página trata sobre el estilo; la página enlazada trata sobre las convenciones de endpoint que la gente construye encima de él.
+
+## Cliente-servidor
+
+El cliente y el servidor evolucionan de forma independiente mientras la interfaz entre ellos no cambie. El cliente no necesita saber cómo almacena o calcula nada el servidor, y el servidor no necesita saber si está hablando con un navegador, una app móvil, u otro servidor. Esta separación es lo que le permite a un equipo de backend enviar una migración de base de datos y a un equipo de frontend enviar un rediseño en la misma semana sin coordinar una sola línea de código.
+
+## Sin estado (Statelessness)
+
+Cada solicitud de un cliente a un servidor debe contener toda la información necesaria para entenderla y procesarla. El servidor no mantiene ningún estado de sesión sobre el cliente entre solicitudes — sin "recordar" que iniciaste sesión hace tres solicitudes. Cualquier estado que parezca de sesión (identidad, posición en un flujo de trabajo en curso) o bien viaja con cada solicitud o vive en el cliente. Esta es una restricción genuinamente estricta: es por lo que una API verdaderamente sin estado puede enrutar cualquier solicitud a cualquier instancia de servidor detrás de un balanceador de carga con cero coordinación, y por lo que un crash del servidor no pierde nada sobre "dónde estaba el cliente".
+
+## Cacheabilidad
+
+Las respuestas deben, implícita o explícitamente, etiquetarse a sí mismas como cacheables o no. Si una respuesta es cacheable, un cliente (o un intermediario, como un proxy) tiene permitido reutilizarla para una solicitud equivalente posterior en lugar de volver a golpear al servidor. Esta es una restricción arquitectónica de primera clase, no una optimización añadida después — es la razón por la que existen las cabeceras `Cache-Control` y `ETag` como parte del propio HTTP en lugar de como una convención a nivel de aplicación.
+
+## Interfaz uniforme
+
+Esta es la restricción que más define el carácter de REST, y tiene cuatro subpartes:
+
+- **Los recursos se identifican en las solicitudes** — una URI nombra una "cosa" (un usuario, un pedido), no una acción.
+- **Los recursos se manipulan a través de representaciones** — un cliente nunca toca directamente los datos internos del servidor; intercambia representaciones de ellos (un documento JSON, típicamente), y un recurso puede tener más de una representación (JSON, HTML, XML) sin cambiar su identidad.
+- **Mensajes autodescriptivos** — cada mensaje incluye suficiente información (tipo de medio, cabeceras) para que un destinatario sepa cómo procesarlo, sin conocimiento fuera de banda incorporado al cliente.
+- **Hipermedia como el motor del estado de la aplicación (HATEOAS)** — un cliente interactúa con la API enteramente a través de enlaces de hipermedia provistos dinámicamente por las respuestas del servidor, de la misma forma en que una persona navega la web haciendo clic en enlaces en lugar de escribiendo URLs que memorizó de antemano.
+
+Esa última subrestricción es la que casi ninguna API en producción implementa realmente. Casi toda API documentada como "RESTful" le entrega a un cliente un conjunto fijo de plantillas de URL de antemano (`/api/users/{id}`, `/api/orders/{id}/items`) que el cliente codifica de forma fija, en lugar de respuestas que le digan al cliente adónde puede ir a continuación. Esa es una compensación razonable — las plantillas de URL codificadas de forma fija son más simples de construir, documentar, y generar SDKs de cliente para ellas que un cliente completamente guiado por hipermedia — pero significa que la mayoría de las "APIs REST" en realidad son "APIs HTTP orientadas a recursos que se saltan HATEOAS". El propio Fielding se opuso públicamente a esta deriva, argumentando que una API sin controles de hipermedia no es REST en absoluto, solo HTTP.
+
+## Sistema en capas
+
+Un cliente normalmente no puede saber si está hablando directamente con el servidor de origen o con un intermediario (un balanceador de carga, un proxy de caché, una pasarela) en el camino, y no debería necesitarlo. Cada capa solo conoce la capa inmediatamente adyacente a ella. Esto es lo que permite que un sistema al estilo REST inserte una CDN, una pasarela de API, o un proxy de limitación de tasa delante de un servicio existente sin tocar el servicio mismo ni romper a los clientes — ver [Arquitectura en Capas](/es/software-architecture/layered-architecture) para la versión más general de "componentes apilados de forma que cada uno solo depende de su vecino".
+
+## Código bajo demanda (opcional)
+
+La única restricción opcional: un servidor puede extender temporalmente la funcionalidad del cliente enviando código ejecutable (applets de Java originalmente; un navegador descargando y ejecutando JavaScript hoy). La mayoría de las discusiones de diseño de API ignoran esta, ya que apenas aplica fuera de los navegadores cargando páginas web.
+
+## Por qué importa la brecha
+
+Nada de esto hace que las APIs de URL codificada de forma fija y no hipermedia estén mal construidas — son más fáciles de razonar y cubren la vasta mayoría de las necesidades de integración reales. Pero importa cuando alguien afirma que una API "RESTful" da el acoplamiento débil que promete REST: sin HATEOAS, la estructura de URL codificada de forma fija de un cliente es en sí misma una forma de acoplamiento a la implementación del servidor, exactamente lo que el estilo completo fue diseñado para evitar.
+
+## Ver también
+
+- **[REST](/es/web-apis/rest)** — la forma práctica de endpoint (verbos, códigos de estado, URLs de recursos) construida encima de este estilo.
+- **[Versionado de API](/es/web-apis/api-versioning)** — una consecuencia directa de saltarse HATEOAS: la estructura de URL se convierte en un contrato que hay que versionar explícitamente.
+- **[Arquitectura en Capas](/es/software-architecture/layered-architecture)** — el patrón general detrás de la restricción de sistema en capas de REST.

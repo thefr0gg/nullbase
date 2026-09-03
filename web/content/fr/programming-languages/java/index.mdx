@@ -1,0 +1,133 @@
+---
+title: Java
+description: Un aperçu de Java, le langage orienté objet, à base de classes et statiquement typé, conçu pour fonctionner partout où tourne la JVM.
+category: Programming Languages
+weight: 1
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Java a été publié par Sun Microsystems en 1995 (aujourd'hui maintenu par
+Oracle) sous le slogan « write once, run anywhere » (écrire une fois,
+exécuter partout). Le code source compile vers un **bytecode**
+indépendant de la plate-forme, qui s'exécute sur la machine virtuelle Java
+(JVM) plutôt que directement sur un système d'exploitation donné. Le même
+fichier `.class` s'exécute sans modification sous Windows, Linux, ou macOS
+tant qu'une JVM compatible est installée.
+
+Java est statiquement typé, avec ramasse-miettes, et profondément orienté
+objet : presque tout ce que vous écrivez vit à l'intérieur d'une classe. Il
+a alimenté une énorme part des systèmes backend d'entreprise, des
+applications Android (via une chaîne d'outils compatible Java), et des
+systèmes distribués à grande échelle pendant trois décennies, et son
+écosystème de bibliothèques et d'outillage matures (Maven, Gradle, Spring)
+est l'un des plus vastes de l'industrie.
+
+## Ce qui rend Java distinctif
+
+- **La JVM.** Le code compile vers du bytecode, pas du code machine. Le
+  compilateur just-in-time de la JVM transforme ensuite le bytecode chaud
+  en instructions natives à l'exécution, et le même bytecode s'exécute sans
+  modification sur toute plate-forme dotée d'une JVM.
+- **Presque tout est une classe.** Il n'y a pas de fonctions flottant
+  librement. Chaque méthode vit à l'intérieur d'une classe ou d'une
+  interface, même le point d'entrée `main` d'un programme.
+- **Exceptions vérifiées.** Java distingue les exceptions que le
+  compilateur vous force à gérer ou à déclarer (checked) de celles qu'il ne
+  force pas (unchecked) — une distinction que la plupart des autres
+  langages grand public ont abandonnée.
+- **Héritage simple, interfaces multiples.** Une classe étend au plus une
+  superclasse mais peut implémenter n'importe quel nombre d'interfaces,
+  contournant le problème du diamant que crée l'héritage multiple complet.
+- **Gestion automatique de la mémoire.** Un ramasse-miettes générationnel
+  récupère les objets inaccessibles ; il n'y a pas de `free` ou de
+  `delete` manuel.
+- **Forte rétrocompatibilité.** Du code écrit pour Java 1.2 à la fin des
+  années 1990 compile encore largement aujourd'hui — une politique
+  d'évolution du langage délibérée et fortement surveillée.
+
+Voici un programme Java minimal et complet :
+
+```java
+public class Main {
+    public static void main(String[] args) {
+        System.out.println("Hello, nullbase!");
+    }
+}
+```
+
+Le fichier doit être nommé `Main.java` pour correspondre au nom de la
+classe publique, et `main` doit avoir exactement cette signature —
+`public static void main(String[] args)` — pour que la JVM la reconnaisse
+comme point d'entrée.
+
+## Quand se tourner vers Java
+
+Java est un solide choix par défaut pour les grands systèmes backend à
+longue durée de vie où la taille de l'équipe, la maturité de l'outillage,
+et la maintenabilité à long terme comptent plus que la latence de démarrage
+minimale : services d'entreprise, applications Android, et infrastructure
+de big data (Hadoop, Kafka, et Spark sont tous écrits en Java ou dans son
+cousin JVM Scala). Il est moins souvent choisi quand vous voulez un unique
+petit binaire sans runtime à installer, ce qui est là où des langages
+compilés comme Go ou Rust ont tendance à gagner.
+
+## Et ensuite
+
+Les pages suivantes parcourent Java de la syntaxe à la concurrence :
+variables et types, flux de contrôle, méthodes, les types de collection
+intégrés, classes et interfaces, gestion des exceptions, l'écosystème des
+paquets et outils de build, et enfin les threads et
+`java.util.concurrent`.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire un programme Java minimal et fonctionnel qui affiche un message de bienvenue."
+  items={[
+    { id: "classopen", label: "public class Main {" },
+    { id: "mainopen", label: "    public static void main(String[] args) {", explanation: "main doit être déclarée à l'intérieur du corps de la classe." },
+    { id: "body", label: "        System.out.println(\"Hello, Java\");" },
+    { id: "mainclose", label: "    }" },
+    { id: "classclose", label: "}" },
+  ]}
+  correctOrder={["classopen", "mainopen", "body", "mainclose", "classclose"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Mettez ces lignes dans l'ordre pour déclarer un champ de classe, le définir dans le constructeur, et l'afficher depuis main."
+  items={[
+    { id: "c1", label: "public class Greeter {" },
+    { id: "c2", label: "    private String name;", explanation: "Les champs sont déclarés avant que le constructeur ne les utilise." },
+    { id: "c3", label: "    public Greeter(String name) { this.name = name; }" },
+    { id: "c4", label: "    public static void main(String[] args) {" },
+    { id: "c5", label: "        Greeter g = new Greeter(\"Ada\");" },
+    { id: "c6", label: "        System.out.println(g.name);" },
+    { id: "c7", label: "    }" },
+    { id: "c8", label: "}" },
+  ]}
+  correctOrder={["c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que ce code affiche ?"
+  code={`public class Main {
+    public static void main(String[] args) {
+        System.out.println("nullbase");
+    }
+}`}
+  options={["nullbase", "\"nullbase\"", "Erreur de compilation : pas de type de retour", "Hello, nullbase!"]}
+  correctIndex={0}
+  explanation="System.out.println affiche le contenu de la chaîne sans les guillemets qui l'entourent, suivi d'un saut de ligne. Les guillemets ne font que délimiter le littéral dans le code source ; ils ne font pas partie de la valeur à l'exécution."
+  actualOutput="nullbase"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Syntaxe et variables](/fr/programming-languages/java/syntax-basics)
+- [Threads et concurrence](/fr/programming-languages/java/advanced)

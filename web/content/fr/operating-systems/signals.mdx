@@ -1,0 +1,72 @@
+---
+title: Signaux
+description: Le mécanisme du noyau pour interrompre un processus en cours — dispositions par défaut, gestionnaires personnalisés, sécurité async-signal, et masquage.
+category: Operating Systems
+weight: 7
+interactive: true
+interactiveType: ["MermaidDiagram"]
+---
+
+Un **signal** est une notification asynchrone que le noyau délivre à un processus, interrompant ce qu'il était en train de faire pour l'informer que quelque chose s'est produit — un utilisateur a appuyé sur Ctrl+C, un autre processus lui a demandé de se terminer, il a essayé de déréférencer une mémoire invalide, un processus enfant qu'il surveillait vient de se terminer. « Asynchrone » est le mot clé : un signal peut arriver à pratiquement n'importe quel point de l'exécution d'un processus, entre des instructions arbitraires, ce qui rend l'écriture de code de gestion de signaux correct plus difficile qu'il n'y paraît. [Processes](/fr/devops/processes) couvre `SIGTERM` vs `SIGKILL` sous un angle pratique de déploiement ; cette page porte sur le mécanisme en dessous : ce qu'est réellement un signal et comment un processus y réagit.
+
+## Disposition par défaut
+
+Chaque type de signal a une action par défaut que le noyau entreprend si le processus destinataire n'a pas installé son propre gestionnaire pour lui. Celles-ci se répartissent en quelques catégories :
+
+- **Terminer** — le processus est tué. `SIGTERM` et `SIGINT` ont ce comportement par défaut.
+- **Terminer avec vidage mémoire (core dump)** — tué, et le noyau écrit un instantané de la mémoire du processus sur disque pour un débogage post-mortem. `SIGSEGV` (accès mémoire invalide) a ce comportement par défaut.
+- **Ignorer** — rien ne se passe. `SIGCHLD` (un processus enfant a changé d'état) est par défaut ignoré par de nombreux processus qui ne tiennent pas à suivre étroitement leurs enfants.
+- **Suspendre** / **Reprendre** — le processus est suspendu ou repris, indépendamment de ce qu'il gère par ailleurs. C'est ce qui permet à un shell de mettre en pause une tâche au premier plan avec Ctrl+Z et de la reprendre plus tard.
+
+Un processus peut outrepasser le comportement par défaut pour la plupart des signaux en installant un gestionnaire — mais pas pour tous les signaux. `SIGKILL` et `SIGSTOP` ne sont intentionnellement ni interceptables, ni ignorables, ni bloquables, parce que le système a besoin d'un moyen de garantir qu'il peut toujours terminer ou suspendre un processus, quoi que fasse le code de ce processus.
+
+## Gestionnaires personnalisés, et pourquoi c'est un endroit restreint
+
+Installer un gestionnaire indique au noyau « quand ce signal arrive, arrête ce que le processus fait et exécute cette fonction à la place ». Cela ressemble à un appel de fonction ordinaire, mais ça n'en est pas un : le gestionnaire s'exécute à un point arbitraire au milieu de ce que le code normal du processus était en train de faire, peut-être en plein milieu d'un appel de bibliothèque qui n'est lui-même pas réentrant. Si le code interrompu était en plein milieu de `malloc()`, en train de mettre à jour la comptabilité interne du tas, et que le gestionnaire de signal appelle aussi `malloc()`, les deux appels peuvent corrompre cette même comptabilité.
+
+C'est l'idée derrière la **sécurité async-signal** : seul un petit ensemble spécifique de fonctions (documenté par plateforme — des choses comme `write()`, mais pas `printf()`, et pas d'allocation générale de tas) est sûr à appeler depuis l'intérieur d'un gestionnaire de signal, parce qu'elles sont garanties de ne pas dépendre d'un état qui pourrait être en cours de mutation quand le signal est arrivé. Le schéma courant et sûr consiste à faire aussi peu que possible dans le gestionnaire lui-même — typiquement juste positionner un drapeau (un `volatile sig_atomic_t`) ou écrire un octet dans un tuyau — et laisser le flux de contrôle normal du processus remarquer ce drapeau et réagir une fois de retour dans un contexte sûr et ordinaire.
+
+## Masquage et blocage
+
+Un processus peut temporairement dire au noyau « ne délivre pas ce signal maintenant » en le **masquant** (bloquant) — le signal n'est pas perdu, il est simplement maintenu en attente jusqu'à ce que le processus le débloque. Cela compte pour protéger les sections critiques : si un morceau de code met à jour un état partagé en quelques étapes qui doivent se produire de façon atomique vis-à-vis d'un signal particulier, il peut bloquer ce signal pendant la durée de l'opération, effectuer la mise à jour, puis le débloquer (moment auquel le noyau délivre tout ce qui est arrivé entre-temps). Cela échange un petit risque — le signal est retardé, pas instantané — contre la garantie qu'il ne peut jamais tomber au milieu de cette séquence d'étapes spécifique.
+
+<MermaidDiagram
+  title="Le chemin d'un signal, de l'émetteur à la disposition"
+  chart={`
+sequenceDiagram
+    participant Sender as Sending process / kernel event
+    participant Kernel
+    participant Proc as Receiving process
+
+    Sender->>Kernel: raise signal (e.g. kill(pid, SIGTERM))
+    alt signal is blocked
+        Kernel->>Kernel: mark pending, hold delivery
+    else signal is deliverable
+        Kernel->>Proc: interrupt normal execution
+        alt custom handler installed
+            Proc->>Proc: run handler (async-signal-safe code only)
+        else no handler (default disposition)
+            Proc->>Proc: terminate / ignore / stop / core dump
+        end
+    end
+`}
+/>
+
+## Un vocabulaire de signaux plus large
+
+| Signal | Défaut typique | Cause courante |
+| --- | --- | --- |
+| `SIGINT` | Terminer | Ctrl+C depuis le terminal de contrôle |
+| `SIGHUP` | Terminer | Terminal de contrôle fermé, ou « recharge ta config » par convention |
+| `SIGCHLD` | Ignorer | Un processus enfant s'est terminé ou arrêté |
+| `SIGSEGV` | Terminer + vidage mémoire | Accès mémoire invalide |
+| `SIGTERM` | Terminer | Une demande polie de s'arrêter, interceptable |
+| `SIGKILL` | Terminer | Immédiat, non interceptable |
+
+Le double sens de `SIGHUP` est un bon exemple de convention superposée au comportement mécanique d'un signal : à l'origine « le terminal a raccroché », de nombreux démons de longue durée traitent maintenant sa réception comme « relis ton fichier de configuration », même si rien dans le noyau n'impose ce sens — c'est simplement ce que fait, de ce signal, le gestionnaire que le démon choisit d'installer.
+
+## Voir aussi
+
+- **[Processes](/fr/devops/processes)** — `SIGTERM` vs `SIGKILL` sous l'angle pratique du redémarrage en douceur d'un service en cours d'exécution.
+- **[Permissions](/fr/operating-systems/permissions)** — un processus a généralement besoin d'une identité utilisateur correspondante (ou de root) pour signaler un autre processus du tout.
+- **[Communication inter-processus](/fr/operating-systems/inter-process-communication)** — les signaux sont un moyen minimal pour des processus de se notifier mutuellement, aux côtés de mécanismes plus riches pour échanger de véritables données.

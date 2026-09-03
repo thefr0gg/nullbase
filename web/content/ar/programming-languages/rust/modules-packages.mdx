@@ -1,0 +1,146 @@
+---
+title: الوحدات وCargo
+description: تنظيم الكود باستخدام mod وuse، وكيف تتعامل Cargo وcrates.io مع الاعتماديات، والبناء، والنشر.
+category: Programming Languages
+weight: 8
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+يُنظَّم كود Rust في **وحدات (modules)** (`mod`)، التي تتحكم بكل من تسمية النطاقات والرؤية، وتُدار المشاريع بواسطة **Cargo**، أداة البناء ومدير الحزم الخاصان بـ Rust. لا يستدعي أحد تقريباً مترجم `rustc` مباشرة لمشروع حقيقي — تغلّفه Cargo، بالإضافة إلى حل الاعتماديات، والاختبار، والنشر.
+
+## `mod`: تسمية النطاقات والخصوصية
+
+تجمّع الوحدة عناصر مرتبطة (دوال، بنى، وحدات أخرى) وتخفيها افتراضياً عن الكود الخارجي — كل شيء في Rust **خاص ما لم يُوسَم بـ `pub`**، عكس الافتراضي في معظم اللغات.
+
+```rust
+mod shapes {
+    pub struct Circle {
+        pub radius: f64,
+    }
+
+    impl Circle {
+        pub fn area(&self) -> f64 {
+            std::f64::consts::PI * self.radius * self.radius
+        }
+    }
+
+    fn internal_helper() {
+        // not pub — invisible outside this module, even to code in the same file
+    }
+}
+
+fn main() {
+    let c = shapes::Circle { radius: 2.0 };
+    println!("area: {}", c.area());
+}
+```
+
+بدون `pub` على `Circle`، و`radius`، و`area`، لن يكون أي منها متاحاً من `main` — سيرفض المترجم `shapes::Circle { radius: 2.0 }` باعتباره وصولاً إلى بنية خاصة. تُفرَض الخصوصية في Rust بواسطة المترجم عند كل حدود، وليست مجرد عرف توثيقي.
+
+## `use`: جلب المسارات إلى النطاق
+
+الإشارة إلى شيء بمساره الكامل (`shapes::Circle`) في كل مرة أمر مملّ. تجلب `use` مساراً إلى النطاق الحالي بحيث يمكن تسميته مباشرة:
+
+```rust
+mod shapes {
+    pub struct Circle {
+        pub radius: f64,
+    }
+}
+
+use shapes::Circle;
+
+fn main() {
+    let c = Circle { radius: 3.0 }; // no shapes:: prefix needed
+    println!("radius: {}", c.radius);
+}
+```
+
+في مشروع حقيقي متعدد الملفات، تعيش الوحدات عادة في ملفاتها الخاصة (`shapes.rs` أو `shapes/mod.rs`)، وتجلب جمل `use` عناصر من وحدات أخرى في نفس الصندوق (crate)، أو من اعتماديات خارجية.
+
+## Cargo وcrates.io
+
+**Cargo** هي أداة البناء ومدير الحزم الخاصان بـ Rust، يُهيَّآن بـ `cargo new my_project`. تقرأ الاعتماديات من `Cargo.toml` وتحمّلها من **crates.io**، سجل الحزم المجتمعي ("الصندوق" crate هو مصطلح Rust لمكتبة أو حزمة مترجمة — يقارب ما يسميه npm حزمة).
+
+```toml
+# Cargo.toml
+[package]
+name = "my_project"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = "1.0"
+rand = "0.8"
+```
+
+مع وجود ذلك، تصبح `use serde::Serialize;` أو `use rand::Rng;` متاحة في أي مكان في المشروع — تحلّ `cargo build` وتترجم رسم بياني الاعتماديات تلقائياً. تغطي أوامر Cargo اليومية دورة الحياة كاملة: `cargo build` تترجم، و`cargo run` تترجم وتشغّل، و`cargo test` تشغّل الاختبارات، و`cargo publish` ترفع صندوقاً إلى crates.io ليعتمد عليه الآخرون.
+
+## طالع أيضاً
+
+- **[البنى والسمات](/ar/programming-languages/rust/oop-or-structs)** — الأنواع التي تُوسَم غالباً بـ `pub` وتُصدَّر من وحدة.
+- **[الملكية والاستعارة](/ar/programming-languages/rust/advanced)** — مفهوم يُطبَّق بنفس الطريقة سواء عاش الكود في ملف واحد أو قُسِّم عبر وحدات وصناديق.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لتعريف وحدة shapes ببنية Circle عامة ودالة area، ثم استخدامها من main."
+  items={[
+    { id: "mod-open", label: "mod shapes {" },
+    { id: "struct-open", label: "    pub struct Circle {" },
+    { id: "field", label: "        pub radius: f64," },
+    { id: "struct-close", label: "    }" },
+    { id: "impl-open", label: "    impl Circle {", explanation: "يجب أن تأتي كتلة impl بعد البنية التي تُلحِق بها دوالاً." },
+    { id: "area", label: "        pub fn area(&self) -> f64 { std::f64::consts::PI * self.radius * self.radius }" },
+    { id: "impl-close", label: "    }" },
+    { id: "mod-close", label: "}" },
+    { id: "main-open", label: "fn main() {" },
+    { id: "let-c", label: "    let c = shapes::Circle { radius: 2.0 };" },
+    { id: "print", label: "    println!(\"area: {}\", c.area());" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["mod-open", "struct-open", "field", "struct-close", "impl-open", "area", "impl-close", "mod-close", "main-open", "let-c", "print", "main-close"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لتعريف وحدة، وجلب بنيتها إلى النطاق بـ use، وإنشائها دون بادئة الوحدة."
+  items={[
+    { id: "mod-open", label: "mod shapes {" },
+    { id: "struct", label: "    pub struct Circle { pub radius: f64 }" },
+    { id: "mod-close", label: "}" },
+    { id: "use", label: "use shapes::Circle;", explanation: "يجب أن تأتي use بعد إعلان الوحدة التي تستورد منها." },
+    { id: "main-open", label: "fn main() {" },
+    { id: "let-c", label: "    let c = Circle { radius: 3.0 };" },
+    { id: "print", label: "    println!(\"radius: {}\", c.radius);" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["mod-open", "struct", "mod-close", "use", "main-open", "let-c", "print", "main-close"]}
+/>
+
+<PredictOutput
+  title="ماذا تطبع هذه الشيفرة؟"
+  code={`mod shapes {
+    pub struct Circle {
+        pub radius: f64,
+    }
+
+    fn internal_helper() -> f64 {
+        0.0
+    }
+}
+
+fn main() {
+    let c = shapes::Circle { radius: 2.0 };
+    println!("{}", c.radius);
+}`}
+  options={["2", "0", "Compile error naming internal_helper", "No output"]}
+  correctIndex={0}
+  explanation="لا تُستدعى internal_helper أبداً من main، وكونها غير pub لا يهم إلا إذا حاول شيء خارج الوحدة استدعاءها — دالة خاصة غير مستخدَمة هي على الأكثر تحذير كود ميت، وليست خطأً. Circle وradius كلاهما pub، لذا يُترجَم البرنامج ويطبع نصف القطر، 2."
+  actualOutput="2"
+/>
+</ExerciseTabs>

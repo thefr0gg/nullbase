@@ -1,0 +1,138 @@
+---
+title: C#
+description: Un aperçu de C#, le langage orienté objet et typé statiquement derrière .NET, ASP.NET Core, et Unity.
+category: Programming Languages
+weight: 1
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+C# (prononcé « C sharp ») est un langage orienté objet et typé statiquement
+créé par Microsoft en 2000, dirigé par Anders Hejlsberg (qui a aussi conçu
+TypeScript plus tard). Il fonctionne sur .NET, un runtime managé avec un
+modèle mémoire à ramasse-miettes, un compilateur juste-à-temps (et de plus en
+plus ahead-of-time), et une immense bibliothèque standard. C# a depuis
+largement dépassé Windows : le .NET moderne est multiplateforme, open source,
+et exécute des charges de travail de production sur des conteneurs Linux,
+dans des jeux Unity, et sur mobile via .NET MAUI.
+
+C# a commencé comme un cousin proche de Java, mais les deux langages ont
+rapidement divergé. C# a ajouté les génériques avec un vrai support à
+l'exécution, les propriétés comme construction de langage de premier ordre,
+LINQ (une syntaxe de requête intégrée au langage), et, plus récemment,
+`async`/`await` pour le code asynchrone, les types de référence nullables
+pour détecter les bugs liés au null à la compilation, et le filtrage par
+motif qui ne cesse de s'étendre à chaque version.
+
+## Ce qui rend C# distinctif
+
+- **Des propriétés, pas seulement des champs.** C# intègre la syntaxe
+  getter/setter directement dans le langage (`public int Age { get; set; }`),
+  donc l'encapsulation n'exige pas d'écrire du code répétitif
+  `getAge()`/`setAge()`.
+- **`async`/`await` comme syntaxe de premier ordre.** Le code asynchrone et
+  non bloquant se lit comme du code synchrone, porté par `Task` et `Task<T>`.
+- **Des génériques forts.** Contrairement aux génériques à effacement de type
+  de Java, les génériques de C# sont réifiés à l'exécution, ce qui les rend
+  plus rapides et permet des choses comme `typeof(T)` à l'intérieur d'une
+  méthode générique.
+- **LINQ.** Interroger et transformer des collections avec une syntaxe façon
+  SQL ou des chaînes de méthodes fluides (`.Where(...)`, `.Select(...)`)
+  intégrées directement dans le langage et la bibliothèque standard.
+- **Les types de référence nullables.** Depuis C# 8, le compilateur peut vous
+  avertir à la compilation quand une référence censée ne jamais être `null`
+  pourrait l'être.
+
+Voici un programme C# minimal et complet :
+
+```csharp
+Console.WriteLine("Hello, nullbase!");
+```
+
+Le C# moderne (depuis les instructions de premier niveau de C# 9) n'exige pas
+d'enveloppe `class` et méthode `Main` pour les programmes simples — le
+compilateur en génère une pour vous en coulisses. Le code plus ancien, et la
+plupart des projets réels, l'écrivent encore explicitement :
+
+```csharp
+using System;
+
+namespace HelloWorld
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            Console.WriteLine("Hello, nullbase!");
+        }
+    }
+}
+```
+
+## Quand se tourner vers C#
+
+C# est le choix par défaut pour les API et backends web ASP.NET Core, les
+logiciels de bureau Windows et d'entreprise, et — via le moteur de jeu Unity —
+une énorme part des jeux commerciaux. Sa combinaison de performance, de
+sécurité mémoire, et d'une riche bibliothèque standard en fait un choix
+généraliste solide partout où l'écosystème JVM pourrait autrement être
+envisagé.
+
+## La suite
+
+Les pages suivantes parcourent C# de la syntaxe à la programmation
+asynchrone : variables et types, flux de contrôle, méthodes, les structures
+de données intégrées, classes et interfaces, gestion des erreurs, et le
+système d'espaces de noms/paquets, en terminant par `async`/`await` et
+`Task`.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Faites glisser les lignes dans le bon ordre pour construire un programme console C# minimal et fonctionnel qui affiche un message de bienvenue."
+  items={[
+    { id: "using", label: "using System;" },
+    { id: "ns", label: "namespace HelloWorld" },
+    { id: "nsopen", label: "{" },
+    { id: "class", label: "    class Program" },
+    { id: "classopen", label: "    {" },
+    { id: "main", label: "        static void Main(string[] args)" },
+    { id: "mainopen", label: "        {" },
+    { id: "print", label: "            Console.WriteLine(\"Hello, C#\");" },
+    { id: "mainclose", label: "        }" },
+    { id: "classclose", label: "    }" },
+    { id: "nsclose", label: "}" },
+  ]}
+  correctOrder={["using", "ns", "nsopen", "class", "classopen", "main", "mainopen", "print", "mainclose", "classclose", "nsclose"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Mettez ces lignes dans l'ordre pour construire un programme à instructions de premier niveau (C# 9+) qui déclare une constante et l'affiche."
+  items={[
+    { id: "using2", label: "using System;" },
+    { id: "const2", label: "const string version = \"1.0\";", explanation: "Les instructions de premier niveau s'exécutent dans l'ordre, de haut en bas, après les directives using." },
+    { id: "print2", label: "Console.WriteLine(version);" },
+  ]}
+  correctOrder={["using2", "const2", "print2"]}
+/>
+
+<PredictOutput
+  title="Qu'affiche ceci ?"
+  code={`using System;
+
+Console.WriteLine("nullbase");`}
+  options={["nullbase", "\"nullbase\"", "Compile error: missing Main", "Hello, nullbase!"]}
+  correctIndex={0}
+  explanation="Console.WriteLine affiche le contenu de la chaîne sans les guillemets qui l'entourent, suivi d'un retour à la ligne. Les instructions de premier niveau (C# 9+) permettent à un fichier de sauter complètement l'enveloppe explicite class/Main — le compilateur en génère quand même une."
+  actualOutput="nullbase"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Syntaxe et variables](/fr/programming-languages/csharp/syntax-basics)
+- [Async et Tasks](/fr/programming-languages/csharp/advanced)

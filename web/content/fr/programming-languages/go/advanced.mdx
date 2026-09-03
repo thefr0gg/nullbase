@@ -1,0 +1,175 @@
+---
+title: Goroutines et Channels
+description: Le modèle de concurrence de Go — les goroutines légères et les channels utilisés pour coordonner et communiquer entre elles.
+category: Programming Languages
+weight: 9
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+La concurrence est la fonctionnalité signature de Go. Plutôt que d'exposer
+les threads OS bruts et les verrous comme outil principal, Go vous donne
+les **goroutines** — des unités d'exécution concurrente extrêmement
+légères gérées par le runtime Go — et les **channels**, des tuyaux typés
+permettant aux goroutines de communiquer en toute sécurité. La philosophie,
+empruntée au modèle CSP de Tony Hoare, est résumée dans une phrase de la
+documentation Go : « Ne communiquez pas en partageant de la mémoire ;
+partagez plutôt la mémoire en communiquant. »
+
+## Goroutines
+
+Démarrer une goroutine tient en un mot-clé, `go`, placé avant un appel de
+fonction. L'appel retourne immédiatement, et la fonction s'exécute de
+manière concurrente :
+
+```go
+func sayHello() {
+	fmt.Println("hello from a goroutine")
+}
+
+func main() {
+	go sayHello()
+	time.Sleep(100 * time.Millisecond) // lui laisser une chance de s'exécuter
+	fmt.Println("main done")
+}
+```
+
+Les goroutines sont bon marché — quelques kilo-octets de pile qui grandit
+selon les besoins, comparé à des mégaoctets pour un thread OS — donc il est
+normal qu'un programme Go en exécute des milliers à la fois. Le
+`time.Sleep` ci-dessus est une façon rudimentaire d'attendre ; le vrai code
+utilise des channels ou `sync.WaitGroup` à la place, puisque dormir une
+durée fixe est une condition de course en devenir.
+
+## Channels
+
+Un channel est un conduit typé dans lequel vous envoyez des valeurs et
+depuis lequel vous en recevez, créé avec `make` :
+
+```go
+func main() {
+	ch := make(chan string)
+
+	go func() {
+		ch <- "result from goroutine" // envoi
+	}()
+
+	msg := <-ch // réception — bloque jusqu'à ce qu'une valeur arrive
+	fmt.Println(msg)
+}
+```
+
+Envoyer et recevoir sur un channel non bufferisé bloquent tous les deux
+jusqu'à ce que l'autre côté soit prêt, ce qui rend les channels utiles pour
+la synchronisation, pas seulement le transfert de données : la réception
+ci-dessus ne se termine qu'après que la goroutine a réellement envoyé sa
+valeur, vous donnant un passage de relais sûr sans verrou explicite.
+
+## Channels bufferisés et fermeture
+
+`make(chan T, n)` crée un channel avec de la place pour `n` valeurs avant
+qu'un envoi ne bloque. Fermer un channel avec `close` signale qu'aucune
+autre valeur n'arrivera, ce que `range` utilise pour savoir quand s'arrêter :
+
+```go
+func main() {
+	results := make(chan int, 3)
+
+	go func() {
+		for i := 1; i <= 3; i++ {
+			results <- i * i
+		}
+		close(results)
+	}()
+
+	for value := range results {
+		fmt.Println(value) // 1, puis 4, puis 9
+	}
+}
+```
+
+## select
+
+`select` attend sur plusieurs opérations de channel à la fois et continue
+avec celle qui est prête en premier — l'équivalent en concurrence d'un
+`switch` sur des channels :
+
+```go
+func main() {
+	c1 := make(chan string)
+	c2 := make(chan string)
+
+	go func() { c1 <- "from c1" }()
+	go func() { c2 <- "from c2" }()
+
+	for i := 0; i < 2; i++ {
+		select {
+		case msg1 := <-c1:
+			fmt.Println(msg1)
+		case msg2 := <-c2:
+			fmt.Println(msg2)
+		}
+	}
+}
+```
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour lancer une goroutine qui envoie une valeur sur un channel, puis la recevoir dans main."
+  items={[
+    { id: "a1", label: "func main() {" },
+    { id: "a2", label: "\tch := make(chan int)" },
+    { id: "a3", label: "\tgo func() {", explanation: "Le channel doit exister avant qu'une goroutine puisse y envoyer." },
+    { id: "a4", label: "\t\tch <- 7" },
+    { id: "a5", label: "\t}()" },
+    { id: "a6", label: "\tfmt.Println(<-ch)" },
+    { id: "a7", label: "}" },
+  ]}
+  correctOrder={["a1", "a2", "a3", "a4", "a5", "a6", "a7"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Ordonnez ces lignes pour produire trois valeurs sur un channel bufferisé depuis une goroutine, le fermer, puis le vider avec range dans main."
+  items={[
+    { id: "b1", label: "ch := make(chan int, 3)" },
+    { id: "b2", label: "go func() {" },
+    { id: "b3", label: "\tfor i := 1; i <= 3; i++ {" },
+    { id: "b4", label: "\t\tch <- i", explanation: "Les valeurs doivent être envoyées avant que le channel ne soit fermé." },
+    { id: "b5", label: "\t}" },
+    { id: "b6", label: "\tclose(ch)" },
+    { id: "b7", label: "}()" },
+    { id: "b8", label: "for v := range ch {" },
+    { id: "b9", label: "\tfmt.Println(v)" },
+    { id: "b10", label: "}" },
+  ]}
+  correctOrder={["b1", "b2", "b3", "b4", "b5", "b6", "b7", "b8", "b9", "b10"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que ce code affiche ?"
+  code={`package main
+
+import "fmt"
+
+func main() {
+	ch := make(chan int, 1)
+	ch <- 10
+	ch <- 20
+	fmt.Println(<-ch)
+}`}
+  options={["10", "20", "Le programme entre en interblocage (deadlock)", "10\\n20"]}
+  correctIndex={2}
+  explanation="Le channel est bufferisé avec une capacité de 1. Le premier envoi (10) tient dans le buffer et retourne immédiatement. Le second envoi (20) bloque parce que le buffer est plein et que rien n'a encore reçu — et comme tout cela se passe sur la seule goroutine main sans aucune autre goroutine pour le vider, le programme entre en interblocage (une erreur fatale à l'exécution : all goroutines are asleep)."
+  actualOutput="fatal error: all goroutines are asleep - deadlock!"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Modules et paquets](/fr/programming-languages/go/modules-packages)
+- [Gestion des erreurs](/fr/programming-languages/go/error-handling)

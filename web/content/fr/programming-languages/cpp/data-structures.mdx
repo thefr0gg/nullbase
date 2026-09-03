@@ -1,0 +1,147 @@
+---
+title: Structures de données
+description: Stocker des collections de valeurs en C++ avec des tableaux de taille fixe, le std::vector redimensionnable, et le std::map ordonné par clé.
+category: Programming Languages
+weight: 5
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+C++ vous offre un choix de conteneurs selon que la taille est connue à l'avance et selon que vous avez besoin d'une recherche rapide par clé plutôt que par position — choisir le mauvais est une source courante à la fois de bugs et de lenteur inutile.
+
+## Tableaux
+
+```cpp
+#include <iostream>
+
+int main() {
+    int scores[5] = {90, 85, 77, 92, 60};
+
+    for (int i = 0; i < 5; i++) {
+        std::cout << "scores[" << i << "] = " << scores[i] << "\n";
+    }
+    return 0;
+}
+```
+
+Un tableau de style C comme `scores` a une taille fixée à la compilation et aucune vérification des limites — lire ou écrire `scores[5]` compile proprement mais lit au-delà de la mémoire du tableau, un comportement indéfini qui peut corrompre silencieusement des données sans rapport. Sa taille n'est pas non plus suivie à l'exécution ; une fonction recevant `scores` a besoin que la longueur soit passée séparément.
+
+## `std::vector`
+
+```cpp
+#include <iostream>
+#include <vector>
+
+int main() {
+    std::vector<int> scores;
+    scores.push_back(90);
+    scores.push_back(85);
+    scores.push_back(77);
+
+    scores.push_back(100);
+    std::cout << "Count: " << scores.size() << "\n";
+
+    for (int s : scores) {
+        std::cout << s << " ";
+    }
+    std::cout << "\n";
+
+    scores.pop_back();
+    std::cout << "After pop_back, count: " << scores.size() << "\n";
+    return 0;
+}
+```
+
+`std::vector<int>` est un tableau redimensionnable : `push_back` ajoute un élément et fait grandir automatiquement le stockage sous-jacent, `size()` rapporte le nombre d'éléments actuel, et `pop_back()` supprime le dernier élément. Contrairement à un tableau brut, un vector connaît toujours sa propre longueur et gère sa propre mémoire — c'est pourquoi `std::vector` est le choix par défaut pour une séquence de valeurs en C++ moderne, réservant un tableau de style C à taille fixe uniquement pour les cas où la taille est véritablement constante et connue à la compilation (ou en utilisant `std::array`, qui offre la même garantie de taille fixe avec une interface plus sûre).
+
+## `std::map`
+
+```cpp
+#include <iostream>
+#include <map>
+#include <string>
+
+int main() {
+    std::map<std::string, int> ages;
+    ages["Ada"] = 36;
+    ages["Grace"] = 85;
+    ages["Alan"] = 41;
+
+    ages["Ada"] = 37; // overwrites the existing entry
+
+    for (const auto& pair : ages) {
+        std::cout << pair.first << " -> " << pair.second << "\n";
+    }
+    return 0;
+}
+```
+
+`std::map<K, V>` stocke des paires clé-valeur et les garde ordonnées par clé en interne (à l'aide d'un arbre binaire équilibré), donc itérer sur un map visite toujours les entrées dans l'ordre croissant des clés — ici, par ordre alphabétique de nom. Indexer avec `ages["Ada"]` insère une nouvelle entrée ou met à jour l'existante si la clé est déjà présente ; rechercher une clé qui n'existe pas avec `[]` l'insère silencieusement avec une valeur construite par défaut, ce qui est une surprise courante — `ages.find("Bob")` ou `ages.count("Bob")` sont les façons plus sûres de vérifier la présence sans insérer.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Faites glisser les lignes dans le bon ordre pour construire un vector, y pousser trois valeurs, et afficher sa taille."
+  items={[
+    { id: "include-vector", label: "#include <vector>" },
+    { id: "include-iostream", label: "#include <iostream>" },
+    { id: "main-open", label: "int main() {" },
+    { id: "declare", label: "    std::vector<int> nums;", explanation: "Le vector doit exister avant que push_back ne puisse être appelé dessus." },
+    { id: "push1", label: "    nums.push_back(10);" },
+    { id: "push2", label: "    nums.push_back(20);" },
+    { id: "print-size", label: "    std::cout << nums.size() << std::endl;" },
+    { id: "return", label: "    return 0;" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["include-vector", "include-iostream", "main-open", "declare", "push1", "push2", "print-size", "return", "main-close"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Faites glisser les lignes dans le bon ordre pour construire un std::map, insérer deux entrées, et en rechercher une."
+  items={[
+    { id: "include-map", label: "#include <map>" },
+    { id: "include-string", label: "#include <string>" },
+    { id: "main-open", label: "int main() {" },
+    { id: "declare", label: "    std::map<std::string, int> inventory;" },
+    { id: "insert1", label: "    inventory[\"apples\"] = 50;", explanation: "Le map doit être déclaré avant que des entrées n'y soient insérées." },
+    { id: "insert2", label: "    inventory[\"bananas\"] = 30;" },
+    { id: "lookup", label: "    std::cout << inventory[\"apples\"] << std::endl;" },
+    { id: "return", label: "    return 0;" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["include-map", "include-string", "main-open", "declare", "insert1", "insert2", "lookup", "return", "main-close"]}
+/>
+
+<PredictOutput
+  title="Qu'affiche ceci ?"
+  code={`#include <iostream>
+#include <map>
+#include <string>
+
+int main() {
+    std::map<std::string, int> scores;
+    scores["b"] = 2;
+    scores["a"] = 1;
+    scores["c"] = 3;
+
+    for (const auto& pair : scores) {
+        std::cout << pair.first;
+    }
+    std::cout << std::endl;
+    return 0;
+}`}
+  options={["bac", "abc", "cba", "Compile error"]}
+  correctIndex={1}
+  explanation={`std::map garde toujours ses entrées triées par clé, quel que soit l'ordre d'insertion. Même si "b" a été inséré en premier, itérer le map visite les clés en ordre croissant : a, b, c.`}
+  actualOutput="abc"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Fonctions](/fr/programming-languages/cpp/functions) — passer des vectors et des maps dans des fonctions par référence.
+- [Classes et objets](/fr/programming-languages/cpp/oop-or-structs) — construire vos propres types de données personnalisés au-delà des conteneurs standard.

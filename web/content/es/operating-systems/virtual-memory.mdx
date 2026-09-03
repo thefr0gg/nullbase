@@ -1,0 +1,50 @@
+---
+title: Memoria Virtual
+description: Por qué cada proceso obtiene su propia ilusión de un espacio de direcciones completo, cómo la paginación y el TLB hacen esa ilusión rápida, y qué sucede en un fallo de página cuando la ilusión choca con los límites físicos.
+category: Operating Systems
+weight: 3
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+La **memoria virtual** es la capa de indirección que permite a cada proceso creer que tiene todo un espacio de direcciones privado para sí mismo — empezando en la dirección cero, tan grande como permita la arquitectura de la CPU — sin importar cuánta RAM física tenga realmente la máquina o qué estén haciendo otros procesos al mismo tiempo. Ningún proceso toca nunca directamente una dirección de RAM física; cada acceso a memoria que hace es una dirección *virtual* que el hardware y el sistema operativo traducen a una ubicación física real por detrás de escena, y esa única capa de indirección es lo que hace posibles a la vez el aislamiento de procesos, la ejecución de programas más grandes que la RAM, y la multitarea segura.
+
+## Qué compra la ilusión
+
+- **Aislamiento** — porque las direcciones virtuales del proceso A se mapean a un conjunto de direcciones físicas completamente distinto al del proceso B, A no tiene forma de siquiera *expresar* una dirección que caiga en la memoria de B. Un bug o una escritura maliciosa en un proceso no puede corromper silenciosamente los datos de otro, sin que el sistema operativo tenga que comprobar a mano cada acceso a memoria.
+- **Programas más grandes que la RAM** — el espacio de direcciones virtual de un proceso no necesita estar completamente residente en memoria física a la vez. Partes de él pueden vivir en disco hasta que realmente se toquen, así que un programa puede escribirse como si la memoria fuera efectivamente ilimitada.
+- **Un modelo mental más simple para cada programa** — porque las direcciones son privadas y empiezan desde el mismo lugar para todos, un compilador y un enlazador pueden organizar la memoria de un programa sin saber nada sobre qué más está ejecutándose en la máquina al mismo tiempo.
+
+## Paginación
+
+El mecanismo que hace esto práctico es la **paginación**: tanto la memoria virtual como la física se trocean en fragmentos de tamaño fijo llamados **páginas** (4 KB es un valor por defecto común), y el sistema operativo mantiene una **tabla de páginas** por proceso que mapea cada página virtual de ese proceso a un marco de página física en algún lugar de la RAM. Un acceso a memoria como "leer de la dirección virtual `0x4000`" se divide en un número de página y un desplazamiento dentro de la página; la tabla de páginas convierte el número de página en el marco de página física real, y el desplazamiento se agrega después sin cambios. Como funciona en unidades de tamaño fijo en lugar de regiones arbitrarias de tamaño variable, el sistema operativo puede colocar las páginas de cualquier proceso en cualquier parte de la memoria física sin necesitar que la memoria física sea contigua — simplificando drásticamente la asignación en comparación con esquemas anteriores que requerían que programas enteros cupieran en un único bloque ininterrumpido.
+
+## El TLB
+
+Recorrer una tabla de páginas completa en *cada acceso a memoria* sería prohibitivamente lento, así que la CPU mantiene una caché pequeña y extremadamente rápida de traducciones recientes de virtual a física llamada el **buffer de traducción adelantada (TLB)**. En un **acierto de TLB**, la CPU ya tiene la dirección física y se salta por completo el recorrido de la tabla de páginas; en un **fallo de TLB**, tiene que recorrer la tabla de páginas (o estructuras gestionadas por hardware) para encontrar el mapeo, y luego almacena ese resultado en el TLB para la próxima vez. Como los programas tienden a acceder repetidamente a un conjunto relativamente pequeño de páginas en una ventana corta (localidad de referencia), la tasa de aciertos del TLB suele ser muy alta en la práctica — pero un cambio de contexto a un proceso distinto invalida la mayoría de esas traducciones en caché, ya que las direcciones virtuales de un proceso nuevo se mapean a un lugar completamente distinto, que es parte de por qué los cambios de contexto acarrean un costo real más allá del simple guardado/restauración de registros [cubierto en la página de Procesos](/es/operating-systems/processes).
+
+## Fallos de página
+
+Un **fallo de página** ocurre cuando un proceso accede a una página virtual que su tabla de páginas dice que no está actualmente mapeada a un marco físico válido, y no es automáticamente un crash — los dos casos se ven muy distintos:
+
+<ItemExplorer
+  title="Tipos de Fallo de Página"
+  layout="table"
+  tableColumns={[{ key: "cause", label: "Qué lo dispara" }, { key: "cost", label: "Costo de resolverlo" }]}
+  items={[
+    { id: "minor", label: "Fallo menor (suave)", color: "blue", columns: { cause: "La página realmente ya está en memoria física (por ejemplo, compartida con otro proceso, o reclamada pero aún no reutilizada) pero todavía no mapeada en la tabla de páginas de este proceso", cost: "Barato — el sistema operativo simplemente actualiza la entrada de la tabla de páginas para apuntar a memoria que ya está residente. Sin acceso a disco." } },
+    { id: "major", label: "Fallo mayor (duro)", color: "red", columns: { cause: "La página genuinamente no está en RAM en absoluto — tiene que leerse desde disco (desde el archivo ejecutable, o desde el swap)", cost: "Órdenes de magnitud más lento — una lectura real de disco (o SSD) tiene que completarse antes de que el proceso pueda reanudarse, que es por lo que la actividad de paginación intensa es un precipicio de rendimiento tan visible." } },
+  ]}
+/>
+
+Un acceso *inválido* — uno que no está respaldado por ningún mapeo legítimo en absoluto, como una desreferenciación de puntero genuinamente fuera de límites — también es técnicamente un fallo de página, pero el sistema operativo lo resuelve entregando un fallo al proceso en lugar de arreglar un mapeo, que en la mayoría de los sistemas es exactamente lo que es un fallo de segmentación por debajo.
+
+## Swapping
+
+Cuando la memoria física realmente se agota, el sistema operativo recurre al **swapping** (o paginación de salida): elige alguna página actualmente residente en RAM que no se haya usado recientemente, escribe su contenido en un área reservada de disco (el espacio de swap), y reutiliza ese marco físico para lo que sea que necesite memoria ahora mismo. Si el proceso original toca de nuevo esa página más tarde, sufre un fallo de página mayor y el sistema operativo la lee de vuelta desde el swap. Esto mantiene al sistema funcionando en lugar de simplemente fallar una asignación, pero el acceso a disco es enormemente más lento que la RAM, así que un sistema que está haciendo swapping intenso ("thrashing") puede pasar más tiempo moviendo páginas hacia y desde el disco que haciendo trabajo real — la señal clásica de que una máquina necesita más RAM en lugar de más optimización.
+
+## Ver también
+
+- **[Procesos](/es/operating-systems/processes)** — el bloque de control de proceso que contiene el puntero de tabla de páginas de cada proceso.
+- **[Sistemas de Archivos](/es/operating-systems/file-systems)** — las estructuras del lado del disco de las que en última instancia leen el espacio de swap y los fallos de página mayores.
+- **[Llamadas al Sistema](/es/operating-systems/system-calls)** — el privilegio de modo kernel que necesita un proceso para que se toquen siquiera sus tablas de páginas.

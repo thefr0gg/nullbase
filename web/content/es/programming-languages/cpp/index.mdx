@@ -1,0 +1,95 @@
+---
+title: C++
+description: Un lenguaje de sistemas compilado y estáticamente tipado construido en torno a abstracciones de costo cero — dónde encaja C++ y por qué sigue importando para el software crítico en rendimiento.
+category: Programming Languages
+weight: 1
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+**C++** es un lenguaje de programación compilado, estáticamente tipado y multiparadigma, diseñado originalmente por Bjarne Stroustrup a principios de la década de 1980 como "C con Clases" — una extensión de C que agregó características orientadas a objetos sin renunciar al control de bajo nivel de C sobre la memoria y el hardware. Décadas después, esa combinación sigue siendo la razón por la que se elige: C++ te permite escribir abstracciones de alto nivel (clases, templates, la biblioteca estándar) mientras conservas la capacidad de gestionar memoria manualmente y razonar con precisión sobre lo que la máquina está realmente haciendo.
+
+La filosofía rectora del lenguaje suele resumirse como **abstracción de costo cero** — una característica que no usas no debería costarte nada, y una característica que sí usas no debería costar más que escribir el código equivalente a mano. Por eso C++ sigue siendo dominante en dominios donde el rendimiento no es negociable: motores de videojuegos, sistemas operativos, navegadores, firmware embebido, sistemas de trading de alta frecuencia, y buena parte de las bibliotecas estándar y runtimes sobre los que se construyen otros lenguajes.
+
+A diferencia de los lenguajes interpretados o compilados por JIT, un programa en C++ se compila por adelantado a código máquina nativo mediante un compilador (GCC, Clang, MSVC). No hay un intérprete en tiempo de ejecución ni un recolector de basura automático — la vida útil de los objetos está determinada por el ámbito y, en el C++ moderno, se gestiona mediante un patrón llamado RAII en lugar de un recolector en segundo plano que decida cuándo reclamar memoria.
+
+```cpp
+#include <iostream>
+
+int main() {
+    std::cout << "Hello, World!" << std::endl;
+    return 0;
+}
+```
+
+Todo programa en C++ necesita una función `int main()` — es el punto de entrada designado que el sistema operativo llama para iniciar la ejecución. `#include <iostream>` incorpora las declaraciones de `std::cout`, el flujo de salida estándar de C++, y `std::endl` vacía el flujo y escribe un salto de línea. Devolver `0` desde `main` le indica al proceso que lo invoca que el programa terminó con éxito; un valor distinto de cero señala un error.
+
+```cpp
+#include <iostream>
+
+int square(int n) {
+    return n * n;
+}
+
+int main() {
+    int value = 6;
+    std::cout << "Square: " << square(value) << std::endl;
+    return 0;
+}
+```
+
+Este ejemplo muestra dos cosas que se repiten a lo largo de C++: las funciones se declaran con un tipo de retorno explícito (`int square(int n)`), y `std::cout` encadena varios valores con `<<` en una sola sentencia — cada llamada a `<<` devuelve el propio flujo, por lo que pueden encadenarse.
+
+Pasar del código fuente a un programa en ejecución es un proceso de múltiples etapas: el preprocesador expande las directivas `#include` y las macros, el compilador traduce el resultado a un archivo objeto, y el enlazador combina archivos objeto (y cualquier biblioteca) en un ejecutable final. Cada archivo `.cpp` se compila de forma independiente en su propio archivo objeto antes del enlazado — un detalle que importa en cuanto un proyecto abarca más de un archivo fuente.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir un programa funcional de '¡Hola, Mundo!'."
+  items={[
+    { id: "include", label: "#include <iostream>", explanation: "La directiva include debe venir antes de cualquier cosa que use std::cout." },
+    { id: "main-open", label: "int main() {" },
+    { id: "print", label: "    std::cout << \"Hello, World!\" << std::endl;" },
+    { id: "return", label: "    return 0;", explanation: "La sentencia return viene después de que el trabajo está hecho, pero sigue dentro del cuerpo de la función." },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["include", "main-open", "print", "return", "main-close"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir un programa que suma dos números e imprime la suma."
+  items={[
+    { id: "include", label: "#include <iostream>" },
+    { id: "main-open", label: "int main() {" },
+    { id: "declare", label: "    int a = 3, b = 4;", explanation: "Las variables deben declararse antes de usarse en una expresión." },
+    { id: "sum", label: "    int sum = a + b;" },
+    { id: "print", label: "    std::cout << sum << std::endl;" },
+    { id: "return", label: "    return 0;" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["include", "main-open", "declare", "sum", "print", "return", "main-close"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`#include <iostream>
+
+int main() {
+    std::cout << 7 / 2 << std::endl;
+    return 0;
+}`}
+  options={["3", "3.5", "4", "Compile error"]}
+  correctIndex={0}
+  explanation="Tanto 7 como 2 son literales int, así que C++ realiza división entera y trunca hacia cero, descartando el resto. Para obtener 3.5 necesitarías que al menos un operando fuera de tipo punto flotante, por ejemplo 7.0 / 2."
+  actualOutput="3"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Sintaxis y Variables](/es/programming-languages/cpp/syntax-basics) — los bloques de construcción usados en todos los ejemplos anteriores.
+- [Módulos y Paquetes](/es/programming-languages/cpp/modules-packages) — cómo funcionan realmente `#include` y los proyectos multi-archivo.

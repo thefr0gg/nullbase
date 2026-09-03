@@ -1,0 +1,171 @@
+---
+title: Gestion des erreurs
+description: La convention de Go consistant à renvoyer des erreurs comme des valeurs plutôt que de lever des exceptions, et comment les construire et les vérifier.
+category: Programming Languages
+weight: 7
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Go n'a pas d'exceptions ni de `try`/`catch`. Les erreurs sont des valeurs
+ordinaires, renvoyées aux côtés du résultat normal d'une fonction, et
+vérifiées avec une simple instruction `if`. C'est un choix de conception
+délibéré : il force les chemins d'erreur à être visibles dans le code
+plutôt que cachés dans un saut de flux de contrôle qui peut être intercepté
+n'importe où plus haut dans la pile d'appels.
+
+## Le type `error` et `if err != nil`
+
+`error` est une interface intégrée avec une seule méthode, `Error()
+string`. Tout type qui l'implémente peut être utilisé comme erreur. Par
+convention, une fonction qui peut échouer renvoie son résultat plus une
+`error` comme dernière valeur de retour, et `nil` signifie « pas
+d'erreur » :
+
+```go
+func divide(a, b float64) (float64, error) {
+	if b == 0 {
+		return 0, errors.New("cannot divide by zero")
+	}
+	return a / b, nil
+}
+
+func main() {
+	result, err := divide(10, 0)
+	if err != nil {
+		fmt.Println("error:", err)
+		return
+	}
+	fmt.Println("result:", result)
+}
+```
+
+`if err != nil` immédiatement après un appel est l'idiome le plus courant
+du code Go. Cela paraît répétitif quand on vient d'un langage try/catch,
+mais cela signifie que chaque appel faillible a un point de décision
+explicite et visible juste là où il se produit — rien ne se propage
+invisiblement.
+
+## Construire des erreurs
+
+`errors.New` crée une erreur simple à partir d'une chaîne. `fmt.Errorf`
+fait la même chose mais prend en charge le formatage, et `%w` enveloppe une
+erreur existante pour qu'elle puisse être déballée plus tard :
+
+```go
+import (
+	"errors"
+	"fmt"
+)
+
+var ErrNotFound = errors.New("item not found")
+
+func find(id int) error {
+	if id != 1 {
+		return fmt.Errorf("looking up id %d: %w", id, ErrNotFound)
+	}
+	return nil
+}
+
+func main() {
+	err := find(99)
+	if errors.Is(err, ErrNotFound) {
+		fmt.Println("not found, as expected")
+	}
+}
+```
+
+`errors.Is` vérifie si une erreur (ou tout ce qu'elle enveloppe) correspond
+à une erreur sentinelle connue comme `ErrNotFound` — c'est ainsi que Go
+vous permet de vérifier des conditions d'erreur spécifiques sans exceptions
+ni hiérarchies de types.
+
+## Types d'erreur personnalisés
+
+Tout type avec une méthode `Error() string` satisfait l'interface `error`,
+donc vous pouvez attacher des données structurées à vos erreurs :
+
+```go
+type ValidationError struct {
+	Field string
+}
+
+func (e *ValidationError) Error() string {
+	return "invalid field: " + e.Field
+}
+
+func validate(age int) error {
+	if age < 0 {
+		return &ValidationError{Field: "age"}
+	}
+	return nil
+}
+```
+
+## panic et recover existent, mais ne sont pas pour les erreurs normales
+
+Go a bien `panic` et `recover`, mais ils sont réservés aux situations
+véritablement irrécupérables (un bug de programmation comme un index hors
+limites), pas pour la gestion d'erreurs du quotidien. Le code Go idiomatique
+ne panique presque jamais délibérément pour quelque chose qu'un appelant
+pourrait raisonnablement vouloir gérer — cela appartient à une `error`
+renvoyée.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire une fonction qui renvoie une erreur et la vérifier avec l'idiome if err != nil."
+  items={[
+    { id: "e1", label: "func parseAge(s string) (int, error) {" },
+    { id: "e2", label: "\tif s == \"\" {" },
+    { id: "e3", label: "\t\treturn 0, errors.New(\"empty input\")", explanation: "Le cas d'erreur renvoie la valeur zéro aux côtés de l'erreur, pas avant de vérifier la condition." },
+    { id: "e4", label: "\t}" },
+    { id: "e5", label: "\treturn 42, nil" },
+    { id: "e6", label: "}" },
+  ]}
+  correctOrder={["e1", "e2", "e3", "e4", "e5", "e6"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Ordonnez ces lignes pour appeler une fonction faillible et gérer son erreur avant d'utiliser le résultat."
+  items={[
+    { id: "h1", label: "age, err := parseAge(\"\")" },
+    { id: "h2", label: "if err != nil {", explanation: "Vérifiez err immédiatement après l'appel, avant de toucher à age." },
+    { id: "h3", label: "\tfmt.Println(\"error:\", err)" },
+    { id: "h4", label: "\treturn" },
+    { id: "h5", label: "}" },
+    { id: "h6", label: "fmt.Println(\"age:\", age)" },
+  ]}
+  correctOrder={["h1", "h2", "h3", "h4", "h5", "h6"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que ce code affiche ?"
+  code={`package main
+
+import (
+	"errors"
+	"fmt"
+)
+
+func main() {
+	var err error
+	fmt.Println(err == nil)
+	err = errors.New("boom")
+	fmt.Println(err == nil)
+}`}
+  options={["false true", "true false", "true true", "Erreur de compilation : error n'a pas de valeur zéro"]}
+  correctIndex={1}
+  explanation={`error est une interface, et sa valeur zéro est nil, donc une variable error non assignée est comparée égale à nil. Après avoir assigné errors.New("boom"), elle contient une valeur error non-nil, donc la deuxième comparaison est false.`}
+  actualOutput="true false"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Structs et interfaces](/fr/programming-languages/go/oop-or-structs)
+- [Modules et paquets](/fr/programming-languages/go/modules-packages)

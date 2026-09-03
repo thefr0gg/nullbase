@@ -1,0 +1,167 @@
+---
+title: البُنى والدوال
+description: لا تملك C أصنافاً — تجمّع البُنى (structs) البيانات، وتقوم مؤشرات الدوال مقام التوابع، ويبني التركيب (لا الوراثة) السلوك.
+category: Programming Languages
+weight: 6
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تسبق C فكرة البرمجة كائنية التوجه كفكرة سائدة، ولا تملك `class`، ولا وراثة، ولا بنية توابع مدمجة. ما تملكه هو `struct` لتجميع البيانات المرتبطة، وحقيقة أن الدوال قيم يمكن الإشارة إليها تعني أنه يمكنك تخزين مؤشر إلى دالة داخل بُنية — وهكذا تحاكي قواعد الكود المبنية على C "كائنات ذات توابع" عند الحاجة. إنه بديل متعمّد ومصنوع يدوياً، لا ميزة خفية كانت C تخفيها طوال الوقت كلغة كائنية التوجه.
+
+## struct: تجميع البيانات المرتبطة
+
+تجمّع `struct` حقولاً مسمّاة من أنواع مختلفة محتملة في نوع واحد:
+
+```c
+#include <stdio.h>
+
+struct Point {
+    double x;
+    double y;
+};
+
+double distanceFromOrigin(struct Point p) {
+    /* passed by value: this receives a copy of the whole struct */
+    double dx = p.x;
+    double dy = p.y;
+    return dx * dx + dy * dy; /* squared distance, skipping sqrt for brevity */
+}
+
+int main(void) {
+    struct Point origin = {0.0, 0.0};
+    struct Point p1 = {3.0, 4.0};
+
+    printf("p1 = (%.1f, %.1f)\n", p1.x, p1.y);
+    printf("squared distance: %.1f\n", distanceFromOrigin(p1));
+
+    return 0;
+}
+```
+
+مثل أي قيمة أخرى، تُنسَخ `struct` عند الإسناد وتُمرَّر بالقيمة إلى الدوال ما لم تمرّر صراحة مؤشراً إليها — بالنسبة لبُنية كبيرة، يتجنب تمرير `struct Point *p` واستخدام `p->x` نسخ البُنية بأكملها في كل استدعاء.
+
+## typedef ومؤشرات الدوال كـ"توابع"
+
+يمنح `typedef` البُنية اسماً مستعاراً أقصر، ويتيح حقل مؤشر دالة للبُنية حمل سلوك إلى جانب بياناتها — أقرب ما تصل إليه C من تابع:
+
+```c
+#include <stdio.h>
+
+typedef struct Account {
+    double balance;
+    void (*deposit)(struct Account *self, double amount);
+} Account;
+
+void depositImpl(Account *self, double amount) {
+    self->balance += amount;
+}
+
+int main(void) {
+    Account acc = {0.0, depositImpl};
+
+    acc.deposit(&acc, 100.0); /* looks like a method call, but it's just a function pointer */
+    acc.deposit(&acc, 50.0);
+
+    printf("balance: %.2f\n", acc.balance);
+
+    return 0;
+}
+```
+
+يُقرأ `acc.deposit(&acc, 100.0)` تقريباً مثلما ستُقرأ `acc.deposit(100.0)` في لغة كائنية التوجه، إلا أن C تتطلب تمرير الكائن (`&acc`) صراحة كأول وسيط — لا يوجد `this` ضمني. تستخدم قواعد كود C الفعلية هذا النمط تحديداً (بُنية من مؤشرات دوال تعمل كـ"جدول توابع افتراضي") لتنفيذ الواجهات وتعدد الأشكال — بُنية `file_operations` في نواة لينكس مثال معروف.
+
+## التركيب بدلاً من الوراثة
+
+لا تملك C طريقة لتقول "هذه البُنية تمتد تلك البُنية." بدلاً من ذلك، تُضمِّن بُنية أخرى كحقل مسمّى، ويُعبَّر عن السلوك المشترك بكتابة دوال تعمل على الجزء المُضمَّن:
+
+```c
+#include <stdio.h>
+
+typedef struct {
+    double x;
+    double y;
+} Point;
+
+typedef struct {
+    Point position; /* composition: a Circle "has a" Point, not "is a" Point */
+    double radius;
+} Circle;
+
+void printPoint(Point p) {
+    printf("(%.1f, %.1f)", p.x, p.y);
+}
+
+int main(void) {
+    Circle c = {{1.0, 2.0}, 5.0};
+
+    printf("circle at ");
+    printPoint(c.position); /* reuse the function written for Point */
+    printf(" with radius %.1f\n", c.radius);
+
+    return 0;
+}
+```
+
+لأنه لا وراثة، تأتي إعادة استخدام الكود في C من تركيب بُنى أصغر وكتابة دوال تعمل على الأجزاء، بدلاً من بناء تسلسل هرمي من الأصناف — وهذا قيد دفع أساليب "البرمجة كائنية التوجه بلا أصناف" اللاحقة (مثل تضمين Go) نحو الفكرة نفسها.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="اجمع بُنية واستخدامها"
+  prompt="اسحب هذه الأسطر إلى الترتيب الذي يعرّف بُنية Point، وينشئ واحدة، ويطبع حقولها."
+  items={[
+    { id: "struct", label: "struct Point {\n    double x;\n    double y;\n};", explanation: "يجب أن يظهر تعريف البُنية قبل أي محاولة للتصريح عن متغير من ذلك النوع." },
+    { id: "main", label: "int main(void) {" },
+    { id: "decl", label: "    struct Point p = {1.0, 2.0};" },
+    { id: "print", label: "    printf(\"(%.1f, %.1f)\\n\", p.x, p.y);" },
+    { id: "close", label: "    return 0;\n}" },
+  ]}
+  correctOrder={["struct", "main", "decl", "print", "close"]}
+/>
+
+<OrderingExercise
+  title="رتّب استدعاء 'تابع' عبر مؤشر دالة"
+  prompt="اسحب هذه الأسطر إلى الترتيب الذي يعرّف بُنية بحقل مؤشر دالة ويستدعيه كتابع."
+  items={[
+    { id: "typedef", label: "typedef struct {\n    int count;\n    void (*increment)(void *self);\n} Counter;" },
+    { id: "impl", label: "void incrementImpl(void *self) {\n    ((Counter *)self)->count++;\n}", explanation: "يجب أن توجد دالة التنفيذ قبل أن تُسنَد إلى نسخة Counter." },
+    { id: "decl", label: "Counter c = {0, incrementImpl};" },
+    { id: "call", label: "c.increment(&c);" },
+    { id: "print", label: "printf(\"%d\\n\", c.count);" },
+  ]}
+  correctOrder={["typedef", "impl", "decl", "call", "print"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا؟"
+  code={`#include <stdio.h>
+
+struct Point {
+    double x;
+    double y;
+};
+
+void movePoint(struct Point p) {
+    p.x += 10; /* p is a copy, passed by value */
+}
+
+int main(void) {
+    struct Point p1 = {1.0, 1.0};
+    movePoint(p1);
+    printf("%.1f\\n", p1.x);
+    return 0;
+}`}
+  options={["1.0", "11.0", "10.0", "خطأ ترجمة"]}
+  correctIndex={0}
+  explanation="تُمرَّر البُنى بالقيمة تماماً مثل أي نوع آخر في C، لذا تستقبل movePoint نسخة منفصلة تماماً من p1 — تعديل p.x داخل الدالة ليس له أي تأثير على p1 الخاصة بالمستدعي. تغييرها فعلياً سيتطلب تمرير struct Point * بدلاً من ذلك."
+  actualOutput="1.0"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- **[هياكل البيانات](/ar/programming-languages/c/data-structures)** — المصفوفات والمؤشرات، النصف الآخر من بناء البُنى في هياكل أكبر.
+- **[الوحدات والحزم](/ar/programming-languages/c/modules-packages)** — مشاركة تعريف بُنية عبر عدة ملفات .c من خلال ملف رأس (header).

@@ -1,0 +1,145 @@
+---
+title: Fonctions
+description: Paramètres typés et types de retour, plus paramètres optionnels et par défaut, dans les signatures de fonction TypeScript.
+category: Programming Languages
+weight: 4
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Les fonctions JavaScript acceptent n'importe quels arguments qu'on leur
+tend, et un appel avec un mauvais nombre ou type d'arguments échoue
+généralement silencieusement (les arguments en trop sont ignorés, les
+manquants deviennent `undefined`) ou lève une exception loin à l'intérieur
+du corps de la fonction. Les signatures de fonction TypeScript déclarent
+exactement ce qui est attendu, et le compilateur vérifie chaque site
+d'appel par rapport à cette déclaration avant que le code ne s'exécute
+jamais.
+
+## Paramètres typés et types de retour
+
+```ts
+function add(a: number, b: number): number {
+  return a + b;
+}
+
+add(2, 3); // 5
+add(2, "3"); // Type error: Argument of type 'string' is not assignable to parameter of type 'number'
+add(2); // Type error: Expected 2 arguments, but got 1
+```
+
+`a: number` et `b: number` contraignent les paramètres ; `: number` après la
+liste de paramètres contraint ce que la fonction est autorisée à
+`return`er. Si le corps de la fonction essayait de `return a + b + "!"`
+(une chaîne), le compilateur rejetterait cela aussi — le type de retour
+déclaré est vérifié par rapport aux instructions return réelles, pas juste
+inféré et laissé sans vérification.
+
+Vous pouvez aussi laisser TypeScript inférer le type de retour au lieu de
+l'écrire explicitement :
+
+```ts
+function multiply(a: number, b: number) {
+  return a * b; // return type inferred as number
+}
+```
+
+Les types de retour explicites valent toujours la peine d'être écrits sur
+les fonctions exportées/publiques — ils agissent comme un contrat qui ne
+change pas silencieusement si quelqu'un modifie le corps de la fonction plus
+tard.
+
+## Paramètres optionnels
+
+Ajouter `?` après un nom de paramètre le rend optionnel — les appelants
+peuvent l'omettre, et à l'intérieur de la fonction son type inclut
+`undefined` :
+
+```ts
+function greet(name: string, title?: string): string {
+  if (title) {
+    return `Hello, ${title} ${name}!`;
+  }
+  return `Hello, ${name}!`;
+}
+
+greet("Ada"); // "Hello, Ada!"
+greet("Ada", "Dr."); // "Hello, Dr. Ada!"
+```
+
+Les paramètres optionnels doivent venir après tous les paramètres requis
+dans la liste de paramètres — `function f(a?: string, b: string)` est une
+erreur à la compilation, puisqu'il n'y aurait aucun moyen de savoir quel
+argument un appel avec une seule valeur était censé remplir.
+
+## Paramètres par défaut
+
+Une valeur par défaut rend un paramètre optionnel au niveau de l'appel tout
+en lui donnant une valeur concrète à l'intérieur du corps de la fonction —
+aucune vérification `undefined` nécessaire :
+
+```ts
+function createUser(name: string, role: string = "member") {
+  return { name, role };
+}
+
+createUser("Ada"); // { name: "Ada", role: "member" }
+createUser("Ada", "admin"); // { name: "Ada", role: "admin" }
+```
+
+Comme le type de `role` est inféré à partir de sa valeur par défaut
+(`string`), passer autre chose qu'un `string | undefined` échoue toujours à
+la compilation — `createUser("Ada", 1)` est une erreur de type, même si
+`role` a une valeur par défaut.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire une fonction add typée et un appel qui échoue au vérificateur de type."
+  items={[
+    { id: "fn-decl", label: "function add(a: number, b: number): number {" },
+    { id: "fn-body", label: "  return a + b;", explanation: "L'instruction return appartient à l'intérieur du corps de la fonction, entre la signature et son accolade fermante." },
+    { id: "fn-close", label: "}" },
+    { id: "good-call", label: "add(2, 3);" },
+    { id: "bad-call", label: "add(2, \"3\"); // Type error" },
+  ]}
+  correctOrder={["fn-decl", "fn-body", "fn-close", "good-call", "bad-call"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire une fonction createUser avec un paramètre role par défaut."
+  items={[
+    { id: "fn-decl", label: "function createUser(name: string, role: string = \"member\") {" },
+    { id: "fn-body", label: "  return { name, role };", explanation: "Le littéral d'objet est renvoyé depuis l'intérieur du corps de la fonction." },
+    { id: "fn-close", label: "}" },
+    { id: "call-one-arg", label: "createUser(\"Ada\");" },
+    { id: "call-two-args", label: "createUser(\"Ada\", \"admin\");" },
+  ]}
+  correctOrder={["fn-decl", "fn-body", "fn-close", "call-one-arg", "call-two-args"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que le vérificateur de type dit ?"
+  code={`function greet(name: string, title?: string): string {
+  if (title) {
+    return \`Hello, \${title} \${name}!\`;
+  }
+  return \`Hello, \${name}!\`;
+}
+
+greet("Ada", 5);`}
+  options={["\"Hello, 5 Ada!\"", "\"Hello, Ada!\"", "Type error: Argument of type 'number' is not assignable to parameter of type 'string | undefined'", "undefined"]}
+  correctIndex={2}
+  explanation="title est optionnel, donc il accepte une string ou d'être omis entièrement — mais il ne s'élargit pas pour accepter n'importe quel type. Passer un number pour un paramètre string optionnel reste une incompatibilité de type, tout comme ce le serait pour un paramètre requis."
+  actualOutput="Type error: Argument of type 'number' is not assignable to parameter of type 'string | undefined'"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Flux de contrôle](/fr/programming-languages/typescript/control-flow)
+- [Génériques](/fr/programming-languages/typescript/advanced)

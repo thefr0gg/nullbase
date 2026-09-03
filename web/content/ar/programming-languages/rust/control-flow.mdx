@@ -1,0 +1,158 @@
+---
+title: التحكم بمسار التنفيذ
+description: كيف توجّه if/else وloop وwhile وfor وmatch التنفيذ في Rust — ولماذا معظمها تعبيرات، وليست جملاً.
+category: Programming Languages
+weight: 3
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+ستبدو بنى التحكم بمسار التنفيذ في Rust مألوفة قادماً من لغات عائلة C، لكن مع التفاف متكرر واحد: `if`، و`loop`، و`match` هي **تعبيرات** — تُنتج قيمة — وليست مجرد جمل. يمكن إسناد تلك القيمة مباشرة إلى متغير، ما يزيل فئة كاملة من الحشو من نوع "أعلن المتغير، ثم أسنده شرطياً في كل فرع".
+
+## `if`/`else` كتعبير
+
+```rust
+fn main() {
+    let temperature = 15;
+
+    let description = if temperature > 25 {
+        "hot"
+    } else if temperature > 10 {
+        "mild"
+    } else {
+        "cold"
+    };
+
+    println!("It's {description} today");
+}
+```
+
+يجب أن ينتج كل فرع نفس النوع (هنا، `&str`)، ولا توجد فاصلة منقوطة لاحقة على تعبيرات الفروع — الفاصلة المنقوطة كانت ستحوّل `"mild"` إلى جملة تُقيَّم إلى `()` (الوحدة)، ما لن يطابق نوع الفروع الأخرى وسيفشل في الترجمة.
+
+## الحلقات: `loop`، و`while`، و`for`
+
+تعمل `loop` إلى الأبد حتى `break` صريح، و— مثل `if` — يمكن لـ `loop` أيضاً أن تُنتج قيمة، عبر تمريرها إلى `break`:
+
+```rust
+fn main() {
+    let mut attempts = 0;
+
+    let result = loop {
+        attempts += 1;
+        if attempts == 3 {
+            break attempts * 10; // loop evaluates to this value
+        }
+    };
+
+    println!("Succeeded on attempt {attempts}, result = {result}");
+}
+```
+
+`while` هي الحلقة الشرطية التي تتوقعها من أي لغة عائلة C، و`for` هي طريقة Rust المفضّلة للتكرار — تقريباً دائماً على مدى أو مكرِّر (iterator)، بدلاً من فهرس مُدار يدوياً:
+
+```rust
+fn main() {
+    let numbers = [10, 20, 30, 40];
+
+    // while: keep going as long as a condition holds
+    let mut i = 0;
+    while i < numbers.len() {
+        println!("index {i}: {}", numbers[i]);
+        i += 1;
+    }
+
+    // for: iterate directly over the collection, no index bookkeeping
+    for n in numbers.iter() {
+        println!("value: {n}");
+    }
+}
+```
+
+نسخة `for` هي Rust الاصطلاحية — لا يمكنها الخروج عن الحدود لأنه لا يوجد فهرس ليُخطئ فيه، وتُقرأ كـ "لكل قيمة في هذه المجموعة" بدلاً من "عُد حتى هذا الطول وافهرس داخله".
+
+## `match`
+
+تقارن `match` قيمة بسلسلة من الأنماط وتنفّذ كود أول نمط يناسب. بخلاف `switch` في لغات عائلة C، فإن `match` في Rust **شاملة (exhaustive)** — يرفض المترجم `match` لا تغطي كل قيمة ممكنة ما لم تضف ذراع شمولية `_`.
+
+```rust
+fn describe(n: i32) -> &'static str {
+    match n {
+        0 => "zero",
+        1 | 2 | 3 => "small",
+        4..=9 => "medium",
+        n if n < 0 => "negative",
+        _ => "large",
+    }
+}
+
+fn main() {
+    for n in [-5, 0, 2, 7, 100] {
+        println!("{n} is {}", describe(n));
+    }
+}
+```
+
+تُظهر هذه الـ `match` الواحدة عدة أشكال أنماط في آن واحد: قيمة محددة (`0`)، وبدائل (`1 | 2 | 3`)، ومدى شامل (`4..=9`)، وشرط حارس (`n if n < 0`)، والشمولية `_`. لأن `match` شاملة، حذف ذراع `_` هنا سيكون خطأ ترجمة — يستطيع المترجم إثبات وجود قيم `i32` لا تغطيها أي ذراع أخرى.
+
+## طالع أيضاً
+
+- **[الدوال](/ar/programming-languages/rust/functions)** — استخدام هذه البنى داخل أجسام الدوال وكتعبيرات إرجاع.
+- **[معالجة الأخطاء](/ar/programming-languages/rust/error-handling)** — `match` هي الطريقة الأساسية التي يعالج بها كود Rust `Result` و`Option`.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء دالة تصنّف درجة الحرارة باستخدام if/else كتعبير."
+  items={[
+    { id: "let-temp", label: "    let temperature = 15;" },
+    { id: "let-desc-open", label: "    let description = if temperature > 25 {" },
+    { id: "hot", label: "        \"hot\"" },
+    { id: "elif", label: "    } else if temperature > 10 {" },
+    { id: "mild", label: "        \"mild\"" },
+    { id: "else", label: "    } else {" },
+    { id: "cold", label: "        \"cold\"" },
+    { id: "close", label: "    };" },
+    { id: "print", label: "    println!(\"It's {description} today\");" },
+  ]}
+  correctOrder={["let-temp", "let-desc-open", "hot", "elif", "mild", "else", "cold", "close", "print"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء حلقة تخرج بقيمة محسوبة في المحاولة الثالثة."
+  items={[
+    { id: "let-attempts", label: "    let mut attempts = 0;" },
+    { id: "let-result-open", label: "    let result = loop {" },
+    { id: "increment", label: "        attempts += 1;" },
+    { id: "if-open", label: "        if attempts == 3 {" },
+    { id: "break", label: "            break attempts * 10;", explanation: "يجب أن تأتي break بعد الفحص الذي يقرر متى تتوقف، وداخل جسم الحلقة." },
+    { id: "if-close", label: "        }" },
+    { id: "loop-close", label: "    };" },
+  ]}
+  correctOrder={["let-attempts", "let-result-open", "increment", "if-open", "break", "if-close", "loop-close"]}
+/>
+
+<PredictOutput
+  title="ماذا تطبع هذه الشيفرة؟"
+  code={`fn describe(n: i32) -> &'static str {
+    match n {
+        0 => "zero",
+        1 | 2 | 3 => "small",
+        4..=9 => "medium",
+        n if n < 0 => "negative",
+        _ => "large",
+    }
+}
+
+fn main() {
+    println!("{}", describe(7));
+}`}
+  options={["small", "medium", "large", "Compile error"]}
+  correctIndex={1}
+  explanation={`تقع 7 ضمن المدى الشامل 4..=9، لذا يطابق ذراع "medium". من المغري الاعتقاد بأن 7 تسقط إلى ذراع الشمولية "large"، لكن match تفحص الأذرع بالترتيب وتتوقف عند أول ذراع مناسب — يأتي ذراع المدى قبل _.`}
+  actualOutput="medium"
+/>
+</ExerciseTabs>

@@ -1,0 +1,24 @@
+---
+title: محوّل الترميز (Base64 / ترميز الروابط)
+description: أداة ترميز/فك ترميز حيّة — اللبنة الأساسية الوحيدة في هذا النظام التي لا تحاكي شيئًا، وتستخدم فعليًا btoa/encodeURIComponent الحقيقيتين في المتصفح.
+category: Interactive Demos
+weight: 11
+interactive: true
+interactiveType: ["Codec"]
+---
+
+على عكس كل عنصر تفاعلي آخر في هذا النظام، لا يحاكي `Codec` أي شيء — فهو يشغّل دوال الترميز الحقيقية في المتصفح (`btoa`/`atob` لترميز Base64، و`encodeURIComponent`/`decodeURIComponent` لترميز الروابط) مباشرة على ما تكتبه. لهذا السبب هو اللبنة الأساسية الوحيدة التي لا تحمل شارة "محاكاة".
+
+## Base64
+
+<Codec mode="base64" defaultInput="Hello, nullbase!" />
+
+## ترميز الروابط
+
+<Codec mode="url" defaultInput="a value with spaces & special=characters" />
+
+جرّب تبديل أيٍّ منهما إلى "decode" ثم الصق فيه ناتج "encode" — يجب أن تحصل على مدخلك الأصلي تمامًا كما كان.
+
+## طالع أيضاً
+
+- **[Base64](/ar/data-serialization/base64)** — مرجع التنسيق الذي يرافقه هذا العنصر في ذلك القسم.

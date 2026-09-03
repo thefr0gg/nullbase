@@ -1,0 +1,100 @@
+---
+title: Flujo de Control
+description: Ramificación y bucles en Python — if/elif/else, bucles for y while, y la cláusula for...else que la mayoría de los lenguajes no tienen.
+category: Programming Languages
+weight: 3
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Las instrucciones condicionales y de bucle de Python se leen casi como inglés llano, pero vale la pena ser precisos sobre la mecánica subyacente, especialmente las partes que difieren de los lenguajes de la familia C.
+
+```python
+temperature = 72
+if temperature > 80:
+    print("hot")
+elif temperature > 60:
+    print("mild")
+else:
+    print("cold")
+```
+
+`elif` es la forma en que Python escribe "else if" — no hay un par de palabras clave `else if` separado, y las condiciones nunca necesitan paréntesis alrededor (aunque puedes añadirlos). Cualquier valor puede usarse como condición, no solo booleanos: `0`, `""`, `None`, y las colecciones vacías (`[]`, `{}`, `()`) son todas "falsy," y todo lo demás es "truthy," así que `if some_list:` es una forma idiomática de comprobar "¿esta lista no está vacía?" sin comparar longitudes explícitamente.
+
+```python
+fruits = ["apple", "banana", "cherry"]
+for index, fruit in enumerate(fruits):
+    print(index, fruit)
+```
+
+El bucle `for` de Python itera directamente sobre los *elementos* de una secuencia — no hay un patrón de conteo al estilo C `for (i = 0; i < len; i++)`. Cuando el índice realmente se necesita junto al valor, `enumerate()` envuelve la secuencia para producir pares `(index, value)`, que es la forma idiomática de obtener ambos sin llevar un contador manualmente.
+
+```python
+n = 0
+while n < 5:
+    if n == 3:
+        n += 1
+        continue
+    print(n)
+    n += 1
+```
+
+Los bucles `while` se ejecutan mientras su condición se mantenga truthy; `continue` salta directamente a la siguiente comprobación de condición, y `break` sale del bucle por completo. Tampoco existe `n++` — Python no tiene operadores de incremento/decremento, solo `n += 1`.
+
+Una característica genuinamente inusual: tanto los bucles `for` como `while` pueden tener una cláusula `else`, que se ejecuta solo si el bucle terminó normalmente — es decir, *no* fue detenido por un `break`.
+
+```python
+for i in range(2, 10):
+    if i % 7 == 0:
+        print("found a multiple of 7:", i)
+        break
+else:
+    print("no multiples of 7 found")
+```
+
+Lee `for...else` como "si nunca salimos de este bucle con un break, entonces..." — es más útil para bucles de búsqueda donde `break` significa "lo encontré" y caer en `else` significa "busqué en todo, no encontré nada."
+
+## Ver también
+
+- **[Sintaxis y Variables](/es/programming-languages/python/syntax-basics)** — los valores truthy/falsy de los que dependen estas condiciones.
+- **[Funciones](/es/programming-languages/python/functions)** — envolver un bucle como los de arriba en una función reutilizable.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir un script que clasifique una temperatura."
+  items={[
+    { id: "temp", label: "temperature = 72" },
+    { id: "if", label: "if temperature > 80:", explanation: "La condición necesita que `temperature` exista antes de poder compararse." },
+    { id: "hot", label: '    print("hot")' },
+    { id: "elif", label: "elif temperature > 60:" },
+    { id: "mild", label: '    print("mild")' },
+    { id: "else", label: "else:" },
+    { id: "cold", label: '    print("cold")' },
+  ]}
+  correctOrder={["temp", "if", "hot", "elif", "mild", "else", "cold"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para recorrer una lista e imprimir cada índice junto a su valor."
+  items={[
+    { id: "fruits", label: 'fruits = ["apple", "banana", "cherry"]' },
+    { id: "for", label: "for index, fruit in enumerate(fruits):", explanation: "`enumerate(fruits)` necesita que `fruits` ya esté definido." },
+    { id: "print", label: "    print(index, fruit)" },
+  ]}
+  correctOrder={["fruits", "for", "print"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`n = 0\nwhile n < 5:\n    if n == 3:\n        n += 1\n        continue\n    print(n)\n    n += 1`}
+  options={["0 1 2 3 4", "0 1 2 4", "0 1 2 3", "0 1 2"]}
+  correctIndex={1}
+  explanation="Cuando n llega a 3, se incrementa y continue salta inmediatamente a la siguiente comprobación de condición, saltándose por completo la llamada print(n) de esa iteración — así que se pasa de 3 pero nunca se imprime."
+  actualOutput="0 1 2 4"
+/>
+</ExerciseTabs>

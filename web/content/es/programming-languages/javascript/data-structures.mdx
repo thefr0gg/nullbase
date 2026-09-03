@@ -1,0 +1,158 @@
+---
+title: Estructuras de Datos
+description: Arrays, objetos, y las colecciones Map y Set en JavaScript, incluyendo trampas comunes en torno a la igualdad de referencia.
+category: Programming Languages
+weight: 5
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+JavaScript tiene dos estructuras de datos de trabajo integradas en la
+sintaxis del lenguaje — arrays y objetos — más dos tipos de colección
+dedicados, `Map` y `Set`, añadidos en ES6 para casos donde los objetos
+simples se quedan cortos.
+
+## Arrays
+
+Los arrays son listas ordenadas y redimensionables, y todo array viene con
+un amplio conjunto de métodos integrados para transformar datos sin bucles
+escritos a mano. `map`, `filter`, y `reduce` son los tres a los que
+recurrirás constantemente:
+
+```js
+const prices = [10, 25, 8, 40];
+
+const withTax = prices.map(p => p * 1.08);
+const affordable = prices.filter(p => p < 30);
+const total = prices.reduce((sum, p) => sum + p, 0);
+
+console.log(withTax);   // [10.8, 27, 8.64, 43.2]
+console.log(affordable); // [10, 25, 8]
+console.log(total);      // 83
+```
+
+`map` y `filter` devuelven nuevos arrays en vez de mutar el original;
+`push`, `pop`, `splice`, y `sort`, por el contrario, mutan el array en su
+lugar — una distinción que vale la pena memorizar ya que es fácil mutar un
+array que no pretendías cambiar.
+
+## Objetos
+
+Los objetos son colecciones desordenadas de pares clave/valor (en la
+práctica, los motores modernos preservan el orden de inserción para claves
+de tipo cadena). El acceso a propiedades funciona con notación de punto o
+corchetes, y la desestructuración extrae valores de forma concisa.
+
+```js
+const user = {
+  name: "ada",
+  role: "admin",
+  loginCount: 12,
+};
+
+const { name, role } = user; // desestructuración
+console.log(`${name} (${role})`); // "ada (admin)"
+
+const updated = { ...user, loginCount: user.loginCount + 1 }; // spread — una copia superficial con un campo cambiado
+console.log(updated.loginCount); // 13
+console.log(user.loginCount);    // 12 — el objeto original no se toca
+```
+
+## Igualdad de referencia
+
+Los objetos y arrays se comparan por referencia, no por valor. Dos arrays
+con contenido idéntico nunca son `===` a menos que sean literalmente el
+mismo objeto en memoria.
+
+```js
+const a = [1, 2, 3];
+const b = [1, 2, 3];
+const c = a;
+
+console.log(a === b); // false — arrays distintos, mismo contenido
+console.log(a === c); // true  — c apunta exactamente al mismo array que a
+
+c.push(4);
+console.log(a); // [1, 2, 3, 4] — mutar c también cambia a, ya que son el mismo objeto
+```
+
+## Map y Set
+
+Un objeto simple solo permite claves de tipo cadena o symbol, y iterar sus
+entradas en un orden garantizado es ligeramente incómodo. `Map` soluciona
+ambas cosas: cualquier valor puede ser una clave, y itera en el orden de
+inserción.
+
+```js
+const scores = new Map();
+scores.set("alice", 90);
+scores.set("bob", 85);
+
+console.log(scores.get("alice")); // 90
+console.log(scores.size);          // 2
+
+for (const [player, score] of scores) {
+  console.log(`${player}: ${score}`);
+}
+```
+
+`Set` almacena valores únicos — añadir un duplicado es un no-op — lo cual
+convierte la deduplicación en una sola línea:
+
+```js
+const tags = new Set(["js", "web", "js", "frontend"]);
+console.log(tags.size);       // 3
+console.log([...tags]);        // ["js", "web", "frontend"]
+console.log(tags.has("web"));  // true
+```
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para filtrar un array de números y sumar el resultado."
+  items={[
+    { id: "arr", label: "const nums = [3, 8, 15, 4, 22];" },
+    { id: "big", label: "const big = nums.filter(n => n > 10);" },
+    { id: "total", label: "const total = big.reduce((sum, n) => sum + n, 0);", explanation: "reduce necesita que `big` ya exista como el array que está sumando." },
+    { id: "log", label: "console.log(total);" },
+  ]}
+  correctOrder={["arr", "big", "total", "log"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Ordena estas líneas para construir un Set a partir de un array y comprobar membresía."
+  items={[
+    { id: "arr2", label: "const ids = [1, 2, 2, 3, 1];" },
+    { id: "set", label: "const uniqueIds = new Set(ids);" },
+    { id: "size", label: "console.log(uniqueIds.size);" },
+    { id: "has", label: "console.log(uniqueIds.has(2));" },
+  ]}
+  correctOrder={["arr2", "set", "size", "has"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`const original = { count: 1, tags: ["a"] };
+const copy = { ...original };
+
+copy.count = 99;
+copy.tags.push("b");
+
+console.log(original.count);
+console.log(original.tags);`}
+  options={["1 then [\"a\"]", "99 then [\"a\", \"b\"]", "1 then [\"a\", \"b\"]", "99 then [\"a\"]"]}
+  correctIndex={2}
+  explanation="Usar spread con {...original} hace una copia superficial: los campos primitivos de nivel superior como count se copian por valor, así que cambiar copy.count no toca original.count. Pero tags es un objeto (un array), así que el spread solo copia la referencia — copy.tags y original.tags apuntan al mismo array, así que hacer push sobre uno afecta a ambos."
+  actualOutput="1
+[ 'a', 'b' ]"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Funciones y Closures](/es/programming-languages/javascript/functions)
+- [Clases y Objetos](/es/programming-languages/javascript/oop-or-structs)

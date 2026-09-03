@@ -1,0 +1,164 @@
+---
+title: Flujo de Control
+description: Los condicionales y bucles de C — if/else, switch, while, for, y las sentencias break/continue/goto que los redirigen.
+category: Programming Languages
+weight: 3
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+El flujo de control de C le resultará familiar a cualquiera que haya usado un lenguaje de la familia C (JavaScript, Java, C#, Go) — y no es coincidencia, ya que todos ellos tomaron prestada su sintaxis de `if`, `for` y `while` directamente de C. Lo distintivamente C es la falta de barandillas de seguridad: las condiciones aceptan cualquier entero (no solo un `bool`), `switch` cae por defecto de un caso al siguiente a menos que uses `break`, y `goto` sigue siendo una palabra clave real y funcional.
+
+## if / else y "veracidad"
+
+Cualquier expresión que se evalúe a un valor distinto de cero cuenta como "verdadera" en una condición — no hay un requisito booleano dedicado:
+
+```c
+#include <stdio.h>
+
+int main(void) {
+    int age = 20;
+
+    if (age < 13) {
+        printf("child\n");
+    } else if (age < 20) {
+        printf("teenager\n");
+    } else {
+        printf("adult\n");
+    }
+
+    int flag = 5; /* nonzero, so this branch runs even though 5 isn't 1 */
+    if (flag) {
+        printf("flag is truthy: %d\n", flag);
+    }
+
+    return 0;
+}
+```
+
+Ese último bloque es una fuente común de bugs: `if (flag)` es válido para cualquier entero, así que un error de escritura como `if (result = 0)` (asignación, no comparación) compila silenciosamente y siempre se evalúa como falso, ya que el propio `0` es falso — la mayoría de los compiladores avisan de esto con `-Wall`, pero no es un error.
+
+## switch y fallthrough
+
+`switch` salta a la etiqueta `case` que coincide y luego **sigue ejecutando cada sentencia siguiente** hasta que encuentra un `break` o el final del bloque — no hay un break implícito como en algunos otros lenguajes:
+
+```c
+#include <stdio.h>
+
+int main(void) {
+    int day = 3;
+
+    switch (day) {
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+            printf("weekday\n");
+            break;
+        case 6:
+        case 7:
+            printf("weekend\n");
+            break;
+        default:
+            printf("invalid day\n");
+    }
+
+    return 0;
+}
+```
+
+Apilar `case 1:` hasta `case 5:` sin ninguna sentencia entre ellos es un fallthrough intencional, usado aquí para agrupar varios valores bajo una misma acción. Olvidar un `break` donde *no* se pretendía el fallthrough es uno de los bugs más comunes de C.
+
+## Bucles: while, do-while, for
+
+```c
+#include <stdio.h>
+
+int main(void) {
+    int i = 0;
+    while (i < 3) {          /* checks condition before each iteration */
+        printf("while: %d\n", i);
+        i++;
+    }
+
+    int j = 0;
+    do {                       /* always runs at least once */
+        printf("do-while: %d\n", j);
+        j++;
+    } while (j < 3);
+
+    for (int k = 0; k < 5; k++) {
+        if (k == 2) continue;  /* skip the rest of this iteration */
+        if (k == 4) break;     /* exit the loop entirely */
+        printf("for: %d\n", k);
+    }
+
+    return 0;
+}
+```
+
+`do-while` es el único bucle que garantiza ejecutar su cuerpo al menos una vez, ya que la condición se verifica *después* de la primera pasada — útil para cosas como "pedir un dato al usuario, y volver a pedirlo mientras la entrada sea inválida."
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla una cadena if/else de calificación"
+  prompt="Arrastra estas líneas al orden que clasifica correctamente una puntuación en una calificación con letra."
+  items={[
+    { id: "if90", label: "if (score >= 90) {", explanation: "El umbral más alto debe verificarse primero — si un umbral más bajo como >= 70 fuera primero, una puntuación de 95 coincidiría incorrectamente con él." },
+    { id: "a", label: "    printf(\"A\\n\");" },
+    { id: "elif70", label: "} else if (score >= 70) {" },
+    { id: "b", label: "    printf(\"B\\n\");" },
+    { id: "else", label: "} else {" },
+    { id: "f", label: "    printf(\"F\\n\");" },
+    { id: "close", label: "}" },
+  ]}
+  correctOrder={["if90", "a", "elif70", "b", "else", "f", "close"]}
+/>
+
+<OrderingExercise
+  title="Ordena un bucle for que suma de 1 a 5"
+  prompt="Arrastra estas líneas al orden que calcula e imprime la suma de 1 a 5."
+  items={[
+    { id: "decl", label: "int sum = 0;" },
+    { id: "for", label: "for (int i = 1; i <= 5; i++) {" },
+    { id: "add", label: "    sum += i;", explanation: "Cada iteración debe sumar a sum antes de que el bucle pase al siguiente i." },
+    { id: "close", label: "}" },
+    { id: "print", label: "printf(\"%d\\n\", sum);" },
+  ]}
+  correctOrder={["decl", "for", "add", "close", "print"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime este switch?"
+  code={`#include <stdio.h>
+
+int main(void) {
+    int n = 2;
+    switch (n) {
+        case 1:
+            printf("one\\n");
+        case 2:
+            printf("two\\n");
+        case 3:
+            printf("three\\n");
+            break;
+        default:
+            printf("other\\n");
+    }
+    return 0;
+}`}
+  options={["two", "two\\nthree", "one\\ntwo\\nthree", "Compile error"]}
+  correctIndex={1}
+  explanation="No hay break después de case 2, así que la ejecución cae en el printf de case 3 antes de finalmente encontrar el break — imprimiendo tanto 'two' como 'three'. Es tentador asumir que switch se detiene después del case que coincide, como pasaría en algunos otros lenguajes, pero C requiere un break explícito para lograr ese comportamiento."
+  actualOutput="two\nthree"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- **[Sintaxis y Variables](/es/programming-languages/c/syntax-basics)** — los operadores y tipos a partir de los cuales se construyen estas condiciones y bucles.
+- **[Funciones](/es/programming-languages/c/functions)** — organizar el flujo de control repetido en bloques reutilizables.

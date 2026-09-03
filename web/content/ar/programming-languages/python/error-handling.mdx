@@ -1,0 +1,108 @@
+---
+title: معالجة الأخطاء
+description: التقاط الاستثناءات وإطلاقها في Python — try/except/else/finally، وتعريف أنواع استثناءات خاصة بك.
+category: Programming Languages
+weight: 7
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تُشير Python إلى الفشل بإطلاق استثناءات، ومعالجة استثناء تعني تغليف الكود المحفوف بالمخاطر داخل كتلة `try` مع جملة أو أكثر من `except` تلتقط أنواع استثناءات محددة.
+
+```python
+try:
+    value = int(input("Enter a number: "))
+except ValueError:
+    print("That wasn't a valid number.")
+else:
+    print(f"You entered {value}")
+finally:
+    print("Done processing input.")
+```
+
+لكل جملة دور مميز: تحتوي كتلة `try` على الكود الذي قد يفشل؛ تلتقط `except ValueError` فقط ذلك الخطأ المحدد (أي `TypeError` في مكان آخر من الكتلة سينتشر دون التقاط)؛ تُنفَّذ `else` فقط إذا اكتملت كتلة `try` دون أي استثناء على الإطلاق؛ وتُنفَّذ `finally` دائماً — سواء حدث استثناء أم لا، أو حدث `return` أم لا — ما يجعلها المكان الصحيح لعمليات التنظيف مثل إغلاق ملف أو تحرير قفل.
+
+التقاط `except ValueError` تحديداً، بدلاً من `except:` مجردة، أمر مهم: تبتلع `except` المجردة *كل شيء*، بما في ذلك الأخطاء المطبعية التي تطلق `NameError` والمقاطعات مثل `KeyboardInterrupt`، ما يجعل الأخطاء الحقيقية تختفي بصمت بدلاً من الظهور.
+
+الاستثناءات المخصصة هي مجرد فئات ترث من `Exception` (أو استثناء مدمج أكثر تحديداً)، ما يتيح للكود المستدعي التقاط نمط الفشل الخاص بك بالاسم بدلاً من التخمين اعتماداً على رسائل نصية.
+
+```python
+class InsufficientFundsError(Exception):
+    """Raised when a withdrawal exceeds the account balance."""
+
+def withdraw(balance, amount):
+    if amount > balance:
+        raise InsufficientFundsError(f"Cannot withdraw {amount}, balance is {balance}")
+    return balance - amount
+
+try:
+    withdraw(100, 150)
+except InsufficientFundsError as e:
+    print(e)  # Cannot withdraw 150, balance is 100
+```
+
+`raise` هي كيف يشير الكود إلى الفشل صراحة؛ وتربط `except ... as e` نسخة الاستثناء المُلتقطة باسم بحيث يمكن فحص رسالتها (أو أي بيانات إضافية مرفقة بها).
+
+```python
+def read_config(path):
+    try:
+        with open(path) as f:
+            return f.read()
+    except FileNotFoundError:
+        return "{}"
+```
+
+هنا تُعالَج حالة فشل محددة ومتوقعة (الملف غير موجود بعد) بقيمة احتياطية معقولة، بينما يُترك أي خطأ آخر — مشكلة أذونات، عطل في القرص — لينتشر، إذ إن ابتلاع تلك الأخطاء بصمت سيخفي مشكلة حقيقية.
+
+## طالع أيضاً
+
+- **[الفئات والكائنات](/ar/programming-languages/python/oop-or-structs)** — الاستثناءات المخصصة هي فئات عادية ترث من `Exception`.
+- **[الوحدات والحزم](/ar/programming-languages/python/modules-packages)** — نمط `with open(...)` أعلاه والمكتبة القياسية التي يأتي منها.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء كتلة try/except/else/finally تحوّل مدخلات المستخدم إلى عدد صحيح بأمان."
+  items={[
+    { id: "try", label: "try:" },
+    { id: "value", label: "    value = int(input())", explanation: "يجب أن يكون هذا التحويل المحفوف بالمخاطر أول سطر داخل كتلة try." },
+    { id: "except", label: "except ValueError:" },
+    { id: "excbody", label: '    print("Not a valid number.")', explanation: "لا يُنفَّذ هذا إلا كجسم لجملة except أعلاه." },
+    { id: "else", label: "else:" },
+    { id: "elsebody", label: "    print(f\"Got {value}\")" },
+    { id: "finally", label: "finally:" },
+    { id: "finallybody", label: '    print("Done.")' },
+  ]}
+  correctOrder={["try", "value", "except", "excbody", "else", "elsebody", "finally", "finallybody"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لتعريف استثناء مخصص، وإطلاقه، والتقاطه."
+  items={[
+    { id: "class", label: "class InsufficientFundsError(Exception):" },
+    { id: "pass", label: "    pass", explanation: "يجب أن يأتي جسم الفئة مباشرة بعد سطر class الخاص بها." },
+    { id: "def", label: "def withdraw(balance, amount):" },
+    { id: "if", label: "    if amount > balance:", explanation: "يجب أن تكون الفئة موجودة قبل أن تتمكن دالة من إطلاق نسخة منها." },
+    { id: "raise", label: "        raise InsufficientFundsError()" },
+    { id: "try", label: "try:" },
+    { id: "call", label: "    withdraw(100, 150)", explanation: "يجب أن تكون الدالة معرَّفة بالكامل قبل إمكانية استدعائها داخل كتلة try." },
+    { id: "except", label: "except InsufficientFundsError:" },
+    { id: "print", label: '    print("Not enough money.")' },
+  ]}
+  correctOrder={["class", "pass", "def", "if", "raise", "try", "call", "except", "print"]}
+/>
+
+<PredictOutput
+  title="ماذا تطبع هذه الشيفرة؟"
+  code={`def f():\n    try:\n        return "try"\n    finally:\n        print("finally runs")\n\nprint(f())`}
+  options={['"try" then "finally runs"', '"finally runs" then "try"', 'Only "finally runs", the return is skipped', 'An error: cannot return from inside a try']}
+  correctIndex={1}
+  explanation='تُنفَّذ finally دائماً قبل خروج التحكم فعلياً من الدالة، حتى عندما تكون جملة return داخل try قد قررت بالفعل القيمة التي ستُعاد — لذا تُطبع "finally runs" أولاً، وبعد ذلك فقط تُعيد f() فعلياً "try" لتعرضها print() الخارجية.'
+  actualOutput='finally runs\ntry'
+/>
+</ExerciseTabs>
+

@@ -1,0 +1,179 @@
+---
+title: Pointeurs et mémoire
+description: Les pointeurs, l'arithmétique des pointeurs, et la gestion manuelle de la mémoire avec malloc/free — ainsi que les bugs de use-after-free, de fuite et de double free qu'ils rendent possibles.
+category: Programming Languages
+weight: 9
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Les pointeurs sont la fonctionnalité qui définit le plus C. Un **pointeur** est une variable qui contient une adresse mémoire plutôt qu'une valeur directement — et parce que C expose les adresses mémoire brutes au programmeur, sans ramasse-miettes pour nettoyer ensuite, C vous donne à la fois la capacité de construire des structures de données extrêmement efficaces et bas niveau, et chaque bug mémoire classique (fuites, pointeurs pendants, débordements de buffer) que les langages de plus haut niveau consacrent un véritable effort de conception à éliminer.
+
+## Les bases des pointeurs
+
+`&` prend l'adresse d'une variable ; `*` (dans une déclaration) marque une variable comme étant un pointeur, et `*` (dans une expression) déréférence un pointeur pour atteindre la valeur qu'il pointe :
+
+```c
+#include <stdio.h>
+
+int main(void) {
+    int value = 42;
+    int *ptr = &value; /* ptr holds the address of value */
+
+    printf("value = %d\n", value);
+    printf("address of value = %p\n", (void *)&value);
+    printf("ptr points to = %p\n", (void *)ptr);
+    printf("dereferenced ptr = %d\n", *ptr); /* follows the address back to 42 */
+
+    *ptr = 100; /* writes through the pointer, changing value itself */
+    printf("value is now = %d\n", value);
+
+    return 0;
+}
+```
+
+`ptr` et `value` sont deux variables distinctes, mais `*ptr` et `value` désignent exactement la même mémoire — modifier l'une via le pointeur change ce que l'autre lit.
+
+## Arithmétique des pointeurs et tableaux
+
+Le nom d'un tableau se dégrade en pointeur vers son premier élément dans la plupart des expressions, et ajouter un entier à un pointeur le fait avancer de ce nombre d'*éléments* (pas d'octets) — le compilateur met à l'échelle le décalage par le `sizeof` du type pointé automatiquement :
+
+```c
+#include <stdio.h>
+
+int main(void) {
+    int numbers[5] = {10, 20, 30, 40, 50};
+    int *p = numbers; /* decays to &numbers[0] */
+
+    printf("%d\n", *p);       /* 10 */
+    printf("%d\n", *(p + 2)); /* 30 -- p+2 skips two ints, not two bytes */
+    printf("%d\n", p[2]);      /* 30 -- numbers[i] is literally *(numbers + i) */
+
+    for (int *cur = numbers; cur < numbers + 5; cur++) {
+        printf("%d ", *cur);
+    }
+    printf("\n");
+
+    return 0;
+}
+```
+
+`p[2]` et `*(p + 2)` sont exactement la même opération en C — l'indexation de tableau est définie en termes d'arithmétique de pointeurs, et non l'inverse, ce qui explique pourquoi C autorise notoirement le (largement inutile mais légal) `2[p]` également.
+
+## malloc, free, et la gestion manuelle de la mémoire
+
+La mémoire allouée avec `malloc` vit sur le **tas (heap)** et survit jusqu'à être explicitement libérée avec `free` — contrairement à une variable locale, elle n'est pas nettoyée automatiquement quand une fonction retourne, ce qui la rend justement utile pour des données qui doivent survivre à la fonction qui les a créées :
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+int *makeArray(int size, int fillValue) {
+    int *arr = malloc(size * sizeof(int)); /* size ints worth of raw memory */
+    if (arr == NULL) {
+        return NULL; /* malloc failed, e.g. out of memory */
+    }
+    for (int i = 0; i < size; i++) {
+        arr[i] = fillValue;
+    }
+    return arr; /* safe: this memory lives on the heap, not the function's stack */
+}
+
+int main(void) {
+    int *nums = makeArray(5, 7);
+    if (nums == NULL) {
+        return 1;
+    }
+
+    for (int i = 0; i < 5; i++) {
+        printf("%d ", nums[i]);
+    }
+    printf("\n");
+
+    free(nums); /* release the memory back to the system */
+    nums = NULL; /* avoid leaving a dangling pointer around */
+
+    return 0;
+}
+```
+
+Chaque `malloc` réussi a besoin d'exactement un `free` correspondant — ne l'appelez jamais et la mémoire fuit (jamais récupérée avant la fin du processus) ; appelez-le deux fois sur le même pointeur (un **double free**) et le comportement est indéfini, corrompant souvent la comptabilité interne du tas.
+
+## Pièges courants
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+int *danglingExample(void) {
+    int local = 5;
+    return &local; /* BUG: local's stack memory is gone once this function returns */
+}
+
+void useAfterFreeExample(void) {
+    int *p = malloc(sizeof(int));
+    *p = 1;
+    free(p);
+    printf("%d\n", *p); /* BUG: use-after-free -- p's memory may already be reused */
+}
+
+void leakExample(void) {
+    int *p = malloc(100 * sizeof(int));
+    /* BUG: no free(p) before p goes out of scope -- that memory is now unreachable */
+}
+```
+
+Aucune de ces trois fonctions ne plantera de manière fiable — c'est exactement ce qui les rend dangereuses. Le pointeur retourné par `danglingExample` pourrait sembler encore « fonctionner » un moment parce que rien d'autre n'a encore écrasé cette mémoire de pile ; `useAfterFreeExample` pourrait afficher `1` normalement la plupart du temps. Des outils comme **Valgrind** et **AddressSanitizer** (`-fsanitize=address` avec gcc/clang) existent précisément parce que ces bugs sont silencieux à la compilation et incohérents à l'exécution — ils instrumentent l'accès mémoire pour détecter les use-after-free, les fuites, et les écritures hors limites qui passeraient sinon inaperçues jusqu'à provoquer un plantage ailleurs, sans rapport apparent.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez un échange de pointeur par adresses"
+  prompt="Faites glisser ces lignes dans l'ordre qui lit une valeur via un pointeur puis la modifie via le même pointeur."
+  items={[
+    { id: "decl", label: "int value = 10;" },
+    { id: "ptr", label: "int *ptr = &value;", explanation: "ptr doit être pointé vers l'adresse de value avant de pouvoir être déréférencé pour la lire ou l'écrire." },
+    { id: "read", label: "printf(\"%d\\n\", *ptr);" },
+    { id: "write", label: "*ptr = 20;" },
+    { id: "readagain", label: "printf(\"%d\\n\", value);" },
+  ]}
+  correctOrder={["decl", "ptr", "read", "write", "readagain"]}
+/>
+
+<OrderingExercise
+  title="Ordonnez un cycle de vie malloc/free correct"
+  prompt="Faites glisser ces lignes dans l'ordre qui alloue de la mémoire, l'utilise, et la libère en toute sécurité."
+  items={[
+    { id: "malloc", label: "int *arr = malloc(3 * sizeof(int));" },
+    { id: "check", label: "if (arr == NULL) return 1;", explanation: "Le résultat de malloc doit être vérifié avant d'être déréférencé -- écrire à travers un pointeur NULL plante." },
+    { id: "fill", label: "arr[0] = 1; arr[1] = 2; arr[2] = 3;" },
+    { id: "print", label: "printf(\"%d %d %d\\n\", arr[0], arr[1], arr[2]);" },
+    { id: "free", label: "free(arr);" },
+  ]}
+  correctOrder={["malloc", "check", "fill", "print", "free"]}
+/>
+
+<PredictOutput
+  title="Qu'affiche l'arithmétique des pointeurs ici ?"
+  code={`#include <stdio.h>
+
+int main(void) {
+    int nums[4] = {5, 10, 15, 20};
+    int *p = nums;
+    p = p + 2;
+    printf("%d\\n", *p);
+    return 0;
+}`}
+  options={["7 (5 plus 2)", "15", "L'adresse de nums[2]", "Compile error"]}
+  correctIndex={1}
+  explanation="p + 2 avance le pointeur de deux pas de la taille d'un int, pas de deux octets et pas de 2 ajouté à la valeur pointée -- il pointe maintenant vers nums[2], qui contient 15. Le compilateur met automatiquement à l'échelle l'arithmétique de pointeurs par sizeof(int), ce qui est exactement ce qui rend p[i] et *(p + i) équivalents."
+  actualOutput="15"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- **[Structures de données](/fr/programming-languages/c/data-structures)** — les tableaux et la liste chaînée construits à partir de cette même mécanique de pointeurs.
+- **[Fonctions](/fr/programming-languages/c/functions)** — comment les pointeurs sont utilisés pour contourner le passage par valeur pour les paramètres de sortie.

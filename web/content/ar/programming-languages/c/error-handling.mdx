@@ -1,0 +1,158 @@
+---
+title: معالجة الأخطاء
+description: لا تملك C استثناءات — تُبلَّغ الأخطاء عبر رموز الإرجاع، والمتغير العام errno، وحالة خروج العملية.
+category: Programming Languages
+weight: 7
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+لا تملك C `try`/`catch`، ولا `throw`، ولا مفهوم استثناء يفكّ مكدس الاستدعاء. كل دالة يمكن أن تفشل تُشير إلى ذلك عبر **قيمة إرجاعها**، وتضبط دوال المكتبة القياسية التي تتعامل مع نظام التشغيل إضافة إلى ذلك متغيراً عاماً يُدعى `errno` يصف *سبب* فشلها. لا توجد آلية على مستوى اللغة تُجبر المستدعي على فحص أيهما — تجاهل قيمة إرجاع أو `errno` يُترجَم بلا مشكلة وهو مصدر شائع لأخطاء حقيقية.
+
+## اصطلاحات رموز الإرجاع
+
+الاصطلاح السائد في C هو: أرجع قيمة خاصة (غالباً `-1`، أو `NULL`، أو رمز حالة غير صفري) للإشارة إلى الفشل، وقيمة عادية للإشارة إلى النجاح. تتبع `main` نفسها هذا — إرجاع `0` يعني النجاح، وغير الصفري يعني الفشل، ويمكن للشل أو العملية المستدعية فحص ذلك:
+
+```c
+#include <stdio.h>
+
+int divide(int a, int b, int *result) {
+    if (b == 0) {
+        return -1; /* failure: division by zero */
+    }
+    *result = a / b;
+    return 0; /* success */
+}
+
+int main(void) {
+    int result;
+
+    if (divide(10, 2, &result) == 0) {
+        printf("10 / 2 = %d\n", result);
+    } else {
+        printf("error: division by zero\n");
+    }
+
+    if (divide(10, 0, &result) != 0) {
+        printf("error: division by zero\n");
+    }
+
+    return 0;
+}
+```
+
+لاحظ أن الجواب الفعلي يُسلَّم عبر معامل مُخرَج (`int *result`)، لأن قيمة الإرجاع نفسها محجوزة لحالة النجاح/الفشل — نمط يظهر باستمرار كلما احتاجت "النتيجة الحقيقية" لدالة وحالة خطئها إلى نقل منفصل.
+
+## errno واستدعاءات النظام
+
+غالباً ما تُرجع دوال المكتبة القياسية والدوال المتعاملة مع نظام التشغيل (مثل `fopen`، والاستدعاءات القريبة من `malloc`، واستدعاءات نظام POSIX) قيمة حارسة مثل `NULL` عند الفشل وتضبط `errno` العام إلى رمز يحدد المشكلة تحديداً. تحوّل `strerror` ذلك الرمز إلى رسالة قابلة للقراءة البشرية:
+
+```c
+#include <stdio.h>
+#include <errno.h>
+#include <string.h>
+
+int main(void) {
+    FILE *file = fopen("does_not_exist.txt", "r");
+
+    if (file == NULL) {
+        printf("failed to open file: %s\n", strerror(errno));
+        return 1; /* nonzero exit code signals failure to the OS */
+    }
+
+    fclose(file);
+    return 0;
+}
+```
+
+`errno` ذات معنى فقط مباشرة بعد استدعاء فشل — لا تُعاد إلى 0 عند النجاح، لذا فإن فحصها *قبل* فحص قيمة إرجاع الدالة نفسها (أو فحصها بعد استدعاء آخر غير متعلق تماماً) يقرأ خطأً قديماً من شيء مختلف تماماً.
+
+## لا استثناءات، لكن setjmp/longjmp موجودة
+
+تتضمن مكتبة C القياسية `setjmp.h`، الذي يسمح بنوع من القفز غير المحلي يمكنه فك عدة إطارات مكدس دفعة واحدة — أقرب ما تملكه C إلى تحكم بمسار التنفيذ على طراز الاستثناءات، رغم ندرته في الكود العادي لأنه يتجاوز التنظيف الطبيعي (لا توجد هدّامات (destructors) لتعمل تلقائياً، لأن C لا تملك أياً منها):
+
+```c
+#include <stdio.h>
+#include <setjmp.h>
+
+jmp_buf recoveryPoint;
+
+void riskyOperation(int fail) {
+    if (fail) {
+        longjmp(recoveryPoint, 1); /* jumps back to setjmp, as if it returned 1 */
+    }
+    printf("risky operation succeeded\n");
+}
+
+int main(void) {
+    if (setjmp(recoveryPoint) == 0) {
+        riskyOperation(1); /* this call never returns normally */
+    } else {
+        printf("recovered from failure\n");
+    }
+    return 0;
+}
+```
+
+يلتزم معظم كود C برموز الإرجاع البسيطة و`errno` — تظهر `setjmp`/`longjmp` أساساً في سياقات متخصصة مثل تنفيذ معالجة أخطاء لغة سكربت أو التعافي من مُعالج إشارة (signal handler)، لا في فحص الأخطاء اليومي.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="اجمع فحص خطأ برمز إرجاع"
+  prompt="اسحب هذه الأسطر إلى الترتيب الذي يقسّم رقمين بأمان باستخدام رمز إرجاع للخطأ ومعامل مُخرَج."
+  items={[
+    { id: "func", label: "int divide(int a, int b, int *out) {" },
+    { id: "check", label: "    if (b == 0) return -1;", explanation: "يجب فحص حالة الفشل قبل حدوث القسمة، وإلا لقسّمت على صفر أولاً." },
+    { id: "assign", label: "    *out = a / b;" },
+    { id: "success", label: "    return 0;\n}" },
+    { id: "call", label: "int result;\nif (divide(10, 0, &result) != 0) {" },
+    { id: "print", label: "    printf(\"error\\n\");\n}" },
+  ]}
+  correctOrder={["func", "check", "assign", "success", "call", "print"]}
+/>
+
+<OrderingExercise
+  title="رتّب فحص ملف قائماً على errno"
+  prompt="اسحب هذه الأسطر إلى الترتيب الذي يفتح ملفاً ويُبلغ عن خطأ نظام التشغيل المحدد إذا فشل."
+  items={[
+    { id: "includes", label: "#include <stdio.h>\n#include <errno.h>\n#include <string.h>" },
+    { id: "open", label: "FILE *file = fopen(\"missing.txt\", \"r\");" },
+    { id: "check", label: "if (file == NULL) {", explanation: "errno ذات معنى فقط مباشرة بعد الاستدعاء الفاشل، لذا يجب قراءتها فوراً داخل هذا الفحص." },
+    { id: "print", label: "    printf(\"%s\\n\", strerror(errno));" },
+    { id: "close", label: "}" },
+  ]}
+  correctOrder={["includes", "open", "check", "print", "close"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا؟"
+  code={`#include <stdio.h>
+
+int safeDivide(int a, int b, int *out) {
+    if (b == 0) {
+        return -1;
+    }
+    *out = a / b;
+    return 0;
+}
+
+int main(void) {
+    int result = 999;
+    int status = safeDivide(10, 0, &result);
+    printf("%d %d\\n", status, result);
+    return 0;
+}`}
+  options={["-1 999", "-1 0", "0 999", "خطأ ترجمة"]}
+  correctIndex={0}
+  explanation="بما أن b تساوي 0، تُرجع safeDivide فوراً -1 دون أن تلمس *out أبداً، لذا تحتفظ result بقيمتها الأصلية 999 — لا تُصفَّر أو تُعاد ضبطها لمجرد فشل الدالة. تُبلغ status بشكل صحيح عن -1. افتراض أن result تحصل على قيمة 'افتراضية' للفشل مثل 0 هو الخطأ المُغري هنا."
+  actualOutput="-1 999"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- **[الدوال](/ar/programming-languages/c/functions)** — المعاملات المُخرَجة عبر المؤشرات، المستخدَمة في جميع أنحاء نمط رموز الإرجاع لهذه الصفحة.
+- **[الوحدات والحزم](/ar/programming-languages/c/modules-packages)** — تأتي errno وsetjmp وأمثالهما جميعاً من ملفات رأس قياسية تُدرجها بـ #include.

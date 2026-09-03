@@ -1,0 +1,158 @@
+---
+title: معالجة الأخطاء
+description: try/catch في TypeScript، ولماذا يُصنَّف الخطأ المُلتَقط بالنوع unknown تحت الإعدادات الصارمة، وبناء أصناف فرعية مخصَّصة من Error.
+category: Programming Languages
+weight: 7
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تعمل `try`/`catch`/`finally` في TypeScript بنفس دلالات JavaScript
+تماماً — لا تضيف TypeScript أي تدفق تحكم جديد هنا. ما تُغيِّره هو
+*نوع* القيمة التي تلتقطها، وهنا يصطدم نظام أنواع TypeScript بإحدى
+الحقائق الأصعب حول معالجة الأخطاء: يمكن لعبارة `throw` أن ترمي أي
+شيء حرفياً، لذا لا يستطيع المُصرِّف افتراض الكثير حول ما يصل إلى
+`catch`.
+
+## try/catch ونوع القيمة المُلتَقطة
+
+```ts
+try {
+  JSON.parse("{ invalid json");
+} catch (err) {
+  console.log(err.message); // Type error under strict mode: 'err' is of type 'unknown'
+}
+```
+
+تحت وضع `strict` في TypeScript (تحديداً `useUnknownInCatchVariables`،
+مفعَّل افتراضياً مع `strict: true`)، يكون نوع المتغير المُلتَقط
+`unknown`، وليس `any` وليس `Error`. هذا مقصود: تتيح لك JavaScript رمي
+أي قيمة إطلاقاً — سلسلة نصية، رقماً، `undefined`، أو `Error` حقيقياً —
+لذا ليس لدى المُصرِّف أي أساس لافتراض أن `err` هو `Error` لمجرد
+ظهورها في كتلة `catch`. أنت مطالَب بتضييق نوعها قبل استخدامها:
+
+```ts
+try {
+  JSON.parse("{ invalid json");
+} catch (err) {
+  if (err instanceof Error) {
+    console.log(err.message); // OK — narrowed to Error
+  } else {
+    console.log("Unknown error:", err);
+  }
+}
+```
+
+هذا تطبيق مباشر لنفس تضييق النوع المشروح في [التحكم بمسار
+التنفيذ](/ar/programming-languages/typescript/control-flow) —
+تُضيِّق `instanceof` النوع `unknown` إلى `Error` داخل ذلك الفرع، تماماً
+كما تُضيِّق `typeof` اتحاداً.
+
+## أصناف Error مخصَّصة
+
+بما أن `Error` صنف حقيقي، يمكنك اشتقاق صنف فرعي منه لإنشاء أنواع
+أخطاء خاصة بمجالك تحمل بيانات إضافية ذات نوع محدد:
+
+```ts
+class ValidationError extends Error {
+  constructor(
+    message: string,
+    public readonly field: string,
+  ) {
+    super(message);
+    this.name = "ValidationError";
+  }
+}
+
+function validateAge(age: number) {
+  if (age < 0) {
+    throw new ValidationError("Age cannot be negative", "age");
+  }
+}
+
+try {
+  validateAge(-5);
+} catch (err) {
+  if (err instanceof ValidationError) {
+    console.log(`${err.field}: ${err.message}`); // "age: Age cannot be negative"
+  }
+}
+```
+
+تُضيِّق `err instanceof ValidationError` نوع `err` وصولاً إلى الصنف
+الفرعي المحدد بالضبط، وهو ما يجعل `err.field` قابلاً للوصول — فحص
+`err instanceof Error` عادي كان ليُضيِّق النوع فقط إلى `Error`
+الأساسي، حيث لا وجود لـ`field` هناك.
+
+## خطأ نوعي يساعد صنف Error مخصَّص على كشفه
+
+```ts
+class ValidationError extends Error {
+  constructor(message: string, public readonly field: string) {
+    super(message);
+  }
+}
+
+function handle(err: ValidationError) {
+  console.log(err.fieldd); // Type error: Property 'fieldd' does not exist on type 'ValidationError'
+}
+```
+
+بما أن `field` خاصية مُصرَّح عنها وذات نوع محدد على `ValidationError`
+(وليست مجرد شيء مُرفَق ديناميكياً في وقت التشغيل، كما كان سيحدث في
+JavaScript العادية)، يُكتشَف خطأ إملائي مثل `fieldd` فوراً — يعرف
+المُصرِّف المجموعة الدقيقة من الخصائص التي يمتلكها الصنف.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لتضييق قيمة unknown مُلتَقطة بأمان بـinstanceof قبل قراءة رسالتها."
+  items={[
+    { id: "try-open", label: "try {" },
+    { id: "try-body", label: "  JSON.parse(\"{ invalid json\");" },
+    { id: "catch-open", label: "} catch (err) {", explanation: "نوع err هو unknown فقط بمجرد وصولها إلى عبارة catch." },
+    { id: "if-open", label: "  if (err instanceof Error) {" },
+    { id: "if-body", label: "    console.log(err.message);" },
+    { id: "if-close", label: "  }" },
+    { id: "catch-close", label: "}" },
+  ]}
+  correctOrder={["try-open", "try-body", "catch-open", "if-open", "if-body", "if-close", "catch-close"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لتعريف صنف فرعي ValidationError ورميه من دالة تحقُّق."
+  items={[
+    { id: "class-open", label: "class ValidationError extends Error {" },
+    { id: "ctor", label: "  constructor(message: string, public readonly field: string) {" },
+    { id: "super-call", label: "    super(message);", explanation: "يجب أن تعمل ()super قبل انتهاء باني الصنف الفرعي، وقبل أن يصبح الصنف قابلاً للاستخدام." },
+    { id: "ctor-close", label: "  }" },
+    { id: "class-close", label: "}" },
+    { id: "fn-decl", label: "function validateAge(age: number) {" },
+    { id: "throw-stmt", label: "  if (age < 0) throw new ValidationError(\"bad age\", \"age\");" },
+    { id: "fn-close", label: "}" },
+  ]}
+  correctOrder={["class-open", "ctor", "super-call", "ctor-close", "class-close", "fn-decl", "throw-stmt", "fn-close"]}
+/>
+
+<PredictOutput
+  title="ماذا يقول مدقّق الأنواع؟"
+  code={`try {
+  throw new Error("boom");
+} catch (err) {
+  console.log(err.message);
+}`}
+  options={["\"boom\"", "undefined", "Type error: 'err' is of type 'unknown'", "Runtime crash: cannot read properties of unknown"]}
+  correctIndex={2}
+  explanation="تحت الوضع الصارم، تُصنَّف متغيرات catch دائماً بالنوع unknown بغض النظر عما رُمي فعلياً في كتلة try — لا يستطيع المُصرِّف النظر داخل عبارة throw واستنتاج Error منها. الوصول إلى .message مباشرة، دون تضييق النوع أولاً بـinstanceof، خطأ في وقت الترجمة حتى لو كانت عبارة throw هذه بالذات ستُنتِج Error حقيقياً في وقت التشغيل."
+  actualOutput="Type error: 'err' is of type 'unknown'"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [الأصناف والواجهات](/ar/programming-languages/typescript/oop-or-structs)
+- [الوحدات والحزم](/ar/programming-languages/typescript/modules-packages)

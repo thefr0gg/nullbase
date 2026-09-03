@@ -1,0 +1,158 @@
+---
+title: التحكم بمسار التنفيذ
+description: توجيه التنفيذ في C++ باستخدام if/else وswitch وأشكال الحلقات الثلاثة، بما في ذلك حلقة for المدى-محورة التي أُدخلت في C++11.
+category: Programming Languages
+weight: 3
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تقرر عبارات التحكم بمسار التنفيذ أي كود يعمل فعلياً وكم مرة — بدونها سيكون برنامج C++ مجرد تسلسل مستقيم من العبارات يُنفَّذ مرة واحدة، من الأعلى إلى الأسفل.
+
+## `if` / `else if` / `else`
+
+```cpp
+#include <iostream>
+
+int main() {
+    int score = 82;
+
+    if (score >= 90) {
+        std::cout << "Grade: A\n";
+    } else if (score >= 80) {
+        std::cout << "Grade: B\n";
+    } else if (score >= 70) {
+        std::cout << "Grade: C\n";
+    } else {
+        std::cout << "Grade: F\n";
+    }
+    return 0;
+}
+```
+
+تُقيَّم الشروط من الأعلى إلى الأسفل، ويعمل أول فرع شرطه `true` — ويُتجاوَز الباقي، حتى لو كان شرط لاحق سيكون `true` أيضاً. `if` مجردة بلا `else` مطابق لا تفعل شيئاً ببساطة عندما يكون شرطها `false`.
+
+## `switch`
+
+```cpp
+#include <iostream>
+
+int main() {
+    int day = 3;
+
+    switch (day) {
+        case 1:
+            std::cout << "Monday\n";
+            break;
+        case 2:
+            std::cout << "Tuesday\n";
+            break;
+        case 3:
+            std::cout << "Wednesday\n";
+            break;
+        default:
+            std::cout << "Some other day\n";
+            break;
+    }
+    return 0;
+}
+```
+
+يقارن `switch` قيمة واحدة بمجموعة من الحالات الثابتة. تحتاج كل `case` إلى `break` صريحة — بدونها، **ينزلق** التنفيذ إلى الحالة التالية بغض النظر عن مطابقة قيمتها، وهي خاصية غريبة في C++ موروثة من C وتُعد مصدراً شائعاً للأخطاء عند نسيانها.
+
+## الحلقات
+
+```cpp
+#include <iostream>
+#include <vector>
+
+int main() {
+    std::vector<int> scores = {70, 85, 90, 60};
+
+    // classic for loop, index-based
+    for (int i = 0; i < scores.size(); i++) {
+        std::cout << "Index " << i << ": " << scores[i] << "\n";
+    }
+
+    // range-based for (C++11), no index needed
+    for (int score : scores) {
+        if (score < 65) continue;
+        std::cout << "Passed with " << score << "\n";
+    }
+
+    // while loop
+    int attempts = 0;
+    while (attempts < 3) {
+        std::cout << "Attempt " << attempts << "\n";
+        attempts++;
+    }
+    return 0;
+}
+```
+
+تمنح حلقة `for (init; condition; increment)` الكلاسيكية تحكماً كاملاً في متغير الحلقة، وهذا يهم عندما تحتاج الفهرس نفسه (كما أعلاه، لطباعته) أو تحتاج للتخطي بأكثر من واحد. أما **حلقة for المدى-محورة**، المُضافة في C++11، فتُكرر مباشرة على عناصر حاوية دون فهرسة يدوية — وهي الشكل المُفضَّل كلما لم تكن الحاجة إلى الفهرس قائمة، إذ لا يوجد خطأ إزاحة بواحد ليخطئ فيه. تُخطي `continue` مباشرة إلى الدورة التالية؛ بينما `break` (غير موضحة هنا) ستخرج من الحلقة كلياً. تعمل `while` طالما شرطها قائم، ويُفحص قبل كل دورة — إذا كان الشرط `false` من البداية، لا يعمل الجسم أبداً، بخلاف `do...while`، التي تعمل الجسم دائماً مرة واحدة على الأقل.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="اجمع الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء سلسلة if/else تصنّف درجة حرارة."
+  items={[
+    { id: "declare", label: "int temp = 15;" },
+    { id: "if-cold", label: "if (temp < 0) {" },
+    { id: "print-cold", label: "    std::cout << \"Freezing\";" },
+    { id: "else-if", label: "} else if (temp < 20) {", explanation: "يجب أن تأتي else if مباشرة بعد القوس المغلق لكتلة if السابقة." },
+    { id: "print-mild", label: "    std::cout << \"Mild\";" },
+    { id: "else", label: "} else {" },
+    { id: "print-warm", label: "    std::cout << \"Warm\";" },
+    { id: "close", label: "}" },
+  ]}
+  correctOrder={["declare", "if-cold", "print-cold", "else-if", "print-mild", "else", "print-warm", "close"]}
+/>
+
+<OrderingExercise
+  title="اجمع الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء حلقة for مدى-محورة تجمع عناصر متجه (vector)."
+  items={[
+    { id: "include", label: "#include <vector>" },
+    { id: "vec", label: "std::vector<int> nums = {1, 2, 3, 4};" },
+    { id: "total", label: "int total = 0;", explanation: "يجب تهيئة total قبل أن تُجمِّع الحلقة فيه." },
+    { id: "for-open", label: "for (int n : nums) {" },
+    { id: "add", label: "    total += n;" },
+    { id: "for-close", label: "}" },
+  ]}
+  correctOrder={["include", "vec", "total", "for-open", "add", "for-close"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا؟"
+  code={`#include <iostream>
+
+int main() {
+    int x = 2;
+    switch (x) {
+        case 1:
+            std::cout << "one";
+        case 2:
+            std::cout << "two";
+        case 3:
+            std::cout << "three";
+            break;
+        default:
+            std::cout << "other";
+    }
+    return 0;
+}`}
+  options={["two", "twothree", "twothreeother", "onetwothree"]}
+  correctIndex={1}
+  explanation={`تطابق x الحالة 2، لكن لا يوجد break بعدها، لذا ينزلق التنفيذ إلى case 3 أيضاً، فيطبع "two" ثم "three" قبل الوصول إلى break. لا تُبلَغ case 1 وdefault أبداً لأن switch يقفز مباشرة إلى الحالة المطابقة.`}
+  actualOutput="twothree"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [بنية اللغة والمتغيرات](/ar/programming-languages/cpp/syntax-basics) — المتغيرات والتعبيرات المستخدَمة في الشروط هنا.
+- [الدوال](/ar/programming-languages/cpp/functions) — تنظيم منطق التحكم بمسار التنفيذ المتكرر في كتل قابلة لإعادة الاستخدام.

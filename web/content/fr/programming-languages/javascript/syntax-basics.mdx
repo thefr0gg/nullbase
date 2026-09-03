@@ -1,0 +1,146 @@
+---
+title: Syntaxe et variables
+description: Déclarations de variables, types primitifs, littéraux de gabarit, et la véracité (truthiness) en JavaScript.
+category: Programming Languages
+weight: 2
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+JavaScript a trois façons de déclarer une variable — `var`, `let`, et
+`const` — et elles ne sont pas interchangeables. `var` a une portée de
+fonction et précède le scoping de bloc dans le langage ; `let` et `const`,
+ajoutés en ES6, ont une portée de bloc et devraient être votre choix par
+défaut. Utilisez `const` sauf si vous savez que la liaison doit être
+réassignée, puis utilisez `let`. Les bases de code JavaScript modernes
+utilisent rarement `var`.
+
+```js
+const name = "nullbase";
+let count = 0;
+
+count = count + 1; // ok, let autorise la réassignation
+// name = "other";  // TypeError: Assignment to constant variable.
+
+{
+  let count = 100; // une nouvelle liaison, limitée à ce bloc seulement
+  console.log(count); // 100
+}
+console.log(count); // 1 — le count extérieur n'est pas touché
+```
+
+Notez que `const` empêche de *réassigner* la liaison, pas de muter la
+valeur qu'elle référence. Un tableau ou un objet `const` peut toujours
+voir son contenu modifié.
+
+## Types primitifs et typage dynamique
+
+JavaScript a sept types primitifs — `string`, `number`, `boolean`,
+`undefined`, `null`, `bigint`, et `symbol` — plus `object` pour tout le
+reste (y compris les tableaux et les fonctions, que `typeof` rapporte
+respectivement comme `"object"` et `"function"`). À la différence des
+langages statiquement typés, le type d'une variable n'est pas fixé à la
+déclaration ; il est déterminé par la valeur qui y vit actuellement, et
+peut changer.
+
+```js
+let value = 42;
+console.log(typeof value); // "number"
+
+value = "now a string";
+console.log(typeof value); // "string"
+
+console.log(typeof undefined); // "undefined"
+console.log(typeof null);      // "object" — un bug célèbre et de longue date dans la spec
+```
+
+Il n'y a qu'un seul type numérique, `number` (une valeur flottante 64
+bits), ce qui explique pourquoi `0.1 + 0.2` ne vaut pas exactement `0.3` —
+le même problème d'arrondi en virgule flottante que tout langage utilisant
+des doubles IEEE 754. `bigint` existe séparément pour les entiers
+au-delà de `Number.MAX_SAFE_INTEGER`.
+
+## Littéraux de gabarit
+
+Les chaînes délimitées par des backticks prennent en charge
+l'interpolation avec `${}` et peuvent s'étendre sur plusieurs lignes sans
+séquences d'échappement :
+
+```js
+const user = "ada";
+const attempts = 3;
+
+const message = `User "${user}" has ${attempts} failed login attempt${attempts === 1 ? "" : "s"}.`;
+console.log(message);
+// User "ada" has 3 failed login attempts.
+```
+
+## Véracité (truthiness) et égalité
+
+Chaque valeur est soit « truthy » (véridique) soit « falsy » (fausse)
+quand elle est utilisée là où un booléen est attendu (une condition `if`,
+par exemple). Les valeurs falsy sont exactement : `false`, `0`, `-0`,
+`0n`, `""`, `null`, `undefined`, et `NaN`. Tout le reste — y compris
+`"0"` et `[]`, qui surprennent beaucoup de nouveaux venus — est truthy.
+
+```js
+if ("0") {
+  console.log("truthy!"); // ceci s'exécute — les chaînes non vides sont toujours truthy
+}
+
+console.log(0 == "0");   // true  — == convertit les types avant de comparer
+console.log(0 === "0");  // false — === compare la valeur ET le type, sans conversion
+console.log(null == undefined);  // true
+console.log(null === undefined); // false
+```
+
+Préférez `===` et `!==` à `==` et `!=` presque partout. Les règles de
+conversion derrière `==` sont suffisamment incohérentes pour que s'y fier
+soit une source de bugs courante plutôt qu'une commodité utile.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour déclarer une constante, construire un message avec un littéral de gabarit, et l'afficher."
+  items={[
+    { id: "decl", label: "const item = \"widget\";" },
+    { id: "price", label: "const price = 9.99;" },
+    { id: "msg", label: "const msg = `The ${item} costs $${price}.`;", explanation: "item et price doivent déjà exister avant que cette ligne ne les référence." },
+    { id: "log", label: "console.log(msg);" },
+  ]}
+  correctOrder={["decl", "price", "msg", "log"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Mettez ces lignes dans l'ordre pour que le let à portée de bloc masque correctement celui de l'extérieur, puis affichez les deux."
+  items={[
+    { id: "outer", label: "let level = \"outer\";" },
+    { id: "blockOpen", label: "{" },
+    { id: "inner", label: "  let level = \"inner\";" },
+    { id: "innerLog", label: "  console.log(level);" },
+    { id: "blockClose", label: "}" },
+    { id: "outerLog", label: "console.log(level);" },
+  ]}
+  correctOrder={["outer", "blockOpen", "inner", "innerLog", "blockClose", "outerLog"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que ce code affiche ?"
+  code={`console.log([] == false);
+console.log([] === false);`}
+  options={["true puis true", "true puis false", "false puis false", "false puis true"]}
+  correctIndex={1}
+  explanation={`Avec ==, [] est converti en chaîne (""), puis en nombre (0), et false se convertit aussi en 0, donc ils sont égaux — true. === ne convertit jamais, et un tableau n'est jamais === à un booléen, donc la deuxième ligne est false. Cet écart entre == et === est exactement pourquoi === est le choix par défaut le plus sûr.`}
+  actualOutput="true
+false"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Flux de contrôle](/fr/programming-languages/javascript/control-flow)
+- [Structures de données](/fr/programming-languages/javascript/data-structures)

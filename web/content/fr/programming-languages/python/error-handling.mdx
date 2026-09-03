@@ -1,0 +1,107 @@
+---
+title: Gestion des erreurs
+description: Intercepter et lever des exceptions en Python — try/except/else/finally, et définir vos propres types d'exception.
+category: Programming Languages
+weight: 7
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Python signale un échec en levant des exceptions, et gérer l'une d'elles consiste à envelopper le code risqué dans un bloc `try` avec une ou plusieurs clauses `except` qui interceptent des types d'exception spécifiques.
+
+```python
+try:
+    value = int(input("Enter a number: "))
+except ValueError:
+    print("That wasn't a valid number.")
+else:
+    print(f"You entered {value}")
+finally:
+    print("Done processing input.")
+```
+
+Chaque clause a un rôle distinct : le bloc `try` contient le code qui pourrait échouer ; `except ValueError` n'intercepte que cette erreur spécifique (un `TypeError` ailleurs dans le bloc se propagerait sans être intercepté) ; `else` ne s'exécute que si le bloc `try` s'est terminé sans aucune exception ; `finally` s'exécute toujours — exception ou non, `return` ou non — ce qui en fait l'endroit idéal pour le nettoyage comme fermer un fichier ou relâcher un verrou.
+
+Intercepter spécifiquement `except ValueError`, plutôt qu'un `except:` nu, importe : un `except` nu avale *tout*, y compris les fautes de frappe qui lèvent `NameError` et les interruptions comme `KeyboardInterrupt`, ce qui fait disparaître silencieusement de vrais bugs au lieu de les faire remonter.
+
+Les exceptions personnalisées ne sont que des classes qui héritent de `Exception` (ou d'une exception intégrée plus spécifique), ce qui permet au code appelant d'intercepter votre mode d'échec spécifique par son nom plutôt que de deviner à partir de messages de chaîne.
+
+```python
+class InsufficientFundsError(Exception):
+    """Raised when a withdrawal exceeds the account balance."""
+
+def withdraw(balance, amount):
+    if amount > balance:
+        raise InsufficientFundsError(f"Cannot withdraw {amount}, balance is {balance}")
+    return balance - amount
+
+try:
+    withdraw(100, 150)
+except InsufficientFundsError as e:
+    print(e)  # Cannot withdraw 150, balance is 100
+```
+
+`raise` est la façon dont le code signale explicitement un échec ; `except ... as e` lie l'instance d'exception interceptée à un nom pour que son message (ou toute donnée supplémentaire qui y est attachée) puisse être inspecté.
+
+```python
+def read_config(path):
+    try:
+        with open(path) as f:
+            return f.read()
+    except FileNotFoundError:
+        return "{}"
+```
+
+Ici, un mode d'échec spécifique et attendu (le fichier n'existe pas encore) est géré avec un repli sensé, tandis que toute autre erreur — un problème de permissions, une panne de disque — est laissée à se propager, puisque les avaler silencieusement cacherait un vrai problème.
+
+## Voir aussi
+
+- **[Classes et objets](/fr/programming-languages/python/oop-or-structs)** — les exceptions personnalisées sont des classes ordinaires qui héritent de `Exception`.
+- **[Modules et paquets](/fr/programming-languages/python/modules-packages)** — le motif `with open(...)` ci-dessus et la bibliothèque standard dont il provient.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire un bloc try/except/else/finally qui convertit en toute sécurité une entrée utilisateur en int."
+  items={[
+    { id: "try", label: "try:" },
+    { id: "value", label: "    value = int(input())", explanation: "Cette conversion risquée doit être la première ligne à l'intérieur du bloc try." },
+    { id: "except", label: "except ValueError:" },
+    { id: "excbody", label: '    print("Not a valid number.")', explanation: "Ceci ne s'exécute que comme corps de la clause except au-dessus." },
+    { id: "else", label: "else:" },
+    { id: "elsebody", label: "    print(f\"Got {value}\")" },
+    { id: "finally", label: "finally:" },
+    { id: "finallybody", label: '    print("Done.")' },
+  ]}
+  correctOrder={["try", "value", "except", "excbody", "else", "elsebody", "finally", "finallybody"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour définir une exception personnalisée, la lever, et l'intercepter."
+  items={[
+    { id: "class", label: "class InsufficientFundsError(Exception):" },
+    { id: "pass", label: "    pass", explanation: "Le corps de la classe doit venir directement après sa ligne class." },
+    { id: "def", label: "def withdraw(balance, amount):" },
+    { id: "if", label: "    if amount > balance:", explanation: "La classe doit exister avant qu'une fonction puisse lever une instance de celle-ci." },
+    { id: "raise", label: "        raise InsufficientFundsError()" },
+    { id: "try", label: "try:" },
+    { id: "call", label: "    withdraw(100, 150)", explanation: "La fonction doit être entièrement définie avant de pouvoir être appelée à l'intérieur du bloc try." },
+    { id: "except", label: "except InsufficientFundsError:" },
+    { id: "print", label: '    print("Not enough money.")' },
+  ]}
+  correctOrder={["class", "pass", "def", "if", "raise", "try", "call", "except", "print"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que ceci affiche ?"
+  code={`def f():\n    try:\n        return "try"\n    finally:\n        print("finally runs")\n\nprint(f())`}
+  options={['"try" then "finally runs"', '"finally runs" then "try"', 'Only "finally runs", the return is skipped', 'An error: cannot return from inside a try']}
+  correctIndex={1}
+  explanation={`finally s'exécute toujours avant que le contrôle ne quitte réellement la fonction, même quand une instruction return à l'intérieur de try a déjà décidé quelle valeur sera renvoyée — donc "finally runs" s'affiche en premier, et c'est seulement après que f() renvoie effectivement "try" pour que le print() externe l'affiche.`}
+  actualOutput={`finally runs\ntry`}
+/>
+</ExerciseTabs>

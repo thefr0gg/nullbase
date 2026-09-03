@@ -1,0 +1,159 @@
+---
+title: Flux de contrôle
+description: Comment les instructions if/switch rétrécissent les types union, et la torsion de vérification de type que TypeScript ajoute au flux de contrôle JavaScript ordinaire.
+category: Programming Languages
+weight: 3
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+`if`, `else`, `switch`, `for`, et `while` se comportent tous exactement
+comme en JavaScript à l'exécution — TypeScript ne change pas la sémantique
+du flux de contrôle. Ce qu'il change est ce que le compilateur *sait* sur
+les types de vos variables au fur et à mesure que l'exécution avance dans
+chaque branche. C'est ce qu'on appelle le **rétrécissement de type** (type
+narrowing), et c'est l'une des fonctionnalités les plus distinctement
+TypeScript de cette page.
+
+## Types union et rétrécissement
+
+Une variable peut être déclarée pour contenir l'un de plusieurs types avec
+un **type union** (`A | B`) :
+
+```ts
+function formatId(id: string | number): string {
+  if (typeof id === "string") {
+    return id.toUpperCase(); // id is narrowed to string here
+  }
+  return id.toFixed(2); // id is narrowed to number here
+}
+```
+
+À l'intérieur de la branche `if (typeof id === "string")`, le compilateur
+rétrécit le type de `id` de `string | number` à juste `string`, donc
+`.toUpperCase()` est autorisé. Dans la branche `else` (le passage implicite
+ici), il rétrécit à `number`, donc `.toFixed(2)` est autorisé. Essayez
+d'appeler `id.toUpperCase()` dans la seconde branche et le compilateur le
+rejette — `toUpperCase` n'existe pas sur `number`.
+
+## Rétrécissement avec switch
+
+`switch` rétrécit de la même façon, branche par branche, ce qui en fait un
+choix naturel pour les **unions discriminées** — des types qui partagent un
+champ littéral commun utilisé pour les distinguer :
+
+```ts
+type Shape =
+  | { kind: "circle"; radius: number }
+  | { kind: "square"; side: number };
+
+function area(shape: Shape): number {
+  switch (shape.kind) {
+    case "circle":
+      return Math.PI * shape.radius ** 2; // shape is narrowed to the circle branch
+    case "square":
+      return shape.side ** 2; // shape is narrowed to the square branch
+  }
+}
+```
+
+Chaque `case` rétrécit `shape` en fonction de la valeur littérale de
+`kind`, donc `shape.radius` n'est accessible que dans le cas `"circle"` et
+`shape.side` seulement dans le cas `"square"` — accéder à `shape.side` à
+l'intérieur du cas `"circle"` serait une erreur de type, parce que le
+compilateur sait que le `shape` de cette branche ne peut pas avoir de
+propriété `side`.
+
+## La torsion spécifique à TS : vérification d'exhaustivité
+
+Le `switch` de JavaScript ordinaire n'a aucune idée si vous avez géré chaque
+cas. TypeScript peut l'imposer, en assignant la valeur « restante
+impossible » à une variable typée `never` :
+
+```ts
+type Shape =
+  | { kind: "circle"; radius: number }
+  | { kind: "square"; side: number }
+  | { kind: "triangle"; base: number; height: number };
+
+function area(shape: Shape): number {
+  switch (shape.kind) {
+    case "circle":
+      return Math.PI * shape.radius ** 2;
+    case "square":
+      return shape.side ** 2;
+    default: {
+      const exhaustiveCheck: never = shape; // Type error if a case was missed
+      throw new Error(`Unhandled shape: ${exhaustiveCheck}`);
+    }
+  }
+}
+```
+
+Après avoir ajouté `"triangle"` à `Shape` sans ajouter de `case`
+correspondant, `shape` dans la branche `default` n'est plus rétréci à rien —
+c'est toujours `{ kind: "triangle"; ... }`, ce qui n'est pas assignable à
+`never`. Le compilateur signale cette assignation comme une erreur à
+l'endroit exact où vous avez oublié de gérer un cas, attrapant un `switch`
+incomplet avant l'exécution plutôt que de tomber silencieusement à travers.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire une fonction qui rétrécit une union string | number avec typeof."
+  items={[
+    { id: "fn-decl", label: "function formatId(id: string | number): string {" },
+    { id: "if-open", label: "  if (typeof id === \"string\") {" },
+    { id: "if-body", label: "    return id.toUpperCase();", explanation: "id n'est connu comme string qu'à l'intérieur de cette branche, après la vérification typeof." },
+    { id: "if-close", label: "  }" },
+    { id: "else-body", label: "  return id.toFixed(2);" },
+    { id: "fn-close", label: "}" },
+  ]}
+  correctOrder={["fn-decl", "if-open", "if-body", "if-close", "else-body", "fn-close"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire une fonction area sur une union discriminée en utilisant switch."
+  items={[
+    { id: "fn-decl", label: "function area(shape: Shape): number {" },
+    { id: "switch-open", label: "  switch (shape.kind) {" },
+    { id: "case-circle", label: "    case \"circle\":" },
+    { id: "return-circle", label: "      return Math.PI * shape.radius ** 2;", explanation: "shape.radius n'existe qu'une fois que le switch a rétréci shape au cas circle." },
+    { id: "case-square", label: "    case \"square\":" },
+    { id: "return-square", label: "      return shape.side ** 2;" },
+    { id: "switch-close", label: "  }" },
+    { id: "fn-close", label: "}" },
+  ]}
+  correctOrder={["fn-decl", "switch-open", "case-circle", "return-circle", "case-square", "return-square", "switch-close", "fn-close"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que le vérificateur de type dit ?"
+  code={`type Shape =
+  | { kind: "circle"; radius: number }
+  | { kind: "square"; side: number };
+
+function describe(shape: Shape): string {
+  if (shape.kind === "circle") {
+    return \`circle r=\${shape.radius}\`;
+  }
+  return \`square s=\${shape.side}\`;
+}
+
+const s: Shape = { kind: "circle", radius: 2 };
+describe(s);`}
+  options={["\"circle r=2\"", "\"square s=undefined\"", "Type error: Property 'radius' does not exist on type 'Shape'", "undefined"]}
+  correctIndex={0}
+  explanation={`La vérification if (shape.kind === "circle") rétrécit shape à la branche circle de l'union, donc shape.radius est valide là, et shape.side est valide dans le else implicite. Appeler describe avec une valeur en forme de circle exécute simplement cette branche et produit "circle r=2".`}
+  actualOutput={`"circle r=2"`}
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Syntaxe et types](/fr/programming-languages/typescript/syntax-basics)
+- [Fonctions](/fr/programming-languages/typescript/functions)

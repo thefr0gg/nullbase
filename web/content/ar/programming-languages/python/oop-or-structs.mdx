@@ -1,0 +1,111 @@
+---
+title: الفئات والكائنات
+description: تعريف فئات حقيقية في Python — __init__، وسمات النسخة (instance attributes)، والوراثة عبر super()، والدوال ذات الشرطتين السفليتين التي تجعل الكائنات تتصرف كالأنواع المدمجة.
+category: Programming Languages
+weight: 6
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تُعرَّف فئة Python باستخدام `class`، وتبدأ كل فئة تقريباً بدالة `__init__` — المُنشئ (constructor)، الذي يُستدعى تلقائياً عند إنشاء نسخة جديدة — والذي يهيّئ سمات النسخة عبر `self`.
+
+```python
+class Dog:
+    def __init__(self, name, breed):
+        self.name = name
+        self.breed = breed
+
+    def bark(self):
+        return f"{self.name} says Woof!"
+
+rex = Dog("Rex", "Labrador")
+print(rex.bark())  # Rex says Woof!
+```
+
+`self` هو النسخة التي استُدعيت الدالة عليها — تمرّرها Python صراحة كأول وسيطة لكل دالة نسخة، بدلاً من جعلها كلمة مفتاحية ضمنية مثل `this` في لغات أخرى. `rex.bark()` هي في الحقيقة `Dog.bark(rex)` تحت الغطاء.
+
+تتيح الوراثة لفئة إعادة استخدام وتوسيع سلوك فئة أخرى. تستدعي الفئة الفرعية `super().__init__(...)` لتشغيل مُنشئ الفئة الأصل قبل إضافة تهيئتها الخاصة، ويمكنها إعادة تعريف أي دالة، بما فيها الدوال التي تعرّفها الفئة الأصل بالفعل.
+
+```python
+class Puppy(Dog):
+    def __init__(self, name, breed, age_months):
+        super().__init__(name, breed)
+        self.age_months = age_months
+
+    def bark(self):
+        return f"{self.name} says Yip!"
+
+buddy = Puppy("Buddy", "Poodle", 4)
+print(buddy.bark())  # Buddy says Yip!
+```
+
+دوال "dunder" (ذات الشرطتين السفليتين) هي كيفية ربط الفئة بعوامل Python المدمجة ودوالها بدلاً من الحاجة إلى واجهة برمجية خاصة بها. تتحكم `__repr__` بما تعرضه `print()` وREPL لنسخة ما؛ وتتحكم `__eq__` بما تفعله `==` بين نسختين.
+
+```python
+class Point:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def __repr__(self):
+        return f"Point({self.x}, {self.y})"
+
+    def __eq__(self, other):
+        return self.x == other.x and self.y == other.y
+
+p1 = Point(1, 2)
+p2 = Point(1, 2)
+print(p1 == p2)  # True — because __eq__ compares the coordinates
+print(p1)         # Point(1, 2) — because __repr__ formats it
+```
+
+بدون `__eq__`، تعود `==` إلى مقارنة الهوية — أي ما إذا كان الاسمان يشيران إلى نفس الكائن بالضبط في الذاكرة — وهذا نادراً ما يكون المطلوب لفئة تشبه القيمة مثل `Point`.
+
+## طالع أيضاً
+
+- **[هياكل البيانات](/ar/programming-languages/python/data-structures)** — الأنواع المدمجة التي تجعل دوال dunder مثل `__eq__` فئاتك الخاصة تتصرف مثلها.
+- **[معالجة الأخطاء](/ar/programming-languages/python/error-handling)** — فئات الاستثناءات المخصصة، التي هي بحد ذاتها مجرد فئات ترث من `Exception`.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لتعريف فئة Dog واستدعاء دالة على نسخة منها."
+  items={[
+    { id: "class", label: "class Dog:" },
+    { id: "init", label: "    def __init__(self, name, breed):", explanation: "يجب تعريف المُنشئ كجزء من جسم الفئة، مباشرة بعد سطر class." },
+    { id: "setname", label: "        self.name = name" },
+    { id: "setbreed", label: "        self.breed = breed" },
+    { id: "bark", label: "    def bark(self):" },
+    { id: "return", label: '        return f"{self.name} says Woof!"' },
+    { id: "instantiate", label: 'rex = Dog("Rex", "Labrador")', explanation: "يجب أن تكون الفئة معرَّفة بالكامل قبل إمكانية إنشاء نسخة منها." },
+    { id: "call", label: "print(rex.bark())" },
+  ]}
+  correctOrder={["class", "init", "setname", "setbreed", "bark", "return", "instantiate", "call"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لتعريف فئة فرعية Puppy تستدعي مُنشئ الفئة الأصل عبر super()."
+  items={[
+    { id: "class", label: "class Puppy(Dog):" },
+    { id: "init", label: "    def __init__(self, name, breed, age_months):", explanation: "ينتمي هذا المُنشئ المُعاد تعريفه مباشرة تحت سطر class." },
+    { id: "super", label: "        super().__init__(name, breed)", explanation: "ينبغي أن تُنفَّذ تهيئة الفئة الأصل قبل أن تضيف هذه الفئة الفرعية سمتها الخاصة." },
+    { id: "setage", label: "        self.age_months = age_months" },
+    { id: "instantiate", label: 'buddy = Puppy("Buddy", "Poodle", 4)' },
+  ]}
+  correctOrder={["class", "init", "super", "setage", "instantiate"]}
+/>
+
+<PredictOutput
+  title="ماذا تطبع هذه الشيفرة؟"
+  code={`class Point:\n    def __init__(self, x, y):\n        self.x = x\n        self.y = y\n\np1 = Point(1, 2)\np2 = Point(1, 2)\nprint(p1 == p2)`}
+  options={["True", "False", "An error, because Point has no __eq__", "Point(1, 2) == Point(1, 2)"]}
+  correctIndex={1}
+  explanation="بدون دالة __eq__ مخصصة، يقارن فحص المساواة الافتراضي في Python هوية الكائن — أي ما إذا كانت p1 وp2 هما نفس الكائن حرفياً في الذاكرة. هما نسختان منفصلتان من Point تتشاركان إحداثيات متساوية فقط، لذا فإن == تعطي False رغم أن القيم تبدو متطابقة."
+  actualOutput="False"
+/>
+</ExerciseTabs>
+

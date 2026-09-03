@@ -1,0 +1,202 @@
+---
+title: الأصناف والواجهات
+description: الأصناف، والواجهات، والوراثة، وخصائص C# ذاتية التنفيذ كبديل أصيل عن الحقول البسيطة.
+category: Programming Languages
+weight: 6
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+C# كائنية التوجه بشكل كامل: تدعم الأصناف الوراثة الفردية، وتدعم
+الواجهات عقود تنفيذ متعددة، ويُبنى التغليف في اللغة عبر
+**الخصائص (properties)** بدلاً من تركه للعُرف.
+
+## الأصناف والحقول
+
+يجمع الصنف الحالة (الحقول) والسلوك (التوابع) معاً:
+
+```csharp
+class Dog
+{
+    private string name;
+
+    public Dog(string name)
+    {
+        this.name = name;
+    }
+
+    public void Bark()
+    {
+        Console.WriteLine($"{name} says Woof!");
+    }
+}
+
+var rex = new Dog("Rex");
+rex.Bark(); // Rex says Woof!
+```
+
+حقل `private` بسيط مثل `name` ليس له أي تحقق ولا طريقة لاعتراض
+القراءات أو الكتابات من خارج الصنف — لهذا وُجدت الخصائص.
+
+## الخصائص: ميزة لغوية، لا عُرف
+
+بخلاف Java أو C++، حيث تعني "الحقول المُغلَّفة" كتابة توابع
+`getName()`/`setName()` يدوياً، تبني C# بنية getter/setter مباشرة
+في اللغة نفسها. تبدو الخاصية كحقل للمستدعين لكن يمكنها تشغيل كود
+عند كل قراءة أو كتابة:
+
+```csharp
+class Person
+{
+    private int age;
+
+    public string Name { get; set; } // auto-implemented property: compiler
+                                      // generates the backing field for you
+
+    public int Age
+    {
+        get => age;
+        set
+        {
+            if (value < 0)
+            {
+                throw new ArgumentException("Age cannot be negative");
+            }
+            age = value;
+        }
+    }
+
+    public string Greeting => $"Hi, I'm {Name}"; // read-only, expression-bodied
+
+    public Person(string name, int age)
+    {
+        Name = name;
+        Age = age;
+    }
+}
+
+var p = new Person("Ada", 36);
+Console.WriteLine(p.Greeting); // Hi, I'm Ada
+p.Age = -5; // throws ArgumentException
+```
+
+يكتب المستدعون `p.Age = 30;` تماماً كما لو كانت `Age` حقلاً — يعمل
+منطق التحقق في كتلة `set` بشفافية. هذا سبب تفضيل أسلوب C# بقوة
+للخصائص العامة على الحقول العامة: يمكنك البدء بخاصية ذاتية التنفيذ
+وإضافة منطق لاحقاً دون كسر أي مستدعٍ.
+
+## الواجهات والوراثة
+
+تصرّح الواجهة عن عقد بلا تنفيذ (باستثناء توابع الواجهة الافتراضية)؛
+يُنفِّذ صنف واجهة واحدة أو أكثر ويرث من صنف أساسي واحد كحد أقصى:
+
+```csharp
+interface IShape
+{
+    double Area();
+}
+
+class Circle : IShape
+{
+    public double Radius { get; }
+
+    public Circle(double radius) => Radius = radius;
+
+    public double Area() => Math.PI * Radius * Radius;
+}
+
+class Square : IShape
+{
+    public double Side { get; }
+
+    public Square(double side) => Side = side;
+
+    public double Area() => Side * Side;
+}
+
+List<IShape> shapes = new List<IShape> { new Circle(2), new Square(3) };
+foreach (IShape shape in shapes)
+{
+    Console.WriteLine(shape.Area());
+}
+```
+
+يستخدم وراثة الصنف الأساسي نفس بنية `:` والكلمة المفتاحية
+`override` لتعدد الأشكال:
+
+```csharp
+class Animal
+{
+    public virtual string Speak() => "...";
+}
+
+class Cat : Animal
+{
+    public override string Speak() => "Meow";
+}
+
+Animal a = new Cat();
+Console.WriteLine(a.Speak()); // Meow — resolved at runtime via the actual type
+```
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="اجمع الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء صنف بخاصية ذاتية التنفيذ واستخدامها."
+  items={[
+    { id: "l1", label: "class Book" },
+    { id: "l2", label: "{" },
+    { id: "l3", label: "    public string Title { get; set; }" },
+    { id: "l4", label: "}" },
+    { id: "l5", label: "var b = new Book { Title = \"Dune\" };" },
+    { id: "l6", label: "Console.WriteLine(b.Title);" },
+  ]}
+  correctOrder={["l1", "l2", "l3", "l4", "l5", "l6"]}
+/>
+
+<OrderingExercise
+  title="اجمع الكود"
+  prompt="ضع هذه الأسطر بالترتيب للتصريح عن واجهة وصنف ينفذها."
+  items={[
+    { id: "m1", label: "interface IGreeter" },
+    { id: "m2", label: "{" },
+    { id: "m3", label: "    string Greet();" },
+    { id: "m4", label: "}" , explanation: "يجب إغلاق جسم الواجهة قبل التصريح عن الصنف الذي ينفذها."},
+    { id: "m5", label: "class English : IGreeter" },
+    { id: "m6", label: "{" },
+    { id: "m7", label: "    public string Greet() => \"Hello\";" },
+    { id: "m8", label: "}" },
+  ]}
+  correctOrder={["m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا؟"
+  code={`class Account
+{
+    private decimal balance;
+
+    public decimal Balance
+    {
+        get => balance;
+        set => balance = value < 0 ? 0 : value;
+    }
+}
+
+var acc = new Account();
+acc.Balance = -50;
+Console.WriteLine(acc.Balance);`}
+  options={["-50", "0", "null", "خطأ ترجمة"]}
+  correctIndex={1}
+  explanation="يُقيِّد مُعامِل set الخاص بالخاصية أي قيمة سالبة إلى 0 قبل تخزينها في الحقل الداعم، لذا فإن قراءة Balance لاحقاً تُرجع 0، لا الـ-50 التي أُسنِدت. هذا بالضبط نوع التحقق الذي لم يكن حقل عام بسيط ليعترضه."
+  actualOutput="0"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [هياكل البيانات](/ar/programming-languages/csharp/data-structures)
+- [معالجة الأخطاء](/ar/programming-languages/csharp/error-handling)

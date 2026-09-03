@@ -1,0 +1,82 @@
+---
+title: بنية اللغة والمتغيرات
+description: كتل يحدّدها الإزاحة، وكتابة ديناميكية، والأنواع المدمجة التي تنتمي إليها كل قيمة في Python.
+category: Programming Languages
+weight: 2
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+لا تحتوي Python على أقواس، ولا كلمات مفتاحية مثل `end`، ولا فواصل منقوطة تنهي الجمل — تُحدَّد الكتلة (جسم `if`، أو حلقة، أو دالة) بالكامل عبر مستوى إزاحتها. الإزاحة المتسقة ليست خياراً أسلوبياً يفرضه أداة تدقيق (linter)؛ إنها البنية النحوية الفعلية التي يحلّلها المفسِّر، وخلط علامات التبويب بالمسافات أو الإزاحة غير المتسقة يؤدي إلى `SyntaxError` أو `IndentationError`.
+
+```python
+# comments start with a hash and run to the end of the line
+count = 10          # int
+price = 3.14         # float
+name = "Nova"         # str
+is_ready = True        # bool
+result = None            # NoneType — Python's "no value" singleton
+
+print(type(count), type(name), type(is_ready))
+```
+
+المتغيرات في Python ذات كتابة ديناميكية: الاسم لا يصرّح بنوع مسبقاً، بل هو مجرد تسمية تشير إلى آخر قيمة أُسندت إليه، ونوع تلك القيمة هو ما تبلّغ عنه `type()`. إعادة الإسناد لاحقاً بـ `count = "ten"` مسموحة تماماً — يشير المتغير الآن إلى سلسلة نصية بدلاً من عدد صحيح — وهذا مريح للسكربتات السريعة لكنه يعني أن الأخطاء المتعلقة بالأنواع تظهر أثناء التشغيل وليس أثناء الترجمة، ما لم تُضِف تلميحات نوع (type hints) وتشغّل أداة فحص منفصلة مثل `mypy`.
+
+```python
+a, b = 1, 2
+a, b = b, a  # swap without a temporary variable
+print(a, b)  # 2 1
+```
+
+يعمل هذا التبديل لأن الطرف الأيمن `b, a` يُقيَّم بالكامل — ببناء زوج مؤقت `(2, 1)` — قبل إعادة إسناد `a` أو `b` في الطرف الأيسر. هذه الآلية نفسها، آلية تفكيك الصفوف (tuple-unpacking)، هي كيف "تُعيد" دوال Python "قيماً متعددة": هي في الحقيقة تُعيد صفاً واحداً يفكّكه المستدعي.
+
+```python
+score = 87
+message = f"You scored {score} points ({score / 100:.0%})"
+print(message)  # You scored 87 points (87%)
+```
+
+سلاسل f-string (السلاسل الحرفية المسبوقة بـ `f`) هي الطريقة القياسية لبناء نص منسّق: كل ما بداخل `{}` يُقيَّم كتعبير Python، و`:format_spec` اختياري بعد `:` يتحكم بكيفية عرضه — `.0%` أعلاه يحوّل `0.87` إلى `"87%"`.
+
+## طالع أيضاً
+
+- **[التحكم بمسار التنفيذ](/ar/programming-languages/python/control-flow)** — استخدام هذه القيم داخل `if` و`for` و`while`.
+- **[هياكل البيانات](/ar/programming-languages/python/data-structures)** — الأنواع المركّبة (القوائم، القواميس) المبنية من هذه الأنواع الأساسية.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لتبديل قيمتي متغيرين وطباعة النتيجة."
+  items={[
+    { id: "a", label: "a = 1" },
+    { id: "b", label: "b = 2" },
+    { id: "swap", label: "a, b = b, a", explanation: "يجب أن تكون لكل من `a` و`b` قيمة بالفعل قبل أن يتمكن هذا السطر من تبديلهما." },
+    { id: "print", label: "print(a, b)" },
+  ]}
+  correctOrder={["a", "b", "swap", "print"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء وطباعة رسالة نتيجة منسّقة."
+  items={[
+    { id: "score", label: "score = 87" },
+    { id: "message", label: 'message = f"You scored {score} points"', explanation: "تحتاج f-string إلى تعريف `score` أولاً، لأنها تقرأ تلك القيمة عند تنفيذ هذا السطر." },
+    { id: "print", label: "print(message)" },
+  ]}
+  correctOrder={["score", "message", "print"]}
+/>
+
+<PredictOutput
+  title="ماذا تطبع هذه الشيفرة؟"
+  code={`print(7 // 2)`}
+  options={["3.5", "3", "4", "Error: unsupported operand"]}
+  correctIndex={1}
+  explanation={'"//" هي القسمة الصحيحة (floor division) — تقسم ثم تقرّب دائماً لأقرب عدد صحيح للأسفل، متجاهلة الباقي تماماً، بخلاف "/" التي تُعيد دائماً عدداً عشرياً (7 / 2 كانت ستعطي 3.5).'}
+  actualOutput="3"
+/>
+</ExerciseTabs>
+

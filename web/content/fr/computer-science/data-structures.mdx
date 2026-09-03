@@ -1,0 +1,34 @@
+---
+title: Structures de données
+description: La poignée de façons d'organiser des données en mémoire — tableaux, listes chaînées, tables de hachage, arbres et graphes — et les schémas d'accès et compromis pour lesquels chacune est réellement construite.
+category: Computer Science
+weight: 2
+---
+
+Une **structure de données** est une façon d'organiser des données de sorte que des opérations spécifiques — recherche, insertion, suppression, itération dans l'ordre — soient peu coûteuses. Il n'existe pas de meilleure structure universelle ; chacune échange la rapidité d'une opération contre celle d'une autre, et choisir entre elles, c'est appliquer la conception d'[algorithmes](/fr/computer-science/algorithms) au stockage plutôt qu'au calcul.
+
+## Tableaux et listes chaînées
+
+Un **tableau** stocke les éléments de façon contiguë en mémoire, donc l'indexation par position est O(1) — l'adresse de l'élément `i` est simplement l'adresse de base plus `i` fois la taille de l'élément. L'insertion ou la suppression au milieu est cependant O(n), puisque tout ce qui suit doit se décaler. Une **liste chaînée** stocke les éléments comme des nœuds séparés, chacun pointant vers le suivant ; l'insertion et la suppression à une position connue sont O(1) puisque seuls des pointeurs changent, mais l'indexation par position est O(n) puisqu'il n'y a pas de raccourci autre que de parcourir la chaîne. Les tableaux gagnent quand vous lisez surtout par index ; les listes chaînées gagnent quand vous insérez et supprimez surtout à des points connus et avez rarement besoin d'un accès arbitraire.
+
+## Tables de hachage
+
+Une **table de hachage** (ou hash table) stocke des paires clé-valeur en faisant passer chaque clé par une fonction de hachage pour choisir un « compartiment » (bucket), offrant en moyenne une recherche, une insertion et une suppression en O(1) quel que soit le nombre d'entrées existantes. Le coût est que les entrées n'ont aucun ordre inhérent, et une mauvaise fonction de hachage ou trop d'entrées dans un même compartiment (une **collision**) dégrade la performance vers O(n) dans le pire des cas. C'est la structure derrière les types objet/dictionnaire de presque tous les langages, et derrière les types d'index de base de données construits pour les recherches par correspondance exacte.
+
+## Arbres
+
+Un **arbre** organise les données de façon hiérarchique — chaque nœud a un parent et un certain nombre d'enfants, avec une seule racine et aucun cycle. Un **arbre binaire de recherche** maintient chaque descendant gauche plus petit et chaque descendant droit plus grand que son parent, offrant une recherche, une insertion et une suppression en O(log n) — *à condition que* l'arbre reste à peu près équilibré ; un ordre d'insertion malchanceux peut dégrader un ABR naïf en liste chaînée (O(n)). Les variantes auto-équilibrées (arbres rouge-noir, arbres AVL) imposent l'équilibre à chaque insertion/suppression pour garantir que le O(log n) reste vrai, ce qui explique pourquoi ce sont elles qu'utilisent en interne les vrais index de bases de données (les B-arbres, un parent large et adapté au disque) et les tables ordonnées des bibliothèques standard des langages.
+
+## Graphes
+
+Un **graphe** est constitué de nœuds reliés par des arêtes, sans restriction à un seul parent comme dans un arbre — c'est la bonne structure dès que les relations ne sont pas strictement hiérarchiques : un réseau social, une carte routière, un graphe de dépendances entre paquets ou cibles de build. Les graphes sont généralement représentés par une **liste d'adjacence** (chaque nœud garde une liste de ses voisins — compact pour les graphes creux) ou une **matrice d'adjacence** (une table n×n indiquant quelles paires sont connectées — recherche d'arête en O(1), mais un espace en O(n²) même quand la plupart des paires ne sont pas connectées).
+
+## En choisir une
+
+La question est toujours « quelle opération se produit le plus souvent, et laquelle puis-je me permettre de rendre lente à la place » : un cache veut une recherche O(1) par clé (table de hachage), une file de priorité veut un accès rapide au minimum/maximum courant (un tas, un arbre spécialisé), un jeu de données ordonné qui change souvent veut une insertion O(log n) tout en restant trié (un arbre équilibré) plutôt qu'un tableau qui nécessiterait un décalage O(n) à chaque insertion.
+
+## Voir aussi
+
+- **[Algorithmes](/fr/computer-science/algorithms)** — la notation de complexité utilisée tout au long de cette page.
+- **[Bases de données](/fr/databases)** — les index B-arbre et les index de hachage sont ces structures appliquées directement à la performance des requêtes.
+- **[Mémoire](/fr/computer-science/memory)** — pourquoi l'agencement contigu (tableau) est souvent plus rapide en pratique que ce que son seul Big O laisserait penser, grâce à la mise en cache du CPU.

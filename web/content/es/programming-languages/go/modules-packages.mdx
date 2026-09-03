@@ -1,0 +1,157 @@
+---
+title: Módulos y Paquetes
+description: Cómo Go organiza el código en paquetes y las dependencias en módulos rastreados mediante go.mod y go.sum.
+category: Programming Languages
+weight: 8
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Go organiza el código en dos niveles: los **paquetes** agrupan archivos
+fuente relacionados dentro de un directorio, y los **módulos** agrupan
+paquetes en una unidad versionada y distribuible con su propia lista de
+dependencias.
+
+## Paquetes
+
+Todo archivo `.go` empieza con una declaración `package`. Todos los archivos
+en el mismo directorio deben declarar el mismo nombre de paquete, y ese
+nombre se convierte en el espacio de nombres que otro código importa:
+
+```go
+package geometry
+
+func Area(width, height float64) float64 {
+	return width * height
+}
+```
+
+Otro archivo en cualquier otro lugar lo importa por su ruta de módulo y
+llama al nombre exportado (con mayúscula):
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"example.com/myapp/geometry"
+)
+
+func main() {
+	fmt.Println(geometry.Area(3, 4)) // 12
+}
+```
+
+`import` puede traer múltiples paquetes a la vez dentro de paréntesis, como
+arriba. La librería estándar se distribuye como paquetes ordinarios que
+importas de la misma manera — `"fmt"`, `"strings"`, `"net/http"` — sin ningún
+paso de instalación aparte.
+
+## go.mod y los módulos de Go
+
+Un **módulo** es la unidad de versionado y gestión de dependencias —
+normalmente un repositorio Git. `go mod init` crea un archivo `go.mod` que
+declara la ruta del módulo y la versión de Go a la que apunta:
+
+```bash
+go mod init example.com/myapp
+```
+
+```go
+module example.com/myapp
+
+go 1.22
+```
+
+Añadir un import a una dependencia real y ejecutar `go build` (o `go mod
+tidy`) la descarga y registra la versión exacta en `go.mod`, con una suma de
+verificación criptográfica de cada dependencia en `go.sum`:
+
+```go
+module example.com/myapp
+
+go 1.22
+
+require github.com/google/uuid v1.6.0
+```
+
+`go.sum` no está pensado para editarse a mano — es un archivo de bloqueo que
+Go mantiene para garantizar compilaciones reproducibles: el mismo `go.mod`
+siempre resuelve al mismo código de dependencias, byte por byte.
+
+## Comandos útiles de módulos
+
+```bash
+go mod init example.com/myapp   # iniciar un nuevo módulo
+go mod tidy                      # añadir dependencias faltantes / eliminar las que no se usan
+go get github.com/some/pkg@v1.2.0  # añadir o actualizar una dependencia
+go build ./...                    # compilar todos los paquetes del módulo
+```
+
+## Paquetes internos
+
+Un directorio llamado `internal` restringe quién puede importarlo: los
+paquetes bajo `internal/` solo pueden importarse desde código dentro del
+árbol de módulos con raíz en el padre de `internal`. Este es el mecanismo
+integrado de Go para marcar código como "detalle de implementación, no parte
+de tu API pública", impuesto por el compilador y no solo por convención.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para configurar un nuevo módulo y su paquete main."
+  items={[
+    { id: "n1", label: "go mod init example.com/hello" },
+    { id: "n2", label: "package main" },
+    { id: "n3", label: "import \"fmt\"", explanation: "El módulo debe existir antes de escribir archivos fuente que le pertenezcan." },
+    { id: "n4", label: "func main() {" },
+    { id: "n5", label: "\tfmt.Println(\"hello\")" },
+    { id: "n6", label: "}" },
+  ]}
+  correctOrder={["n1", "n2", "n3", "n4", "n5", "n6"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Ordena estas líneas para importar un paquete local y llamar a una de sus funciones exportadas."
+  items={[
+    { id: "q1", label: "package main" },
+    { id: "q2", label: "import (" },
+    { id: "q3", label: "\t\"fmt\"" },
+    { id: "q4", label: "\t\"example.com/myapp/geometry\"", explanation: "Los imports se agrupan dentro de paréntesis, tanto los de la librería estándar como las rutas locales." },
+    { id: "q5", label: ")" },
+    { id: "q6", label: "func main() {" },
+    { id: "q7", label: "\tfmt.Println(geometry.Area(2, 5))" },
+    { id: "q8", label: "}" },
+  ]}
+  correctOrder={["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`package main
+
+import "fmt"
+
+func main() {
+	fmt.Println(add(2, 3))
+}
+
+func add(a, b int) int {
+	return a + b
+}`}
+  options={["Compile error: add used before declared", "5", "2 3", "Compile error: add not exported"]}
+  correctIndex={1}
+  explanation="A diferencia de un lenguaje de scripting que se lee de arriba a abajo, Go compila un archivo entero (y un paquete entero) antes de ejecutarlo, así que el orden de declaración dentro de un archivo no importa — add puede definirse después de main y aun así ser llamada desde ella. Los nombres en minúscula son utilizables dentro del mismo paquete sin importar su estado de exportación."
+  actualOutput="5"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Manejo de Errores](/es/programming-languages/go/error-handling)
+- [Goroutines y Channels](/es/programming-languages/go/advanced)

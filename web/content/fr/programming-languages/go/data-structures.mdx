@@ -1,0 +1,155 @@
+---
+title: Structures de données
+description: Les tableaux, slices et maps de Go, y compris le comportement d'aliasing subtil des slices partageant un tableau sous-jacent.
+category: Programming Languages
+weight: 5
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Go a trois types composites intégrés qu'il vaut la peine de bien
+comprendre : les tableaux, les slices, et les maps. Les slices sont ce que
+vous utiliserez presque tout le temps — les tableaux existent surtout comme
+la chose sur laquelle les slices sont construites.
+
+## Tableaux
+
+Un tableau a une longueur fixe qui fait partie de son type : `[3]int` et
+`[5]int` sont des types différents et ne peuvent pas être assignés l'un à
+l'autre.
+
+```go
+var scores [3]int
+scores[0] = 90
+scores[1] = 85
+scores[2] = 78
+fmt.Println(scores) // [90 85 78]
+
+primes := [5]int{2, 3, 5, 7, 11}
+```
+
+Parce que la taille est fixe et connue à la compilation, les tableaux sont
+utilisés directement par valeur : assigner un tableau à un autre copie
+chaque élément.
+
+## Slices
+
+Un slice est une vue sur un tableau sous-jacent : un pointeur, une
+longueur, et une capacité. Les slices sont ce vers quoi vous vous tournez
+presque toujours à la place des tableaux, parce qu'ils peuvent grandir.
+
+```go
+nums := []int{1, 2, 3}
+nums = append(nums, 4)
+fmt.Println(nums) // [1 2 3 4]
+```
+
+`make` crée un slice avec une longueur donnée (et optionnellement une
+capacité) :
+
+```go
+buf := make([]int, 3)    // [0 0 0]
+buf2 := make([]int, 0, 10) // longueur 0, capacité 10
+```
+
+Découper un slice existant (`s[low:high]`) ne **copie pas** — le nouveau
+slice partage le même tableau sous-jacent que l'original. Modifier via l'un
+est visible via l'autre, jusqu'à ce qu'un `append` force une réallocation :
+
+```go
+a := []int{1, 2, 3, 4, 5}
+b := a[1:3] // [2 3], partage le tableau support de a
+b[0] = 99
+fmt.Println(a) // [1 99 3 4 5] — a a aussi changé
+```
+
+Cet aliasing est l'une des sources de surprise les plus courantes pour les
+personnes venant de langages où découper copie toujours. Quand vous avez
+besoin d'une copie indépendante, utilisez la fonction intégrée `copy` :
+
+```go
+src := []int{1, 2, 3}
+dst := make([]int, len(src))
+copy(dst, src)
+```
+
+## Maps
+
+Une map est la table de hachage intégrée de Go, déclarée avec
+`map[KeyType]ValueType` :
+
+```go
+ages := map[string]int{
+	"ada":  36,
+	"grace": 85,
+}
+
+ages["linus"] = 55
+fmt.Println(ages["ada"]) // 36
+
+value, ok := ages["missing"]
+fmt.Println(value, ok) // 0 false — la valeur zéro, et ok signale l'absence
+```
+
+Supprimer une clé utilise la fonction intégrée `delete` :
+
+```go
+delete(ages, "grace")
+```
+
+Itérer une map avec `range` visite les entrées dans un **ordre aléatoire**
+par conception — Go randomise délibérément l'ordre d'itération pour
+empêcher du code de dépendre accidentellement de celui-ci. Triez vous-même
+les clés si vous avez besoin d'un ordre stable.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire un slice et y ajouter un élément."
+  items={[
+    { id: "s1", label: "nums := []int{1, 2, 3}" },
+    { id: "s2", label: "nums = append(nums, 4)", explanation: "append renvoie un nouvel en-tête de slice — vous devez le réassigner à nums." },
+    { id: "s3", label: "fmt.Println(nums)" },
+  ]}
+  correctOrder={["s1", "s2", "s3"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Ordonnez ces lignes pour rechercher une clé dans une map et vérifier si elle était présente."
+  items={[
+    { id: "m1", label: "ages := map[string]int{\"ada\": 36}" },
+    { id: "m2", label: "value, ok := ages[\"ada\"]", explanation: "La forme comma-ok doit venir après que la map a été déclarée." },
+    { id: "m3", label: "if ok {" },
+    { id: "m4", label: "\tfmt.Println(value)" },
+    { id: "m5", label: "}" },
+  ]}
+  correctOrder={["m1", "m2", "m3", "m4", "m5"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que ce code affiche ?"
+  code={`package main
+
+import "fmt"
+
+func main() {
+	original := []int{10, 20, 30, 40}
+	view := original[1:3]
+	view[0] = 999
+	fmt.Println(original)
+}`}
+  options={["[10 20 30 40]", "[10 999 30 40]", "[999 30]", "Erreur de compilation : impossible de modifier le slice"]}
+  correctIndex={1}
+  explanation="view := original[1:3] ne copie pas les éléments — il partage le tableau sous-jacent de original à partir de l'index 1. Écrire dans view[0] écrit aussi dans original[1], donc original devient [10 999 30 40]."
+  actualOutput="[10 999 30 40]"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Fonctions](/fr/programming-languages/go/functions)
+- [Structs et interfaces](/fr/programming-languages/go/oop-or-structs)

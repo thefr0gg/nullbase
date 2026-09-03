@@ -1,0 +1,122 @@
+---
+title: Genéricos
+description: Escribir funciones y tipos que funcionen a través de muchos tipos manteniendo total seguridad de tipos en tiempo de compilación.
+category: Programming Languages
+weight: 9
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Los **genéricos** son la característica distintiva de nivel intermedio de TypeScript — la herramienta para escribir código que funciona con muchos tipos sin recurrir a `any` y perder la seguridad de tipos por completo. Una función o tipo genérico toma un **parámetro de tipo**, convencionalmente llamado `T`, que actúa como un marcador de posición que se rellena con un tipo concreto en cada sitio de llamada.
+
+## El problema que resuelven los genéricos
+
+Sin genéricos, o bien escribes una función una vez por tipo, o amplías a `any` y pierdes toda verificación:
+
+```ts
+function firstAny(arr: any[]): any {
+  return arr[0];
+}
+
+const num = firstAny([1, 2, 3]); // typed any — no error if you misuse it
+num.toUpperCase(); // no compile error, but this crashes at runtime
+```
+
+`firstAny` compila limpiamente para cualquier array, pero el valor de retorno es `any`, así que llamar a `.toUpperCase()` sobre un número pasa directamente el verificador de tipos y explota en tiempo de ejecución.
+
+## Escribir una función genérica
+
+```ts
+function first<T>(arr: T[]): T {
+  return arr[0];
+}
+
+const num = first([1, 2, 3]); // T inferred as number; num: number
+const str = first(["a", "b"]); // T inferred as string; str: string
+
+num.toUpperCase(); // Type error: Property 'toUpperCase' does not exist on type 'number'
+```
+
+`first<T>` todavía funciona con un array de cualquier tipo, exactamente igual que `firstAny` lo hacía — pero ahora el tipo de retorno está ligado a lo que se infirió como `T` para esa llamada específica. `first([1, 2, 3])` devuelve `number`, así que llamar a `.toUpperCase()` sobre el resultado se detecta inmediatamente, a diferencia de la versión basada en `any`.
+
+## Restringir un parámetro de tipo
+
+`extends` restringe lo que puede ser un parámetro de tipo, así puedes usar de forma segura operaciones que solo tienen sentido para un subconjunto de tipos:
+
+```ts
+function getLength<T extends { length: number }>(value: T): number {
+  return value.length;
+}
+
+getLength("hello"); // 5 — string has .length
+getLength([1, 2, 3]); // 3 — array has .length
+getLength(42); // Type error: Argument of type 'number' is not assignable to parameter of type '{ length: number }'
+```
+
+`T extends { length: number }` significa "`T` puede ser cualquier cosa, siempre que tenga una propiedad `.length` que sea un número" — no limita `T` a un tipo específico, solo a las formas que hacen que `value.length` sea algo seguro de escribir.
+
+## Tipos e interfaces genéricos
+
+Los genéricos no se limitan a funciones — un `type` o `interface` también puede tomar un parámetro de tipo, que es cómo una única forma reutilizable como `Box<T>` puede describir una caja que contiene cualquier tipo de contenido:
+
+```ts
+interface Box<T> {
+  contents: T;
+}
+
+const numberBox: Box<number> = { contents: 42 };
+const stringBox: Box<string> = { contents: "hello" };
+
+numberBox.contents = "oops"; // Type error: Type 'string' is not assignable to type 'number'
+```
+
+Una vez que `numberBox` se declara como `Box<number>`, `T` queda fijado a `number` para esa caja específica — `contents` nunca puede contener un `string`, aunque `Box<T>` en sí se escribió una vez y funciona para cualquier `T`.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir una función genérica first y dos llamadas que infieran diferentes parámetros de tipo."
+  items={[
+    { id: "fn-decl", label: "function first<T>(arr: T[]): T {" },
+    { id: "fn-body", label: "  return arr[0];", explanation: "El cuerpo de la función debe estar entre la firma genérica y la llave de cierre." },
+    { id: "fn-close", label: "}" },
+    { id: "call-num", label: "const num = first([1, 2, 3]);" },
+    { id: "call-str", label: "const str = first([\"a\", \"b\"]);" },
+  ]}
+  correctOrder={["fn-decl", "fn-body", "fn-close", "call-num", "call-str"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir una interfaz genérica Box y dos cajas que contengan tipos diferentes."
+  items={[
+    { id: "iface-open", label: "interface Box<T> {" },
+    { id: "iface-field", label: "  contents: T;", explanation: "El campo que usa T debe declararse dentro de Box antes de que la interfaz se cierre." },
+    { id: "iface-close", label: "}" },
+    { id: "number-box", label: "const numberBox: Box<number> = { contents: 42 };" },
+    { id: "string-box", label: "const stringBox: Box<string> = { contents: \"hello\" };" },
+  ]}
+  correctOrder={["iface-open", "iface-field", "iface-close", "number-box", "string-box"]}
+/>
+
+<PredictOutput
+  title="¿Qué dice el verificador de tipos?"
+  code={`function getLength<T extends { length: number }>(value: T): number {
+  return value.length;
+}
+
+getLength(42);`}
+  options={["42", "Type error: Argument of type 'number' is not assignable to parameter of type '{ length: number }'", "undefined", "NaN"]}
+  correctIndex={1}
+  explanation="La restricción T extends { length: number } solo permite tipos que realmente tienen una propiedad length numérica — las cadenas y los arrays califican, pero number no tiene ningún .length en absoluto. El compilador rechaza la llamada antes incluso de generar código que intentaría leer .length de 42."
+  actualOutput="Type error: Argument of type 'number' is not assignable to parameter of type '{ length: number }'"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Módulos y Paquetes](/es/programming-languages/typescript/modules-packages)
+- [TypeScript](/es/programming-languages/typescript)

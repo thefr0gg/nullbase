@@ -1,0 +1,48 @@
+---
+title: Communication inter-processus
+description: Pourquoi des processus isolés en mémoire ont besoin de l'aide du noyau pour partager des données intentionnellement, et les compromis entre tuyaux, files de messages, mémoire partagée et sockets.
+category: Operating Systems
+weight: 8
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+La **communication inter-processus (IPC)** est l'ensemble des mécanismes fournis par le noyau qui permettent à deux processus séparés d'échanger des données intentionnellement. Cela doit exister comme une fonctionnalité délibérée parce que l'isolation des processus — chaque processus obtenant son propre espace de mémoire virtuelle, appliqué par le matériel — est un objectif de conception, pas un accident : c'est ce qui empêche un bug ou un crash dans un processus de corrompre la mémoire d'un autre processus. Mais de nombreux systèmes réels sont construits à partir de plusieurs processus coopérants (un shell redirigeant la sortie d'un programme vers un autre, les processus de rendu d'un navigateur parlant à son processus principal, les processus workers d'une base de données coordonnant l'accès à des tampons partagés), et l'isolation par défaut signifie qu'ils ne peuvent pas simplement plonger dans la mémoire de l'autre pour collaborer. Le noyau doit intermédier cet échange explicitement, et il offre plusieurs mécanismes différents parce que « les processus ont besoin de partager des données » couvre des formes de problèmes réellement différentes.
+
+## Les tuyaux : un flux d'octets entre processus
+
+Un **tuyau** (pipe) est la forme la plus simple — un flux d'octets unidirectionnel avec une extrémité de lecture et une extrémité d'écriture, le plus visible dans une commande shell comme `producteur | consommateur`, où le shell relie directement le stdout du producteur au stdin du consommateur. Un tuyau anonyme comme celui-ci ne fonctionne qu'entre des processus partageant un ancêtre commun, parce que le tuyau est créé comme un descripteur de fichier avant que les deux processus ne soient séparés par fork — un processus non apparenté n'a aucun moyen d'obtenir ce descripteur. Les **tuyaux nommés (FIFO)** résolvent cela en donnant un nom au tuyau dans le système de fichiers, si bien que tout processus qui connaît le chemin peut l'ouvrir, qu'il soit ou non apparenté au processus de l'autre côté. Dans les deux cas, un tuyau n'est qu'un flux d'octets — il n'y a pas de délimitation de messages intégrée, donc tout ce qui va au-delà de « des octets arbitraires dans l'ordre où ils ont été écrits » est une convention que les deux extrémités s'accordent elles-mêmes.
+
+## Les files de messages : de la structure, pas juste des octets
+
+Une **file de messages** est un cran au-dessus en structure : au lieu d'un flux d'octets brut, le noyau met en tampon des messages discrets et délimités, chacun avec une taille et (selon l'implémentation) un type ou une priorité. Un lecteur peut extraire un type de message spécifique de la file sans avoir à d'abord consommer tout ce qui le précède, et les messages ne se concatènent pas entre eux comme peuvent le faire les écritures dans un tuyau. Cela coûte plus cher qu'un tuyau — le noyau fait plus de comptabilité par message — mais c'est mieux adapté quand ce qui est échangé est naturellement une séquence d'événements ou de commandes discrets plutôt qu'un flux continu.
+
+## La mémoire partagée : la plus rapide, mais vous êtes livré à vous-même
+
+La **mémoire partagée** mappe les mêmes pages de mémoire physique dans l'espace d'adressage de plus d'un processus, si bien qu'écrire une valeur dans un processus la rend immédiatement visible à l'autre sans qu'aucune donnée ne soit réellement copiée à travers le noyau — aucun surcoût d'appel système `read()`/`write()`, aucune mise en tampon. Cela en fait le mécanisme IPC le plus rapide de loin pour des transferts volumineux ou fréquents. Le coût est que le noyau s'efface entièrement une fois le mappage établi : il ne fait rien pour empêcher les deux processus d'écrire dans la même mémoire en même temps et de corrompre les données l'un de l'autre. Utiliser correctement la mémoire partagée signifie presque toujours l'associer à une primitive de synchronisation séparée — couramment un sémaphore — que les processus utilisent pour se relayer, afin qu'un seul d'entre eux touche la région partagée à la fois.
+
+## Les sockets : aussi une primitive réseau
+
+Un **socket** fournit un canal de communication bidirectionnel entre deux extrémités, et — contrairement à tout mécanisme ci-dessus — il n'exige pas que les deux processus soient sur la même machine. Un socket de domaine Unix est de l'IPC au sens classique, local à la machine uniquement, mais la même API socket est ce qu'utilisent deux processus pour se parler sur un véritable réseau via TCP ou UDP ; voir [TCP](/fr/networking/tcp) pour ce côté-là. Ce double rôle explique pourquoi les sockets tendent à être le choix par défaut quand un système pourrait avoir besoin de passer de « deux processus sur une machine » à « deux services sur des machines différentes » sans réécriture — la même interface couvre les deux cas.
+
+<ItemExplorer
+  title="Comparaison des mécanismes IPC"
+  layout="table"
+  tableColumns={[{ key: "speed", label: "Vitesse" }, { key: "complexity", label: "Complexité" }, { key: "useCase", label: "Cas d'usage typique" }]}
+  items={[
+    { id: "pipes", label: "Tuyaux / FIFO", color: "blue", columns: { speed: "Modérée — passe par le noyau comme un flux d'octets", complexity: "Faible — le plus simple à utiliser correctement", useCase: "Chaîner des commandes, flux de données simple parent/enfant" } },
+    { id: "message-queues", label: "Files de messages", color: "green", columns: { speed: "Modérée — mise en tampon par le noyau, plus de surcoût par message qu'un tuyau", complexity: "Moyenne — délimitation et types de messages gérés pour vous", useCase: "Commandes/événements discrets entre processus, pas un flux continu" } },
+    { id: "shared-memory", label: "Mémoire partagée", color: "orange", columns: { speed: "La plus rapide — aucune copie à travers le noyau", complexity: "Élevée — les processus doivent synchroniser l'accès eux-mêmes", useCase: "Transfert de données volumineux ou à haute fréquence où la vitesse domine" } },
+    { id: "sockets", label: "Sockets", color: "purple", columns: { speed: "La plus lente des quatre localement, mais la seule qui fonctionne entre machines", complexity: "Moyenne — API bien standardisée", useCase: "Tout ce qui pourrait ne pas rester sur une seule machine" } },
+  ]}
+/>
+
+## En choisir un
+
+En pratique, le choix se résume souvent à deux questions : ceci doit-il un jour franchir une frontière entre machines (si oui, ce sont les sockets, point final), et sinon, combien le débit brut compte-t-il par rapport à la complexité que vous êtes prêt à assumer. Un échange ponctuel rapide entre un parent et un processus enfant se tourne par défaut vers un tuyau ; une boucle serrée poussant de gros tampons entre deux processus sur la même machine qui a réellement besoin de la vitesse supplémentaire se tourne vers la mémoire partagée et accepte le travail de synchronisation qui l'accompagne.
+
+## Voir aussi
+
+- **[Signaux](/fr/operating-systems/signals)** — une forme bien plus étroite de notification inter-processus, sans charge utile au-delà du type de signal lui-même.
+- **[Permissions](/fr/operating-systems/permissions)** — les tuyaux nommés et les segments de mémoire partagée sont des objets visibles dans le système de fichiers, soumis aux mêmes vérifications d'accès propriétaire/groupe que les fichiers.
+- **[TCP](/fr/networking/tcp)** — le protocole réseau sous-jacent à une connexion socket qui franchit des frontières entre machines.

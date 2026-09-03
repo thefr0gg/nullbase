@@ -1,0 +1,127 @@
+---
+title: Go
+description: Un aperçu de Go, le langage compilé et statiquement typé de Google conçu pour la simplicité et la concurrence.
+category: Programming Languages
+weight: 1
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Go (aussi appelé Golang) est un langage compilé et statiquement typé créé
+chez Google en 2009 par Robert Griesemer, Rob Pike et Ken Thompson. Il a été
+conçu comme une réaction à la complexité des grandes bases de code C++ : une
+compilation rapide, une spécification de langage réduite, un ramasse-miettes
+(garbage collector), et des primitives de concurrence intégrées directement
+dans le langage plutôt qu'ajoutées comme une bibliothèque.
+
+Go compile directement vers un unique binaire statique — pas de runtime à
+installer, pas de machine virtuelle, pas d'arbre de dépendances à livrer avec
+votre programme. Cette propriété, combinée à une bibliothèque standard livrée
+avec tout le nécessaire (serveurs HTTP, encodage JSON, cryptographie), en a
+fait le choix par défaut pour une énorme quantité de logiciels
+d'infrastructure modernes : Docker, Kubernetes, Terraform, et les outils
+d'edge de Cloudflare eux-mêmes sont tous écrits en Go.
+
+## Ce qui rend Go distinctif
+
+- **Goroutines et channels.** La concurrence est une fonctionnalité de
+  première classe du langage, pas une bibliothèque. Démarrer une unité de
+  travail concurrente tient en un mot-clé : `go`.
+- **Gestion explicite des erreurs.** Go n'a pas d'exceptions. Les fonctions
+  qui peuvent échouer renvoient une valeur `error` comme une valeur de retour
+  ordinaire, et les appelants la vérifient immédiatement.
+- **Pas d'héritage.** Il n'y a pas de classes. Le comportement est composé
+  par embarquement de `struct` et satisfait implicitement par des
+  `interface` — un type ne déclare jamais « j'implémente X », il le fait,
+  tout simplement.
+- **Formatage normatif.** `gofmt` fait partie de la chaîne d'outils et
+  formate chaque fichier `.go` de la même façon. Les bases de code Go n'ont
+  pas de débats de style sur le placement des accolades.
+- **Builds rapides et simples.** `go build` produit un unique binaire natif
+  sans dépendance runtime externe.
+
+Voici un programme Go minimal et complet :
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+	fmt.Println("Hello, nullbase!")
+}
+```
+
+Chaque programme Go exécutable a un `package main` et une fonction `main`
+comme point d'entrée — il n'y a aucune ambiguïté sur l'endroit où l'exécution
+commence, contrairement aux langages de script où les instructions de
+premier niveau s'exécutent dans l'ordre du fichier.
+
+## Quand se tourner vers Go
+
+Go brille pour les services réseau, les outils en ligne de commande, et tout
+ce pour quoi vous voulez un unique binaire déployable et des performances
+prévisibles sans avoir à ajuster manuellement la gestion mémoire. Il est
+moins adapté aux domaines qui reposent sur une abstraction fortement basée
+sur les génériques ou le calcul numérique avec une riche surcharge
+d'opérateurs, bien que les génériques (ajoutés dans Go 1.18) aient comblé
+une partie de cet écart.
+
+## Et ensuite
+
+Les pages suivantes parcourent Go de la syntaxe à son modèle de concurrence :
+variables et types, flux de contrôle, fonctions, les structures de données
+intégrées, structs et interfaces, gestion des erreurs, et le système de
+modules, pour finir avec les goroutines et les channels.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire un programme Go minimal et fonctionnel qui affiche un message de bienvenue."
+  items={[
+    { id: "pkg", label: "package main" },
+    { id: "import", label: "import \"fmt\"" },
+    { id: "funcopen", label: "func main() {" },
+    { id: "body", label: "\tfmt.Println(\"Hello, Go\")" },
+    { id: "funcclose", label: "}" },
+  ]}
+  correctOrder={["pkg", "import", "funcopen", "body", "funcclose"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Mettez ces lignes dans l'ordre pour déclarer une constante au niveau du package et l'afficher depuis main."
+  items={[
+    { id: "pkg2", label: "package main" },
+    { id: "import2", label: "import \"fmt\"" },
+    { id: "const", label: "const Version = \"1.0\"", explanation: "Les déclarations au niveau du package viennent avant func main, après les imports." },
+    { id: "main2", label: "func main() {" },
+    { id: "print2", label: "\tfmt.Println(Version)" },
+    { id: "close2", label: "}" },
+  ]}
+  correctOrder={["pkg2", "import2", "const", "main2", "print2", "close2"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que ce code affiche ?"
+  code={`package main
+
+import "fmt"
+
+func main() {
+	fmt.Println("nullbase")
+}`}
+  options={["nullbase", "\"nullbase\"", "Erreur de compilation : package manquant", "Hello, nullbase!"]}
+  correctIndex={0}
+  explanation="fmt.Println affiche le contenu de la chaîne sans les guillemets qui l'entourent, suivi d'un saut de ligne. Les guillemets dans le code source ne font que délimiter le littéral de chaîne ; ils ne font pas partie de la valeur."
+  actualOutput="nullbase"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Syntaxe et variables](/fr/programming-languages/go/syntax-basics)
+- [Goroutines et Channels](/fr/programming-languages/go/advanced)

@@ -1,0 +1,93 @@
+---
+title: Funciones
+description: Definir código reutilizable con def — argumentos por defecto, argumentos con nombre, y los patrones *args/**kwargs para listas de parámetros de longitud variable.
+category: Programming Languages
+weight: 4
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Las funciones se definen con `def`, y Python no exige declarar un tipo de retorno ni tipos de parámetros — sin embargo, a los parámetros se les pueden dar valores por defecto, lo cual los hace opcionales en el sitio de la llamada.
+
+```python
+def greet(name, greeting="Hello"):
+    return f"{greeting}, {name}!"
+
+print(greet("Sam"))                 # Hello, Sam!
+print(greet("Sam", greeting="Hey"))  # Hey, Sam!
+```
+
+`greeting="Hello"` le da a ese parámetro un valor por defecto, así que quienes llaman pueden omitirlo por completo. Los argumentos también pueden pasarse por nombre (`greeting="Hey"`) en vez de por posición, lo cual es útil una vez que una función toma varios parámetros y el sitio de la llamada, de otro modo, sería una lista confusa de valores sueltos.
+
+A veces el número de argumentos que una función debería aceptar no está fijado de antemano. `*args` recolecta cualquier argumento posicional adicional en una tupla, y `**kwargs` recolecta cualquier argumento con nombre adicional en un dict — los nombres `args`/`kwargs` son solo convención, los prefijos `*`/`**` son lo que importa.
+
+```python
+def total(*args, **kwargs):
+    print("positional:", args)     # (1, 2, 3)
+    print("keyword:", kwargs)       # {'label': 'sum'}
+    return sum(args)
+
+result = total(1, 2, 3, label="sum")
+print(result)  # 6
+```
+
+Este patrón aparece constantemente en código de bibliotecas — una función envoltorio que necesita aceptar "cualesquiera argumentos que acepte lo que envuelve" sin conocer esa firma de antemano usa `def wrapper(*args, **kwargs)` y los reenvía con `wrapped(*args, **kwargs)`.
+
+Las funciones también son objetos ordinarios: pueden asignarse a variables, pasarse como argumentos, y devolverse desde otras funciones, que es lo que hace posibles a los closures.
+
+```python
+def make_multiplier(factor):
+    def multiplier(x):
+        return x * factor
+    return multiplier
+
+double = make_multiplier(2)
+triple = make_multiplier(3)
+print(double(5), triple(5))  # 10 15
+```
+
+`multiplier` "recuerda" el valor de `factor` de la llamada que lo creó, incluso después de que `make_multiplier` ya ha retornado — eso es un closure, y es el mecanismo detrás de los decoradores de Python.
+
+## Ver también
+
+- **[Estructuras de Datos](/es/programming-languages/python/data-structures)** — cómo se comporta un parámetro por defecto desnudo `basket=[]` a través de las llamadas.
+- **[Decoradores y Generadores](/es/programming-languages/python/advanced)** — closures como `multiplier` usados para envolver otras funciones.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir una función de saludo con un argumento por defecto y llamarla dos veces."
+  items={[
+    { id: "def", label: 'def greet(name, greeting="Hello"):' },
+    { id: "return", label: '    return f"{greeting}, {name}!"', explanation: "Esta línea solo tiene sentido como el cuerpo del def de arriba." },
+    { id: "call1", label: 'print(greet("Sam"))' },
+    { id: "call2", label: 'print(greet("Sam", greeting="Hey"))' },
+  ]}
+  correctOrder={["def", "return", "call1", "call2"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir una función que acepte argumentos posicionales y con nombre variables."
+  items={[
+    { id: "def", label: "def total(*args, **kwargs):" },
+    { id: "printargs", label: '    print("positional:", args)', explanation: "Esto debe estar dentro del cuerpo de la función, después de la línea def." },
+    { id: "printkwargs", label: '    print("keyword:", kwargs)' },
+    { id: "return", label: "    return sum(args)" },
+    { id: "call", label: 'total(1, 2, 3, label="sum")', explanation: "La función tiene que estar definida antes de poder ser llamada." },
+  ]}
+  correctOrder={["def", "printargs", "printkwargs", "return", "call"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`def add_item(item, basket=[]):\n    basket.append(item)\n    return basket\n\nprint(add_item("apple"))\nprint(add_item("banana"))`}
+  options={['["apple"] then ["banana"]', '["apple"] then ["apple", "banana"]', 'An error, because basket is never initialized', '["apple"] then ["apple"]']}
+  correctIndex={1}
+  explanation="El valor de un argumento por defecto se crea exactamente una vez, cuando la función se define — no en cada llamada. Dado que basket=[] es una lista mutable, cada llamada que no pasa su propia basket comparte y muta esa misma lista, así que la segunda llamada ve el elemento sobrante de la primera llamada todavía dentro."
+  actualOutput='["apple"] then ["apple", "banana"]'
+/>
+</ExerciseTabs>

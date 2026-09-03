@@ -1,0 +1,129 @@
+---
+title: JavaScript
+description: Una visión general de JavaScript, el lenguaje de tipado dinámico que se ejecuta en todo navegador y, mediante Node.js, también en servidores.
+category: Programming Languages
+weight: 1
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+JavaScript fue creado por Brendan Eich en 1995 en aproximadamente diez días,
+originalmente para hacer interactivas las páginas web dentro de Netscape
+Navigator. A pesar de ese origen apresurado — y un nombre elegido por
+razones de marketing más que por cualquier parentesco real con Java — se ha
+convertido en el único lenguaje de programación que se ejecuta nativamente
+en todo navegador web, y, desde que Node.js llegó en 2009, también una
+opción de primera clase para servidores, CLIs, y aplicaciones de escritorio.
+El lenguaje en sí está estandarizado como ECMAScript, y el JavaScript
+moderno (comúnmente llamado "ES6+" tras la revisión de 2015) luce bastante
+distinto del JavaScript de principios de los 2000.
+
+JavaScript es de tipado dinámico (los tipos de las variables se comprueban
+en tiempo de ejecución, no en tiempo de compilación), de un solo hilo con un
+bucle de eventos para la concurrencia, y basado en prototipos por debajo
+aunque ahora ofrezca sintaxis `class` por encima. También es famoso por ser
+permisivo: operaciones que serían un error de compilación en muchos
+lenguajes — comparar una cadena con un número, llamar a un método sobre
+`undefined` — a menudo están permitidas y producen un resultado, a veces uno
+sorprendente.
+
+## Qué hace distintivo a JavaScript
+
+- **Se ejecuta en todas partes.** Navegadores, servidores (Node.js, Deno,
+  Bun), móviles (React Native), incluso dispositivos embebidos. Ningún otro
+  lenguaje tiene ese alcance.
+- **Un solo hilo con un bucle de eventos.** JavaScript nunca ejecuta dos
+  fragmentos de tu código al mismo tiempo. La E/S de larga duración
+  (solicitudes de red, lecturas de archivos, temporizadores) se maneja de
+  forma asíncrona mediante callbacks, Promises, o `async`/`await`, sin
+  bloquear el resto del programa.
+- **Dinámico y de tipado débil.** Las variables no tienen un tipo declarado;
+  la misma variable puede contener un número, luego una cadena, luego una
+  función.
+- **Funciones de primera clase.** Las funciones son valores — puedes
+  guardarlas en variables, pasarlas como argumentos, y devolverlas desde
+  otras funciones. Esto es lo que hace naturales a los closures y las APIs
+  basadas en callbacks en JS.
+- **Objetos basados en prototipos.** Los objetos heredan directamente de
+  otros objetos a través de una cadena de prototipos, en vez de desde clases
+  en el sentido clásico. La sintaxis `class` (añadida en ES6) es azúcar
+  sintáctico conveniente sobre este mecanismo, no un modelo de herencia
+  distinto.
+
+Aquí tienes un ejemplo pequeño pero completo:
+
+```js
+function greet(name) {
+  return `Hello, ${name}!`;
+}
+
+console.log(greet("nullbase"));
+```
+
+Ejecutar esto con Node.js (`node greet.js`) o pegarlo en la consola de un
+navegador produce la misma salida — no hay paso de compilación, y la misma
+sintaxis funciona en ambos entornos.
+
+## Cuándo recurrir a JavaScript
+
+JavaScript es la única opción para la lógica del lado del cliente en una
+página web, y una opción sólida para servidores cuando quieres compartir
+código (lógica de validación, modelos de datos) entre frontend y backend, o
+cuando tu carga de trabajo depende mucho de E/S — muchas solicitudes de red
+concurrentes — en vez de depender mucho de la CPU. Es una opción más débil
+para cálculo numérico intensivo en CPU o programación de sistemas, donde los
+lenguajes compilados y de tipado estático dan un rendimiento más predecible
+y detectan más errores antes de que el código siquiera se ejecute.
+
+## Qué sigue
+
+Las siguientes páginas recorren JavaScript desde cero: variables y
+sintaxis, flujo de control, funciones y closures, las estructuras de datos
+integradas, clases y herencia prototípica, manejo de errores, el sistema de
+módulos y npm, y finalmente programación asíncrona con Promises y
+`async`/`await`.
+
+<CodePlayground title="Pruébalo en vivo" initialCode={`function greet(name) {\n  return \`Hello, \${name}!\`;\n}\n\nconsole.log(greet("World"));`} />
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir un programa JavaScript mínimo y funcional que imprima un saludo."
+  items={[
+    { id: "fn-open", label: "function greet(name) {" },
+    { id: "fn-body", label: "  return `Hello, ${name}!`;" },
+    { id: "fn-close", label: "}" },
+    { id: "call", label: "console.log(greet(\"nullbase\"));" },
+  ]}
+  correctOrder={["fn-open", "fn-body", "fn-close", "call"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Ordena estas líneas para declarar una variable, comprobar una condición sobre ella, y registrar el resultado."
+  items={[
+    { id: "decl", label: "const age = 20;" },
+    { id: "if-open", label: "if (age >= 18) {", explanation: "La condición necesita que age ya exista, así que la declaración debe venir primero." },
+    { id: "if-body", label: "  console.log(\"adult\");" },
+    { id: "if-close", label: "}" },
+  ]}
+  correctOrder={["decl", "if-open", "if-body", "if-close"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`console.log(typeof "5" + 5);`}
+  options={["\"string5\"", "10", "\"5\" + 5", "NaN"]}
+  correctIndex={0}
+  explanation={`typeof "5" se evalúa primero y devuelve la cadena "string". Luego "string" + 5 concatena, produciendo "string5" — la trampa clásica es asumir que el + 5 se aplica al valor original al que se le hizo typeof, cuando typeof ya se ejecutó y devolvió una cadena.`}
+  actualOutput="string5"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Sintaxis y Variables](/es/programming-languages/javascript/syntax-basics)
+- [Async y Promesas](/es/programming-languages/javascript/advanced)

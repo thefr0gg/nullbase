@@ -1,0 +1,158 @@
+---
+title: Gestion des erreurs
+description: C n'a pas d'exceptions — les erreurs sont signalées via des codes de retour, la variable globale errno, et le statut de sortie du processus.
+category: Programming Languages
+weight: 7
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+C n'a pas de `try`/`catch`, pas de `throw`, et aucun concept d'exception qui déroulerait la pile d'appels. Chaque fonction qui peut échouer le signale via sa **valeur de retour**, et les fonctions de la bibliothèque standard qui interagissent avec le système d'exploitation définissent en plus une variable globale appelée `errno` décrivant *pourquoi* elles ont échoué. Il n'y a aucun mécanisme au niveau du langage forçant un appelant à vérifier l'un ou l'autre — ignorer une valeur de retour ou `errno` compile très bien et est une source courante de bugs réels.
+
+## Conventions de code de retour
+
+La convention C dominante est : retourner une valeur spéciale (souvent `-1`, `NULL`, ou un code de statut non nul) pour signaler un échec, et une valeur normale pour signaler un succès. `main` lui-même suit cela — retourner `0` signifie un succès, une valeur non nulle un échec, et le shell ou le processus appelant peut le vérifier :
+
+```c
+#include <stdio.h>
+
+int divide(int a, int b, int *result) {
+    if (b == 0) {
+        return -1; /* failure: division by zero */
+    }
+    *result = a / b;
+    return 0; /* success */
+}
+
+int main(void) {
+    int result;
+
+    if (divide(10, 2, &result) == 0) {
+        printf("10 / 2 = %d\n", result);
+    } else {
+        printf("error: division by zero\n");
+    }
+
+    if (divide(10, 0, &result) != 0) {
+        printf("error: division by zero\n");
+    }
+
+    return 0;
+}
+```
+
+Remarquez que la vraie réponse est délivrée via un paramètre de sortie (`int *result`), parce que la valeur de retour elle-même est réservée au statut de succès/échec — un motif qui apparaît constamment dès qu'il faut communiquer séparément le « vrai » résultat d'une fonction et son statut d'erreur.
+
+## errno et les appels système
+
+Les fonctions de la bibliothèque standard et celles orientées système d'exploitation (comme `fopen`, les appels apparentés à `malloc`, et les appels système POSIX) retournent souvent une valeur sentinelle comme `NULL` en cas d'échec et définissent la variable globale `errno` avec un code identifiant le problème spécifique. `strerror` convertit ce code en un message lisible par un humain :
+
+```c
+#include <stdio.h>
+#include <errno.h>
+#include <string.h>
+
+int main(void) {
+    FILE *file = fopen("does_not_exist.txt", "r");
+
+    if (file == NULL) {
+        printf("failed to open file: %s\n", strerror(errno));
+        return 1; /* nonzero exit code signals failure to the OS */
+    }
+
+    fclose(file);
+    return 0;
+}
+```
+
+`errno` n'a de sens qu'immédiatement après un appel qui a échoué — elle n'est pas remise à 0 en cas de succès, donc la vérifier *avant* de vérifier la valeur de retour de la fonction elle-même (ou la vérifier après un appel différent et sans rapport) lit une erreur périmée provenant d'autre chose entièrement.
+
+## Pas d'exceptions, mais setjmp/longjmp existe
+
+La bibliothèque standard de C inclut bien `setjmp.h`, qui permet une sorte de saut non local capable de dérouler plusieurs trames de pile à la fois — ce qui se rapproche le plus en C d'un flux de contrôle de type exception, bien que ce soit rare dans du code ordinaire car cela contourne le nettoyage normal (il n'existe pas de destructeurs pour s'exécuter automatiquement, puisque C n'en a pas) :
+
+```c
+#include <stdio.h>
+#include <setjmp.h>
+
+jmp_buf recoveryPoint;
+
+void riskyOperation(int fail) {
+    if (fail) {
+        longjmp(recoveryPoint, 1); /* jumps back to setjmp, as if it returned 1 */
+    }
+    printf("risky operation succeeded\n");
+}
+
+int main(void) {
+    if (setjmp(recoveryPoint) == 0) {
+        riskyOperation(1); /* this call never returns normally */
+    } else {
+        printf("recovered from failure\n");
+    }
+    return 0;
+}
+```
+
+La plupart du code C s'en tient aux simples codes de retour et à `errno` — `setjmp`/`longjmp` apparaît principalement dans des contextes spécialisés comme l'implémentation de la gestion d'erreurs d'un langage de script ou la récupération depuis un gestionnaire de signal, pas la vérification d'erreur quotidienne.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez une vérification d'erreur par code de retour"
+  prompt="Faites glisser ces lignes dans l'ordre qui divise deux nombres en toute sécurité à l'aide d'un code de retour d'erreur et d'un paramètre de sortie."
+  items={[
+    { id: "func", label: "int divide(int a, int b, int *out) {" },
+    { id: "check", label: "    if (b == 0) return -1;", explanation: "Le cas d'échec doit être vérifié avant que la division ne se produise, sinon elle diviserait d'abord par zéro." },
+    { id: "assign", label: "    *out = a / b;" },
+    { id: "success", label: "    return 0;\n}" },
+    { id: "call", label: "int result;\nif (divide(10, 0, &result) != 0) {" },
+    { id: "print", label: "    printf(\"error\\n\");\n}" },
+  ]}
+  correctOrder={["func", "check", "assign", "success", "call", "print"]}
+/>
+
+<OrderingExercise
+  title="Ordonnez une vérification de fichier basée sur errno"
+  prompt="Faites glisser ces lignes dans l'ordre qui ouvre un fichier et rapporte l'erreur système spécifique en cas d'échec."
+  items={[
+    { id: "includes", label: "#include <stdio.h>\n#include <errno.h>\n#include <string.h>" },
+    { id: "open", label: "FILE *file = fopen(\"missing.txt\", \"r\");" },
+    { id: "check", label: "if (file == NULL) {", explanation: "errno n'a de sens que juste après l'appel qui a échoué, donc elle doit être lue immédiatement à l'intérieur de cette vérification." },
+    { id: "print", label: "    printf(\"%s\\n\", strerror(errno));" },
+    { id: "close", label: "}" },
+  ]}
+  correctOrder={["includes", "open", "check", "print", "close"]}
+/>
+
+<PredictOutput
+  title="Qu'affiche ceci ?"
+  code={`#include <stdio.h>
+
+int safeDivide(int a, int b, int *out) {
+    if (b == 0) {
+        return -1;
+    }
+    *out = a / b;
+    return 0;
+}
+
+int main(void) {
+    int result = 999;
+    int status = safeDivide(10, 0, &result);
+    printf("%d %d\\n", status, result);
+    return 0;
+}`}
+  options={["-1 999", "-1 0", "0 999", "Compile error"]}
+  correctIndex={0}
+  explanation="Comme b vaut 0, safeDivide retourne -1 immédiatement sans jamais toucher à *out, donc result conserve sa valeur d'origine de 999 — elle n'est jamais remise à zéro ou réinitialisée simplement parce que la fonction a échoué. status rapporte correctement -1. Supposer que result obtient une valeur d'échec « par défaut » comme 0 est l'erreur tentante ici."
+  actualOutput="-1 999"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- **[Fonctions](/fr/programming-languages/c/functions)** — les paramètres de sortie via pointeurs, utilisés partout dans le motif de code de retour de cette page.
+- **[Modules et paquets](/fr/programming-languages/c/modules-packages)** — errno, setjmp et consorts proviennent tous d'en-têtes standard que vous incluez avec #include.

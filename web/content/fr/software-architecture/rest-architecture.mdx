@@ -1,0 +1,49 @@
+---
+title: Architecture REST
+description: Les contraintes architecturales que Roy Fielding a réellement définies pour REST, et pourquoi la plupart des API « RESTful » n'en implémentent qu'une fraction.
+category: Software Architecture
+weight: 6
+---
+
+**REST (Representational State Transfer)** est un style architectural pour les systèmes hypermédia distribués, défini par Roy Fielding dans sa thèse de doctorat de 2000 comme une description des contraintes qui ont fait passer le web lui-même à l'échelle — pas une spécification pour construire des API JSON. Fielding a dérivé REST en partant d'un style nul et en ajoutant des contraintes une par une, ne gardant chacune que si elle améliorait une propriété du système (scalabilité, simplicité, évolutivité). Ce qu'on appelle communément « REST » aujourd'hui — une poignée de verbes HTTP mappés sur des URL de ressources, voir [REST](/fr/web-apis/rest) pour cette forme — est un sous-ensemble petit et pratique d'un style architectural bien plus strict. Cette page porte sur le style ; la page liée porte sur les conventions d'endpoints que les gens construisent par-dessus.
+
+## Client-serveur
+
+Le client et le serveur évoluent indépendamment tant que l'interface entre eux ne change pas. Le client n'a pas besoin de savoir comment le serveur stocke ou calcule quoi que ce soit, et le serveur n'a pas besoin de savoir s'il parle à un navigateur, une application mobile, ou un autre serveur. Cette séparation est ce qui permet à une équipe backend de livrer une migration de base de données et à une équipe frontend de livrer une refonte la même semaine sans coordonner une seule ligne de code.
+
+## L'absence d'état (statelessness)
+
+Chaque requête d'un client à un serveur doit contenir toute l'information nécessaire pour la comprendre et la traiter. Le serveur ne conserve aucun état de session sur le client entre les requêtes — pas de « se souvenir » que vous vous êtes connecté trois requêtes plus tôt. Tout état qui ressemble à une session (identité, position dans un workflow en cours) voyage soit avec chaque requête, soit vit sur le client. C'est une contrainte réellement stricte : c'est pourquoi une API véritablement sans état peut router n'importe quelle requête vers n'importe quelle instance de serveur derrière un load balancer avec zéro coordination, et pourquoi un crash de serveur ne perd rien concernant « où en était le client ».
+
+## La mise en cache (cacheability)
+
+Les réponses doivent, implicitement ou explicitement, s'étiqueter elles-mêmes comme cachables ou non. Si une réponse est cachable, un client (ou un intermédiaire, comme un proxy) est autorisé à la réutiliser pour une future requête équivalente au lieu de recontacter le serveur. C'est une contrainte architecturale de premier ordre, pas une optimisation boulonnée après coup — c'est la raison pour laquelle les en-têtes `Cache-Control` et `ETag` existent comme partie intégrante de HTTP lui-même plutôt que comme une convention au niveau applicatif.
+
+## L'interface uniforme
+
+C'est la contrainte qui définit le plus le caractère de REST, et elle a quatre sous-parties :
+
+- **Les ressources sont identifiées dans les requêtes** — une URI nomme une « chose » (un utilisateur, une commande), pas une action.
+- **Les ressources sont manipulées via des représentations** — un client ne touche jamais directement les données internes du serveur ; il échange des représentations de celles-ci (un document JSON, typiquement), et une ressource peut avoir plus d'une représentation (JSON, HTML, XML) sans changer son identité.
+- **Des messages auto-descriptifs** — chaque message inclut assez d'information (type de média, en-têtes) pour qu'un destinataire sache comment le traiter, sans connaissance hors bande intégrée dans le client.
+- **L'hypermédia comme moteur de l'état applicatif (HATEOAS)** — un client interagit avec l'API entièrement à travers des liens hypermédia fournis dynamiquement par les réponses du serveur, de la même façon qu'une personne navigue sur le web en cliquant sur des liens plutôt qu'en tapant des URL qu'elle a mémorisées à l'avance.
+
+Cette dernière sous-contrainte est celle que presque aucune API en production n'implémente réellement. Presque toute API documentée comme « RESTful » remet à un client un ensemble fixe de gabarits d'URL en amont (`/api/users/{id}`, `/api/orders/{id}/items`) que le client code en dur, plutôt que des réponses qui disent au client où il peut aller ensuite. C'est un compromis raisonnable — des gabarits d'URL codés en dur sont plus simples à construire, documenter, et pour lesquels générer des SDK client qu'un client entièrement piloté par l'hypermédia — mais cela signifie que la plupart des « API REST » sont en réalité des « API HTTP orientées ressources qui sautent HATEOAS ». Fielding lui-même a publiquement contesté cette dérive, arguant qu'une API sans contrôles hypermédia n'est pas REST du tout, juste HTTP.
+
+## Système en couches
+
+Un client ne peut généralement pas dire s'il parle directement au serveur d'origine ou à un intermédiaire (un load balancer, un proxy de cache, une passerelle) en chemin, et il ne devrait pas avoir besoin de le savoir. Chaque couche ne connaît que la couche immédiatement adjacente. C'est ce qui permet à un système de style REST d'insérer un CDN, une passerelle API, ou un proxy de limitation de débit devant un service existant sans toucher au service lui-même ni casser les clients — voir [Architecture en couches](/fr/software-architecture/layered-architecture) pour la version plus générale de « des composants empilés de sorte que chacun ne dépende que de son voisin ».
+
+## Code à la demande (optionnel)
+
+La seule contrainte optionnelle : un serveur peut temporairement étendre la fonctionnalité du client en envoyant du code exécutable (des applets Java à l'origine ; un navigateur téléchargeant et exécutant du JavaScript aujourd'hui). La plupart des discussions de conception d'API ignorent celle-ci, puisqu'elle s'applique à peine en dehors des navigateurs chargeant des pages web.
+
+## Pourquoi l'écart compte
+
+Rien de tout cela ne rend fausses les API à URL codées en dur, non hypermédia, à construire — elles sont plus faciles à raisonner et couvrent la vaste majorité des besoins d'intégration réels. Mais cela compte quand quelqu'un prétend qu'une API « RESTful » offre le couplage lâche que promet REST : sans HATEOAS, la structure d'URL codée en dur d'un client est elle-même une forme de couplage à l'implémentation du serveur, exactement ce que le style complet était conçu pour éviter.
+
+## Voir aussi
+
+- **[REST](/fr/web-apis/rest)** — la forme pratique d'endpoint (verbes, codes de statut, URL de ressources) construite par-dessus ce style.
+- **[Versionnage d'API](/fr/web-apis/api-versioning)** — une conséquence directe du fait de sauter HATEOAS : la structure d'URL devient un contrat qui doit être versionné explicitement.
+- **[Architecture en couches](/fr/software-architecture/layered-architecture)** — le pattern général derrière la contrainte de système en couches de REST.

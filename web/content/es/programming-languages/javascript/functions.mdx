@@ -1,0 +1,174 @@
+---
+title: Funciones y Closures
+description: Declaraciones de función, arrow functions, parámetros por defecto y rest, y closures en JavaScript.
+category: Programming Languages
+weight: 4
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Las funciones en JavaScript son valores: puedes asignarlas a variables,
+pasarlas como argumentos, guardarlas en arrays, y devolverlas desde otras
+funciones. Esta propiedad de "funciones de primera clase" es la base de los
+callbacks, los métodos de array como `map`/`filter`, y los closures.
+
+## Declarar funciones
+
+Hay tres formas comunes de escribir una función, y difieren en más que solo
+sintaxis.
+
+```js
+// Declaración de función — hoisted, puede llamarse antes de que aparezca su definición
+function add(a, b) {
+  return a + b;
+}
+
+// Expresión de función — no hoisted, existe solo una vez que esta línea se ejecuta
+const subtract = function (a, b) {
+  return a - b;
+};
+
+// Arrow function — sintaxis concisa, sin `this` ni `arguments` propios
+const multiply = (a, b) => a * b;
+```
+
+Las declaraciones de función tienen hoisting con su cuerpo completo, así que
+llamar a una antes de su línea en el archivo funciona sin problema. Las
+expresiones de función y las arrow functions asignadas a `const`/`let` no —
+la variable existe (en una "zona muerta temporal") pero no es invocable
+hasta que se ejecuta la asignación.
+
+## Arrow functions
+
+Las arrow functions son más que un atajo de sintaxis. No tienen su propio
+`this`, `arguments`, ni `super` — en su lugar los capturan del alcance
+envolvente. Eso las convierte en la opción correcta para callbacks donde
+quieres que `this` se mantenga ligado al contexto circundante, y la opción
+incorrecta para métodos de objeto que necesitan su propio `this`.
+
+```js
+const doubled = [1, 2, 3].map(n => n * 2);
+console.log(doubled); // [2, 4, 6]
+
+const counter = {
+  count: 0,
+  incrementBad: () => {
+    this.count++; // `this` aquí NO es el objeto counter — las arrow functions
+                  // no obtienen su propio `this`, así que esto no hace nada útil silenciosamente
+  },
+  incrementGood() {
+    this.count++; // un método normal — `this` correctamente se refiere a `counter`
+  },
+};
+```
+
+## Parámetros por defecto y rest
+
+Los parámetros pueden tener valores por defecto, usados solo cuando el
+argumento es `undefined` (no para ningún otro valor falsy). Los parámetros
+rest recogen cualquier argumento restante en un array real.
+
+```js
+function createUser(name, role = "member") {
+  return { name, role };
+}
+
+console.log(createUser("ada"));            // { name: "ada", role: "member" }
+console.log(createUser("grace", "admin")); // { name: "grace", role: "admin" }
+
+function sum(...numbers) {
+  return numbers.reduce((total, n) => total + n, 0);
+}
+
+console.log(sum(1, 2, 3, 4)); // 10
+```
+
+## Closures
+
+Un closure es una función que "recuerda" las variables del alcance en el
+que fue creada, incluso después de que ese alcance exterior haya terminado
+de ejecutarse. Así es como obtienes estado privado sin clases: cada llamada
+a una función exterior crea un alcance nuevo y aislado que las funciones
+internas pueden seguir referenciando.
+
+```js
+function makeCounter() {
+  let count = 0; // privado a cada counter — no accesible desde fuera
+
+  return {
+    increment() {
+      count += 1;
+      return count;
+    },
+    reset() {
+      count = 0;
+    },
+  };
+}
+
+const counterA = makeCounter();
+const counterB = makeCounter();
+
+console.log(counterA.increment()); // 1
+console.log(counterA.increment()); // 2
+console.log(counterB.increment()); // 1 — un `count` completamente separado
+```
+
+Cada llamada a `makeCounter()` crea una nueva variable `count`, y los
+métodos devueltos forman un closure sobre esa específica — `counterA` y
+`counterB` nunca interfieren entre sí.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir una función que filtre y duplique un array usando arrow functions."
+  items={[
+    { id: "arr", label: "const nums = [1, 2, 3, 4, 5];" },
+    { id: "evens", label: "const evens = nums.filter(n => n % 2 === 0);" },
+    { id: "doubled", label: "const doubled = evens.map(n => n * 2);", explanation: "doubled depende de que evens ya exista, así que el filtrado debe ocurrir primero." },
+    { id: "log", label: "console.log(doubled);" },
+  ]}
+  correctOrder={["arr", "evens", "doubled", "log"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Ordena estas líneas para construir un saldo bancario basado en closures con una variable privada."
+  items={[
+    { id: "fnOpen", label: "function makeAccount(initial) {" },
+    { id: "balance", label: "  let balance = initial;" },
+    { id: "return", label: "  return {" },
+    { id: "deposit", label: "    deposit(amount) { balance += amount; return balance; }," },
+    { id: "getBalance", label: "    getBalance() { return balance; }," },
+    { id: "returnClose", label: "  };" },
+    { id: "fnClose", label: "}" },
+  ]}
+  correctOrder={["fnOpen", "balance", "return", "deposit", "getBalance", "returnClose", "fnClose"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`function makeMultiplier(factor) {
+  return n => n * factor;
+}
+
+const triple = makeMultiplier(3);
+const quadruple = makeMultiplier(4);
+
+console.log(triple(5));
+console.log(quadruple(5));`}
+  options={["15 then 15", "15 then 20", "20 then 15", "12 then 20"]}
+  correctIndex={1}
+  explanation="Cada llamada a makeMultiplier crea su propio closure sobre un `factor` distinto. triple cerró sobre 3, así que triple(5) es 15; quadruple cerró sobre 4, así que quadruple(5) es 20. Los dos closures no comparten ni sobrescriben el factor del otro aunque provengan de la misma función."
+  actualOutput="15
+20"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Flujo de Control](/es/programming-languages/javascript/control-flow)
+- [Async y Promesas](/es/programming-languages/javascript/advanced)

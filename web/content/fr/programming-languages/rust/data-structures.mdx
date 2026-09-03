@@ -1,0 +1,145 @@
+---
+title: Structures de données
+description: Tableaux de taille fixe, collections Vec extensibles, et HashMaps clé-valeur — les façons intégrées essentielles de Rust pour contenir plusieurs valeurs.
+category: Programming Languages
+weight: 5
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Rust sépare « combien d'éléments, connu à la compilation » de « combien
+d'éléments, décidé à l'exécution » au niveau du type. Un **tableau** a une
+taille fixe et vit sur la pile ; un **`Vec`** (vecteur) est extensible et
+possède une allocation sur le tas. Se tromper de choix est une erreur
+fréquente au début — les tableaux ne peuvent pas grandir, donc tout ce qui
+est construit élément par élément a besoin d'un `Vec`.
+
+## Tableaux
+
+```rust
+fn main() {
+    let scores: [i32; 3] = [90, 85, 78];
+    println!("first score: {}", scores[0]);
+    println!("total scores: {}", scores.len());
+
+    // scores.push(100); // error: no method named `push` on array [i32; 3]
+}
+```
+
+Le type `[i32; 3]` intègre la longueur dans le type lui-même — un tableau de
+3 `i32` est un type différent d'un tableau de 4, et aucun des deux n'a de
+méthode `push`, parce que leur taille ne peut jamais changer après la
+création.
+
+## `Vec<T>`
+
+`Vec<T>` est l'alternative extensible et allouée sur le tas — la collection
+vers laquelle on se tourne par défaut quand le nombre d'éléments n'est pas
+fixé à l'avance.
+
+```rust
+fn main() {
+    let mut scores: Vec<i32> = Vec::new();
+    scores.push(90);
+    scores.push(85);
+    scores.push(78);
+
+    // vec! macro is the more common way to write this
+    let scores = vec![90, 85, 78];
+
+    let average: i32 = scores.iter().sum::<i32>() / scores.len() as i32;
+    println!("average: {average}");
+}
+```
+
+Indexer un `Vec` en dehors des limites (`scores[10]` sur un vec à 3
+éléments) panique à l'exécution plutôt que de renvoyer silencieusement des
+déchets — Rust préfère planter bruyamment plutôt que de vous laisser lire de
+la mémoire qui n'est pas la vôtre. Pour une recherche qui ne panique pas,
+`scores.get(10)` renvoie `Option<&i32>` — `None` au lieu d'une valeur quand
+l'index n'existe pas.
+
+## `HashMap<K, V>`
+
+`HashMap` stocke des paires clé-valeur, similaire à un dictionnaire en
+Python ou un objet utilisé comme map en JavaScript. Il doit être importé
+explicitement depuis `std::collections` — contrairement à `Vec` et aux
+tableaux, il n'est pas dans le prélude par défaut.
+
+```rust
+use std::collections::HashMap;
+
+fn main() {
+    let mut inventory: HashMap<String, i32> = HashMap::new();
+    inventory.insert(String::from("apples"), 12);
+    inventory.insert(String::from("bananas"), 6);
+
+    match inventory.get("apples") {
+        Some(count) => println!("apples: {count}"),
+        None => println!("no apples tracked"),
+    }
+
+    // entry API: increment if present, insert 1 if not
+    *inventory.entry(String::from("apples")).or_insert(0) += 1;
+    println!("apples now: {}", inventory["apples"]);
+}
+```
+
+`get` renvoie `Option<&V>` plutôt que la valeur directement, parce que la
+clé pourrait ne pas exister — c'est le même motif `Option` qu'utilise
+`Vec::get`, et c'est central à la façon dont Rust évite les erreurs de
+référence nulle (couvert en détail sur la page
+[Gestion des erreurs](/fr/programming-languages/rust/error-handling)).
+L'API `entry` ci-dessus est la façon idiomatique de faire « mettre à jour si
+présent, insérer une valeur par défaut sinon » en une ligne sans chercher la
+clé deux fois.
+
+## Voir aussi
+
+- **[Structs et traits](/fr/programming-languages/rust/oop-or-structs)** — grouper des données liées dans vos propres types nommés plutôt que des tuples ou maps sans structure.
+- **[Possession et emprunt](/fr/programming-languages/rust/advanced)** — pourquoi `scores.iter()` emprunte le vecteur au lieu de le consommer.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire un Vec de scores et afficher leur moyenne."
+  items={[
+    { id: "let-scores", label: "    let scores = vec![90, 85, 78];" },
+    { id: "let-avg", label: "    let average: i32 = scores.iter().sum::<i32>() / scores.len() as i32;", explanation: "scores doit exister avant de pouvoir être sommé et moyenné." },
+    { id: "print", label: "    println!(\"average: {average}\");" },
+  ]}
+  correctOrder={["let-scores", "let-avg", "print"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire une HashMap, insérer une valeur, et la relire avec un match."
+  items={[
+    { id: "use", label: "use std::collections::HashMap;" },
+    { id: "main-open", label: "fn main() {" },
+    { id: "new-map", label: "    let mut inventory: HashMap<String, i32> = HashMap::new();" },
+    { id: "insert", label: "    inventory.insert(String::from(\"apples\"), 12);", explanation: "La map doit être créée avant que quoi que ce soit y soit inséré." },
+    { id: "match-open", label: "    match inventory.get(\"apples\") {" },
+    { id: "some", label: "        Some(count) => println!(\"apples: {count}\")," },
+    { id: "none", label: "        None => println!(\"no apples tracked\")," },
+    { id: "match-close", label: "    }" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["use", "main-open", "new-map", "insert", "match-open", "some", "none", "match-close", "main-close"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que ceci affiche ?"
+  code={`fn main() {
+    let scores = [90, 85, 78];
+    println!("{}", scores.get(10).is_some());
+}`}
+  options={["true", "false", "panic!", "Compile error"]}
+  correctIndex={1}
+  explanation="get() renvoie une Option, sans jamais paniquer sur un index hors limites — il renvoie None ici puisque l'index 10 n'existe pas dans un tableau à 3 éléments, donc is_some() vaut false. L'indexation directe (scores[10]) est celle qui paniquerait ; get() existe spécifiquement pour éviter cela."
+  actualOutput="false"
+/>
+</ExerciseTabs>

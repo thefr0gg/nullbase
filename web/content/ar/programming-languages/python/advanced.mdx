@@ -1,0 +1,106 @@
+---
+title: المزخرفات والمولدات
+description: الميزات المميزة لمستوى Python المتوسط — تغليف الدوال بمزخرفات (decorators)، وإنتاج القيم كسولياً باستخدام المولدات (generators) وyield.
+category: Programming Languages
+weight: 9
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+**المزخرف (decorator)** دالة تأخذ دالة وتُعيد دالة جديدة تغلّفها — تُستخدم لإضافة سلوك (تسجيل، توقيت، فحوصات وصول) دون لمس جسم الدالة الأصلية. صياغة `@decorator` فوق `def` هي مجرد اختصار لإعادة إسناد الدالة إلى القيمة التي يُعيدها المزخرف.
+
+```python
+def logged(func):
+    def wrapper(*args, **kwargs):
+        print(f"Calling {func.__name__}")
+        return func(*args, **kwargs)
+    return wrapper
+
+@logged
+def add(a, b):
+    return a + b
+
+print(add(2, 3))
+# Calling add
+# 5
+```
+
+`@logged` فوق `def add(...)` يعادل كتابة `add = logged(add)` مباشرة بعد تعريفها — كل استدعاء لـ `add` الآن يستدعي فعلياً `wrapper`، التي تطبع، ثم تستدعي `add` الأصلية عبر الإغلاق على `func`، وتُعيد نتيجتها. هذه نفس آلية الإغلاق المشروحة في [الدوال](/ar/programming-languages/python/functions)، مطبَّقة هنا لتغليف سلوك بدلاً من مجرد التقاط قيمة.
+
+**المولد (generator)** دالة تُنتج تسلسلاً من القيم كسولياً، واحدة تلو الأخرى، باستخدام `yield` بدلاً من `return`. استدعاء دالة مولّد لا ينفّذ جسمها فوراً — بل يُعيد كائن مولّد، ولا يتقدم الجسم إلا حتى `yield` التالية في كل مرة تُطلب فيها قيمة.
+
+```python
+def countdown(n):
+    while n > 0:
+        yield n
+        n -= 1
+
+for number in countdown(3):
+    print(number)
+# 3
+# 2
+# 1
+```
+
+يستأنف كل تكرار لحلقة `for` تنفيذ `countdown` مباشرة بعد `yield`، بدلاً من إعادة تشغيل الدالة كاملة من الصفر — تُحفَظ حالة الدالة المحلية (`n`، وموضعها ضمن حلقة `while`) بين كل يول ويول. هذا ما يجعل المولّدات فعّالة من حيث الذاكرة للتسلسلات الكبيرة أو غير المحدودة: لا يحتاج أي شيء يتجاوز القيمة الحالية إلى الوجود في الذاكرة دفعة واحدة.
+
+**تعبير مولّد (generator expression)** — `(expr for item in iterable)` — هو النظير الكسول لفهم القائمة (list comprehension)، ينتج نفس نوع المولّد الذي يُنتج قيمة واحدة كل مرة دون `def` أو `yield` على الإطلاق.
+
+```python
+squares = (x * x for x in range(5))
+print(next(squares))       # 0
+print(next(squares))       # 1
+print(list(squares))       # [4, 9, 16] — the rest, in one go
+```
+
+تسحب `next()` قيمة واحدة بالضبط من المولّد في كل مرة تُستدعى فيها؛ بينما تستنزف `list()` كل ما تبقّى. لاحظ أن أول قيمتين (`0`، `1`) قد اختفتا بالفعل بحلول وقت تشغيل `list()` — يُنتج المولّد كل قيمة مرة واحدة فقط، ولا توجد طريقة "لإرجاعه للخلف".
+
+## طالع أيضاً
+
+- **[الدوال](/ar/programming-languages/python/functions)** — الإغلاقات التي تجعل مزخرفات مثل `logged` ممكنة.
+- **[التحكم بمسار التنفيذ](/ar/programming-languages/python/control-flow)** — حلقات `for` التي تُشغّل كلاً من المولّدات وتعبيرات المولّدات.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء مزخرف تسجيل وتطبيقه على دالة."
+  items={[
+    { id: "def", label: "def logged(func):" },
+    { id: "wrapperdef", label: "    def wrapper(*args, **kwargs):", explanation: "تُعرَّف wrapper داخل logged، مباشرة بعد تعريف الدالة الخارجية." },
+    { id: "printcall", label: '        print(f"Calling {func.__name__}")' },
+    { id: "returncall", label: "        return func(*args, **kwargs)" },
+    { id: "returnwrapper", label: "    return wrapper", explanation: "يجب أن تُعيد logged الـ wrapper التي بنتها للتو، كسطرها الأخير." },
+    { id: "decorate", label: "@logged", explanation: "يجب أن يكون المزخرف موجوداً قبل إمكانية تطبيقه على دالة باستخدام @." },
+    { id: "adddef", label: "def add(a, b):" },
+    { id: "addreturn", label: "    return a + b" },
+  ]}
+  correctOrder={["def", "wrapperdef", "printcall", "returncall", "returnwrapper", "decorate", "adddef", "addreturn"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء مولّد عد تنازلي واستهلاكه في حلقة."
+  items={[
+    { id: "def", label: "def countdown(n):" },
+    { id: "while", label: "    while n > 0:", explanation: "تنتمي الحلقة إلى داخل جسم دالة المولّد." },
+    { id: "yield", label: "        yield n" },
+    { id: "decrement", label: "        n -= 1" },
+    { id: "for", label: "for number in countdown(3):", explanation: "يجب تعريف countdown بالكامل قبل إمكانية استدعائها والتكرار عليها." },
+    { id: "print", label: "    print(number)" },
+  ]}
+  correctOrder={["def", "while", "yield", "decrement", "for", "print"]}
+/>
+
+<PredictOutput
+  title="ماذا تطبع هذه الشيفرة؟"
+  code={`gen = (x for x in range(3))\nprint(list(gen))\nprint(list(gen))`}
+  options={["[0, 1, 2] then [0, 1, 2]", "[0, 1, 2] then []", "[] then [0, 1, 2]", "An error: gen is exhausted after the first list()"]}
+  correctIndex={1}
+  explanation="ينتج المولّد كل قيمة مرة واحدة بالضبط ولا يمكن إعادة تشغيله. يستنزف list(gen) الأول كل قيمة سينتجها المولّد على الإطلاق، لذا لا يتبقى شيء لسحبه في الاستدعاء الثاني — تُعيد list() على مولّد استُنفد بالفعل قائمة فارغة ببساطة، وليس خطأ."
+  actualOutput='[0, 1, 2]\n[]'
+/>
+</ExerciseTabs>
+

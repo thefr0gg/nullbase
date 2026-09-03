@@ -1,0 +1,26 @@
+---
+title: Systèmes d'exploitation
+description: Ce que le noyau fait réellement sous un processus, un fichier ou un programme en cours d'exécution — la théorie derrière des concepts que ce site couvre par ailleurs sous un angle pratique et quotidien.
+category: Operating Systems
+weight: 14
+---
+
+Plusieurs sections de ce site abordent déjà des concepts de systèmes d'exploitation sous un angle pratique — [Processes](/fr/devops/processes) et [Linux](/fr/devops/linux) dans DevOps, les modèles de concurrence dans [Application Servers](/fr/backend/application-servers). Cette section descend d'un niveau sous ces pages : les mécanismes réels du noyau — états de processus, pagination mémoire, la frontière des appels système — qui font fonctionner la version pratique et quotidienne de ces concepts. Chaque page ici renvoie vers son équivalent pratique plutôt que de le répéter.
+
+## Exécuter du code
+
+- **[Processus](/fr/operating-systems/processes)** — la machine à états que traverse chaque processus, et ce que fork/exec/wait/exit lui font.
+- **[Threads](/fr/operating-systems/threads)** — une unité d'ordonnancement moins coûteuse qui partage la mémoire d'un processus.
+- **[Ordonnancement](/fr/operating-systems/scheduling)** — comment le noyau décide quoi exécuter ensuite quand il y a plus de travail exécutable que de cœurs CPU.
+
+## Mémoire et stockage
+
+- **[Mémoire virtuelle](/fr/operating-systems/virtual-memory)** — pourquoi chaque processus croit posséder son propre espace d'adressage privé.
+- **[Systèmes de fichiers](/fr/operating-systems/file-systems)** — comment l'OS organise les blocs de disque bruts en fichiers et répertoires nommés.
+
+## La frontière entre les programmes et le noyau
+
+- **[Appels système](/fr/operating-systems/system-calls)** — la frontière mode utilisateur/mode noyau que chaque opération privilégiée doit franchir.
+- **[Permissions](/fr/operating-systems/permissions)** — comment le noyau décide si un processus donné a le droit de faire quelque chose.
+- **[Signaux](/fr/operating-systems/signals)** — comment un processus interrompt de façon asynchrone le flux de contrôle normal d'un autre.
+- **[Communication inter-processus](/fr/operating-systems/inter-process-communication)** — comment des processus isolés en mémoire partagent tout de même des données intentionnellement.

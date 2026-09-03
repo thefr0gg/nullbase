@@ -1,0 +1,30 @@
+---
+title: Concurrencia
+description: Estructurar un programa para lidiar con más de una cosa en progreso a la vez — hilos, locks, condiciones de carrera, y por qué la concurrencia es un problema de estructura de programa distinto del paralelismo.
+category: Computer Science
+weight: 8
+---
+
+La **concurrencia** trata de *estructura*: un programa que puede tener más de una unidad de trabajo lógicamente independiente en progreso al mismo tiempo, avanzando en cada una intercalándolas, sin necesariamente ejecutar dos de ellas en el mismo instante exacto. Esa última cláusula es lo que la separa del [paralelismo](/es/computer-science/parallelism) — una máquina de un solo núcleo puede ejecutar un programa concurrente perfectamente bien cambiando rápidamente entre tareas, de la misma forma que un único núcleo de [CPU](/es/computer-science/cpu) cambia entre procesos.
+
+## Hilos y memoria compartida
+
+Un **hilo** es la unidad de concurrencia más directa: una secuencia de instrucciones que puede planificarse de forma independiente, pero que comparte la memoria de su proceso padre con cualquier otro hilo de ese proceso — ver [Hilos](/es/operating-systems/threads) para la mecánica a nivel de sistema operativo. Compartir memoria es lo que hace baratos a los hilos (sin copiar, sin sobrecarga de paso de mensajes para comunicarse), y también exactamente lo que hace difícil a la programación concurrente: dos hilos leyendo y escribiendo la misma variable sin coordinación producen una **condición de carrera** — el resultado depende del orden impredecible en el que el planificador termine intercalando sus instrucciones, así que el mismo código puede comportarse correctamente mil veces en pruebas y luego corromper datos en producción la única vez que el timing coincide de forma distinta.
+
+## Locks y el costo de la coordinación
+
+Un **mutex** (lock de exclusión mutua) es la solución estándar: un hilo debe adquirir el lock antes de tocar un dato compartido, y cualquier otro hilo que lo quiera tiene que esperar hasta que se libere. Esto elimina la condición de carrera, pero introduce sus propios modos de fallo — un **deadlock**, donde dos hilos cada uno mantiene un lock que el otro necesita y ninguno lo liberará jamás, y la simple contención de locks, donde los hilos pasan tanto tiempo esperándose unos a otros que agregar más hilos deja de ayudar o activamente empeora las cosas. Las primitivas de nivel más alto — semáforos, variables de condición, locks de lectura-escritura — son todas variaciones sobre la misma compensación subyacente: serializar el acceso al estado compartido justo lo suficiente para seguir siendo correcto, sin serializar tanto que la concurrencia deje de aportar algo.
+
+## Alternativas al locking
+
+Debido a que el locking manual es fácil de hacer mal de forma sutil, existen varios modelos específicamente para evitarlo:
+
+- **Paso de mensajes** — en lugar de compartir memoria, unidades independientes de trabajo (a menudo llamadas actores, o goroutines comunicándose por canales) se envían mensajes entre sí; nada es mutado por más de un hilo, así que no hay nada sobre lo que competir. Los canales de Go y el modelo de actores de Erlang están construidos directamente en torno a esto.
+- **Inmutabilidad** — si los datos nunca se mutan después de su creación, no es posible ninguna condición de carrera sin importar cuántos hilos los lean concurrentemente; varios lenguajes funcionales se apoyan en esto como su historia principal de seguridad en la concurrencia.
+- **El bucle de eventos** — un único hilo toma repetidamente el siguiente callback listo de una cola y lo ejecuta hasta completarlo antes de tomar el siguiente, así que el código de la aplicación nunca se ejecuta concurrentemente consigo mismo aunque puedan estar en curso muchas operaciones de E/S a la vez. Este es el modelo detrás de Node.js y la mayoría de los runtimes de JavaScript — ver [Servidores de Aplicación](/es/backend/application-servers) para cómo se sostiene esto frente a un modelo de un hilo por solicitud en la práctica.
+
+## Ver también
+
+- **[Hilos](/es/operating-systems/threads)** — el mecanismo del sistema operativo sobre el que en última instancia se construyen la mayoría de los modelos de programación concurrente.
+- **[Paralelismo](/es/computer-science/parallelism)** — realmente ejecutar trabajo concurrente en el mismo instante, lo cual necesita más de un núcleo para ser físicamente posible.
+- **[Servidores de Aplicación](/es/backend/application-servers)** — hilo por solicitud frente a bucle de eventos, una aplicación práctica directa de las compensaciones de esta página.

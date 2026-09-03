@@ -1,0 +1,101 @@
+---
+title: التحكم بمسار التنفيذ
+description: التفرّع والتكرار في Python — if/elif/else، وحلقتا for وwhile، وجملة for...else التي لا تملكها معظم اللغات الأخرى.
+category: Programming Languages
+weight: 3
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تُقرأ جمل الشرط والحلقات في Python قريباً من الإنجليزية العادية، لكن الآلية الكامنة تستحق الدقة، خصوصاً الأجزاء التي تختلف عن لغات عائلة C.
+
+```python
+temperature = 72
+if temperature > 80:
+    print("hot")
+elif temperature > 60:
+    print("mild")
+else:
+    print("cold")
+```
+
+`elif` هي طريقة Python لكتابة "else if" — لا يوجد زوج كلمات مفتاحية منفصل لـ `else if`، ولا تحتاج الشروط أبداً إلى أقواس محيطة (رغم إمكانية إضافتها). يمكن استخدام أي قيمة كشرط، وليس فقط القيم المنطقية: `0`، و`""`، و`None`، والمجموعات الفارغة (`[]`، `{}`، `()`) كلها "زائفة" (falsy)، وكل شيء آخر "صادق" (truthy)، لذا فإن `if some_list:` طريقة اصطلاحية للتحقق من "هل هذه القائمة غير فارغة" دون مقارنة الأطوال صراحة.
+
+```python
+fruits = ["apple", "banana", "cherry"]
+for index, fruit in enumerate(fruits):
+    print(index, fruit)
+```
+
+تتكرر حلقة `for` في Python مباشرة على *عناصر* التسلسل — لا يوجد نمط عدّ بأسلوب C مثل `for (i = 0; i < len; i++)`. عندما تكون الحاجة فعلياً إلى الفهرس إلى جانب القيمة، تغلّف `enumerate()` التسلسل لتُنتج أزواج `(index, value)`، وهذه هي الطريقة الاصطلاحية للحصول على الاثنين معاً دون تتبّع عدّاد يدوياً.
+
+```python
+n = 0
+while n < 5:
+    if n == 3:
+        n += 1
+        continue
+    print(n)
+    n += 1
+```
+
+تُنفَّذ حلقات `while` طالما بقي شرطها صادقاً؛ يقفز `continue` مباشرة إلى فحص شرط التكرار التالي، بينما يخرج `break` من الحلقة تماماً. كما لا يوجد `n++` — لا تملك Python عوامل زيادة/نقصان، فقط `n += 1`.
+
+هناك ميزة غريبة حقاً: يمكن لكل من حلقتي `for` و`while` أن تملكا جملة `else`، تُنفَّذ فقط إذا انتهت الحلقة بشكل طبيعي — أي أنها *لم* تتوقف بسبب `break`.
+
+```python
+for i in range(2, 10):
+    if i % 7 == 0:
+        print("found a multiple of 7:", i)
+        break
+else:
+    print("no multiples of 7 found")
+```
+
+اقرأ `for...else` على أنها "إن لم نخرج من هذه الحلقة عبر break، فإذن..." — وهي أكثر فائدة في حلقات البحث حيث يعني `break` "وجدناه"، بينما يعني الوصول إلى `else` "بحثنا في كل شيء ولم نجد شيئاً".
+
+## طالع أيضاً
+
+- **[بنية اللغة والمتغيرات](/ar/programming-languages/python/syntax-basics)** — القيم الصادقة/الزائفة التي تعتمد عليها هذه الشروط.
+- **[الدوال](/ar/programming-languages/python/functions)** — تغليف حلقة كالتي أعلاه في دالة قابلة لإعادة الاستخدام.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء سكربت يصنّف درجة حرارة."
+  items={[
+    { id: "temp", label: "temperature = 72" },
+    { id: "if", label: "if temperature > 80:", explanation: "يحتاج الشرط إلى وجود `temperature` قبل أن يمكن مقارنته." },
+    { id: "hot", label: '    print("hot")' },
+    { id: "elif", label: "elif temperature > 60:" },
+    { id: "mild", label: '    print("mild")' },
+    { id: "else", label: "else:" },
+    { id: "cold", label: '    print("cold")' },
+  ]}
+  correctOrder={["temp", "if", "hot", "elif", "mild", "else", "cold"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح للتكرار على قائمة وطباعة كل فهرس مع قيمته."
+  items={[
+    { id: "fruits", label: 'fruits = ["apple", "banana", "cherry"]' },
+    { id: "for", label: "for index, fruit in enumerate(fruits):", explanation: "يحتاج `enumerate(fruits)` إلى تعريف `fruits` مسبقاً." },
+    { id: "print", label: "    print(index, fruit)" },
+  ]}
+  correctOrder={["fruits", "for", "print"]}
+/>
+
+<PredictOutput
+  title="ماذا تطبع هذه الشيفرة؟"
+  code={`n = 0\nwhile n < 5:\n    if n == 3:\n        n += 1\n        continue\n    print(n)\n    n += 1`}
+  options={["0 1 2 3 4", "0 1 2 4", "0 1 2 3", "0 1 2"]}
+  correctIndex={1}
+  explanation="عندما يصل n إلى 3، تتم زيادته وينتقل continue مباشرة إلى فحص الشرط التالي، متجاوزاً استدعاء print(n) لتلك الدورة تماماً — لذا تُزاد قيمة 3 لكنها لا تُطبع أبداً."
+  actualOutput="0 1 2 4"
+/>
+</ExerciseTabs>
+

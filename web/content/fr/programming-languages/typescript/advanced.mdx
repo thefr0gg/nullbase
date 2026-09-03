@@ -1,0 +1,145 @@
+---
+title: Génériques
+description: Écrire des fonctions et des types qui fonctionnent avec de nombreux types tout en conservant une sécurité de type complète à la compilation.
+category: Programming Languages
+weight: 9
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Les **génériques** sont la fonctionnalité intermédiaire emblématique de
+TypeScript — l'outil pour écrire du code qui fonctionne avec de nombreux
+types sans se rabattre sur `any` et perdre entièrement la sécurité de type.
+Une fonction ou un type générique prend un **paramètre de type**,
+conventionnellement nommé `T`, qui agit comme un espace réservé rempli par
+un type concret à chaque site d'appel.
+
+## Le problème que résolvent les génériques
+
+Sans génériques, on écrit soit une fonction par type, soit on élargit vers
+`any` et on perd toute vérification :
+
+```ts
+function firstAny(arr: any[]): any {
+  return arr[0];
+}
+
+const num = firstAny([1, 2, 3]); // typé any — aucune erreur si mal utilisé
+num.toUpperCase(); // pas d'erreur de compilation, mais ça plante à l'exécution
+```
+
+`firstAny` compile proprement pour n'importe quel tableau, mais la valeur
+de retour est `any`, donc appeler `.toUpperCase()` sur un nombre passe
+directement à travers le vérificateur de type et explose à l'exécution.
+
+## Écrire une fonction générique
+
+```ts
+function first<T>(arr: T[]): T {
+  return arr[0];
+}
+
+const num = first([1, 2, 3]); // T inféré comme number ; num: number
+const str = first(["a", "b"]); // T inféré comme string ; str: string
+
+num.toUpperCase(); // Type error: Property 'toUpperCase' does not exist on type 'number'
+```
+
+`first<T>` fonctionne toujours avec un tableau de n'importe quel type,
+exactement comme `firstAny` — mais maintenant le type de retour est lié à
+ce que `T` a été inféré pour cet appel spécifique. `first([1, 2, 3])`
+retourne `number`, donc appeler `.toUpperCase()` sur le résultat est
+détecté immédiatement, contrairement à la version basée sur `any`.
+
+## Contraindre un paramètre de type
+
+`extends` restreint ce qu'un paramètre de type peut être, ce qui permet
+d'utiliser en toute sécurité des opérations qui n'ont de sens que pour un
+sous-ensemble de types :
+
+```ts
+function getLength<T extends { length: number }>(value: T): number {
+  return value.length;
+}
+
+getLength("hello"); // 5 — string a .length
+getLength([1, 2, 3]); // 3 — array a .length
+getLength(42); // Type error: Argument of type 'number' is not assignable to parameter of type '{ length: number }'
+```
+
+`T extends { length: number }` signifie « `T` peut être n'importe quoi,
+tant qu'il possède une propriété `.length` de type number » — cela ne
+limite pas `T` à un type spécifique, seulement aux formes qui rendent
+`value.length` sûr à écrire.
+
+## Types et interfaces génériques
+
+Les génériques ne se limitent pas aux fonctions — un `type` ou une
+`interface` peut aussi prendre un paramètre de type, ce qui permet à une
+forme réutilisable unique comme `Box<T>` de décrire une boîte contenant
+n'importe quel type de contenu :
+
+```ts
+interface Box<T> {
+  contents: T;
+}
+
+const numberBox: Box<number> = { contents: 42 };
+const stringBox: Box<string> = { contents: "hello" };
+
+numberBox.contents = "oops"; // Type error: Type 'string' is not assignable to type 'number'
+```
+
+Une fois `numberBox` déclaré comme `Box<number>`, `T` est fixé à `number`
+pour cette boîte spécifique — `contents` ne peut jamais contenir de
+`string`, même si `Box<T>` lui-même n'a été écrit qu'une seule fois et
+fonctionne pour n'importe quel `T`.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire une fonction générique first et deux appels qui infèrent des paramètres de type différents."
+  items={[
+    { id: "fn-decl", label: "function first<T>(arr: T[]): T {" },
+    { id: "fn-body", label: "  return arr[0];", explanation: "Le corps de la fonction doit se trouver entre la signature générique et l'accolade fermante." },
+    { id: "fn-close", label: "}" },
+    { id: "call-num", label: "const num = first([1, 2, 3]);" },
+    { id: "call-str", label: "const str = first([\"a\", \"b\"]);" },
+  ]}
+  correctOrder={["fn-decl", "fn-body", "fn-close", "call-num", "call-str"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire une interface Box générique et deux boîtes contenant des types différents."
+  items={[
+    { id: "iface-open", label: "interface Box<T> {" },
+    { id: "iface-field", label: "  contents: T;", explanation: "Le champ utilisant T doit être déclaré à l'intérieur de Box avant que l'interface ne se ferme." },
+    { id: "iface-close", label: "}" },
+    { id: "number-box", label: "const numberBox: Box<number> = { contents: 42 };" },
+    { id: "string-box", label: "const stringBox: Box<string> = { contents: \"hello\" };" },
+  ]}
+  correctOrder={["iface-open", "iface-field", "iface-close", "number-box", "string-box"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que le vérificateur de type dit ?"
+  code={`function getLength<T extends { length: number }>(value: T): number {
+  return value.length;
+}
+
+getLength(42);`}
+  options={["42", "Type error: Argument of type 'number' is not assignable to parameter of type '{ length: number }'", "undefined", "NaN"]}
+  correctIndex={1}
+  explanation="La contrainte T extends { length: number } n'autorise que les types qui ont réellement une propriété length numérique — les chaînes et les tableaux qualifient, mais number n'a pas du tout de .length. Le compilateur rejette l'appel avant même de générer du code qui essaierait de lire .length sur 42."
+  actualOutput="Type error: Argument of type 'number' is not assignable to parameter of type '{ length: number }'"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Modules et paquets](/fr/programming-languages/typescript/modules-packages)
+- [TypeScript](/fr/programming-languages/typescript)

@@ -1,0 +1,111 @@
+---
+title: C
+description: Un lenguaje de sistemas rápido y sin gestión automática de memoria, creado en 1972, que aún sustenta la mayoría de los sistemas operativos, runtimes y dispositivos embebidos en uso hoy en día.
+category: Programming Languages
+weight: 1
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+**C** fue creado por Dennis Ritchie en los Bell Labs a principios de la década de 1970, originalmente para reescribir el kernel de Unix en algo más portable que el ensamblador. Más de cincuenta años después, sigue siendo el lenguaje en el que están escritos la mayoría de los kernels de sistemas operativos, el firmware embebido, los runtimes de otros lenguajes (CPython, el núcleo de la JVM, Lua) y las librerías de bajo nivel (`libc`, SQLite, zlib). C compila directamente a código máquina, no tiene recolector de basura ni red de seguridad en tiempo de ejecución, y le da al programador un control casi total sobre el diseño de memoria y el comportamiento de la CPU — precisamente por eso es a la vez extremadamente rápido y extremadamente fácil de usar para dispararse en el pie.
+
+Todo lo que este sitio cubre sobre C se deriva de una sola decisión de diseño: C confía completamente en el programador. No hay verificación de límites en los arrays, no hay gestión automática de memoria, y no hay excepciones — solo funciones, punteros, y una biblioteca estándar muy pequeña. Lenguajes modernos como Rust y Go existen en gran parte como reacciones a lo costosa que resulta esa confianza en la práctica, pero la franqueza de C es también la razón por la que sigue siendo la lingua franca en la que está implementado el runtime de casi cualquier otro lenguaje.
+
+## Un programa mínimo en C
+
+```c
+#include <stdio.h>
+
+int main(void) {
+    printf("Hello, nullbase!\n");
+    return 0;
+}
+```
+
+`#include <stdio.h>` incorpora las declaraciones de funciones estándar de E/S como `printf`. `main` es el punto de entrada que todo programa en C debe tener; devolver `0` le indica al sistema operativo que el programa terminó con éxito (un valor distinto de cero señala un error a quien sea que lo haya invocado — un script de shell, una herramienta de compilación, etc.).
+
+## Compilarlo y ejecutarlo
+
+C se compila por adelantado, no se interpreta — no hay un runtime de C leyendo tu código fuente línea por línea. Un compilador (`gcc` o `clang`) traduce el código fuente a un ejecutable nativo *antes* de que se ejecute:
+
+```c
+#include <stdio.h>
+
+int square(int n) {
+    return n * n;
+}
+
+int main(void) {
+    for (int i = 1; i <= 5; i++) {
+        printf("%d squared is %d\n", i, square(i));
+    }
+    return 0;
+}
+```
+
+Guardado como `squares.c`, esto se convierte en un binario ejecutable con:
+
+```bash
+gcc squares.c -o squares
+./squares
+```
+
+No hay un paso de gestor de paquetes, ni un intérprete que invocar — `gcc` lee el archivo `.c`, resuelve los `#include`, y genera un ejecutable independiente. Esa separación entre compilar y ejecutar (en lugar de un JIT o un intérprete) es la razón por la que los programas en C arrancan instantáneamente, y por la que un bug como leer más allá del final de un array es un fallo en tiempo de ejecución, no un error de compilación que el compilador pudiera haber detectado.
+
+## Lo que viene
+
+El resto de esta sección recorre la sintaxis y variables de C, el flujo de control, las funciones, los arrays y strings, los structs (el sustituto de C para las clases), el manejo de errores por código de retorno, cómo se construyen los programas multi-archivo, y finalmente los punteros y la gestión manual de memoria — la parte de C que la mayoría de los demás lenguajes han eliminado deliberadamente.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla un programa mínimo"
+  prompt="Arrastra estas líneas al orden que produce un programa en C válido que imprime un saludo."
+  items={[
+    { id: "include", label: "#include <stdio.h>", explanation: "El compilador necesita ver la declaración de printf antes de que sea llamada, así que el #include debe ir primero." },
+    { id: "main-open", label: "int main(void) {" },
+    { id: "printf", label: "    printf(\"Hello, nullbase!\\n\");" },
+    { id: "return", label: "    return 0;" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["include", "main-open", "printf", "return", "main-close"]}
+/>
+
+<OrderingExercise
+  title="Ordena los pasos de compilación"
+  prompt="Coloca estos pasos en el orden en que realmente los realizarías para ir del código fuente a un programa en ejecución."
+  items={[
+    { id: "write", label: "Escribir squares.c en un editor de texto" },
+    { id: "compile", label: "Ejecutar: gcc squares.c -o squares", explanation: "Compilar tiene que ocurrir después de que el código fuente exista, y antes de que puedas ejecutar el binario que produce." },
+    { id: "run", label: "Ejecutar: ./squares" },
+  ]}
+  correctOrder={["write", "compile", "run"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime este bucle?"
+  code={`#include <stdio.h>
+
+int square(int n) {
+    return n * n;
+}
+
+int main(void) {
+    for (int i = 1; i <= 3; i++) {
+        printf("%d squared is %d\\n", i, square(i));
+    }
+    return 0;
+}`}
+  options={["1 squared is 1\\n2 squared is 4\\n3 squared is 9", "0 squared is 0\\n1 squared is 1\\n2 squared is 4", "1 squared is 1\\n2 squared is 2\\n3 squared is 3", "Compile error"]}
+  correctIndex={0}
+  explanation="El bucle recorre i = 1, 2, 3 (y se detiene en cuanto i <= 3 es falso), y square(i) devuelve n * n cada vez, así que imprime 1, 4 y 9 — no el propio i, que es la respuesta incorrecta tentadora si se pasa por alto la llamada a la función."
+  actualOutput="1 squared is 1\n2 squared is 4\n3 squared is 9"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- **[Sintaxis y Variables](/es/programming-languages/c/syntax-basics)** — tipos, operadores y declaraciones con más profundidad.
+- **[Punteros y Memoria](/es/programming-languages/c/advanced)** — la parte de C que más lo distingue de los lenguajes de más alto nivel.

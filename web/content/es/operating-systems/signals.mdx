@@ -1,0 +1,72 @@
+---
+title: Señales
+description: El mecanismo del kernel para interrumpir un proceso en ejecución — disposiciones por defecto, manejadores personalizados, seguridad async-signal, y enmascaramiento.
+category: Operating Systems
+weight: 7
+interactive: true
+interactiveType: ["MermaidDiagram"]
+---
+
+Una **señal** es una notificación asíncrona que el kernel entrega a un proceso, interrumpiendo lo que estaba haciendo para informarle que algo sucedió — un usuario presionó Ctrl+C, otro proceso le pidió que terminara, intentó desreferenciar memoria inválida, un proceso hijo que estaba vigilando acaba de terminar. "Asíncrona" es la palabra clave: una señal puede llegar en esencialmente cualquier punto de la ejecución de un proceso, entre instrucciones arbitrarias, que es lo que hace que escribir código de manejo de señales correcto sea más difícil de lo que parece. [Procesos](/es/devops/processes) cubre `SIGTERM` frente a `SIGKILL` desde un ángulo práctico de despliegue; esta página trata sobre el mecanismo por debajo de eso: qué es realmente una señal y cómo reacciona un proceso ante una.
+
+## Disposición por defecto
+
+Cada tipo de señal tiene una acción por defecto que toma el kernel si el proceso receptor no ha instalado su propio manejador para ella. Estas caen en un puñado de categorías:
+
+- **Terminar** — el proceso es matado. `SIGTERM` y `SIGINT` toman esto por defecto.
+- **Terminar con volcado de memoria** — matado, y el kernel escribe una instantánea de la memoria del proceso a disco para depuración post-mortem. `SIGSEGV` (acceso inválido a memoria) toma esto por defecto.
+- **Ignorar** — no pasa nada. `SIGCHLD` (un proceso hijo cambió de estado) es ignorado por defecto por muchos procesos a los que no les importa rastrear a sus hijos de cerca.
+- **Detener** / **Continuar** — el proceso se suspende o se reanuda, independientemente de si está manejando alguna otra cosa. Esto es lo que permite que un shell pause un trabajo en primer plano con Ctrl+Z y lo reanude después.
+
+Un proceso puede anular el comportamiento por defecto para la mayoría de las señales instalando un manejador — pero no para todas. `SIGKILL` y `SIGSTOP` intencionalmente no son interceptables, ignorables, ni bloqueables, porque el sistema necesita una forma de garantizar que siempre puede terminar o suspender un proceso sin importar lo que haga el código de ese proceso.
+
+## Manejadores personalizados, y por qué son un lugar restringido en el que estar
+
+Instalar un manejador le dice al kernel "cuando llegue esta señal, detén lo que el proceso está haciendo y ejecuta esta función en su lugar". Eso suena como una llamada a función ordinaria, pero no lo es: el manejador se ejecuta en un punto arbitrario en medio de lo que sea que estuviera haciendo el código normal del proceso, posiblemente a mitad de una llamada de biblioteca que en sí misma no es reentrante. Si el código interrumpido estaba en medio de `malloc()`, actualizando la contabilidad interna del heap, y el manejador de señales también llama a `malloc()`, las dos llamadas pueden corromper esa misma contabilidad.
+
+Esta es la idea detrás de la **seguridad async-signal**: solo un conjunto pequeño y específico de funciones (documentado por plataforma — cosas como `write()`, pero no `printf()`, ni la asignación general de heap) son seguras de llamar desde dentro de un manejador de señales, porque están garantizadas para no depender de estado que podría estar a mitad de mutación cuando llegó la señal. El patrón común y seguro es hacer lo menos posible en el manejador en sí — típicamente solo establecer una bandera (un `volatile sig_atomic_t`) o escribir un byte en una tubería — y dejar que el flujo de control normal del proceso note esa bandera y reaccione una vez que esté de vuelta en un contexto seguro y ordinario.
+
+## Enmascaramiento y bloqueo
+
+Un proceso puede decirle temporalmente al kernel "no entregues esta señal ahora mismo" **enmascarándola** (bloqueándola) — la señal no se pierde, simplemente se mantiene pendiente hasta que el proceso la desbloquea. Esto importa para proteger secciones críticas: si un fragmento de código está actualizando algún estado compartido en unos pocos pasos que necesitan ocurrir atómicamente con respecto a una señal en particular, puede bloquear esa señal durante ese tiempo, hacer la actualización, y luego desbloquearla (momento en el cual el kernel entrega lo que sea que haya llegado mientras tanto). Esto intercambia un pequeño riesgo — la señal se retrasa, no es instantánea — por la garantía de que nunca podrá caer en medio de esa secuencia específica de pasos.
+
+<MermaidDiagram
+  title="La ruta de una señal desde el emisor hasta la disposición"
+  chart={`
+sequenceDiagram
+    participant Sender as Sending process / kernel event
+    participant Kernel
+    participant Proc as Receiving process
+
+    Sender->>Kernel: raise signal (e.g. kill(pid, SIGTERM))
+    alt signal is blocked
+        Kernel->>Kernel: mark pending, hold delivery
+    else signal is deliverable
+        Kernel->>Proc: interrupt normal execution
+        alt custom handler installed
+            Proc->>Proc: run handler (async-signal-safe code only)
+        else no handler (default disposition)
+            Proc->>Proc: terminate / ignore / stop / core dump
+        end
+    end
+`}
+/>
+
+## Un vocabulario de señales más amplio
+
+| Señal | Comportamiento por defecto típico | Causa común |
+| --- | --- | --- |
+| `SIGINT` | Terminar | Ctrl+C desde el terminal de control |
+| `SIGHUP` | Terminar | Terminal de control cerrado, o "recarga tu configuración" por convención |
+| `SIGCHLD` | Ignorar | Un proceso hijo terminó o se detuvo |
+| `SIGSEGV` | Terminar + volcado de memoria | Acceso inválido a memoria |
+| `SIGTERM` | Terminar | Una solicitud educada de apagado, interceptable |
+| `SIGKILL` | Terminar | Inmediato, no interceptable |
+
+El doble significado de `SIGHUP` es un buen ejemplo de convención superpuesta sobre el comportamiento mecánico de una señal: originalmente "el terminal colgó", muchos daemons de larga duración ahora tratan recibirla como "vuelve a leer tu archivo de configuración", aunque nada en el kernel obligue ese significado — es simplemente lo que hace con ella el manejador que el daemon elige instalar.
+
+## Ver también
+
+- **[Procesos](/es/devops/processes)** — `SIGTERM` frente a `SIGKILL` desde el ángulo práctico de reiniciar graciosamente un servicio en ejecución.
+- **[Permisos](/es/operating-systems/permissions)** — un proceso generalmente necesita una identidad de usuario coincidente (o ser root) para poder siquiera enviar una señal a otro proceso.
+- **[Comunicación entre Procesos](/es/operating-systems/inter-process-communication)** — las señales son una forma mínima de que los procesos se notifiquen entre sí, junto a mecanismos más ricos para intercambiar datos reales.

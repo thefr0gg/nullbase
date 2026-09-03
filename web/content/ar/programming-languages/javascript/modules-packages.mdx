@@ -1,0 +1,161 @@
+---
+title: الوحدات و npm
+description: صيغة import/export لوحدات ES، وpackage.json، وكيف تدير npm اعتماديات JavaScript.
+category: Programming Languages
+weight: 8
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+قبل ES6، لم يكن لدى JavaScript نظام وحدات مدمج — كان الكود مُقسَّماً عبر
+وسوم `<script>` أو مُجمَّعاً بأدوات خارجية مثل CommonJS (`require`/
+`module.exports` الخاصة بـNode). وحدات ES، باستخدام `import` و`export`،
+هي الآن المعيار وتعمل بنفس الطريقة في المتصفحات (بـ`<script
+type="module">`) وفي Node.js.
+
+## التصديرات المسمّاة والافتراضية
+
+يمكن لوحدة أن تُصدِّر قيماً مسمّاة متعددة، وتصديراً افتراضياً واحداً
+اختيارياً.
+
+```js
+// math.js
+export function add(a, b) {
+  return a + b;
+}
+
+export function subtract(a, b) {
+  return a - b;
+}
+
+export const PI = 3.14159;
+
+export default function multiply(a, b) {
+  return a * b;
+}
+```
+
+```js
+// main.js
+import multiply, { add, subtract, PI } from "./math.js";
+
+console.log(add(2, 3));      // 5
+console.log(multiply(2, 3));  // 6
+console.log(PI);              // 3.14159
+```
+
+يجب أن تطابق الاستيرادات المسمّاة الأسماء المُصدَّرة بالضبط (أو تُعاد
+تسميتها بـ`as`)، ويمكن أن يوجد تصدير افتراضي واحد كحد أقصى لكل وحدة، وهذا
+سبب استيراده دون أقواس معقوفة.
+
+```js
+import multiply, { subtract as minus } from "./math.js";
+
+console.log(minus(10, 4)); // 6
+```
+
+## استيراد مساحة الأسماء وإعادة التصدير
+
+يمكنك سحب كل تصدير مسمّى لوحدة كـكائن واحد، ويمكن للوحدات إعادة تصدير
+أشياء من وحدات أخرى — مفيد لبناء نقطة دخول "برميل" (barrel) واحدة لمجلد
+من الملفات ذات الصلة.
+
+```js
+import * as MathUtils from "./math.js";
+console.log(MathUtils.add(1, 1)); // 2
+
+// utils/index.js — إعادة التصدير من ملفات متعددة
+export { add, subtract } from "./math.js";
+export { formatDate } from "./dates.js";
+```
+
+## package.json وnpm
+
+يصف ملف `package.json` كل مشروع Node.js (ومعظم مشاريع الواجهة الأمامية):
+اسم المشروع، وإصداره، واعتمادياته، والسكربتات التي تُشغِّلها بـ
+`npm run`.
+
+```json
+{
+  "name": "my-app",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "express": "^4.19.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0"
+  }
+}
+```
+
+يخبر `"type": "module"` نود أن يعامل ملفات `.js` كوحدات ES بدلاً من صيغة
+CommonJS الأقدم — دونه، ترمي `import`/`export` خطأ صيغة وستحتاج
+`require`/`module.exports` بدلاً منهما. يقرأ `npm install`
+`dependencies` و`devDependencies` ويُنزِّل كل شيء (بالإضافة إلى
+اعتمادياته الخاصة، تكرارياً) إلى `node_modules`، مُسجِّلاً الإصدارات
+المحلولة الدقيقة في `package-lock.json` كي تكون التثبيتات قابلة لإعادة
+الإنتاج عبر الأجهزة. تعني `^` في `"^4.19.0"` "أي إصدار متوافق بدءاً من
+4.19.0، وحتى (لكن غير شامل) 5.0.0" — اصطلاح npm لنطاقات الإصدار
+الدلالي (semantic versioning).
+
+تُشحَن `dependencies` مع تطبيقك في الإنتاج؛ `devDependencies` (المدقّقات
+اللغوية (linters)، مشغّلات الاختبار، أدوات التجميع) لازمة فقط أثناء
+التطوير ويتخطاها `npm install --omit=dev` في تثبيتات الإنتاج.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لتعريف تصديرات مسمّاة في ملف واستيرادها في آخر."
+  items={[
+    { id: "export1", label: "export function square(n) { return n * n; }" },
+    { id: "export2", label: "export const ORIGIN = { x: 0, y: 0 };" },
+    { id: "importLine", label: "import { square, ORIGIN } from \"./geometry.js\";", explanation: "يجب أن يأتي الاستيراد بعد وجود التصديرات في وحدة المصدر، رغم أنه ملف منفصل يُحمَّل أولاً وقت التشغيل." },
+    { id: "use", label: "console.log(square(4), ORIGIN);" },
+  ]}
+  correctOrder={["export1", "export2", "importLine", "use"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="رتّب هذه الأسطر لبناء package.json بسكربت تشغيل واعتمادية واحدة."
+  items={[
+    { id: "open", label: "{" },
+    { id: "name", label: "  \"name\": \"weather-cli\"," },
+    { id: "version", label: "  \"version\": \"1.0.0\"," },
+    { id: "scriptsOpen", label: "  \"scripts\": { \"start\": \"node index.js\" }," },
+    { id: "depsOpen", label: "  \"dependencies\": { \"chalk\": \"^5.3.0\" }" },
+    { id: "close", label: "}" },
+  ]}
+  correctOrder={["open", "name", "version", "scriptsOpen", "depsOpen", "close"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا الكود؟"
+  code={`// shapes.js
+export default function circleArea(r) {
+  return Math.PI * r * r;
+}
+export const shapeCount = 1;
+
+// main.js
+import area, { shapeCount } from "./shapes.js";
+console.log(typeof area, shapeCount);`}
+  options={["\"function\" 1", "\"object\" 1", "\"undefined\" undefined", "SyntaxError"]}
+  correctIndex={0}
+  explanation={`ترتبط area بالتصدير الافتراضي، وهو دالة circleArea، لذا typeof area هي "function". shapeCount تصدير مسمّى مستورَد باسمه الدقيق داخل أقواس، لذا يصل كالرقم 1. مزج تصدير افتراضي واستيرادات مسمّاة في عبارة واحدة، كما هنا، صيغة وحدات ES صالحة.`}
+  actualOutput="function 1"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [البرمجة غير المتزامنة والوعود](/ar/programming-languages/javascript/advanced)
+- [معالجة الأخطاء](/ar/programming-languages/javascript/error-handling)

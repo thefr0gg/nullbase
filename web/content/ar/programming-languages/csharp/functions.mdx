@@ -1,0 +1,144 @@
+---
+title: الدوال
+description: تصريح الدوال (methods) في C#، وأنواع الإرجاع، والمعاملات الاختيارية والمُسماة، والأعضاء ذات الجسم التعبيري.
+category: Programming Languages
+weight: 4
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+في C#، تُصرَّح الدوال دائماً تقريباً كـ**توابع (methods)** — أعضاء
+صنف أو بُنية — بدلاً من دوال حرة مستقلة (الدوال المحلية استثناء،
+مشمولة أدناه). تصرّح الدالة عن نوع إرجاع، واسم، وقائمة معاملات.
+
+## الدوال الأساسية
+
+```csharp
+class Calculator
+{
+    public int Add(int a, int b)
+    {
+        return a + b;
+    }
+
+    // Expression-bodied method: shorthand for a single-expression body
+    public int Square(int x) => x * x;
+}
+
+var calc = new Calculator();
+Console.WriteLine(calc.Add(2, 3));    // 5
+Console.WriteLine(calc.Square(4));    // 16
+```
+
+تستخدم الدالة التي لا تُرجع شيئاً `void`. تنتمي التوابع `static`
+إلى النوع نفسه بدلاً من نسخة، وهذا سبب كون `Main` دائماً `static`.
+
+## المعاملات الاختيارية والقيم الافتراضية
+
+يمكن أن تصرّح المعاملات عن قيمة افتراضية، ما يجعلها اختيارية في
+موقع الاستدعاء — يجب أن يمتلك أي معامل بعد معامل ذي قيمة افتراضية
+قيمة افتراضية أيضاً:
+
+```csharp
+string Greet(string name, string greeting = "Hello", bool shout = false)
+{
+    string message = $"{greeting}, {name}!";
+    return shout ? message.ToUpper() : message;
+}
+
+Console.WriteLine(Greet("Ada"));                        // Hello, Ada!
+Console.WriteLine(Greet("Ada", "Hey"));                  // Hey, Ada!
+Console.WriteLine(Greet("Ada", shout: true));            // HELLO, ADA!
+```
+
+## الوسائط المُسماة
+
+يمكن لأي استدعاء تمرير الوسائط بالاسم بدلاً من الموضع، بأي ترتيب —
+هذا مفيد خصوصاً عند تجاوز معاملات اختيارية سابقة، كما فعلت
+`shout: true` أعلاه. تجعل الوسائط المُسماة مواقع الاستدعاء موثِّقة
+ذاتياً عندما يأخذ تابع عدة معاملات من النوع نفسه:
+
+```csharp
+void CreateUser(string name, int age, bool isAdmin = false)
+{
+    Console.WriteLine($"{name}, {age}, admin={isAdmin}");
+}
+
+CreateUser(name: "Grace", age: 40, isAdmin: true);
+CreateUser(age: 25, name: "Alan"); // order doesn't matter with names
+```
+
+## params والدوال المحلية
+
+تتيح `params` لتابع قبول عدد متغير من الوسائط الزائدة كمصفوفة،
+وتتيح الدوال المحلية تضمين تابع مساعد داخل آخر:
+
+```csharp
+int Sum(params int[] numbers)
+{
+    int total = 0;
+    foreach (int n in numbers)
+    {
+        total += n;
+    }
+    return total;
+}
+
+Console.WriteLine(Sum(1, 2, 3, 4)); // 10
+
+int Outer(int x)
+{
+    int Double(int n) => n * 2; // local function, only visible inside Outer
+    return Double(x) + 1;
+}
+
+Console.WriteLine(Outer(5)); // 11
+```
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="اجمع الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء تابع يجمع رقمين واستدعائه."
+  items={[
+    { id: "l1", label: "int Add(int a, int b)" },
+    { id: "l2", label: "{" },
+    { id: "l3", label: "    return a + b;" },
+    { id: "l4", label: "}" },
+    { id: "l5", label: "Console.WriteLine(Add(3, 4));" },
+  ]}
+  correctOrder={["l1", "l2", "l3", "l4", "l5"]}
+/>
+
+<OrderingExercise
+  title="اجمع الكود"
+  prompt="ضع هذه الأسطر بالترتيب للتصريح عن تابع بمعامل اختياري واستدعائه بطريقتين."
+  items={[
+    { id: "m1", label: "string Greet(string name, string greeting = \"Hi\") => $\"{greeting}, {name}!\";" },
+    { id: "m2", label: "Console.WriteLine(Greet(\"Sam\"));" , explanation: "تُستخدَم القيمة الافتراضية لأن greeting محذوفة هنا."},
+    { id: "m3", label: "Console.WriteLine(Greet(\"Sam\", \"Yo\"));" },
+  ]}
+  correctOrder={["m1", "m2", "m3"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا؟"
+  code={`void Describe(string name, int age = 30, bool vip = false)
+{
+    Console.WriteLine($"{name}, {age}, vip={vip}");
+}
+
+Describe(age: 25, name: "Rae");`}
+  options={["Rae, 25, vip=False", "25, Rae, vip=False", "خطأ ترجمة", "Rae, 30, vip=False"]}
+  correctIndex={0}
+  explanation="يمكن أن تظهر الوسائط المُسماة بأي ترتيب في موقع الاستدعاء؛ تطابقها C# بالاسم، لا بالموضع. تبادلت age وname في الاستدعاء لكنهما لا تزالان تُربطان بشكل صحيح، وترجع vip إلى قيمتها الافتراضية، false."
+  actualOutput="Rae, 25, vip=False"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [التحكم بمسار التنفيذ](/ar/programming-languages/csharp/control-flow)
+- [هياكل البيانات](/ar/programming-languages/csharp/data-structures)

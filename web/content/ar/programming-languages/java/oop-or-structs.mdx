@@ -1,0 +1,268 @@
+---
+title: الأصناف والواجهات
+description: الأصناف، والحقول، والبُناة (constructors)، والوراثة، والواجهات، وتعدد الأشكال — نموذج Java الكائني بعمق.
+category: Programming Languages
+weight: 6
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Java لغة كائنية التوجه بعمق: الأصناف هي وحدة التنظيم الأساسية، وكل برنامج
+غير تافه تقريباً هو شبكة من الكائنات تُرسل رسائل (تستدعي توابع) لبعضها
+بعضاً. تغطي هذه الصفحة النموذج الكائني الأساسي — الأصناف، والوراثة،
+والواجهات، وتعدد الأشكال — بعمق أكبر من الصفحات الأخرى، لأنها حيث تعيش
+معظم فلسفة تصميم Java.
+
+## الأصناف، والحقول، والبُناة
+
+يجمع الصنف الحالة (**الحقول**) مع السلوك (**التوابع**). يُهيِّئ **الباني
+(constructor)** نسخة جديدة:
+
+```java
+public class Point {
+    private final double x;
+    private final double y;
+
+    public Point(double x, double y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    public double distanceFromOrigin() {
+        return Math.sqrt(x * x + y * y);
+    }
+
+    @Override
+    public String toString() {
+        return "Point(" + x + ", " + y + ")";
+    }
+}
+```
+
+```java
+Point p = new Point(3.0, 4.0);
+System.out.println(p.distanceFromOrigin()); // 5.0
+System.out.println(p);                      // Point(3.0, 4.0) — تُستدعى toString ضمنياً
+```
+
+الحقول `private` قابلة للوصول فقط داخل الصنف نفسه — الاصطلاح المعياري في
+Java هو إبقاء الحقول private وكشف السلوك (أو توابع getter/setter) بدلاً
+من السماح لكود خارجي بالوصول مباشرة إلى حالة الكائن. تشير `this` إلى
+النسخة الحالية وتزيل الغموض بين حقل ومعامل باني بنفس الاسم.
+
+## الوراثة بـextends
+
+يمكن لصنف أن يمتد (`extend`) من صنف أب واحد بالضبط، وارثاً حقوله وتوابعه
+ومُتجاوزاً السلوك اختيارياً:
+
+```java
+public class Shape {
+    protected String name;
+
+    public Shape(String name) {
+        this.name = name;
+    }
+
+    public double area() {
+        return 0.0;
+    }
+
+    public String describe() {
+        return name + " has area " + area();
+    }
+}
+
+public class Circle extends Shape {
+    private final double radius;
+
+    public Circle(double radius) {
+        super("Circle"); // يجب استدعاء باني الصنف الأب أولاً
+        this.radius = radius;
+    }
+
+    @Override
+    public double area() {
+        return Math.PI * radius * radius;
+    }
+}
+```
+
+```java
+Shape s = new Circle(2.0);
+System.out.println(s.describe()); // Circle has area 12.566370614359172
+```
+
+يستدعي `super(...)` باني الصنف الأب ويجب أن تكون أول عبارة في باني صنف
+فرعي إذا استُخدمت صراحة؛ وإذا حُذفت، تُدرج Java استدعاء `super()` ضمنياً
+بلا وسائط. `@Override` اختيارية لكنها موصى بها بشدة — تخبر المصرّف "يجب
+أن يطابق هذا تابعاً في الصنف الأب"، ملتقطة الأخطاء المطبعية (اسم تابع
+مكتوب خطأً يصبح صامتاً تابعاً جديداً بدلاً من تجاوز دون هذا التعليق) وقت
+التصريف.
+
+تدعم Java عمداً **وراثة أحادية** فقط للأصناف — يمتد الصنف من صنف أب واحد
+كحد أقصى. هذا يتجنب "مشكلة الماس" التي تنشأ عندما يرث صنف تنفيذين
+متضاربين لنفس التابع من أبوين عبر وراثة متعددة كاملة.
+
+## تعدد الأشكال
+
+يمكن لمتغير مُصرَّح بنوع أب أن يشير إلى نسخة أي نوع فرعي، واستدعاء تابع
+مُتجاوَز يُوجَّه إلى تنفيذ النوع الفعلي وقت التشغيل — وليس النوع المُعلَن
+(وقت التصريف):
+
+```java
+Shape[] shapes = { new Circle(1.0), new Circle(2.0) };
+for (Shape shape : shapes) {
+    System.out.println(shape.describe()); // يستدعي دائماً ()area الخاص بـCircle
+}
+```
+
+هذا هو **التوزيع الديناميكي (dynamic dispatch)**: رغم أن نوع عنصر
+المصفوفة المُعلَن هو `Shape`، يُحَل كل استدعاء لـ`area()` إلى
+`Circle.area()` وقت التشغيل، لأن ذلك هو النوع الفعلي للكائن المخزَّن
+هناك.
+
+## الواجهات
+
+تُعلن الواجهة عقداً — توقيعات توابع بلا تنفيذ (بالإضافة، منذ Java 8، إلى
+توابع `default` اختيارية بجسم) — يمكن لأي عدد من الأصناف غير المرتبطة
+تنفيذها:
+
+```java
+public interface Movable {
+    void move(double dx, double dy);
+
+    default void stop() {
+        System.out.println("Stopped.");
+    }
+}
+
+public class Robot implements Movable {
+    private double x = 0;
+    private double y = 0;
+
+    @Override
+    public void move(double dx, double dy) {
+        x += dx;
+        y += dy;
+        System.out.println("Now at (" + x + ", " + y + ")");
+    }
+}
+```
+
+خلافاً لـ`extends`، يمكن لصنف أن يُنفِّذ (`implements`) أي عدد من
+الواجهات — هذه هي طريقة Java للحصول على معظم الفائدة العملية للوراثة
+المتعددة دون مثالبها، بما أن الواجهات (في الغالب) لا تحمل حالة حقول
+متضاربة. الصنف الذي يُنفِّذ واجهة قابل للإسناد إلى متغير من نوع تلك
+الواجهة، تماماً كما لو كان لصنف أب:
+
+```java
+Movable m = new Robot();
+m.move(1.0, 2.0); // Now at (1.0, 2.0)
+m.stop();         // Stopped. (يستخدم تنفيذ الواجهة الافتراضي)
+```
+
+## الأصناف abstract
+
+يمكن لصنف `abstract` أن يخلط توابع منفَّذة مع أخرى `abstract` غير منفَّذة،
+و — خلافاً للواجهة — يمكنه احتواء حقول غير `static` وغير `final` مشتركة
+عبر الوراثة. لا يمكن إنشاء نسخة منه مباشرة؛ فقط صنف فرعي ملموس ينفّذ كل
+تابع `abstract` يمكن ذلك:
+
+```java
+public abstract class Animal {
+    protected final String name;
+
+    public Animal(String name) {
+        this.name = name;
+    }
+
+    public abstract String sound();
+
+    public void speak() {
+        System.out.println(name + " says " + sound());
+    }
+}
+
+public class Dog extends Animal {
+    public Dog(String name) {
+        super(name);
+    }
+
+    @Override
+    public String sound() {
+        return "Woof";
+    }
+}
+```
+
+الاختيار بين صنف `abstract` وواجهة يتعلق أساساً بما إذا كانت الأنواع
+الفرعية تشترك حالة حقيقية وما إذا كان النوع بحاجة للوراثة من أكثر من
+مصدر: الجأ إلى واجهة افتراضياً، وصنف `abstract` عندما تشترك عدة أصناف
+فرعية ذات صلة فعلاً في حقول ومنطق باني.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لتعريف صنف Point بباني وتابع، ثم استخدامه."
+  items={[
+    { id: "p1", label: "public class Point {" },
+    { id: "p2", label: "    private final double x, y;" },
+    { id: "p3", label: "    public Point(double x, double y) { this.x = x; this.y = y; }", explanation: "يجب تصريح الحقول قبل الباني الذي يُهيِّئها." },
+    { id: "p4", label: "    public double sum() { return x + y; }" },
+    { id: "p5", label: "}" },
+    { id: "p6", label: "Point p = new Point(2.0, 3.0);" },
+    { id: "p7", label: "System.out.println(p.sum());" },
+  ]}
+  correctOrder={["p1", "p2", "p3", "p4", "p5", "p6", "p7"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="رتّب هذه الأسطر لبناء صنف فرعي Circle يمتد من Shape، مُتجاوِزاً ()area، وطباعة استدعاء متعدد الأشكال."
+  items={[
+    { id: "q1", label: "public class Shape {" },
+    { id: "q2", label: "    public double area() { return 0.0; }" },
+    { id: "q3", label: "}" },
+    { id: "q4", label: "public class Circle extends Shape {", explanation: "يجب أن يأتي تصريح Circle بعد اكتمال تعريف Shape، الصنف الذي يمتد منه." },
+    { id: "q5", label: "    private final double radius;" },
+    { id: "q6", label: "    public Circle(double radius) { this.radius = radius; }" },
+    { id: "q7", label: "    @Override" },
+    { id: "q8", label: "    public double area() { return Math.PI * radius * radius; }" },
+    { id: "q9", label: "}" },
+    { id: "q10", label: "Shape s = new Circle(2.0);" },
+    { id: "q11", label: "System.out.println(s.area());" },
+  ]}
+  correctOrder={["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا الكود؟"
+  code={`public class Shape {
+    public String kind() { return "Shape"; }
+}
+
+public class Square extends Shape {
+    @Override
+    public String kind() { return "Square"; }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        Shape s = new Square();
+        System.out.println(s.kind());
+    }
+}`}
+  options={["Shape", "Square", "خطأ تصريف: أنواع غير متوافقة", "يعتمد على النوع المُعلَن، فلا يطبع شيئاً محدداً"]}
+  correctIndex={1}
+  explanation="استدعاءات التوابع في Java تستخدم التوزيع الديناميكي: تنظر JVM إلى النوع الفعلي وقت التشغيل للكائن (Square)، وليس النوع المُعلَن وقت التصريف للمتغير (Shape)، لتقرر أي تنفيذ لـ()kind يعمل. هذا ما يجعل تعدد الأشكال مفيداً."
+  actualOutput="Square"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [هياكل البيانات](/ar/programming-languages/java/data-structures)
+- [معالجة الأخطاء](/ar/programming-languages/java/error-handling)

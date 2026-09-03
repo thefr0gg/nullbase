@@ -1,0 +1,105 @@
+---
+title: Decoradores y Generadores
+description: Las características de nivel intermedio distintivas de Python — envolver funciones con decoradores, y producir valores perezosamente con generadores y yield.
+category: Programming Languages
+weight: 9
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Un **decorador** es una función que toma una función y devuelve una nueva función que la envuelve — usado para añadir comportamiento (registro, cronometraje, comprobaciones de acceso) sin tocar el cuerpo de la función original. La sintaxis `@decorator` encima de un `def` es solo una forma abreviada de reasignar la función al valor de retorno del decorador.
+
+```python
+def logged(func):
+    def wrapper(*args, **kwargs):
+        print(f"Calling {func.__name__}")
+        return func(*args, **kwargs)
+    return wrapper
+
+@logged
+def add(a, b):
+    return a + b
+
+print(add(2, 3))
+# Calling add
+# 5
+```
+
+`@logged` encima de `def add(...)` es equivalente a escribir `add = logged(add)` justo después de definirlo — cada llamada a `add` ahora realmente llama a `wrapper`, que imprime, luego llama a la `add` original mediante el closure sobre `func`, y devuelve su resultado. Este es el mismo mecanismo de closure cubierto en [Funciones](/es/programming-languages/python/functions), aplicado para envolver comportamiento en vez de simplemente capturar un valor.
+
+Un **generador** es una función que produce una secuencia de valores perezosamente, uno a la vez, usando `yield` en vez de `return`. Llamar a una función generadora no ejecuta su cuerpo inmediatamente — devuelve un objeto generador, y el cuerpo solo avanza hasta el siguiente `yield` cada vez que se solicita un valor.
+
+```python
+def countdown(n):
+    while n > 0:
+        yield n
+        n -= 1
+
+for number in countdown(3):
+    print(number)
+# 3
+# 2
+# 1
+```
+
+Cada iteración del bucle `for` reanuda `countdown` justo después de su `yield`, en vez de volver a ejecutar toda la función desde cero — el estado local de la función (`n`, y su posición en el bucle `while`) se preserva entre yields. Esto hace que los generadores sean eficientes en memoria para secuencias grandes o sin límite: no hace falta que exista en memoria a la vez nada más allá del valor actual.
+
+Una **expresión generadora** — `(expr for item in iterable)` — es la contraparte perezosa de una comprensión de lista, produciendo el mismo tipo de generador uno-a-la-vez sin ningún `def` ni `yield` en absoluto.
+
+```python
+squares = (x * x for x in range(5))
+print(next(squares))       # 0
+print(next(squares))       # 1
+print(list(squares))       # [4, 9, 16] — the rest, in one go
+```
+
+`next()` extrae exactamente un valor del generador cada vez que se llama; `list()` drena lo que quede. Nota que los dos primeros valores (`0`, `1`) ya han desaparecido para cuando `list()` se ejecuta — un generador solo produce cada valor una vez, y no hay forma de "rebobinarlo."
+
+## Ver también
+
+- **[Funciones](/es/programming-languages/python/functions)** — los closures que hacen posibles decoradores como `logged`.
+- **[Flujo de Control](/es/programming-languages/python/control-flow)** — los bucles `for` que impulsan tanto a los generadores como a las expresiones generadoras.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir un decorador de registro y aplicarlo a una función."
+  items={[
+    { id: "def", label: "def logged(func):" },
+    { id: "wrapperdef", label: "    def wrapper(*args, **kwargs):", explanation: "wrapper se define dentro de logged, justo después del def exterior." },
+    { id: "printcall", label: '        print(f"Calling {func.__name__}")' },
+    { id: "returncall", label: "        return func(*args, **kwargs)" },
+    { id: "returnwrapper", label: "    return wrapper", explanation: "logged debe devolver el wrapper que acaba de construir, como su última línea." },
+    { id: "decorate", label: "@logged", explanation: "El decorador tiene que existir antes de poder aplicarse a una función con @." },
+    { id: "adddef", label: "def add(a, b):" },
+    { id: "addreturn", label: "    return a + b" },
+  ]}
+  correctOrder={["def", "wrapperdef", "printcall", "returncall", "returnwrapper", "decorate", "adddef", "addreturn"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir un generador countdown y consumirlo en un bucle."
+  items={[
+    { id: "def", label: "def countdown(n):" },
+    { id: "while", label: "    while n > 0:", explanation: "El bucle pertenece dentro del cuerpo de la función generadora." },
+    { id: "yield", label: "        yield n" },
+    { id: "decrement", label: "        n -= 1" },
+    { id: "for", label: "for number in countdown(3):", explanation: "countdown debe estar completamente definido antes de poder ser llamado e iterado." },
+    { id: "print", label: "    print(number)" },
+  ]}
+  correctOrder={["def", "while", "yield", "decrement", "for", "print"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`gen = (x for x in range(3))\nprint(list(gen))\nprint(list(gen))`}
+  options={["[0, 1, 2] then [0, 1, 2]", "[0, 1, 2] then []", "[] then [0, 1, 2]", "An error: gen is exhausted after the first list()"]}
+  correctIndex={1}
+  explanation="Un generador produce cada valor exactamente una vez y no se puede reiniciar. El primer list(gen) drena cada valor que el generador jamás producirá, así que para la segunda llamada no queda nada por extraer — list() sobre un generador ya agotado simplemente devuelve una lista vacía, no un error."
+  actualOutput='[0, 1, 2]\n[]'
+/>
+</ExerciseTabs>

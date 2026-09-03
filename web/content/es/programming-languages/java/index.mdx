@@ -1,0 +1,132 @@
+---
+title: Java
+description: Una visión general de Java, el lenguaje orientado a objetos, de tipado estático y basado en clases construido para ejecutarse en cualquier lugar donde corra la JVM.
+category: Programming Languages
+weight: 1
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Java fue lanzado por Sun Microsystems en 1995 (ahora mantenido por Oracle)
+bajo el lema "write once, run anywhere" (escribe una vez, ejecuta en
+cualquier lugar). El código fuente compila a **bytecode** independiente de la
+plataforma, que se ejecuta en la Máquina Virtual de Java (JVM) en vez de
+directamente sobre un sistema operativo concreto. El mismo archivo `.class`
+se ejecuta sin modificaciones en Windows, Linux, o macOS siempre que haya
+instalada una JVM compatible.
+
+Java es de tipado estático, con recolección de basura, y profundamente
+orientado a objetos: casi todo lo que escribes vive dentro de una clase. Ha
+impulsado una enorme parte de los sistemas backend empresariales, las
+aplicaciones Android (mediante una cadena de herramientas compatible con
+Java), y los sistemas distribuidos a gran escala durante tres décadas, y su
+ecosistema de librerías y herramientas maduras (Maven, Gradle, Spring) es uno
+de los más grandes de la industria.
+
+## Qué hace distintivo a Java
+
+- **La JVM.** El código compila a bytecode, no a código máquina. El
+  compilador just-in-time de la JVM luego convierte el bytecode "caliente"
+  en instrucciones nativas en tiempo de ejecución, y el mismo bytecode se
+  ejecuta sin modificaciones en cualquier plataforma con una JVM.
+- **Todo es una clase (casi).** No hay funciones flotantes. Todo método vive
+  dentro de una clase o interfaz, incluso el punto de entrada `main` de un
+  programa.
+- **Excepciones comprobadas (checked).** Java distingue las excepciones que
+  el compilador te obliga a manejar o declarar (checked) de aquellas que no
+  (unchecked) — una distinción que la mayoría de los otros lenguajes
+  principales abandonó.
+- **Herencia simple, múltiples interfaces.** Una clase extiende como máximo
+  una superclase pero puede implementar cualquier número de interfaces,
+  evitando el problema del diamante que crea la herencia múltiple completa.
+- **Gestión automática de memoria.** Un recolector de basura generacional
+  recupera los objetos inalcanzables; no hay `free` ni `delete` manual.
+- **Fuerte compatibilidad hacia atrás.** El código escrito para Java 1.2 a
+  finales de los años 90 en gran medida todavía compila hoy — una política
+  de evolución del lenguaje deliberada y muy vigilada.
+
+Aquí tienes un programa Java mínimo y completo:
+
+```java
+public class Main {
+    public static void main(String[] args) {
+        System.out.println("Hello, nullbase!");
+    }
+}
+```
+
+El archivo debe llamarse `Main.java` para coincidir con el nombre de la
+clase pública, y `main` debe tener exactamente esta firma — `public static
+void main(String[] args)` — para que la JVM lo reconozca como el punto de
+entrada.
+
+## Cuándo recurrir a Java
+
+Java es una opción por defecto sólida para sistemas backend grandes y de
+larga vida donde el tamaño del equipo, la madurez de las herramientas, y la
+mantenibilidad a largo plazo importan más que una latencia de arranque
+mínima: servicios empresariales, aplicaciones Android, e infraestructura de
+big data (Hadoop, Kafka, y Spark están todos escritos en Java o en su
+hermano de la JVM, Scala). Se recurre a él con menos frecuencia cuando
+quieres un único binario pequeño sin runtime que instalar, que es donde
+lenguajes compilados como Go o Rust suelen ganar.
+
+## Qué sigue
+
+Las siguientes páginas recorren Java desde la sintaxis hasta la
+concurrencia: variables y tipos, flujo de control, métodos, los tipos de
+colección integrados, clases e interfaces, manejo de excepciones, el
+ecosistema de paquetes y herramientas de compilación, y finalmente los hilos
+y `java.util.concurrent`.
+
+## Ejercicios
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Arrastra las líneas al orden correcto para construir un programa Java mínimo y funcional que imprima un saludo."
+  items={[
+    { id: "classopen", label: "public class Main {" },
+    { id: "mainopen", label: "    public static void main(String[] args) {", explanation: "main debe declararse dentro del cuerpo de la clase." },
+    { id: "body", label: "        System.out.println(\"Hello, Java\");" },
+    { id: "mainclose", label: "    }" },
+    { id: "classclose", label: "}" },
+  ]}
+  correctOrder={["classopen", "mainopen", "body", "mainclose", "classclose"]}
+/>
+
+<OrderingExercise
+  title="Ensambla el código"
+  prompt="Ordena estas líneas para declarar un campo de clase, asignarlo en el constructor, e imprimirlo desde main."
+  items={[
+    { id: "c1", label: "public class Greeter {" },
+    { id: "c2", label: "    private String name;", explanation: "Los campos se declaran antes de que el constructor los use." },
+    { id: "c3", label: "    public Greeter(String name) { this.name = name; }" },
+    { id: "c4", label: "    public static void main(String[] args) {" },
+    { id: "c5", label: "        Greeter g = new Greeter(\"Ada\");" },
+    { id: "c6", label: "        System.out.println(g.name);" },
+    { id: "c7", label: "    }" },
+    { id: "c8", label: "}" },
+  ]}
+  correctOrder={["c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8"]}
+/>
+
+<PredictOutput
+  title="¿Qué imprime esto?"
+  code={`public class Main {
+    public static void main(String[] args) {
+        System.out.println("nullbase");
+    }
+}`}
+  options={["nullbase", "\"nullbase\"", "Compile error: no return type", "Hello, nullbase!"]}
+  correctIndex={0}
+  explanation="System.out.println imprime el contenido de la cadena sin las comillas que la rodean, seguido de un salto de línea. Las comillas solo delimitan el literal en el código fuente; no forman parte del valor en tiempo de ejecución."
+  actualOutput="nullbase"
+/>
+</ExerciseTabs>
+
+## Ver también
+
+- [Sintaxis y Variables](/es/programming-languages/java/syntax-basics)
+- [Hilos y Concurrencia](/es/programming-languages/java/advanced)

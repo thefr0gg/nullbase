@@ -1,0 +1,33 @@
+---
+title: Compilateurs
+description: Comment le code source devient du code machine avant même que le programme ne s'exécute — lexing, parsing, les représentations intermédiaires qu'un compilateur optimise, et ce que « langage compilé » signifie réellement.
+category: Computer Science
+weight: 6
+---
+
+Un **compilateur** traduit du code source écrit dans un langage vers une autre forme — généralement du code machine que le CPU peut exécuter directement — entièrement avant que le programme ne s'exécute. Ce « entièrement avant » est la distinction clé avec un [interpréteur](/fr/computer-science/interpreters), qui effectue le travail équivalent pendant que le programme s'exécute.
+
+## Le pipeline
+
+Un compilateur est généralement organisé comme un pipeline d'étapes distinctes, chacune consommant la sortie de l'étape précédente :
+
+- **Lexing (tokenisation)** — le texte source brut est découpé en un flux de **tokens** : mots-clés, identifiants, littéraux, opérateurs. À ce stade, `x=x+1` et `x = x + 1` produisent des tokens identiques ; les espaces ont déjà cessé d'avoir de l'importance.
+- **Parsing (analyse syntaxique)** — le flux de tokens est assemblé en un **arbre syntaxique abstrait (AST)**, un [arbre](/fr/computer-science/data-structures) représentant la structure grammaticale du code — quelles sous-expressions appartiennent à quelle instruction, ce qui est imbriqué dans quoi.
+- **Analyse sémantique** — l'AST est vérifié par rapport aux règles du langage que le parsing seul ne peut pas imposer : les types sont-ils compatibles, cette variable est-elle déclarée avant utilisation, cet appel de fonction correspond-il à une signature connue. C'est là que la plupart des erreurs de compilation sont réellement levées — le parsing échoue seulement sur du code grammaticalement mal formé.
+- **Représentation intermédiaire (IR)** — l'AST est abaissé en une représentation plus simple et plus uniforme, plus facile à analyser et à optimiser que l'arbre syntaxique d'origine, et non liée au langage source ni à la machine cible finale. L'IR de LLVM en est un exemple largement utilisé, partagé entre de nombreux langages frontaux et architectures backend différents.
+- **Optimisation** — l'IR est transformée pour être plus rapide ou plus petite sans changer ce que calcule le programme : élimination de code mort, réduction de constantes (calculer `2 + 2` une fois à la compilation plutôt qu'à chaque exécution), inlining de petites fonctions à leurs sites d'appel.
+- **Génération de code** — l'IR optimisée est enfin traduite en code machine réel (ou une autre cible, comme du bytecode) pour une architecture spécifique.
+
+## Pourquoi « langage compilé » est un peu imprécis
+
+Qualifier un langage de « compilé » ou d'« interprété » décrit en réalité la façon dont une implémentation particulière l'exécute généralement, pas une propriété inhérente au langage — le même langage peut avoir les deux types d'implémentations. C et Rust sont compilés à l'avance directement en code machine natif. Java se compile en un **bytecode** intermédiaire qu'une machine virtuelle interprète ensuite (ou compile davantage, voir ci-dessous) à l'exécution. L'implémentation de référence de Python se compile aussi en bytecode, mais ce bytecode est ensuite interprété plutôt que compilé en code natif, ce qui explique en grande partie pourquoi le code Python s'exécute plus lentement qu'un programme C compilé équivalent pour le même travail lié au CPU.
+
+## Compilation JIT
+
+Certains runtimes brouillent délibérément la frontière avec la **compilation just-in-time (JIT)** : le code commence interprété (ou exécuté comme bytecode non optimisé), mais le runtime observe quelles parties s'exécutent réellement assez souvent pour valoir le coût, et compile *ces* chemins chauds en code machine natif pendant que le programme continue de tourner — combinant le démarrage rapide d'un interpréteur avec la vitesse en régime permanent d'un compilateur pour le code qui compte. La JVM (Java), V8 (JavaScript, dans chaque navigateur basé sur Chromium et Node.js), et les implémentations Python modernes comme PyPy fonctionnent toutes ainsi.
+
+## Voir aussi
+
+- **[Interpréteurs](/fr/computer-science/interpreters)** — l'alternative à la compilation à l'avance, et où se situe le JIT entre les deux.
+- **[Structures de données](/fr/computer-science/data-structures)** — l'AST qu'un analyseur syntaxique produit est un arbre, parcouru et transformé à presque chaque étape ultérieure.
+- **[Langages de programmation](/fr/programming-languages)** — le côté pratique, propre à chaque langage, de ce que ces pipelines produisent réellement.

@@ -1,0 +1,224 @@
+---
+title: Possession et emprunt
+description: L'ensemble de règles — possession, emprunt, et durées de vie — qui permet à Rust de garantir la sécurité mémoire à la compilation sans ramasse-miettes.
+category: Programming Languages
+weight: 9
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+La possession (ownership) est l'idée autour de laquelle Rust est construit,
+et tout le reste dans le langage — comment `String` se comporte
+différemment de `i32`, pourquoi certains appels de fonction « consomment »
+leur argument et d'autres non, pourquoi le compilateur rejette parfois du
+code qui semble manifestement correct — remonte à trois règles :
+
+1. Chaque valeur a exactement un **possesseur** à la fois.
+2. Quand le possesseur sort de la portée, la valeur est libérée (sa mémoire
+   est libérée).
+3. La possession peut être transférée (**déplacée**) ou temporairement prêtée
+   (**empruntée**), mais jamais dupliquée gratuitement.
+
+Aucun ramasse-miettes ne scanne la mémoire à l'exécution à la recherche de
+ce qui n'est plus accessible — le compilateur détermine à la compilation
+exactement quand le possesseur de chaque valeur sort de la portée, et
+insère le code de nettoyage à cet endroit. C'est pourquoi Rust a des
+performances prévisibles, sans pauses de GC : la gestion de la mémoire est
+un fait de compilation, pas un processus d'exécution.
+
+## Déplacements
+
+Certains types (`i32`, `bool`, `char`, et d'autres types de taille fixe,
+uniquement sur la pile) implémentent `Copy`, ce qui signifie que
+l'assignation duplique la valeur à moindre coût — exactement comme en C. Les
+types qui possèdent de la mémoire sur le tas, comme `String` et `Vec<T>`,
+n'implémentent pas `Copy` ; assigner l'un à une autre variable **déplace**
+la possession à la place, et la liaison originale devient invalide.
+
+```rust
+fn main() {
+    let s1 = String::from("hello");
+    let s2 = s1; // ownership of the heap data moves from s1 to s2
+
+    println!("{s2}, world!"); // fine — s2 owns the data now
+    // println!("{s1}"); // would fail — s1 no longer owns anything
+}
+```
+
+La raison n'est pas une pédanterie arbitraire : si à la fois `s1` et `s2`
+étaient autorisés à libérer indépendamment la même allocation de tas
+lorsqu'ils sortent de la portée, ce serait une double libération — un vrai
+bug de corruption mémoire dans les langages sans cette règle. Déplacer la
+possession plutôt que la copier signifie qu'une seule variable est jamais
+responsable de libérer cette mémoire.
+
+Voici exactement l'erreur d'une vraie compilation :
+
+```rust
+fn takes_ownership(s: String) {
+    println!("{s}");
+} // s goes out of scope here — its heap memory is freed
+
+fn main() {
+    let s1 = String::from("hello");
+    takes_ownership(s1); // s1 is moved into the function
+    println!("{s1}"); // error: use of moved value
+}
+```
+
+```text
+error[E0382]: borrow of moved value: `s1`
+ --> src/main.rs:8:20
+  |
+6 |     let s1 = String::from("hello");
+  |         -- move occurs because `s1` has type `String`, which does not implement the `Copy` trait
+7 |     takes_ownership(s1); // s1 is moved into the function
+  |                     -- value moved here
+8 |     println!("{s1}"); // error: use of moved value
+  |                ^^ value borrowed here after move
+```
+
+Passer `s1` par valeur le déplace dans `takes_ownership`, qui le libère
+quand la fonction retourne — au moment où `main` essaie d'afficher `s1` à
+nouveau, cette mémoire a déjà été libérée, et le compilateur refuse de
+laisser le programme s'exécuter avec une référence vers elle.
+
+## Emprunt : des références sans prendre possession
+
+Déplacer la possession dans chaque fonction qui a besoin de lire une valeur
+rendrait le code simple impraticable — il faudrait repasser la valeur en
+sortie juste pour continuer à l'utiliser. L'**emprunt** résout cela : une
+référence (`&T`) permet à une fonction d'utiliser une valeur sans en prendre
+possession.
+
+```rust
+fn calculate_length(s: &String) -> usize {
+    s.len()
+} // s goes out of scope, but it doesn't own the data, so nothing is dropped
+
+fn main() {
+    let s1 = String::from("hello");
+    let len = calculate_length(&s1); // borrow, don't move
+
+    println!("The length of '{s1}' is {len}"); // s1 is still valid here
+}
+```
+
+L'emprunt a sa propre règle, imposée par le borrow checker : à tout moment,
+vous pouvez avoir soit **n'importe quel nombre de références immuables**
+(`&T`) soit **exactement une référence mutable** (`&mut T`) vers une valeur
+— jamais les deux à la fois. C'est ce qui élimine les courses de données à
+la compilation : deux lecteurs immuables ne peuvent jamais entrer en
+conflit, et un seul écrivain ne peut jamais être observé en cours
+d'écriture par quelqu'un d'autre.
+
+```rust
+fn main() {
+    let mut s = String::from("hello");
+
+    let r1 = &s;
+    let r2 = &s;
+    println!("{r1} and {r2}"); // fine: multiple immutable borrows
+
+    let r3 = &mut s;
+    r3.push_str(", world");
+    println!("{r3}"); // fine, but only because r1/r2 are no longer used after this point
+}
+```
+
+## Durées de vie
+
+Une **durée de vie** (lifetime) est la façon dont le compilateur suit
+combien de temps une référence est valide, afin de pouvoir attraper une
+référence qui survivrait aux données qu'elle pointe (une référence
+pendante). La plupart du temps, les durées de vie sont inférées
+silencieusement, mais une fonction qui renvoie une référence dérivée de
+plus d'une entrée a parfois besoin d'une annotation de durée de vie
+explicite pour dire au compilateur comment les entrées et la sortie sont
+liées.
+
+```rust
+// 'a says: the returned reference lives at most as long as
+// the shorter-lived of x and y.
+fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {
+    if x.len() > y.len() { x } else { y }
+}
+
+fn main() {
+    let s1 = String::from("hello");
+    let result;
+    {
+        let s2 = String::from("world!");
+        result = longest(s1.as_str(), s2.as_str());
+        println!("longest: {result}"); // fine, s2 still alive here
+    }
+    // println!("{result}"); // would fail — s2 (and what result might point to) is gone
+}
+```
+
+Sans l'annotation `'a`, le compilateur n'a aucun moyen de savoir si la
+validité de la référence renvoyée est liée à `x`, à `y`, ou à aucun des deux
+— `longest` ne compilerait pas du tout, puisque le borrow checker refuse de
+deviner. L'annotation ne change pas combien de temps quoi que ce soit vit
+réellement ; elle rend simplement visible au compilateur une relation déjà
+vraie afin qu'il puisse vérifier les appelants par rapport à elle.
+
+## Voir aussi
+
+- **[Structures de données](/fr/programming-languages/rust/data-structures)** — où l'emprunt apparaît constamment, par ex. `vec.iter()` empruntant plutôt que consommant un `Vec`.
+- **[Aperçu de Rust](/fr/programming-languages/rust)** — l'exemple d'utilisation après déplacement qui introduit la possession dès la toute première page de cette section.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire une fonction qui emprunte un String pour calculer sa longueur, puis affiche à la fois l'original et la longueur."
+  items={[
+    { id: "fn-open", label: "fn calculate_length(s: &String) -> usize {" },
+    { id: "fn-body", label: "    s.len()" },
+    { id: "fn-close", label: "}" },
+    { id: "main-open", label: "fn main() {" },
+    { id: "s1", label: "    let s1 = String::from(\"hello\");" },
+    { id: "len", label: "    let len = calculate_length(&s1);", explanation: "s1 doit exister avant de pouvoir être emprunté, et il reste valide ensuite puisqu'il n'a été qu'emprunté, pas déplacé." },
+    { id: "print", label: "    println!(\"The length of '{s1}' is {len}\");" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["fn-open", "fn-body", "fn-close", "main-open", "s1", "len", "print", "main-close"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Glissez les lignes dans le bon ordre pour construire une fonction longest avec une durée de vie explicite et un site d'appel qui l'utilise pendant que les deux entrées sont encore dans la portée."
+  items={[
+    { id: "sig", label: "fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {" },
+    { id: "body", label: "    if x.len() > y.len() { x } else { y }" },
+    { id: "close", label: "}" },
+    { id: "main-open", label: "fn main() {" },
+    { id: "s1", label: "    let s1 = String::from(\"hello\");" },
+    { id: "s2", label: "    let s2 = String::from(\"world!\");", explanation: "s1 et s2 doivent tous deux être créés avant que longest ne puisse emprunter des deux." },
+    { id: "result", label: "    let result = longest(s1.as_str(), s2.as_str());" },
+    { id: "print", label: "    println!(\"longest: {result}\");" },
+    { id: "main-close", label: "}" },
+  ]}
+  correctOrder={["sig", "body", "close", "main-open", "s1", "s2", "result", "print", "main-close"]}
+/>
+
+<PredictOutput
+  title="Qu'est-ce que ceci affiche ?"
+  code={`fn takes_ownership(s: String) {
+    println!("{s}");
+}
+
+fn main() {
+    let s1 = String::from("hello");
+    takes_ownership(s1);
+    println!("{s1}");
+}`}
+  options={["hello, twice", "hello, then an empty line", "hello, then a runtime panic", "Compile error"]}
+  correctIndex={3}
+  explanation="Passer s1 par valeur déplace la possession dans takes_ownership, qui la libère quand la fonction retourne. Le second println! essaie d'utiliser s1 après qu'il a été déplacé, ce que le borrow checker rejette à la compilation — il n'a jamais l'occasion d'afficher une chaîne vide ou une valeur périmée, parce que le programme ne compile jamais."
+  actualOutput={`error[E0382]: borrow of moved value: \`s1\``}
+/>
+</ExerciseTabs>

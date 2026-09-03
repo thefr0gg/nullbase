@@ -1,0 +1,127 @@
+---
+title: بنية اللغة والمتغيرات
+description: بنية C الأساسية — الأنواع، والتصريحات، والعوامل، والإدخال/الإخراج المُنسَّق عبر printf وscanf.
+category: Programming Languages
+weight: 2
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+تتمتع C بنوعية ثابتة و(في الغالب) ضعيفة: كل متغير له نوع ثابت يُصرَّح عنه مسبقاً، لكن المترجم غالباً ما يسمح لك بالتحويل بين الأنواع دون اعتراض يُذكر، وأحياناً يقتطع أو يعيد تفسير البيانات بصمت أثناء ذلك. فهم أنواع C الأساسية وكيفية التصريح عنها هو الأساس لكل شيء آخر في اللغة.
+
+## الأنواع الأساسية والتصريحات
+
+تصف الأنواع المدمجة في C أحجام تخزين خام، لا مفاهيم عالية المستوى مثل "عدد صحيح" — يكون `int` عادة 32 بتاً، لكن معيار C يضمن فقط حداً أدنى للمدى، وليس حجماً دقيقاً، وهذا سبب وجود أنواع ذات عرض ثابت مثل `int32_t` عندما يهم الحجم الدقيق.
+
+```c
+#include <stdio.h>
+
+int main(void) {
+    int count = 42;          /* whole numbers */
+    float price = 19.99f;    /* single-precision floating point */
+    double precise = 3.14159265358979; /* double-precision floating point */
+    char grade = 'B';        /* a single byte, usually holding one character */
+    unsigned int score = 100; /* no sign bit, so it can't go negative */
+
+    printf("count=%d price=%.2f grade=%c\n", count, price, grade);
+    return 0;
+}
+```
+
+يجب التصريح عن كل متغير بنوع قبل استخدامه، وتحمل المتغيرات المحلية غير المُهيَّأة أياً كانت البتات العشوائية الموجودة سلفاً في تلك الذاكرة — لن تُصفّرها C عنك ولن تعترض في وقت الترجمة إن قرأتها قبل إسناد قيمة لها.
+
+## العوامل والإدخال/الإخراج المُنسَّق
+
+تكتب `printf` مخرجات منسَّقة باستخدام **محددات التنسيق** (`%d` لـ `int`، و`%f` للفاصلة العائمة، و`%s` لسلسلة نصية، و`%c` لحرف) التي يجب أن تطابق نوع الوسيط المُمرَّر — عدم مطابقتها كود C صحيح لكنه ينتج قيماً عشوائية أو انهياراً، لأن `printf` ليس لديها طريقة لفحص الأنواع في وقت الترجمة من تلقاء نفسها. تقرأ `scanf` الإدخال بالطريقة نفسها، بشكل معكوس، وتحتاج إلى *عنوان* المتغير الذي ستكتب فيه (ومن هنا يأتي `&`):
+
+```c
+#include <stdio.h>
+
+int main(void) {
+    int a, b;
+    printf("Enter two integers: ");
+    scanf("%d %d", &a, &b);
+
+    int sum = a + b;
+    int remainder = a % b;   /* modulo: remainder of a divided by b */
+
+    printf("sum = %d, remainder = %d\n", sum, remainder);
+    printf("a > b is %d\n", a > b); /* comparisons produce 0 or 1 as an int */
+    return 0;
+}
+```
+
+لا تملك C نوعاً منطقياً مخصصاً في المعايير الأقدم — تُقيَّم مقارنات مثل `a > b` إلى `int` بقيمة `0` (خطأ) أو `1` (صحيح)، وتُعامَل أي قيمة غير صفرية على أنها "صحيحة" داخل شرط. يضيف `stdbool.h` (في C99 وما بعدها) نوع `bool` مع `true`/`false` كأسماء بديلة لـ `1`/`0`، لكنه يبقى في جوهره مجرد عدد صحيح.
+
+## الثوابت والنطاق
+
+تُميّز `const` متغيراً كقابل للقراءة فقط بعد تهيئته (يرفض المترجم إعادة إسناده)، بينما ينشئ `#define` ماكرو معالجة مسبقة يُستبدَل نصياً قبل بدء الترجمة أصلاً:
+
+```c
+#include <stdio.h>
+
+#define MAX_USERS 100   /* preprocessor macro, substituted as text */
+
+const double PI = 3.14159; /* typed constant, checked by the compiler */
+
+int main(void) {
+    double radius = 2.0;
+    double area = PI * radius * radius;
+    printf("Area: %.2f, capacity: %d\n", area, MAX_USERS);
+    return 0;
+}
+```
+
+لا يوجد `MAX_USERS` فعلياً كمتغير في الذاكرة أبداً — تستبدل المعالجة المسبقة كل ظهور للنص `MAX_USERS` بـ `100` قبل أن يرى المترجم الكود أصلاً، بينما `PI` متغير حقيقي ذو نوع يستطيع المترجم فحصه.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="اجمع برنامج مجموع ومتوسط"
+  prompt="اسحب هذه الأسطر إلى الترتيب الذي يقرأ رقمين ويطبع مجموعهما ومتوسطهما."
+  items={[
+    { id: "include", label: "#include <stdio.h>" },
+    { id: "main", label: "int main(void) {" },
+    { id: "decl", label: "    int a, b;" },
+    { id: "scanf", label: "    scanf(\"%d %d\", &a, &b);" },
+    { id: "sum", label: "    int sum = a + b;", explanation: "يجب حساب المجموع بعد قراءة كل من a وb، وقبل طباعته." },
+    { id: "printf", label: "    printf(\"sum=%d avg=%.1f\\n\", sum, sum / 2.0);" },
+    { id: "return", label: "    return 0;" },
+    { id: "close", label: "}" },
+  ]}
+  correctOrder={["include", "main", "decl", "scanf", "sum", "printf", "return", "close"]}
+/>
+
+<OrderingExercise
+  title="رتّب هذه التصريحات بحسب ما تنشئه فعلياً"
+  prompt="رتّبها من شيء موجود فقط أثناء المعالجة المسبقة، إلى ثابت يفحصه المترجم، إلى متغير عادي قابل للتغيير."
+  items={[
+    { id: "macro", label: "#define LIMIT 10", explanation: "استبدال نصي بحت — يختفي قبل أن يعمل المترجم نفسه أصلاً." },
+    { id: "const", label: "const int limit = 10;", explanation: "متغير حقيقي ذو نوع يفرض عليه المترجم وصول القراءة فقط." },
+    { id: "var", label: "int limit = 10;" },
+  ]}
+  correctOrder={["macro", "const", "var"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا؟"
+  code={`#include <stdio.h>
+
+int main(void) {
+    int a = 7, b = 2;
+    printf("%d %d %d\\n", a / b, a % b, (float)a / b);
+    return 0;
+}`}
+  options={["3 1 3.500000", "3.5 1 3.5", "3 1 3", "خطأ ترجمة"]}
+  correctIndex={0}
+  explanation="a / b قسمة أعداد صحيحة (7 / 2 تُقتطع إلى 3)، وa % b هو الباقي (1)، وتحويل a إلى float قبل القسمة يفرض قسمة فاصلة عائمة، تُطبع بستة منازل عشرية افتراضية لـ %f كـ 3.500000. نسيان التحويل هو الفخ الكلاسيكي — بدونه، تحدث قسمة الأعداد الصحيحة قبل أن تُعامَل النتيجة كفاصلة عائمة أصلاً."
+  actualOutput="3 1 3.500000"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- **[C](/ar/programming-languages/c)** — النظرة العامة ونموذج الترجمة اللذان تُبنى عليهما هذه الأمثلة.
+- **[التحكم بمسار التنفيذ](/ar/programming-languages/c/control-flow)** — استخدام هذه العوامل داخل الشروط والحلقات.

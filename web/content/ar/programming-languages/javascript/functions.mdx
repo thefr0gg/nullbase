@@ -1,0 +1,170 @@
+---
+title: الدوال والإغلاقات
+description: تصريحات الدوال، ودوال الأسهم (arrow functions)، والمعاملات الافتراضية والباقية (rest)، والإغلاقات (closures) في JavaScript.
+category: Programming Languages
+weight: 4
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+الدوال في JavaScript قيم: يمكنك إسنادها إلى متغيرات، وتمريرها كوسائط،
+وتخزينها في مصفوفات، وإعادتها من دوال أخرى. هذه الخاصية "الدوال من الدرجة
+الأولى" هي الأساس لردود النداء (callbacks)، وتوابع المصفوفة مثل
+`map`/`filter`، والإغلاقات.
+
+## تصريح الدوال
+
+توجد ثلاث طرق شائعة لكتابة دالة، وتختلف في أكثر من مجرد الصيغة.
+
+```js
+// تصريح دالة — مرفوعة (hoisted)، يمكن استدعاؤها قبل ظهور تعريفها
+function add(a, b) {
+  return a + b;
+}
+
+// تعبير دالة — غير مرفوع، يوجد فقط بمجرد تنفيذ هذا السطر
+const subtract = function (a, b) {
+  return a - b;
+};
+
+// دالة سهم — صيغة موجزة، بلا `this` أو `arguments` خاصين بها
+const multiply = (a, b) => a * b;
+```
+
+تُرفَع تصريحات الدوال بجسمها الكامل، لذا استدعاء إحداها قبل سطرها في
+الملف يعمل بلا مشكلة. تعبيرات الدوال ودوال الأسهم المُسنَدة إلى
+`const`/`let` لا تُرفَع — يوجد المتغير (في "منطقة ميتة مؤقتة") لكنه غير
+قابل للاستدعاء حتى يُنفَّذ الإسناد.
+
+## دوال الأسهم
+
+دوال الأسهم أكثر من مجرد اختصار. ليس لها `this` أو `arguments` أو
+`super` خاصة بها — بل تلتقطها من النطاق المحيط بدلاً من ذلك. هذا يجعلها
+الخيار الصحيح لردود النداء التي تريد فيها بقاء `this` مرتبطاً بالسياق
+المحيط، والخيار الخاطئ لتوابع الكائنات التي تحتاج `this` خاصة بها.
+
+```js
+const doubled = [1, 2, 3].map(n => n * 2);
+console.log(doubled); // [2, 4, 6]
+
+const counter = {
+  count: 0,
+  incrementBad: () => {
+    this.count++; // `this` هنا ليست كائن counter — دوال الأسهم
+                  // لا تحصل على `this` خاصة بها، لذا هذا لا يفعل شيئاً مفيداً بصمت
+  },
+  incrementGood() {
+    this.count++; // تابع عادي — تشير `this` بشكل صحيح إلى counter
+  },
+};
+```
+
+## المعاملات الافتراضية والباقية (Rest)
+
+يمكن أن تحمل المعاملات قيماً افتراضية، تُستخدَم فقط عندما يكون الوسيط
+`undefined` (وليس لأي قيمة زائفة أخرى). تجمع معاملات rest أي وسائط متبقية
+في مصفوفة حقيقية.
+
+```js
+function createUser(name, role = "member") {
+  return { name, role };
+}
+
+console.log(createUser("ada"));            // { name: "ada", role: "member" }
+console.log(createUser("grace", "admin")); // { name: "grace", role: "admin" }
+
+function sum(...numbers) {
+  return numbers.reduce((total, n) => total + n, 0);
+}
+
+console.log(sum(1, 2, 3, 4)); // 10
+```
+
+## الإغلاقات (Closures)
+
+الإغلاق دالة "تتذكر" متغيرات النطاق الذي أُنشئت فيه، حتى بعد انتهاء تنفيذ
+ذلك النطاق الخارجي. هكذا تحصل على حالة خاصة دون أصناف: كل استدعاء لدالة
+خارجية يُنشئ نطاقاً جديداً ومعزولاً يمكن للدوال الداخلية الاستمرار في
+الإشارة إليه.
+
+```js
+function makeCounter() {
+  let count = 0; // خاصة بكل عدّاد — غير قابلة للوصول من الخارج
+
+  return {
+    increment() {
+      count += 1;
+      return count;
+    },
+    reset() {
+      count = 0;
+    },
+  };
+}
+
+const counterA = makeCounter();
+const counterB = makeCounter();
+
+console.log(counterA.increment()); // 1
+console.log(counterA.increment()); // 2
+console.log(counterB.increment()); // 1 — count منفصلة تماماً
+```
+
+كل استدعاء لـ`makeCounter()` يُنشئ متغير `count` جديداً، وتشكّل التوابع
+المُعادَة إغلاقاً حول تلك المتغيرة المحدَّدة — لا تتداخل `counterA` و
+`counterB` أبداً مع بعضهما بعضاً.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="اسحب الأسطر إلى الترتيب الصحيح لبناء دالة تُصفِّي وتُضاعِف مصفوفة باستخدام دوال الأسهم."
+  items={[
+    { id: "arr", label: "const nums = [1, 2, 3, 4, 5];" },
+    { id: "evens", label: "const evens = nums.filter(n => n % 2 === 0);" },
+    { id: "doubled", label: "const doubled = evens.map(n => n * 2);", explanation: "تعتمد doubled على وجود evens مسبقاً، لذا يجب أن تحدث التصفية أولاً." },
+    { id: "log", label: "console.log(doubled);" },
+  ]}
+  correctOrder={["arr", "evens", "doubled", "log"]}
+/>
+
+<OrderingExercise
+  title="ركّب الكود"
+  prompt="رتّب هذه الأسطر لبناء رصيد بنكي مبني على إغلاق بمتغير خاص."
+  items={[
+    { id: "fnOpen", label: "function makeAccount(initial) {" },
+    { id: "balance", label: "  let balance = initial;" },
+    { id: "return", label: "  return {" },
+    { id: "deposit", label: "    deposit(amount) { balance += amount; return balance; }," },
+    { id: "getBalance", label: "    getBalance() { return balance; }," },
+    { id: "returnClose", label: "  };" },
+    { id: "fnClose", label: "}" },
+  ]}
+  correctOrder={["fnOpen", "balance", "return", "deposit", "getBalance", "returnClose", "fnClose"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا الكود؟"
+  code={`function makeMultiplier(factor) {
+  return n => n * factor;
+}
+
+const triple = makeMultiplier(3);
+const quadruple = makeMultiplier(4);
+
+console.log(triple(5));
+console.log(quadruple(5));`}
+  options={["15 ثم 15", "15 ثم 20", "20 ثم 15", "12 ثم 20"]}
+  correctIndex={1}
+  explanation="كل استدعاء لـmakeMultiplier يُنشئ إغلاقه الخاص حول factor مميَّزة. أغلقت triple على 3، لذا triple(5) تساوي 15؛ أغلقت quadruple على 4، لذا quadruple(5) تساوي 20. الإغلاقان لا يتشاركان أو يكتب أحدهما فوق factor الآخر رغم أنهما جاءا من نفس الدالة."
+  actualOutput="15
+20"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- [التحكم بمسار التنفيذ](/ar/programming-languages/javascript/control-flow)
+- [البرمجة غير المتزامنة والوعود](/ar/programming-languages/javascript/advanced)

@@ -1,0 +1,187 @@
+---
+title: Flux de contrôle
+description: If/else, boucles, et les expressions switch avec filtrage par motif de C# pour brancher sur la forme et la valeur.
+category: Programming Languages
+weight: 3
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+Le flux de contrôle de C# commence de façon familière — `if`/`else`, `for`,
+`while` — puis va plus loin que la plupart des langages de la famille C avec
+des expressions `switch` qui filtrent sur le type et la structure, pas
+seulement l'égalité.
+
+## if / else et boucles
+
+```csharp
+int score = 82;
+
+if (score >= 90)
+{
+    Console.WriteLine("A");
+}
+else if (score >= 80)
+{
+    Console.WriteLine("B");
+}
+else
+{
+    Console.WriteLine("C or below");
+}
+
+for (int i = 0; i < 3; i++)
+{
+    Console.WriteLine($"Iteration {i}");
+}
+
+int n = 5;
+while (n > 0)
+{
+    Console.WriteLine(n);
+    n--;
+}
+```
+
+`foreach` itère sur n'importe quel `IEnumerable<T>` — tableaux, listes,
+dictionnaires — sans gérer d'index :
+
+```csharp
+string[] fruits = { "apple", "banana", "cherry" };
+foreach (string fruit in fruits)
+{
+    Console.WriteLine(fruit);
+}
+```
+
+## Le switch classique
+
+L'instruction `switch` traditionnelle compare une valeur à un ensemble de cas
+constants et exige un `break` explicite (ou une autre instruction de saut)
+par cas — tomber au cas suivant est une erreur de compilation sauf si le
+corps du cas est vide :
+
+```csharp
+int day = 3;
+switch (day)
+{
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+        Console.WriteLine("Weekday");
+        break;
+    case 6:
+    case 7:
+        Console.WriteLine("Weekend");
+        break;
+    default:
+        Console.WriteLine("Invalid day");
+        break;
+}
+```
+
+## Filtrage par motif avec les expressions switch
+
+Depuis C# 8, `switch` peut être utilisé comme une *expression* qui retourne
+une valeur, et ses motifs vont bien au-delà de l'égalité : les motifs de
+type, les motifs relationnels, et les motifs de propriété vous permettent de
+brancher sur la forme d'un objet en un seul endroit.
+
+```csharp
+object shape = new { Kind = "circle", Radius = 3.0 };
+
+string Describe(object value) => value switch
+{
+    int n when n < 0 => "negative integer",
+    int n => $"non-negative integer: {n}",
+    string s when s.Length == 0 => "empty string",
+    string s => $"string of length {s.Length}",
+    null => "nothing at all",
+    _ => "something else",
+};
+
+Console.WriteLine(Describe(-5));   // negative integer
+Console.WriteLine(Describe("hi")); // string of length 2
+Console.WriteLine(Describe(null)); // nothing at all
+```
+
+Les motifs de propriété peuvent déstructurer et filtrer directement sur les
+membres d'un objet, ce qui est courant lors de la manipulation de types
+record :
+
+```csharp
+record Point(int X, int Y);
+
+string Classify(Point p) => p switch
+{
+    { X: 0, Y: 0 } => "origin",
+    { X: 0 } => "on the Y axis",
+    { Y: 0 } => "on the X axis",
+    { X: > 0, Y: > 0 } => "first quadrant",
+    _ => "elsewhere",
+};
+
+Console.WriteLine(Classify(new Point(0, 0))); // origin
+Console.WriteLine(Classify(new Point(3, 5))); // first quadrant
+```
+
+Les expressions `switch` avec filtrage par motif doivent être exhaustives du
+point de vue du compilateur — un bras `_` de rejet est le moyen habituel de
+le garantir, similaire à `default` dans une instruction `switch` classique.
+
+## Exercices
+
+<ExerciseTabs>
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Faites glisser les lignes dans le bon ordre pour construire une boucle for qui affiche les nombres de 0 à 2."
+  items={[
+    { id: "l1", label: "for (int i = 0; i < 3; i++)" },
+    { id: "l2", label: "{" },
+    { id: "l3", label: "    Console.WriteLine(i);" },
+    { id: "l4", label: "}" },
+  ]}
+  correctOrder={["l1", "l2", "l3", "l4"]}
+/>
+
+<OrderingExercise
+  title="Assemblez le code"
+  prompt="Mettez ces lignes dans l'ordre pour construire une expression switch qui classe un entier comme négatif, zéro, ou positif."
+  items={[
+    { id: "m1", label: "string Classify(int n) => n switch" },
+    { id: "m2", label: "{" },
+    { id: "m3", label: "    < 0 => \"negative\"," },
+    { id: "m4", label: "    0 => \"zero\"," , explanation: "Les motifs relationnels comme < 0 sont vérifiés dans l'ordre, de haut en bas, tout comme les cas d'un switch."},
+    { id: "m5", label: "    > 0 => \"positive\"," },
+    { id: "m6", label: "};" },
+  ]}
+  correctOrder={["m1", "m2", "m3", "m4", "m5", "m6"]}
+/>
+
+<PredictOutput
+  title="Qu'affiche ceci ?"
+  code={`object value = 42;
+
+string Describe(object v) => v switch
+{
+    string => "a string",
+    int n when n > 100 => "a big int",
+    int n => $"an int: {n}",
+    _ => "unknown",
+};
+
+Console.WriteLine(Describe(value));`}
+  options={["a string", "a big int", "an int: 42", "unknown"]}
+  correctIndex={2}
+  explanation="value est boxé comme un int (42). Il échoue le motif string, échoue la garde 'when n > 100' puisque 42 n'est pas supérieur à 100, et correspond au simple motif 'int n', affichant sa valeur."
+  actualOutput="an int: 42"
+/>
+</ExerciseTabs>
+
+## Voir aussi
+
+- [Syntaxe et variables](/fr/programming-languages/csharp/syntax-basics)
+- [Méthodes](/fr/programming-languages/csharp/functions)

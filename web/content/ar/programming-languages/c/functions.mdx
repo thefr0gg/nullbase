@@ -1,0 +1,143 @@
+---
+title: الدوال
+description: تصريح الدوال وتعريفها واستدعاؤها في C — دلالات التمرير بالقيمة، والمعاملات المُخرَجة عبر المؤشرات، والنماذج الأولية، والاستدعاء الذاتي.
+category: Programming Languages
+weight: 4
+interactive: true
+interactiveType: ["ExerciseTabs", "OrderingExercise", "PredictOutput"]
+toc: true
+---
+
+دوال C تُمرَّر بالقيمة فقط: يُنسَخ كل وسيط إلى المعاملات المحلية للدالة، لذا لا يمكن لدالة تعديل متغير المستدعي مباشرة أبداً — فقط نسختها الخاصة. هذه الحقيقة الواحدة تشكّل جزءاً كبيراً من كود C الاصطلاحي، بما في ذلك سبب تمرير "المعاملات المُخرَجة" كمؤشرات بدلاً من إرجاعها مباشرة، وسبب كون فهم التمرير بالقيمة شرطاً أساسياً لفهم المؤشرات على الإطلاق.
+
+## تصريح دالة واستدعاؤها
+
+للدالة نوع إرجاع، واسم، وقائمة معاملات، وجسم. تميّز C أيضاً بين **النموذج الأولي** (التوقيع وحده، منتهياً بـ`;`) و**التعريف** (التوقيع مع الجسم) — يسمح لك النموذج الأولي باستدعاء دالة قبل أن يرى المترجم تعريفها الكامل:
+
+```c
+#include <stdio.h>
+
+int add(int a, int b); /* prototype: tells the compiler this function exists */
+
+int main(void) {
+    int result = add(3, 4); /* can be called here even though add is defined below */
+    printf("3 + 4 = %d\n", result);
+    return 0;
+}
+
+int add(int a, int b) { /* definition */
+    return a + b;
+}
+```
+
+بدون النموذج الأولي، سيكون استدعاء `add` قبل ظهور تعريفها في الملف خطأ ترجمة في C الحديثة — يحتاج المترجم لمعرفة توقيع الدالة قبل أن يتمكن من توليد كود يستدعيها بشكل صحيح.
+
+## التمرير بالقيمة ولماذا يهم
+
+```c
+#include <stdio.h>
+
+void tryToDouble(int n) {
+    n = n * 2; /* only modifies the local copy */
+}
+
+void doubleViaPointer(int *n) {
+    *n = *n * 2; /* dereferences the pointer to modify the caller's variable */
+}
+
+int main(void) {
+    int x = 5;
+
+    tryToDouble(x);
+    printf("after tryToDouble: %d\n", x); /* still 5 */
+
+    doubleViaPointer(&x); /* pass the address of x */
+    printf("after doubleViaPointer: %d\n", x); /* now 10 */
+
+    return 0;
+}
+```
+
+تستقبل `tryToDouble` نسخة من قيمة `x` ولا يمكنها التأثير على الأصل. أما `doubleViaPointer` فتستقبل بدلاً من ذلك *عنوان* `x`، وتُفكك المؤشر (dereference) بـ `*n` للوصول إلى ذاكرة المستدعي مباشرة — هكذا تحاكي C "التمرير بالمرجع"، وهذا سبب احتياج دوال مثل `scanf` إلى `&variable` لكل قيمة تحتاج للكتابة فيها.
+
+## الاستدعاء الذاتي (Recursion)
+
+تعمل دالة تستدعي نفسها تماماً كما لو كانت تكراراً، شريطة وجود حالة أساسية توقف الاستدعاء الذاتي:
+
+```c
+#include <stdio.h>
+
+long factorial(int n) {
+    if (n <= 1) {
+        return 1; /* base case */
+    }
+    return n * factorial(n - 1); /* recursive case */
+}
+
+int main(void) {
+    for (int i = 1; i <= 6; i++) {
+        printf("%d! = %ld\n", i, factorial(i));
+    }
+    return 0;
+}
+```
+
+يحصل كل استدعاء لـ `factorial` على إطار مكدس خاص به بنسخته الخاصة من `n` — يستهلك الاستدعاء الذاتي في C ذاكرة مكدس حقيقية لكل استدعاء، وتؤدي حالة أساسية مفقودة أو غير قابلة للوصول إلى فيضان في المكدس بدلاً من حلقة لا نهائية تعلق فقط.
+
+## تمارين
+
+<ExerciseTabs>
+<OrderingExercise
+  title="اجمع دالة مع نموذج أولي"
+  prompt="اسحب هذه الأسطر إلى الترتيب الذي يصرّح عن نموذج أولي، ويستدعي الدالة من main، ويعرّفها بعد ذلك."
+  items={[
+    { id: "proto", label: "int square(int n);", explanation: "يجب أن يأتي النموذج الأولي قبل main حتى يعرف المترجم توقيع square عندما تستدعيها main." },
+    { id: "mainopen", label: "int main(void) {" },
+    { id: "call", label: "    printf(\"%d\\n\", square(5));" },
+    { id: "mainclose", label: "    return 0;\n}" },
+    { id: "def", label: "int square(int n) {\n    return n * n;\n}" },
+  ]}
+  correctOrder={["proto", "mainopen", "call", "mainclose", "def"]}
+/>
+
+<OrderingExercise
+  title="رتّب تبديلاً قائماً على المؤشرات"
+  prompt="اسحب هذه الأسطر إلى الترتيب الذي يبدّل عددين صحيحين في main باستخدام دالة مساعدة تأخذ مؤشرات."
+  items={[
+    { id: "protoswap", label: "void swap(int *a, int *b);" },
+    { id: "mainopen", label: "int main(void) {" },
+    { id: "vars", label: "    int x = 1, y = 2;" },
+    { id: "call", label: "    swap(&x, &y);", explanation: "تحتاج swap عناوين x وy لتعديل متغيرات المستدعي، وليس قيمهما." },
+    { id: "print", label: "    printf(\"%d %d\\n\", x, y);" },
+    { id: "mainclose", label: "    return 0;\n}" },
+    { id: "def", label: "void swap(int *a, int *b) {\n    int temp = *a;\n    *a = *b;\n    *b = temp;\n}" },
+  ]}
+  correctOrder={["protoswap", "mainopen", "vars", "call", "print", "mainclose", "def"]}
+/>
+
+<PredictOutput
+  title="ماذا يطبع هذا؟"
+  code={`#include <stdio.h>
+
+void increment(int n) {
+    n = n + 1;
+}
+
+int main(void) {
+    int count = 10;
+    increment(count);
+    increment(count);
+    printf("%d\\n", count);
+    return 0;
+}`}
+  options={["10", "11", "12", "خطأ ترجمة"]}
+  correctIndex={0}
+  explanation="تستقبل increment نسخة من count في كل مرة تُستدعى فيها، لذا فإن تعديل n داخل الدالة ليس له أي تأثير على count في main — تبقى 10 مهما استُدعيت increment. لتغيير count فعلياً، ستحتاج increment إلى أخذ int * وتفكيكه."
+  actualOutput="10"
+/>
+</ExerciseTabs>
+
+## طالع أيضاً
+
+- **[التحكم بمسار التنفيذ](/ar/programming-languages/c/control-flow)** — الحلقات والشروط التي تُبنى منها الدوال.
+- **[المؤشرات والذاكرة](/ar/programming-languages/c/advanced)** — نظرة أعمق على المؤشرات المستخدَمة هنا للالتفاف حول التمرير بالقيمة.
