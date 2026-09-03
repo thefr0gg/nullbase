@@ -2,7 +2,7 @@ import "../globals.css";
 import "../mdx.css";
 import { Geist_Mono, JetBrains_Mono, Noto_Kufi_Arabic, Noto_Sans_Arabic, Plus_Jakarta_Sans } from "next/font/google";
 import Link from "next/link";
-import { Heart } from "lucide-react";
+import { HandCoins } from "lucide-react";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { ThemeToggle } from "@/app/_components/theme-toggle";
@@ -174,7 +174,7 @@ export default async function LocaleLayout({
                     title="Support This Website"
                     className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-surface text-text-secondary transition-colors hover:bg-electric-blue/10 hover:text-electric-blue"
                   >
-                    <Heart className="h-4 w-4" />
+                    <HandCoins className="h-4 w-4" />
                   </a>
                   <ThemeToggle dict={dict} />
                 </div>
