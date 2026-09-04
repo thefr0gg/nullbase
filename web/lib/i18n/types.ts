@@ -45,6 +45,7 @@ export interface Dictionary {
   footer: {
     tagline: string;
     privacy: string;
+    developer: string;
   };
   pageFooter: {
     next: string;

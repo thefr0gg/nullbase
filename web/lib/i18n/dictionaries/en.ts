@@ -24,6 +24,7 @@ export const en: Dictionary = {
   footer: {
     tagline: "nullbase — building the developer reference, one spec at a time.",
     privacy: "Privacy",
+    developer: "Developer",
   },
   pageFooter: {
     next: "Next",

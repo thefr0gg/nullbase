@@ -24,6 +24,7 @@ export const ar: Dictionary = {
   footer: {
     tagline: "nullbase — نبني مرجع المطورين، صفحة تلو الأخرى.",
     privacy: "الخصوصية",
+    developer: "المطوّر",
   },
   pageFooter: {
     next: "التالي",

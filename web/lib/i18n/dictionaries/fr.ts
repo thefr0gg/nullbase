@@ -24,6 +24,7 @@ export const fr: Dictionary = {
   footer: {
     tagline: "nullbase — la référence pour développeurs, une page à la fois.",
     privacy: "Confidentialité",
+    developer: "Développeur",
   },
   pageFooter: {
     next: "Suivant",

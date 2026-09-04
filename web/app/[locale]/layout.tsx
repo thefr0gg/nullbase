@@ -2,7 +2,7 @@ import "../globals.css";
 import "../mdx.css";
 import { Geist_Mono, JetBrains_Mono, Noto_Kufi_Arabic, Noto_Sans_Arabic, Plus_Jakarta_Sans } from "next/font/google";
 import Link from "next/link";
-import { HandCoins } from "lucide-react";
+import { KofiIcon } from "@/app/_components/kofi-icon";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { ThemeToggle } from "@/app/_components/theme-toggle";
@@ -174,7 +174,7 @@ export default async function LocaleLayout({
                     title="Support This Website"
                     className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-surface text-text-secondary transition-colors hover:bg-electric-blue/10 hover:text-electric-blue"
                   >
-                    <HandCoins className="h-4 w-4" />
+                    <KofiIcon className="h-4 w-4" />
                   </a>
                   <ThemeToggle dict={dict} />
                 </div>
@@ -185,12 +185,22 @@ export default async function LocaleLayout({
             </main>
             <footer className="flex flex-col items-center gap-4 border-t border-border px-4 py-8 text-center text-sm text-text-secondary sm:px-6">
               <span>{dict.footer.tagline}</span>
-              <Link
-                href={`${slugToHref(locale, [])}/privacy`}
-                className="underline underline-offset-2 hover:text-text-primary"
-              >
-                {dict.footer.privacy}
-              </Link>
+              <div className="flex items-center gap-4">
+                <Link
+                  href={`${slugToHref(locale, [])}/privacy`}
+                  className="underline underline-offset-2 hover:text-text-primary"
+                >
+                  {dict.footer.privacy}
+                </Link>
+                <a
+                  href="https://github.com/thefr0gg"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-2 hover:text-text-primary"
+                >
+                  {dict.footer.developer}
+                </a>
+              </div>
             </footer>
           </div>
         </div>
