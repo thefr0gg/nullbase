@@ -8,6 +8,11 @@
   "observability": {
     "enabled": true
   },
+  // Runs the Worker closer to D1 (every request hits it) rather than always
+  // at the edge nearest the client. Free on the Workers plan.
+  "placement": {
+    "mode": "smart"
+  },
   "d1_databases": [
     {
       "binding": "DB",
