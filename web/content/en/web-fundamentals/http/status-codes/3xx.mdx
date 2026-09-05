@@ -23,7 +23,7 @@ A `3xx` status tells the client the resource has moved, or that another step is 
 
 ## Understanding 301 vs 302 vs 307 vs 308
 
-### 301 Moved Permanently
+### [301 Moved Permanently](/en/web-fundamentals/http/status-codes/301)
 The resource has moved to a new URL **permanently**. Caches and browsers remember this.
 
 ```http
@@ -35,7 +35,7 @@ Location: /new/path
 
 ---
 
-### 302 Found
+### [302 Found](/en/web-fundamentals/http/status-codes/302)
 The resource is at a different URL **right now**, but might move back later.
 
 ```http
@@ -49,7 +49,7 @@ Location: /temporary/path
 
 ---
 
-### 307 Temporary Redirect
+### [307 Temporary Redirect](/en/web-fundamentals/http/status-codes/307)
 Like 302, but **guaranteed** to preserve the method.
 
 ```http
@@ -61,7 +61,7 @@ Location: /temporary/path
 
 ---
 
-### 308 Permanent Redirect
+### [308 Permanent Redirect](/en/web-fundamentals/http/status-codes/308)
 Like 301, but **guaranteed** to preserve the method.
 
 ```http
@@ -73,7 +73,7 @@ Location: /new/path
 
 ---
 
-## 304 Not Modified
+## [304 Not Modified](/en/web-fundamentals/http/status-codes/304)
 
 The resource hasn't changed since you last checked. Use your cached copy.
 

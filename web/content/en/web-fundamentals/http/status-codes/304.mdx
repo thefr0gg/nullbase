@@ -1,0 +1,40 @@
+---
+title: "304 Not Modified"
+description: The resource has not changed since the client's cached version — reuse it.
+category: HTTP
+weight: 46
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+The `304 Not Modified` response status code indicates that **the resource has not changed since the version the client already has cached**.
+
+<StatusCodeExplorer defaultCode={304} />
+
+## Details
+
+- **Class:** 3xx (Redirection)
+- **Triggered by:** conditional requests using `If-None-Match` (with `ETag`) or `If-Modified-Since` (with `Last-Modified`).
+- **Body:** must be empty — a `304` never carries a message body.
+
+## Example
+
+```http
+GET /style.css HTTP/1.1
+If-None-Match: "abc123"
+
+HTTP/1.1 304 Not Modified
+ETag: "abc123"
+```
+
+## Common Mistakes
+
+**Avoid:** Sending a body with `304` — it defeats the purpose of the response and violates the spec.
+
+**Avoid:** Not setting `ETag`/`Last-Modified` on the original response — without them, the client has nothing to send back for `304` to ever trigger.
+
+## See Also
+
+- **[Status Codes Reference](/en/web-fundamentals/http/status-codes)** — All codes at a glance.
+- **[3xx Redirection](/en/web-fundamentals/http/status-codes/3xx)** — Further action needed.
+- **[Cache-Control](/en/web-fundamentals/http/headers/cache-control)** — Caching directives that work alongside 304.

@@ -1,0 +1,40 @@
+---
+title: "301 Moved Permanently"
+description: The target resource has been permanently moved to a new URL.
+category: HTTP
+weight: 44
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+The `301 Moved Permanently` response status code indicates that **the target resource has been permanently moved to a new URL**.
+
+<StatusCodeExplorer defaultCode={301} />
+
+## Details
+
+- **Class:** 3xx (Redirection)
+- **Caching:** cacheable by default — browsers and CDNs may remember the redirect.
+- **SEO:** a `301` passes most link equity to the new URL, which is why it's the standard choice for permanent domain or path changes.
+- **Method:** historically, clients may switch a `POST` to a `GET` when following a `301` — use `308` if the method must be preserved.
+
+## Example
+
+```http
+GET /old-page HTTP/1.1
+
+HTTP/1.1 301 Moved Permanently
+Location: /new-page
+```
+
+## Common Mistakes
+
+**Avoid:** Using `301` for a temporary move — use `302` or `307` instead, since `301` gets cached aggressively by browsers and search engines.
+
+**Avoid:** Chaining multiple redirects — each hop adds latency; point directly at the final URL.
+
+## See Also
+
+- **[Status Codes Reference](/en/web-fundamentals/http/status-codes)** — All codes at a glance.
+- **[3xx Redirection](/en/web-fundamentals/http/status-codes/3xx)** — Further action needed.
+- **[308 Permanent Redirect](/en/web-fundamentals/http/status-codes/308)** — Like 301, but preserves the method.

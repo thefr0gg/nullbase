@@ -1,0 +1,42 @@
+---
+title: "429 Too Many Requests"
+description: The client has sent too many requests in a given amount of time (rate limiting).
+category: HTTP
+weight: 49
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+The `429 Too Many Requests` response status code indicates that **the client has sent too many requests in a given amount of time and is being rate limited**.
+
+<StatusCodeExplorer defaultCode={429} />
+
+## Details
+
+- **Class:** 4xx (Client error)
+- **When to use:** per-client, per-IP, or per-API-key request quotas have been exceeded.
+- **Should include:** a `Retry-After` header telling the client how long to wait before trying again.
+
+## Example
+
+```http
+POST /api/login HTTP/1.1
+
+HTTP/1.1 429 Too Many Requests
+Retry-After: 60
+{
+  "error": "Rate limit exceeded. Try again in 60 seconds."
+}
+```
+
+## Common Mistakes
+
+**Avoid:** Omitting `Retry-After` — without it, clients have to guess when to retry, which often makes rate limiting worse, not better.
+
+**Avoid:** Returning `503` for rate limiting — `503` implies the server itself is overloaded; `429` correctly signals it's this specific client that must slow down.
+
+## See Also
+
+- **[Status Codes Reference](/en/web-fundamentals/http/status-codes)** — All codes at a glance.
+- **[4xx Client Error](/en/web-fundamentals/http/status-codes/4xx)** — The client did something wrong.
+- **[503 Service Unavailable](/en/web-fundamentals/http/status-codes/503)** — The server, not the client, is the bottleneck.

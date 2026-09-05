@@ -1,0 +1,42 @@
+---
+title: "308 Permanent Redirect"
+description: The target resource has been permanently moved, and the request method must not change.
+category: HTTP
+weight: 48
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+The `308 Permanent Redirect` response status code indicates that **the target resource has permanently moved to a new URL, and the client must repeat the request with the same method**.
+
+<StatusCodeExplorer defaultCode={308} />
+
+## Details
+
+- **Class:** 3xx (Redirection)
+- **Difference from 301:** `308` guarantees the method (and body, for `POST`/`PUT`) is preserved; `301` does not.
+- **SEO:** passes link equity like `301` does, while keeping the original method intact.
+
+## Example
+
+```http
+PUT /api/v1/resource HTTP/1.1
+Content-Type: application/json
+
+{ "value": 1 }
+
+HTTP/1.1 308 Permanent Redirect
+Location: /api/v2/resource
+```
+
+## Common Mistakes
+
+**Avoid:** Using `301` when the method must be preserved — some clients rewrite `POST`/`PUT` to `GET` on a `301`, which `308` prevents.
+
+**Avoid:** Using `308` for a temporary move — use `307` instead so caches don't treat it as permanent.
+
+## See Also
+
+- **[Status Codes Reference](/en/web-fundamentals/http/status-codes)** — All codes at a glance.
+- **[3xx Redirection](/en/web-fundamentals/http/status-codes/3xx)** — Further action needed.
+- **[301 Moved Permanently](/en/web-fundamentals/http/status-codes/301)** — Permanent redirect that may change the method.

@@ -1,0 +1,43 @@
+---
+title: "504 Gateway Timeout"
+description: A server acting as a gateway or proxy did not receive a timely response from the upstream server.
+category: HTTP
+weight: 52
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+The `504 Gateway Timeout` response status code indicates that **a server acting as a gateway or proxy did not receive a response from the upstream server in time**.
+
+<StatusCodeExplorer defaultCode={504} />
+
+## Details
+
+- **Class:** 5xx (Server error)
+- **Typical cause:** a slow database query, an overloaded backend, or a network issue between the proxy and the origin server.
+- **Difference from 502:** `502` means the upstream responded with something invalid; `504` means it didn't respond in time at all.
+
+## Example
+
+```http
+GET /api/report HTTP/1.1
+
+HTTP/1.1 504 Gateway Timeout
+Content-Type: text/html
+
+<h1>504 Gateway Timeout</h1>
+<p>The upstream server took too long to respond.</p>
+```
+
+## Common Mistakes
+
+**Avoid:** Setting proxy timeouts shorter than the operation genuinely needs — a long-running but healthy request shouldn't be cut off and reported as a failure.
+
+**Avoid:** Confusing `504` with `408 Request Timeout` — `408` is about the client being too slow to send the request; `504` is about the upstream being too slow to respond.
+
+## See Also
+
+- **[Status Codes Reference](/en/web-fundamentals/http/status-codes)** — All codes at a glance.
+- **[5xx Server Error](/en/web-fundamentals/http/status-codes/5xx)** — The server failed.
+- **[502 Bad Gateway](/en/web-fundamentals/http/status-codes/502)** — Upstream sent an invalid response.
+- **[Proxies & Gateways](/en/web-fundamentals/http/proxies)** — Where 504s come from.

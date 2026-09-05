@@ -1,0 +1,42 @@
+---
+title: "307 Temporary Redirect"
+description: The target resource temporarily resides under a different URL, and the request method must not change.
+category: HTTP
+weight: 47
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+The `307 Temporary Redirect` response status code indicates that **the target resource temporarily resides under a different URL, and the client must repeat the request with the same method**.
+
+<StatusCodeExplorer defaultCode={307} />
+
+## Details
+
+- **Class:** 3xx (Redirection)
+- **Difference from 302:** `307` guarantees the method (and body, for `POST`/`PUT`) is preserved; `302` does not.
+- **Typical use:** redirecting API clients where the original method must be retried exactly.
+
+## Example
+
+```http
+POST /submit HTTP/1.1
+Content-Type: application/json
+
+{ "vote": "yes" }
+
+HTTP/1.1 307 Temporary Redirect
+Location: /submit-v2
+```
+
+## Common Mistakes
+
+**Avoid:** Using `302` when the method must be preserved — many clients silently downgrade `POST` to `GET` on `302`, which `307` prevents.
+
+**Avoid:** Using `307` for a permanent move — use `308` instead so caches and search engines treat it as permanent.
+
+## See Also
+
+- **[Status Codes Reference](/en/web-fundamentals/http/status-codes)** — All codes at a glance.
+- **[3xx Redirection](/en/web-fundamentals/http/status-codes/3xx)** — Further action needed.
+- **[302 Found](/en/web-fundamentals/http/status-codes/302)** — Temporary redirect that may change the method.

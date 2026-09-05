@@ -71,20 +71,50 @@ function isInternalOnly(slug: string[]): boolean {
   return slug.length > 0 && INTERNAL_ONLY_ROOTS.has(slug[0]);
 }
 
-// Build-time cache, keyed by locale: the content tree never changes during a
-// single build, but `getPage` is called from `generateStaticParams`,
-// `generateMetadata` and the page itself. In dev we bypass the cache so
-// edits are picked up immediately.
-const cache = new Map<Locale, CollectedPage[]>();
+/**
+ * Cache keyed by locale, holding both the parsed pages and the freshness
+ * signature (see `treeSignature`) they were built from. In production the
+ * content tree never changes during a single build, so the signature check
+ * below is skipped entirely. In dev, `getPage`/`getAllPages` run on every
+ * request (`generateStaticParams`, `generateMetadata`, and the page itself
+ * each call in) — re-walking and re-parsing the ~1000+ .mdx files on every
+ * one of those calls made dev noticeably slow. Comparing a cheap signature
+ * (file count + max mtime) lets a request reuse the cached parse until a
+ * file actually changes, without losing "edits show up on next request."
+ */
+const cache = new Map<Locale, { pages: CollectedPage[]; signature: string }>();
 
-export function getAllPages(locale: Locale): CollectedPage[] {
-  const cached = cache.get(locale);
-  if (cached && process.env.NODE_ENV === "production") return cached;
+/** Cheap freshness check: total file count plus the newest mtime across the
+ *  tree. Doesn't need to read file contents, just `stat` each one — a
+ *  content edit changes mtime, an add/delete changes the count. */
+function treeSignature(root: string): string {
+  let count = 0;
+  let maxMtime = 0;
+  const walk = (dir: string) => {
+    let entries: fs.Dirent[] = [];
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(full);
+      } else if (entry.isFile() && entry.name.endsWith(".mdx")) {
+        count++;
+        const mtime = fs.statSync(full).mtimeMs;
+        if (mtime > maxMtime) maxMtime = mtime;
+      }
+    }
+  };
+  walk(root);
+  return `${count}:${maxMtime}`;
+}
+
+function loadPages(locale: Locale): CollectedPage[] {
   const root = contentRoot(locale);
-  if (!fs.existsSync(root)) {
-    cache.set(locale, []);
-    return [];
-  }
+  if (!fs.existsSync(root)) return [];
   const files = readMdxFiles(root);
   let pages: CollectedPage[] = files.map((file) => ({
     slug: fileToSlug(root, file),
@@ -94,7 +124,22 @@ export function getAllPages(locale: Locale): CollectedPage[] {
   if (process.env.NODE_ENV === "production") {
     pages = pages.filter((p) => !isInternalOnly(p.slug));
   }
-  cache.set(locale, pages);
+  return pages;
+}
+
+export function getAllPages(locale: Locale): CollectedPage[] {
+  const cached = cache.get(locale);
+  if (cached && process.env.NODE_ENV === "production") return cached.pages;
+
+  const root = contentRoot(locale);
+  if (cached) {
+    const signature = fs.existsSync(root) ? treeSignature(root) : "0:0";
+    if (signature === cached.signature) return cached.pages;
+  }
+
+  const pages = loadPages(locale);
+  const signature = fs.existsSync(root) ? treeSignature(root) : "0:0";
+  cache.set(locale, { pages, signature });
   return pages;
 }
 

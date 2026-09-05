@@ -1,0 +1,39 @@
+---
+title: "302 Found"
+description: The target resource temporarily resides under a different URL.
+category: HTTP
+weight: 45
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+The `302 Found` response status code indicates that **the target resource temporarily resides under a different URL**.
+
+<StatusCodeExplorer defaultCode={302} />
+
+## Details
+
+- **Class:** 3xx (Redirection)
+- **Typical use:** post-login redirects, temporary maintenance pages, A/B routing.
+- **Method:** historically, clients may switch a `POST` to a `GET` when following a `302` — use `307` if the method must be preserved.
+
+## Example
+
+```http
+GET /dashboard HTTP/1.1
+
+HTTP/1.1 302 Found
+Location: /login
+```
+
+## Common Mistakes
+
+**Avoid:** Using `302` when the move is actually permanent — search engines won't transfer ranking signals the way they do with `301`.
+
+**Avoid:** Relying on the method being preserved — some clients rewrite `POST` to `GET` on a `302`; use `307` if that matters.
+
+## See Also
+
+- **[Status Codes Reference](/en/web-fundamentals/http/status-codes)** — All codes at a glance.
+- **[3xx Redirection](/en/web-fundamentals/http/status-codes/3xx)** — Further action needed.
+- **[307 Temporary Redirect](/en/web-fundamentals/http/status-codes/307)** — Like 302, but preserves the method.

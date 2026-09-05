@@ -1,0 +1,44 @@
+---
+title: "503 Service Unavailable"
+description: The server is currently unable to handle the request, usually due to overload or maintenance.
+category: HTTP
+weight: 51
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+The `503 Service Unavailable` response status code indicates that **the server is currently unable to handle the request, typically because it's overloaded or down for maintenance**.
+
+<StatusCodeExplorer defaultCode={503} />
+
+## Details
+
+- **Class:** 5xx (Server error)
+- **Typical cause:** the server is intentionally refusing traffic (deploy in progress, maintenance window) or is overwhelmed by load.
+- **Should include:** a `Retry-After` header telling the client when to try again.
+
+## Example
+
+```http
+GET /api/data HTTP/1.1
+
+HTTP/1.1 503 Service Unavailable
+Retry-After: 120
+Content-Type: text/html
+
+<h1>503 Service Unavailable</h1>
+<p>We're undergoing maintenance. Please try again shortly.</p>
+```
+
+## Common Mistakes
+
+**Avoid:** Omitting `Retry-After` — without it, clients (and search engine crawlers) can't tell whether this is a five-second blip or a permanent outage.
+
+**Avoid:** Using `500` for planned maintenance — `503` more precisely tells clients (and monitoring) the outage is expected and temporary.
+
+## See Also
+
+- **[Status Codes Reference](/en/web-fundamentals/http/status-codes)** — All codes at a glance.
+- **[5xx Server Error](/en/web-fundamentals/http/status-codes/5xx)** — The server failed.
+- **[502 Bad Gateway](/en/web-fundamentals/http/status-codes/502)** — Upstream sent an invalid response.
+- **[504 Gateway Timeout](/en/web-fundamentals/http/status-codes/504)** — Upstream took too long.

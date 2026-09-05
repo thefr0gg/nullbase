@@ -1,0 +1,47 @@
+---
+title: "422 Unprocessable Entity"
+description: The request is well-formed but contains semantically invalid data.
+category: HTTP
+weight: 48
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+The `422 Unprocessable Entity` response status code indicates that **the request is syntactically valid but the server can't process the contained instructions because the data itself is invalid**.
+
+<StatusCodeExplorer defaultCode={422} />
+
+## Details
+
+- **Class:** 4xx (Client error)
+- **Difference from 400:** `400` means the request itself is malformed; `422` means the request is well-formed but the data fails validation (bad email format, out-of-range value, business-rule violation).
+- **Response should include:** which field(s) failed and why, so the client can correct them.
+
+## Example
+
+```http
+POST /api/users HTTP/1.1
+Content-Type: application/json
+
+{
+  "name": "Alice",
+  "email": "invalid-email"
+}
+
+HTTP/1.1 422 Unprocessable Entity
+{
+  "error": "Invalid email format"
+}
+```
+
+## Common Mistakes
+
+**Avoid:** Using `400` for validation failures — reserve `400` for genuinely malformed requests and use `422` for semantically invalid data.
+
+**Avoid:** Returning a single generic error message when multiple fields failed validation — list them all so the client doesn't have to resubmit repeatedly.
+
+## See Also
+
+- **[Status Codes Reference](/en/web-fundamentals/http/status-codes)** — All codes at a glance.
+- **[4xx Client Error](/en/web-fundamentals/http/status-codes/4xx)** — The client did something wrong.
+- **[400 Bad Request](/en/web-fundamentals/http/status-codes/400)** — Malformed syntax, not just bad data.

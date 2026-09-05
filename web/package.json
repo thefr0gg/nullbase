@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "lint": "eslint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "content:status-codes": "tsx scripts/generate-status-codes.ts"
   },
   "dependencies": {
     "lucide-react": "^1.34.0",
@@ -42,6 +43,7 @@
     "jsdom": "^30.0.1",
     "remark-frontmatter": "^5.0.0",
     "tailwindcss": "^4",
+    "tsx": "^4.20.0",
     "typescript": "^5",
     "vitest": "^4.1.11"
   }

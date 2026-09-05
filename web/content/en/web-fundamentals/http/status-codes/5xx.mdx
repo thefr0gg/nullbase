@@ -20,7 +20,7 @@ A `5xx` status means the request was valid, but the server failed to handle it â
 
 ## Detailed Breakdown
 
-### 500 Internal Server Error
+### [500 Internal Server Error](/en/web-fundamentals/http/status-codes/500)
 A generic server error. Something broke, and the server doesn't want to say what.
 
 ```http
@@ -48,7 +48,7 @@ HTTP/1.1 500 Internal Server Error
 
 ---
 
-### 502 Bad Gateway
+### [502 Bad Gateway](/en/web-fundamentals/http/status-codes/502)
 The server is acting as a proxy (or load balancer) and got an invalid response from the backend server.
 
 ```http
@@ -67,7 +67,7 @@ HTTP/1.1 502 Bad Gateway
 
 ---
 
-### 503 Service Unavailable
+### [503 Service Unavailable](/en/web-fundamentals/http/status-codes/503)
 The server is temporarily unable to handle the request. It's usually temporary (maintenance, overload, restart).
 
 ```http
@@ -90,7 +90,7 @@ Retry-After: 120
 
 ---
 
-### 504 Gateway Timeout
+### [504 Gateway Timeout](/en/web-fundamentals/http/status-codes/504)
 The server is acting as a proxy and the backend took too long to respond.
 
 ```http

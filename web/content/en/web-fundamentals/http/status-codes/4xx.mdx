@@ -23,7 +23,7 @@ A `4xx` status means the server can't fulfill the request as sent — malformed 
 
 ## Detailed Breakdown
 
-### 400 Bad Request
+### [400 Bad Request](/en/web-fundamentals/http/status-codes/400)
 The request format is invalid or malformed.
 
 ```http
@@ -46,7 +46,7 @@ HTTP/1.1 400 Bad Request
 
 ---
 
-### 401 Unauthorized
+### [401 Unauthorized](/en/web-fundamentals/http/status-codes/401)
 You need to authenticate (provide credentials like username/password or API key).
 
 ```http
@@ -63,7 +63,7 @@ WWW-Authenticate: Bearer realm="api"
 
 ---
 
-### 403 Forbidden
+### [403 Forbidden](/en/web-fundamentals/http/status-codes/403)
 You're authenticated, but you don't have permission to access this resource.
 
 ```http
@@ -80,7 +80,7 @@ HTTP/1.1 403 Forbidden
 
 ---
 
-### 404 Not Found
+### [404 Not Found](/en/web-fundamentals/http/status-codes/404)
 The requested resource doesn't exist.
 
 ```http
@@ -96,7 +96,7 @@ HTTP/1.1 404 Not Found
 
 ---
 
-### 409 Conflict
+### [409 Conflict](/en/web-fundamentals/http/status-codes/409)
 The request conflicts with the current server state.
 
 ```http
@@ -113,7 +113,7 @@ HTTP/1.1 409 Conflict
 
 ---
 
-### 422 Unprocessable Entity
+### [422 Unprocessable Entity](/en/web-fundamentals/http/status-codes/422)
 The request format is valid (valid JSON), but the data is rejected.
 
 ```http
@@ -139,7 +139,7 @@ HTTP/1.1 422 Unprocessable Entity
 
 ---
 
-### 429 Too Many Requests
+### [429 Too Many Requests](/en/web-fundamentals/http/status-codes/429)
 You're sending too many requests. Slow down.
 
 ```http

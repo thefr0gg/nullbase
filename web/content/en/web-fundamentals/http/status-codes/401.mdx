@@ -1,0 +1,53 @@
+---
+title: "401 Unauthorized"
+description: The request lacks valid authentication credentials for the target resource.
+category: HTTP
+weight: 45
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+The `401 Unauthorized` response status code indicates that **the request lacks valid authentication credentials for the target resource**.
+
+<StatusCodeExplorer defaultCode={401} />
+
+## Details
+
+- **Class:** 4xx (Client error)
+- **When to use:** no credentials were sent, or the credentials sent are invalid or expired.
+- **Should include:** a `WWW-Authenticate` header describing how to authenticate.
+
+## Example
+
+```http
+GET /api/admin HTTP/1.1
+
+HTTP/1.1 401 Unauthorized
+WWW-Authenticate: Bearer realm="api"
+{
+  "error": "No authentication provided"
+}
+```
+
+Despite the name, `401` means "you're not logged in," not "you don't have permission" — that's `403`.
+
+## 401 vs 403
+
+| 401 Unauthorized | 403 Forbidden |
+|-----------------|---------------|
+| You need to log in | You're logged in, but no permission |
+| No credentials, or invalid/expired credentials | Valid credentials, but insufficient role/permission |
+| Include `WWW-Authenticate` | Don't include `WWW-Authenticate` |
+
+## Common Mistakes
+
+**Avoid:** Returning `401` when the user is authenticated but lacks permission — that's `403`.
+
+**Avoid:** Omitting `WWW-Authenticate` — clients need it to know which auth scheme to use.
+
+## See Also
+
+- **[Status Codes Reference](/en/web-fundamentals/http/status-codes)** — All codes at a glance.
+- **[4xx Client Error](/en/web-fundamentals/http/status-codes/4xx)** — The client did something wrong.
+- **[403 Forbidden](/en/web-fundamentals/http/status-codes/403)** — Authenticated, but not permitted.
+- **[Authorization](/en/web-fundamentals/http/headers/authorization)** — The header that prevents most 401s.

@@ -1,0 +1,44 @@
+---
+title: "400 Bad Request"
+description: The server cannot process the request due to malformed syntax or invalid data.
+category: HTTP
+weight: 44
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+The `400 Bad Request` response status code indicates that **the server cannot or will not process the request due to something the client did wrong**.
+
+<StatusCodeExplorer defaultCode={400} />
+
+## Details
+
+- **Class:** 4xx (Client error)
+- **When to use:** invalid JSON, missing required fields, malformed query parameters, or a request the server can't parse at all.
+- **Not for:** authentication (`401`) or permission (`403`) problems — reserve `400` for structurally or semantically invalid requests.
+
+## Example
+
+```http
+POST /api/users HTTP/1.1
+Content-Type: application/json
+
+{ invalid json }
+
+HTTP/1.1 400 Bad Request
+{
+  "error": "Invalid JSON syntax"
+}
+```
+
+## Common Mistakes
+
+**Avoid:** Using `400` as a catch-all for every client error — `401`, `403`, `404`, `409`, and `422` are all more specific and more useful to the caller.
+
+**Avoid:** Returning `400` with no explanation — include what was wrong and, ideally, which field.
+
+## See Also
+
+- **[Status Codes Reference](/en/web-fundamentals/http/status-codes)** — All codes at a glance.
+- **[4xx Client Error](/en/web-fundamentals/http/status-codes/4xx)** — The client did something wrong.
+- **[422 Unprocessable Entity](/en/web-fundamentals/http/status-codes/422)** — Valid syntax, rejected data.

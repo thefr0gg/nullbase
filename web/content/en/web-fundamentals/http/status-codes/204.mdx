@@ -1,0 +1,38 @@
+---
+title: "204 No Content"
+description: The server successfully processed the request and there is no content to send back.
+category: HTTP
+weight: 43
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+The `204 No Content` response status code indicates that **the server successfully processed the request, but there is no content to send in response**.
+
+<StatusCodeExplorer defaultCode={204} />
+
+## Details
+
+- **Class:** 2xx (Success)
+- **Typical with:** `DELETE`, `PUT`, `PATCH`
+- **Body:** must be empty — a `204` response must not include a message body.
+
+## Example
+
+```http
+DELETE /api/users/42 HTTP/1.1
+
+HTTP/1.1 204 No Content
+```
+
+## Common Mistakes
+
+**Avoid:** Sending a response body with `204` — clients and proxies expect none, and some will error on one.
+
+**Avoid:** Using `200` with an empty body instead — `204` explicitly signals "nothing more to say," which is more precise than a `200` with no content.
+
+## See Also
+
+- **[Status Codes Reference](/en/web-fundamentals/http/status-codes)** — All codes at a glance.
+- **[2xx Success](/en/web-fundamentals/http/status-codes/2xx)** — Request succeeded.
+- **[DELETE](/en/web-fundamentals/http/methods/delete)** — The method most often paired with 204.

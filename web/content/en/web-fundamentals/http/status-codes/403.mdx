@@ -1,0 +1,52 @@
+---
+title: "403 Forbidden"
+description: The server understood the request but refuses to authorize it.
+category: HTTP
+weight: 46
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+The `403 Forbidden` response status code indicates that **the server understood the request but refuses to authorize it**.
+
+<StatusCodeExplorer defaultCode={403} />
+
+## Details
+
+- **Class:** 4xx (Client error)
+- **When to use:** the client is authenticated but doesn't have permission for this specific resource or action.
+- **Do not include:** a `WWW-Authenticate` header — the problem isn't a missing credential.
+
+## Example
+
+```http
+GET /api/admin HTTP/1.1
+Authorization: Bearer valid-token
+
+HTTP/1.1 403 Forbidden
+{
+  "error": "Insufficient permissions"
+}
+```
+
+The client is typically authenticated but lacks the role or permission needed — unlike `401`, logging in again won't help.
+
+## 401 vs 403
+
+| 401 Unauthorized | 403 Forbidden |
+|-----------------|---------------|
+| You need to log in | You're logged in, but no permission |
+| No credentials, or invalid/expired credentials | Valid credentials, but insufficient role/permission |
+| Include `WWW-Authenticate` | Don't include `WWW-Authenticate` |
+
+## Common Mistakes
+
+**Avoid:** Returning `404` instead of `403` to hide that a resource exists — this is sometimes intentional for security, but document the tradeoff; usually `403` is more honest and more useful to legitimate clients.
+
+**Avoid:** Returning `403` when the real problem is missing authentication — that's `401`.
+
+## See Also
+
+- **[Status Codes Reference](/en/web-fundamentals/http/status-codes)** — All codes at a glance.
+- **[4xx Client Error](/en/web-fundamentals/http/status-codes/4xx)** — The client did something wrong.
+- **[401 Unauthorized](/en/web-fundamentals/http/status-codes/401)** — Not authenticated at all.

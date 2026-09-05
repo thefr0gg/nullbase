@@ -4,6 +4,7 @@ description: Complete reference of all HTTP status codes, grouped by class, with
 category: HTTP
 weight: 4
 interactive: true
+interactiveType: ["ItemExplorer", "MermaidDiagram"]
 ---
 
 Every HTTP response starts with a **status code** — a 3-digit number that tells the client what happened.
@@ -135,20 +136,25 @@ HTTP/1.1 500 Internal Server Error
 
 ## Quick Decision Guide
 
-**Did the request succeed?**
-- Yes → **2xx** (usually 200 or 201)
-- No → Continue below
+<MermaidDiagram
+  title="Which Status Code Should I Return?"
+  chart={`flowchart TD
+    A[Did the request succeed?] -->|Yes| B["2xx — usually 200 or 201"]
+    A -->|No| C{Does the client need to follow a redirect?}
+    C -->|Yes| D["3xx — usually 301, 302, 307"]
+    C -->|No| E{Did the client do something wrong?}
+    E -->|"Yes"| F["4xx — 400, 401, 403, 404, 422, 429, etc."]
+    E -->|No| G["5xx — the server failed: 500, 502, 503, 504"]
 
-**Is there something else the client needs to do?**
-- Yes, follow a redirect → **3xx** (usually 301, 302, 307)
-- No → Continue below
-
-**Did the client do something wrong?**
-- Yes → **4xx** (400, 401, 403, 404, 422, 429, etc.)
-- No → The server failed
-
-**The server failed?**
-- Yes → **5xx** (500, 502, 503, 504)
+    class B success
+    class D redirect
+    class F clientError
+    class G serverError
+    classDef success fill:#22c55e33,stroke:#22c55e,color:inherit
+    classDef redirect fill:#3b82f633,stroke:#3b82f6,color:inherit
+    classDef clientError fill:#f59e0b33,stroke:#f59e0b,color:inherit
+    classDef serverError fill:#ef444433,stroke:#ef4444,color:inherit`}
+/>
 
 ---
 

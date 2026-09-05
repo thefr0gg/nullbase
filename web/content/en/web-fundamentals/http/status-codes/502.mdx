@@ -1,0 +1,43 @@
+---
+title: "502 Bad Gateway"
+description: A server acting as a gateway or proxy received an invalid response from the upstream server.
+category: HTTP
+weight: 50
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+The `502 Bad Gateway` response status code indicates that **a server acting as a gateway or proxy received an invalid or malformed response from the upstream server it was trying to reach**.
+
+<StatusCodeExplorer defaultCode={502} />
+
+## Details
+
+- **Class:** 5xx (Server error)
+- **Typical cause:** the upstream application server crashed, restarted, or returned garbage while the proxy (nginx, a load balancer, a CDN) was waiting for a response.
+- **Who fixes it:** the origin/backend, not the client — retrying the exact same request rarely helps until the upstream recovers.
+
+## Example
+
+```http
+GET /api/data HTTP/1.1
+
+HTTP/1.1 502 Bad Gateway
+Content-Type: text/html
+
+<h1>502 Bad Gateway</h1>
+<p>The upstream server returned an invalid response.</p>
+```
+
+## Common Mistakes
+
+**Avoid:** Confusing `502` with `503` — `502` means the upstream sent back something invalid; `503` means the server (or upstream) is deliberately unavailable, e.g. overloaded or in maintenance.
+
+**Avoid:** Retrying aggressively without backoff — a struggling upstream service gets worse under a retry storm.
+
+## See Also
+
+- **[Status Codes Reference](/en/web-fundamentals/http/status-codes)** — All codes at a glance.
+- **[5xx Server Error](/en/web-fundamentals/http/status-codes/5xx)** — The server failed.
+- **[503 Service Unavailable](/en/web-fundamentals/http/status-codes/503)** — Server temporarily can't handle requests.
+- **[Proxies & Gateways](/en/web-fundamentals/http/proxies)** — Where 502s come from.

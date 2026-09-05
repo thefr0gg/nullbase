@@ -1,0 +1,45 @@
+---
+title: "201 Created"
+description: The request succeeded and a new resource was created as a result.
+category: HTTP
+weight: 42
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+The `201 Created` response status code indicates that **the request succeeded and a new resource was created**.
+
+<StatusCodeExplorer defaultCode={201} />
+
+## Details
+
+- **Class:** 2xx (Success)
+- **Typical with:** `POST`, sometimes `PUT`
+- **Should include:** a `Location` header pointing to the newly created resource, and usually the resource itself in the body.
+
+## Example
+
+```http
+POST /api/users HTTP/1.1
+Content-Type: application/json
+
+{ "name": "Alice" }
+
+HTTP/1.1 201 Created
+Location: /api/users/42
+Content-Type: application/json
+
+{ "id": 42, "name": "Alice" }
+```
+
+## Common Mistakes
+
+**Avoid:** Returning `200` instead of `201` for creation — clients (and monitoring) rely on `201` to know a new resource now exists.
+
+**Avoid:** Omitting the `Location` header — it tells the client exactly where to find what it just created.
+
+## See Also
+
+- **[Status Codes Reference](/en/web-fundamentals/http/status-codes)** — All codes at a glance.
+- **[2xx Success](/en/web-fundamentals/http/status-codes/2xx)** — Request succeeded.
+- **[POST](/en/web-fundamentals/http/methods/post)** — The method most often paired with 201.

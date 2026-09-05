@@ -1,0 +1,42 @@
+---
+title: "409 Conflict"
+description: The request conflicts with the current state of the target resource.
+category: HTTP
+weight: 47
+interactive: true
+interactiveType: ["ItemExplorer"]
+---
+
+The `409 Conflict` response status code indicates that **the request conflicts with the current state of the target resource**.
+
+<StatusCodeExplorer defaultCode={409} />
+
+## Details
+
+- **Class:** 4xx (Client error)
+- **When to use:** optimistic-concurrency mismatches (stale `If-Match`), duplicate unique fields (e.g. an email that already exists), or two operations racing on the same resource.
+- **Response should explain:** what conflicted, so the client can decide how to resolve it (retry, merge, or abort).
+
+## Example
+
+```http
+PUT /api/documents/42 HTTP/1.1
+If-Match: "old-version"
+
+HTTP/1.1 409 Conflict
+{
+  "error": "The document was modified by someone else"
+}
+```
+
+## Common Mistakes
+
+**Avoid:** Using `400` for conflicts — `409` is more specific and tells the client the request itself was valid, just untimely.
+
+**Avoid:** Not explaining the conflict — a bare `409` with no detail leaves the client guessing whether to retry or give up.
+
+## See Also
+
+- **[Status Codes Reference](/en/web-fundamentals/http/status-codes)** — All codes at a glance.
+- **[4xx Client Error](/en/web-fundamentals/http/status-codes/4xx)** — The client did something wrong.
+- **[422 Unprocessable Entity](/en/web-fundamentals/http/status-codes/422)** — Valid syntax, rejected data.
