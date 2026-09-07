@@ -17,7 +17,22 @@ import { en } from "@/lib/i18n/dictionaries/en";
  */
 export default function RootNotFound() {
   return (
-    <html lang={defaultLocale} data-theme="dark">
+    <html lang={defaultLocale} suppressHydrationWarning>
+      <head>
+        {/*
+          Same before-paint theme script as the locale layout (see
+          `app/[locale]/layout.tsx`) — without it this page always shipped
+          `data-theme="dark"` statically and never read the visitor's saved
+          preference, so a light-mode visitor landing on a 404 saw a jarring
+          theme flip back to dark.
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t==='light'?'light':'dark');}catch(e){document.documentElement.setAttribute('data-theme','dark');}})();",
+          }}
+        />
+      </head>
       <body className="bg-background text-text-primary antialiased">
         <main className="mx-auto w-full max-w-4xl px-4 py-16 sm:px-6">
           <NotFoundContent homeHref={`/${defaultLocale}`} dict={en} />

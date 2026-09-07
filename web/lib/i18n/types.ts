@@ -217,14 +217,9 @@ export interface Dictionary {
     feedbackTypes: Record<FeedbackType, string>;
   };
   notFound: {
-    badge: string;
     heading: string;
     description: string;
-    responseLabel: string;
     backToHome: string;
-    statusBadge: string;
-    jsonError: string;
-    jsonMessage: string;
   };
   home: {
     heroLead: string;

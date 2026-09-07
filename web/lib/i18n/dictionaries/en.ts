@@ -194,15 +194,9 @@ export const en: Dictionary = {
     },
   },
   notFound: {
-    badge: "4xx Client Error",
-    heading: "Not Found",
-    description:
-      "The server did not find a current representation for the target resource — the page you're looking for doesn't exist here.",
-    responseLabel: "Response",
+    heading: "Page not found",
+    description: "The page you're looking for doesn't exist or has been moved.",
     backToHome: "Back to home",
-    statusBadge: "404 Not Found",
-    jsonError: "Not Found",
-    jsonMessage: "No page matches this URL.",
   },
   home: {
     heroLead: "Look it up. See it",

@@ -197,15 +197,9 @@ export const fr: Dictionary = {
     },
   },
   notFound: {
-    badge: "Erreur 4xx côté client",
     heading: "Page introuvable",
-    description:
-      "Le serveur n'a trouvé aucune représentation actuelle pour la ressource demandée — la page que vous cherchez n'existe pas ici.",
-    responseLabel: "Réponse",
+    description: "La page que vous cherchez n'existe pas ou a été déplacée.",
     backToHome: "Retour à l'accueil",
-    statusBadge: "404 Not Found",
-    jsonError: "Not Found",
-    jsonMessage: "Aucune page ne correspond à cette URL.",
   },
   home: {
     heroLead: "Cherchez-le. Voyez-le",

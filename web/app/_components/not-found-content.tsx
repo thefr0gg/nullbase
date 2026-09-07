@@ -1,7 +1,5 @@
 import Link from "next/link";
 import { Home } from "lucide-react";
-import { Badge } from "@/app/_components/ui";
-import { EyebrowLabel, JsonBlock } from "@/components/interactive/_shared";
 import type { Dictionary } from "@/lib/i18n/types";
 
 /**
@@ -9,9 +7,8 @@ import type { Dictionary } from "@/lib/i18n/types";
  * common case — a bad slug under a valid locale, with full sidebar/header
  * chrome via the locale layout) and `app/(root)/not-found.tsx` (the rare
  * case of a totally unrecognized top-level segment, with no chrome to
- * inherit from). Styled as the HTTP `404 Not Found` status it represents,
- * using the same chrome (EyebrowLabel, Badge, JsonBlock) as every
- * interactive playground on the site.
+ * inherit from). Deliberately minimal — a numeral, a short message, and a
+ * way back — rather than styled as an HTTP response.
  */
 export function NotFoundContent({
   homeHref,
@@ -22,36 +19,16 @@ export function NotFoundContent({
 }) {
   const t = dict.notFound;
   return (
-    <section className="flex flex-col items-center gap-10 py-6 text-center">
-      <div className="flex flex-col items-center gap-3">
-        <Badge color="red">{t.badge}</Badge>
-        <p
-          aria-hidden="true"
-          className="font-mono text-6xl font-bold leading-none text-text-primary sm:text-7xl"
-        >
-          4<span className="text-electric-blue">0</span>
-          <span className="text-tangerine">4</span>
-        </p>
-        <h1 className="text-2xl font-semibold text-text-primary sm:text-3xl">{t.heading}</h1>
-        <p className="max-w-md text-text-secondary">{t.description}</p>
-      </div>
-
-      <div className="w-full max-w-md overflow-hidden rounded-3xl border border-border bg-surface text-start shadow-card">
-        <div className="flex items-center justify-between border-b border-border bg-background/60 px-5 py-3">
-          <EyebrowLabel as="span" className="mb-0">
-            {t.responseLabel}
-          </EyebrowLabel>
-          <Badge color="red">{t.statusBadge}</Badge>
-        </div>
-        <div className="p-5">
-          <JsonBlock
-            text={JSON.stringify(
-              { error: t.jsonError, message: t.jsonMessage },
-              null,
-              2,
-            )}
-          />
-        </div>
+    <section className="flex flex-col items-center gap-6 py-20 text-center">
+      <p
+        aria-hidden="true"
+        className="font-mono text-7xl font-bold leading-none tracking-tight text-text-primary sm:text-8xl"
+      >
+        4<span className="text-electric-blue">0</span>4
+      </p>
+      <div className="flex flex-col items-center gap-2">
+        <h1 className="text-xl font-semibold text-text-primary sm:text-2xl">{t.heading}</h1>
+        <p className="max-w-sm text-sm text-text-secondary">{t.description}</p>
       </div>
 
       <Link

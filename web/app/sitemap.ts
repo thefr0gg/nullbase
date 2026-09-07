@@ -20,21 +20,25 @@ export const dynamic = "force-static";
  * `app/(root)/page.tsx`), not a real indexable page; each locale's own
  * homepage (`/en`, `/fr`, ...) is what should be indexed instead.
  *
- * URLs intentionally omit the trailing slash to match the canonical links
- * already emitted by `generateMetadata`, even though `trailingSlash: true`
- * is what the static host actually serves.
+ * URLs carry a trailing slash to match `trailingSlash: true`'s effect on
+ * every page's real canonical link (Next normalizes `alternates.canonical`
+ * to the trailing-slash form at export time, whatever `slugToHref` itself
+ * returns) — without it, Search Console requests the sitemap URL, gets
+ * redirected to the canonical trailing-slash form, and flags the page as
+ * "page with redirect" instead of indexing it.
  */
 export default function sitemap(): MetadataRoute.Sitemap {
+  const withSlash = (path: string) => (path.endsWith("/") ? path : `${path}/`);
   return locales.flatMap((locale) => {
     const pages = getAllPages(locale);
     return [
       {
-        url: SITE_URL + slugToHref(locale, []),
+        url: SITE_URL + withSlash(slugToHref(locale, [])),
         changeFrequency: "weekly" as const,
         priority: 1,
       },
       ...pages.map((page) => ({
-        url: SITE_URL + slugToHref(locale, page.slug),
+        url: SITE_URL + withSlash(slugToHref(locale, page.slug)),
         changeFrequency: "weekly" as const,
         // Category landing pages (top-level, e.g. /en/web-fundamentals) rank
         // slightly above their individual leaf pages.

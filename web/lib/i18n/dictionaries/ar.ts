@@ -208,15 +208,9 @@ export const ar: Dictionary = {
     },
   },
   notFound: {
-    badge: "خطأ 4xx من جهة العميل",
     heading: "الصفحة غير موجودة",
-    description:
-      "لم يجد الخادم تمثيلاً حالياً للمورد المطلوب — الصفحة التي تبحث عنها غير موجودة هنا.",
-    responseLabel: "الاستجابة",
+    description: "الصفحة التي تبحث عنها غير موجودة أو تم نقلها.",
     backToHome: "العودة إلى الرئيسية",
-    statusBadge: "404 Not Found",
-    jsonError: "Not Found",
-    jsonMessage: "لا توجد صفحة مطابقة لهذا الرابط.",
   },
   home: {
     heroLead: "ابحث عنه. شاهده",

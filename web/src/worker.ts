@@ -35,6 +35,19 @@ function isStaticAsset(pathname: string): boolean {
 const worker = {
   async fetch(request: Request, env: { ASSETS: AssetsBinding }): Promise<Response> {
     const url = new URL(request.url);
+
+    // `www.nullbase.wiki` is bound as its own custom domain (wrangler.jsonc)
+    // pointing at this same Worker/asset build, so it was silently serving
+    // an exact duplicate of every page at a different host — no canonical
+    // pointed at it, but Google still crawled it, found (in its eyes) 800+
+    // duplicate/non-canonical URLs, and reported them as not indexed.
+    // Redirecting to the apex consolidates everything onto the one host
+    // every canonical/sitemap URL already uses.
+    if (url.hostname === "www.nullbase.wiki") {
+      url.hostname = "nullbase.wiki";
+      return Response.redirect(url.toString(), 301);
+    }
+
     if (
       url.hostname === "admin.nullbase.wiki" &&
       !isStaticAsset(url.pathname) &&

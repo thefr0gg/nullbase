@@ -194,15 +194,9 @@ export const es: Dictionary = {
     },
   },
   notFound: {
-    badge: "Error 4xx del cliente",
-    heading: "No encontrado",
-    description:
-      "El servidor no encontró una representación actual para el recurso solicitado — la página que buscas no existe aquí.",
-    responseLabel: "Respuesta",
+    heading: "Página no encontrada",
+    description: "La página que buscas no existe o ha sido movida.",
     backToHome: "Volver al inicio",
-    statusBadge: "404 Not Found",
-    jsonError: "Not Found",
-    jsonMessage: "Ninguna página coincide con esta URL.",
   },
   home: {
     heroLead: "Búscalo. Míralo",
