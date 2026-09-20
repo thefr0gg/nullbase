@@ -2,6 +2,7 @@
 
 import { useCallback } from "react";
 import { Moon, Sun } from "lucide-react";
+import clsx from "clsx";
 import { useTheme, type Theme } from "@/lib/theme";
 import type { Dictionary } from "@/lib/i18n/types";
 
@@ -14,7 +15,15 @@ import type { Dictionary } from "@/lib/i18n/types";
  * trees (the admin panel) can pass a plain `{ theme: {...} }` object
  * without needing the whole locale dictionary system.
  */
-export function ThemeToggle({ dict }: { dict: Pick<Dictionary, "theme"> }) {
+export function ThemeToggle({
+  dict,
+  bare = false,
+}: {
+  dict: Pick<Dictionary, "theme">;
+  /** Drops the resting `bg-surface` fill, leaving only the hover state —
+   *  for contexts (e.g. the admin header) that want a plain icon button. */
+  bare?: boolean;
+}) {
   const theme = useTheme();
 
   const toggle = useCallback(() => {
@@ -34,7 +43,10 @@ export function ThemeToggle({ dict }: { dict: Pick<Dictionary, "theme"> }) {
       onClick={toggle}
       aria-label={label}
       title={label}
-      className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg bg-surface text-text-secondary transition-colors hover:bg-electric-blue/10 hover:text-electric-blue"
+      className={clsx(
+        "inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-text-secondary transition-colors hover:bg-electric-blue/10 hover:text-electric-blue",
+        !bare && "bg-surface",
+      )}
     >
       {theme === "light" ? (
         <Moon className="h-4 w-4" />

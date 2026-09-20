@@ -81,6 +81,67 @@ export function tokenizeCode(raw: string): CodeToken[] {
   return scanTokens(raw).filter((t): t is CodeToken => t.type !== "ws");
 }
 
+/** Punctuation that's always its own chip, never merged into a neighboring
+ *  chunk — these are the structural landmarks (block/argument/statement
+ *  boundaries) a learner needs to place precisely, so folding them into a
+ *  bigger chunk would make the drop target ambiguous. */
+const STANDALONE_PUNCT = new Set(["{", "}", "(", ")", "[", "]", ";", ",", "<", ">"]);
+
+/** Punctuation that glues tightly (no space either side) onto its
+ *  neighbors when merged — these read as part of the identifier they
+ *  touch (`a.b`, `x:`, `Self::new`), unlike e.g. `=` or `+`. */
+const TIGHT_PUNCT = new Set([".", ":", "::", "->", "=>"]);
+
+/** Order of "how much this token matters," used to pick one type/color for
+ *  a merged chunk of several tokens (the most significant token wins). */
+const TYPE_RANK: Record<CodeTokenType, number> = {
+  comment: 6,
+  string: 5,
+  keyword: 4,
+  number: 3,
+  identifier: 2,
+  punct: 1,
+};
+
+/** Merges a flat token stream into coarser drag pieces — e.g. `const x :
+ *  number = 5 ;` (7 tokens) becomes `const x:` `number` `= 5` `;` (4 chips)
+ *  — so beginners aren't asked to place one chip per character. Comments,
+ *  strings, and `STANDALONE_PUNCT` landmarks are always kept as their own
+ *  chip; everything else is grouped greedily up to `maxChunk` tokens. */
+function mergeTokens(tokens: CodeToken[], maxChunk = 3): CodeToken[] {
+  const merged: CodeToken[] = [];
+  let chunk: CodeToken[] = [];
+
+  function flush() {
+    if (chunk.length === 0) return;
+    const text = chunk.reduce((acc, t, i) => {
+      if (i === 0) return t.text;
+      return TIGHT_PUNCT.has(t.text) || TIGHT_PUNCT.has(chunk[i - 1].text) ? acc + t.text : `${acc} ${t.text}`;
+    }, "");
+    const type = chunk.reduce((best, t) => (TYPE_RANK[t.type] > TYPE_RANK[best] ? t.type : best), chunk[0].type);
+    merged.push({ text, type });
+    chunk = [];
+  }
+
+  for (const token of tokens) {
+    const standalone = token.type === "comment" || token.type === "string" || STANDALONE_PUNCT.has(token.text);
+    if (standalone || chunk.length >= maxChunk) flush();
+    chunk.push(token);
+    if (standalone) flush();
+  }
+  flush();
+
+  return merged;
+}
+
+/** Same as `tokenizeCode`, but coarser: adjacent tokens are grouped into
+ *  fewer, chunkier drag pieces (see `mergeTokens`) so exercises with long
+ *  lines don't overwhelm beginners with one chip per token. This is what
+ *  `OrderingExercise` builds its draggable pieces from. */
+export function tokenizeCodeForExercise(raw: string): CodeToken[] {
+  return mergeTokens(tokenizeCode(raw));
+}
+
 function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }

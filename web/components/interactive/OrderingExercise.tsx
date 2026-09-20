@@ -6,15 +6,17 @@ import { Plus, X } from "lucide-react";
 import clsx from "clsx";
 import { Button } from "@/app/_components/ui";
 import { useInteractiveDict } from "@/lib/i18n/step-flow-context";
-import { codeTokenClassName, highlightCode, tokenizeCode, type CodeTokenType } from "./_code-tokens";
+import { codeTokenClassName, highlightCode, tokenizeCodeForExercise, type CodeTokenType } from "./_code-tokens";
 import { DetailPanel, EyebrowLabel, Ltr, PlaygroundSection, PlaygroundShell } from "./_shared";
 
 /**
  * A "build the code" exercise: every item's `label` is tokenized into
- * individual keyword/operator/string/etc. pieces, which start out shuffled
- * in a word bank and get placed into a multi-line answer area — closer to a
- * Duolingo sentence-builder than a reorder-the-lines list, and each piece is
- * colored by what kind of code token it is via `_code-tokens`. The answer
+ * coarse, word-sized pieces (see `tokenizeCodeForExercise` — adjacent
+ * tokens are merged so a beginner isn't placing one chip per character),
+ * which start out shuffled in a word bank and get placed into a multi-line
+ * answer area — closer to a Duolingo sentence-builder than a
+ * reorder-the-lines list, and each piece is colored by what kind of code
+ * token it is via `_code-tokens`. The answer
  * area has its own line gutter (line numbers + a "+" to insert a new line),
  * since real code has line breaks that are themselves part of the puzzle —
  * each authored `item` is one intended line, so correctness checks that
@@ -59,7 +61,7 @@ const BREAK = "__BREAK__";
 function buildPieces(items: OrderingExerciseItem[]): Piece[] {
   const pieces: Piece[] = [];
   for (const item of items) {
-    tokenizeCode(item.label).forEach((token, index) => {
+    tokenizeCodeForExercise(item.label).forEach((token, index) => {
       pieces.push({ id: `${item.id}::${index}`, text: token.text, type: token.type, itemId: item.id });
     });
   }
@@ -106,6 +108,17 @@ function flattenWithIndex(groups: string[][]): { flat: string[]; indexOf: Map<st
     if (i < nonEmpty.length - 1) flat.push(BREAK);
   });
   return { flat, indexOf };
+}
+
+/** Without this, the browser falls back to its default drag ghost — for a
+ *  `<button>` with `user-select: none` styling that often renders as a bare
+ *  outline/text snippet rather than the actual chip (border, background,
+ *  token color), making it look like a text selection is being dragged
+ *  instead of the piece itself. Pointing the drag image at the button that
+ *  triggered the drag snapshots its real rendered appearance. */
+function setDragImageToSelf(e: DragEvent) {
+  const target = e.currentTarget as HTMLElement;
+  e.dataTransfer.setDragImage(target, target.offsetWidth / 2, target.offsetHeight / 2);
 }
 
 type DragSource = { from: "bank" } | { from: "line"; lineId: string };
@@ -312,6 +325,7 @@ export default function OrderingExercise({ prompt, items, correctOrder, title }:
                       draggable
                       onDragStart={(e) => {
                         e.stopPropagation();
+                        setDragImageToSelf(e);
                         setDragSource({ from: "line", lineId: line.id });
                         setDraggedPieceId(id);
                       }}
@@ -352,7 +366,8 @@ export default function OrderingExercise({ prompt, items, correctOrder, title }:
                 key={id}
                 type="button"
                 draggable
-                onDragStart={() => {
+                onDragStart={(e) => {
+                  setDragImageToSelf(e);
                   setDragSource({ from: "bank" });
                   setDraggedPieceId(id);
                 }}

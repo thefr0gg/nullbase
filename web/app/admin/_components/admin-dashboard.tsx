@@ -67,11 +67,11 @@ export function AdminDashboard({ pageTitles }: { pageTitles: Record<string, stri
             href={homeHref}
             aria-label="Back to site"
             title="Back to site"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-surface text-text-secondary transition-colors hover:bg-electric-blue/10 hover:text-electric-blue"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-text-secondary transition-colors hover:bg-electric-blue/10 hover:text-electric-blue"
           >
             <Home className="h-4 w-4" />
           </a>
-          <ThemeToggle dict={THEME_DICT} />
+          <ThemeToggle dict={THEME_DICT} bare />
           <Button variant="ghost" onClick={logout} aria-label="Sign out">
             <LogOut className="h-4 w-4" />
             <span className="hidden sm:inline">Sign out</span>

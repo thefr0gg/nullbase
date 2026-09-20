@@ -52,7 +52,15 @@ export default function PredictOutput({
         </PlaygroundSection>
       )}
       <PlaygroundSection>
-        <DetailPanel className="overflow-x-auto bg-background p-3">
+        <DetailPanel className="flex overflow-x-auto bg-background p-3">
+          <div
+            aria-hidden="true"
+            className="select-none pe-3 text-end font-mono text-xs leading-6 text-text-secondary/70"
+          >
+            {code.split("\n").map((_, i) => (
+              <div key={i}>{i + 1}</div>
+            ))}
+          </div>
           <Ltr
             as="pre"
             className="whitespace-pre font-mono text-xs leading-6 text-text-primary"
