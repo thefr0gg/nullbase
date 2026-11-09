@@ -6,6 +6,9 @@ export const fr: Dictionary = {
     closeNavigation: "Fermer la navigation",
     collapseNode: "Réduire {title}",
     expandNode: "Développer {title}",
+    contents: "Sommaire",
+    allTopics: "Tous les sujets",
+    runnableExamples: "exemples exécutables",
   },
   search: {
     placeholderTopic: "Rechercher dans {topic}…",
@@ -28,6 +31,9 @@ export const fr: Dictionary = {
   },
   pageFooter: {
     next: "Suivant",
+  },
+  toc: {
+    heading: "Sur cette page",
   },
   stepFlow: {
     previous: "Précédent",
@@ -117,6 +123,7 @@ export const fr: Dictionary = {
     emptyAnswer: "Touchez ou glissez les pièces ci-dessous pour construire le code.",
   },
   predictOutput: {
+    defaultTitle: "Prédire le résultat",
     submit: "Vérifier la réponse",
     retry: "Réessayer",
     correct: "Correct !",
@@ -235,6 +242,12 @@ export const fr: Dictionary = {
       "Systèmes d'exploitation",
       "Informatique théorique",
     ],
+  },
+  heroDemo: {
+    eyebrow: "essayez · code http",
+    live: "EN DIRECT",
+    name: "Trop de requêtes",
+    description: "Vous avez atteint une limite de débit. Attendez Retry-After avant de réessayer.",
   },
   privacy: {
     badge: "Confidentialité",

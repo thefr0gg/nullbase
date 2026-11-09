@@ -1,5 +1,4 @@
-import { getPage } from "@/lib/content/loader";
-import { slugToHref } from "@/lib/content/meta";
+import { slugToHref, resolveBreadcrumbTrail } from "@/lib/content/meta";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import type { Locale } from "@/lib/i18n/config";
 import type { CollectedPage } from "@/lib/content/schema";
@@ -11,20 +10,17 @@ import type { CollectedPage } from "@/lib/content/schema";
  */
 
 /** Home, then every ancestor of `slug` that resolves to a real page, each
- *  with a locale-correct URL — mirrors the sidebar hierarchy exactly. */
+ *  with a locale-correct URL — mirrors the sidebar hierarchy exactly. Shares
+ *  its trail-resolution with the visible <Breadcrumbs> component via
+ *  resolveBreadcrumbTrail, so the two never drift apart. */
 export function buildBreadcrumbList(locale: Locale, slug: string[]) {
   const items: { name: string; url: string }[] = [
     { name: "Home", url: `${SITE_URL}${slugToHref(locale, [])}` },
+    ...resolveBreadcrumbTrail(locale, slug).map((entry) => ({
+      name: entry.title,
+      url: `${SITE_URL}${entry.href}`,
+    })),
   ];
-  for (let i = 1; i <= slug.length; i++) {
-    const ancestorSlug = slug.slice(0, i);
-    const page = getPage(locale, ancestorSlug);
-    if (!page) continue;
-    items.push({
-      name: page.frontmatter.title,
-      url: `${SITE_URL}${slugToHref(locale, ancestorSlug)}`,
-    });
-  }
 
   return {
     "@context": "https://schema.org",

@@ -114,6 +114,7 @@ const DEFAULT_DICT: InteractiveDict = {
     emptyAnswer: "Tap or drag pieces below to build the code.",
   },
   predictOutput: {
+    defaultTitle: "Predict the output",
     submit: "Check answer",
     retry: "Try again",
     correct: "Correct!",

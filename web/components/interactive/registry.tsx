@@ -47,6 +47,8 @@ export const interactiveComponents = {
   UnderTheHood: lazy(() => import("./UnderTheHood")),
   InteractiveSlider: lazy(() => import("./InteractiveSlider")),
   GlossaryTerm: lazy(() => import("./GlossaryTerm")),
+  GrowthComparison: lazy(() => import("./GrowthComparison")),
+  DiffViewer: lazy(() => import("./DiffViewer")),
 
   // Legacy aliases — do not remove without migrating web/content/http/**.
   HttpRequest: LegacyHttpRequest,

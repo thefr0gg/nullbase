@@ -74,7 +74,7 @@ export function LanguageSwitcher({ currentLocale, localesForSlug, dict }: Props)
               <div
                 role="listbox"
                 aria-label={dict.language.switchLanguage}
-                className="w-48 overflow-hidden rounded-2xl border border-border bg-surface p-1.5 shadow-card"
+                className="w-48 overflow-hidden rounded-2xl border-[1.5px] border-border-strong glass-panel p-1.5 shadow-card"
                 onClick={(e) => e.stopPropagation()}
               >
                 {locales.map((l) => {

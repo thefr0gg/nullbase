@@ -25,6 +25,11 @@ export interface Dictionary {
     collapseNode: string;
     /** `{title}` */
     expandNode: string;
+    /** The "Contents" sidebar's own caption label. */
+    contents: string;
+    allTopics: string;
+    /** Legend caption below the sidebar tree. */
+    runnableExamples: string;
   };
   search: {
     /** `{topic}` */
@@ -49,6 +54,9 @@ export interface Dictionary {
   };
   pageFooter: {
     next: string;
+  };
+  toc: {
+    heading: string;
   };
   stepFlow: {
     previous: string;
@@ -143,6 +151,7 @@ export interface Dictionary {
     emptyAnswer: string;
   };
   predictOutput: {
+    defaultTitle: string;
     submit: string;
     retry: string;
     correct: string;
@@ -243,6 +252,14 @@ export interface Dictionary {
      *  translated content title once it's built, so the "already built"
      *  filter keeps working per locale. */
     plannedCategories: string[];
+  };
+  /** The homepage hero's static "try it" illustration panel — purely
+   *  illustrative, not a real interactive widget (see hero-demo-panel.tsx). */
+  heroDemo: {
+    eyebrow: string;
+    live: string;
+    name: string;
+    description: string;
   };
   privacy: {
     badge: string;

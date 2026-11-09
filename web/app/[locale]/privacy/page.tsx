@@ -52,7 +52,7 @@ export default async function PrivacyPage({
   const t = getDictionary(locale).privacy;
 
   return (
-    <div className="flex flex-col gap-12">
+    <div className="mx-auto flex max-w-3xl flex-col gap-12 px-4 py-8 sm:px-6 sm:py-10">
       <header className="flex flex-col gap-3">
         <Badge color="blue" className="w-fit">
           {t.badge}

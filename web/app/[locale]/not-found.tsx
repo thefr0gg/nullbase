@@ -18,5 +18,9 @@ export default function NotFound() {
   const locale = first && isLocale(first) ? first : defaultLocale;
   const dict = getDictionary(locale);
 
-  return <NotFoundContent homeHref={`/${locale}`} dict={dict} />;
+  return (
+    <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
+      <NotFoundContent homeHref={`/${locale}`} dict={dict} />
+    </div>
+  );
 }

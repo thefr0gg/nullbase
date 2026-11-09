@@ -1,12 +1,20 @@
 import "../globals.css";
 import "../mdx.css";
-import { Geist_Mono, JetBrains_Mono, Noto_Kufi_Arabic, Noto_Sans_Arabic, Plus_Jakarta_Sans } from "next/font/google";
+import {
+  Bricolage_Grotesque,
+  Geist,
+  Geist_Mono,
+  JetBrains_Mono,
+  Noto_Kufi_Arabic,
+  Noto_Sans_Arabic,
+  Plus_Jakarta_Sans,
+} from "next/font/google";
 import Link from "next/link";
 import { KofiIcon } from "@/app/_components/kofi-icon";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { ThemeToggle } from "@/app/_components/theme-toggle";
-import { SidebarNav } from "@/app/_components/sidebar-nav";
+import { LogoMark } from "@/app/_components/logo-mark";
 import { MobileNav } from "@/app/_components/mobile-nav";
 import { SearchBar } from "@/app/_components/search-bar";
 import { getSidebarTree, slugToHref } from "@/lib/content/meta";
@@ -22,6 +30,17 @@ const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   display: "swap",
 });
+// Display font for headings/hero text — the dark-neon redesign's heavy,
+// tight-tracking display type.
+const bricolage = Bricolage_Grotesque({
+  variable: "--font-bricolage",
+  subsets: ["latin"],
+  display: "swap",
+});
+// Body/UI sans, replacing Jakarta as --font-body/--font-sans (Jakarta stays
+// loaded above since app/admin/layout.tsx and MermaidDiagram.tsx still
+// reference --font-jakarta directly).
+const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"], display: "swap" });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 // Distinct from --font-geist-mono (used for inline code/curl output
 // site-wide) — reserved for the SQL playground's CodeEditor, so it visibly
@@ -127,7 +146,7 @@ export default async function LocaleLayout({
       // you changed languages. `suppressHydrationWarning` only covers the
       // very first hydration pass, not this.
       suppressHydrationWarning
-      className={`${jakarta.variable} ${geistMono.variable} ${jetbrainsMono.variable} ${notoSansArabic.variable} ${notoKufiArabic.variable} font-sans`}
+      className={`${jakarta.variable} ${bricolage.variable} ${geistSans.variable} ${geistMono.variable} ${jetbrainsMono.variable} ${notoSansArabic.variable} ${notoKufiArabic.variable} font-sans`}
     >
       <head>
         {/*
@@ -151,58 +170,63 @@ export default async function LocaleLayout({
         />
       </head>
       <body className="bg-background text-text-primary antialiased">
-        <div className="flex min-h-screen">
-          <SidebarNav tree={tree} locale={locale} dict={dict} />
-          <div className="flex min-w-0 flex-1 flex-col">
-            <header className="sticky top-0 z-10 border-b border-border bg-surface/70 backdrop-blur">
-              <div className="flex h-14 items-center gap-3 px-4 sm:px-6">
-                <div className="flex shrink-0 items-center gap-2">
-                  <MobileNav tree={tree} dict={dict} />
-                </div>
-                {/* Search centered in the remaining space */}
-                <div className="flex flex-1 justify-center px-2">
-                  <SearchBar index={searchIndex} locale={locale} dict={dict} />
-                </div>
-                <div className="flex shrink-0 items-center gap-1.5">
-                  <AdminPanelLink />
-                  <LanguageSwitcher currentLocale={locale} localesForSlug={localesForSlug} dict={dict} />
-                  <a
-                    href="https://ko-fi.com/U8H826028S"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Support This Website"
-                    title="Support This Website"
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-surface text-text-secondary transition-colors hover:bg-electric-blue/10 hover:text-electric-blue"
-                  >
-                    <KofiIcon className="h-4 w-4" />
-                  </a>
-                  <ThemeToggle dict={dict} />
-                </div>
+        <div className="flex min-h-screen flex-col">
+          <header className="sticky top-3 z-20 px-3 sm:px-6">
+            <div className="mx-auto flex max-w-[1320px] items-center gap-3 rounded-2xl border-[1.5px] border-border-strong glass-panel px-3 py-2.5 shadow-card">
+              <Link
+                href={`/${locale}`}
+                className="flex shrink-0 items-center gap-2 rounded-xl p-1 transition-colors hover:bg-background/60"
+              >
+                <LogoMark className="h-7 w-7" />
+                <span className="hidden font-heading text-lg font-extrabold tracking-[-0.03em] text-text-primary sm:inline">
+                  nullbase
+                  <span className="font-mono text-xs font-normal tracking-normal text-electric-blue">.wiki</span>
+                </span>
+              </Link>
+              <div className="flex shrink-0 items-center gap-2">
+                <MobileNav tree={tree} dict={dict} />
               </div>
-            </header>
-            <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-8 sm:px-6 sm:py-10">
-              {children}
-            </main>
-            <footer className="flex flex-col items-center gap-4 border-t border-border px-4 py-8 text-center text-sm text-text-secondary sm:px-6">
-              <span>{dict.footer.tagline}</span>
-              <div className="flex items-center gap-4">
-                <Link
-                  href={`${slugToHref(locale, [])}/privacy`}
-                  className="underline underline-offset-2 hover:text-text-primary"
-                >
-                  {dict.footer.privacy}
-                </Link>
+              {/* Search centered in the remaining space */}
+              <div className="flex flex-1 justify-center px-1">
+                <SearchBar index={searchIndex} locale={locale} dict={dict} />
+              </div>
+              <div className="flex shrink-0 items-center gap-1.5">
+                <AdminPanelLink />
+                <LanguageSwitcher currentLocale={locale} localesForSlug={localesForSlug} dict={dict} />
                 <a
-                  href="https://github.com/thefr0gg"
+                  href="https://ko-fi.com/U8H826028S"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="underline underline-offset-2 hover:text-text-primary"
+                  aria-label="Support This Website"
+                  title="Support This Website"
+                  className="hidden h-9 w-9 items-center justify-center rounded-lg text-text-secondary transition-colors hover:bg-electric-blue/10 hover:text-electric-blue sm:inline-flex"
                 >
-                  {dict.footer.developer}
+                  <KofiIcon className="h-4 w-4" />
                 </a>
+                <ThemeToggle dict={dict} bare />
               </div>
-            </footer>
-          </div>
+            </div>
+          </header>
+          <main className="w-full flex-1">{children}</main>
+          <footer className="flex flex-col items-center gap-4 border-t border-border px-4 py-8 text-center text-sm text-text-secondary sm:px-6">
+            <span>{dict.footer.tagline}</span>
+            <div className="flex items-center gap-4">
+              <Link
+                href={`${slugToHref(locale, [])}/privacy`}
+                className="underline underline-offset-2 hover:text-text-primary"
+              >
+                {dict.footer.privacy}
+              </Link>
+              <a
+                href="https://github.com/thefr0gg"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-2 hover:text-text-primary"
+              >
+                {dict.footer.developer}
+              </a>
+            </div>
+          </footer>
         </div>
       </body>
     </html>

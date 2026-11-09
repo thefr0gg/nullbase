@@ -97,7 +97,7 @@ export default function DiagramExplorer({ rows, title }: DiagramExplorerProps) {
                         onClick={() => setSelectedId(isSelected ? null : node.id)}
                         aria-expanded={isSelected}
                         className={clsx(
-                          "rounded-xl border px-4 py-2.5 text-sm font-semibold shadow-[0_4px_0_0_rgba(23,23,26,0.08)] transition-all duration-150",
+                          "rounded-xl border px-4 py-2.5 text-sm font-semibold shadow-[0_4px_0_0_var(--shadow-ink-soft)] transition-all duration-150",
                           isSelected
                             ? clsx("border-transparent shadow-none", NODE_SOLID_CLASSES[node.color ?? "default"])
                             : NODE_TINT_CLASSES[node.color ?? "default"],

@@ -16,20 +16,26 @@ interface Props {
 }
 
 /**
- * Mobile navigation (<md): a hamburger button (rendered in the header) that
- * opens a slide-in drawer with the full sidebar tree. Hidden on md+.
+ * Global "browse all topics" trigger: a hamburger button (rendered in the
+ * header, on every page and every viewport width) that opens a slide-in
+ * drawer with the full sidebar tree. Visible at all widths — not just
+ * narrow ones — because the inline <ContentsSidebar> only renders on
+ * content pages; this is the homepage's only way to browse the tree
+ * besides search.
  *
- * Shares <SidebarTree> with the desktop sidebar so both stay behaviorally
+ * Shares <SidebarTree> with <ContentsSidebar> so both stay behaviorally
  * identical (same active-branch auto-expand, same "every category always
- * visible" fix) instead of drifting apart as two hand-copied trees.
+ * visible" fix, same numbering/dot indicators) instead of drifting apart
+ * as two hand-copied trees.
  *
  * The drawer is rendered via a portal to `document.body`. The header this
- * button lives in uses `backdrop-blur`, and `backdrop-filter` — like
- * `filter`/`transform` — makes an element establish a new containing block
- * for `position: fixed` descendants (CSS spec, not a Tailwind quirk). Left
- * un-portaled, the "fixed inset-0" overlay resolves against the 56px-tall
- * header instead of the viewport, so the drawer only ever occupies the top
- * sliver of the screen instead of the full height.
+ * button lives in uses `backdrop-filter` (via .glass-panel), and
+ * `backdrop-filter` — like `filter`/`transform` — makes an element
+ * establish a new containing block for `position: fixed` descendants (CSS
+ * spec, not a Tailwind quirk). Left un-portaled, the "fixed inset-0"
+ * overlay resolves against the header instead of the viewport, so the
+ * drawer only ever occupies the top sliver of the screen instead of the
+ * full height.
  */
 export function MobileNav({ tree, dict }: Props) {
   const [open, setOpen] = useState(false);
@@ -42,7 +48,7 @@ export function MobileNav({ tree, dict }: Props) {
         type="button"
         onClick={() => setOpen(true)}
         aria-label={dict.nav.openNavigation}
-        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-text-secondary transition-colors hover:bg-electric-blue/10 hover:text-electric-blue md:hidden"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-text-secondary transition-colors hover:bg-electric-blue/10 hover:text-electric-blue"
       >
         <Menu className="h-4 w-4" />
       </button>
@@ -50,13 +56,13 @@ export function MobileNav({ tree, dict }: Props) {
       {open &&
         mounted &&
         createPortal(
-          <div className="fixed inset-0 z-40 md:hidden">
+          <div className="fixed inset-0 z-40">
             <div
               className="absolute inset-0 bg-black/40"
               onClick={() => setOpen(false)}
               aria-hidden="true"
             />
-            <div className="absolute inset-y-0 start-0 flex w-72 max-w-[80vw] flex-col border-e border-border bg-surface/95 shadow-card backdrop-blur-md">
+            <div className="absolute inset-y-0 start-0 flex w-72 max-w-[80vw] flex-col border-e border-[1.5px] border-border-strong glass-panel shadow-card">
               <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
                 <div className="flex items-center gap-2">
                   <LogoMark className="h-8 w-8" />

@@ -6,6 +6,9 @@ export const en: Dictionary = {
     closeNavigation: "Close navigation",
     collapseNode: "Collapse {title}",
     expandNode: "Expand {title}",
+    contents: "Contents",
+    allTopics: "All topics",
+    runnableExamples: "runnable examples",
   },
   search: {
     placeholderTopic: "Search {topic}…",
@@ -28,6 +31,9 @@ export const en: Dictionary = {
   },
   pageFooter: {
     next: "Next",
+  },
+  toc: {
+    heading: "On this page",
   },
   stepFlow: {
     previous: "Previous",
@@ -117,6 +123,7 @@ export const en: Dictionary = {
     emptyAnswer: "Tap or drag pieces below to build the code.",
   },
   predictOutput: {
+    defaultTitle: "Predict the output",
     submit: "Check answer",
     retry: "Try again",
     correct: "Correct!",
@@ -226,6 +233,12 @@ export const en: Dictionary = {
       "Operating Systems",
       "Computer Science",
     ],
+  },
+  heroDemo: {
+    eyebrow: "try it · http status",
+    live: "LIVE",
+    name: "Too Many Requests",
+    description: "You hit a rate limit. Wait for Retry-After before sending again.",
   },
   privacy: {
     badge: "Privacy",

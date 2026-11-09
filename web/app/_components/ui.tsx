@@ -14,10 +14,11 @@ export function Button({
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant }) {
   const styles: Record<Variant, string> = {
+    // Lime fill needs dark ink text, not white — white-on-lime fails contrast.
     primary:
-      "bg-electric-blue text-white shadow-[0_4px_0_0_rgba(23,23,26,0.15)] hover:translate-y-[-1px] hover:shadow-[0_6px_0_0_rgba(23,23,26,0.15)] active:translate-y-[1px] active:shadow-[0_2px_0_0_rgba(23,23,26,0.15)] focus-visible:ring-2 focus-visible:ring-electric-blue/40",
+      "bg-electric-blue text-[#0a0a0c] border-[1.5px] border-text-primary shadow-[4px_4px_0_0_var(--shadow-ink)] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_var(--shadow-ink)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none focus-visible:ring-2 focus-visible:ring-electric-blue/40",
     secondary:
-      "border border-border bg-surface text-text-primary shadow-[0_4px_0_0_rgba(23,23,26,0.08)] hover:translate-y-[-1px] hover:shadow-[0_6px_0_0_rgba(23,23,26,0.08)] active:translate-y-[1px] active:shadow-[0_2px_0_0_rgba(23,23,26,0.08)] hover:bg-border focus-visible:ring-2 focus-visible:ring-electric-blue/40",
+      "border-[1.5px] border-border-strong bg-surface text-text-primary shadow-[4px_4px_0_0_var(--shadow-ink-soft)] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_var(--shadow-ink-soft)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none hover:border-electric-blue focus-visible:ring-2 focus-visible:ring-electric-blue/40",
     ghost:
       "text-text-secondary hover:bg-surface/80 hover:text-text-primary",
   };
@@ -63,7 +64,7 @@ export function Badge({
   return (
     <span
       className={clsx(
-        "inline-flex items-center rounded-lg px-2 py-0.5 text-xs font-medium",
+        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
         styles[color],
         className,
       )}
@@ -76,12 +77,16 @@ export function Badge({
 export function Card({
   children,
   className,
+  variant = "default",
   ...props
-}: HTMLAttributes<HTMLDivElement>) {
+}: HTMLAttributes<HTMLDivElement> & { variant?: "default" | "feature" }) {
   return (
     <div
       className={clsx(
-        "rounded-2xl border border-border bg-surface p-5 shadow-card",
+        "rounded-2xl border bg-surface p-5",
+        variant === "feature"
+          ? "border-[1.5px] border-text-primary shadow-[8px_8px_0_0_var(--color-electric-blue)]"
+          : "border-border shadow-card",
         className,
       )}
       {...props}

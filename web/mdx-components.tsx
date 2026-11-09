@@ -4,6 +4,7 @@ import clsx from "clsx";
 import { ArrowUpRight, ChevronDown, CircleAlert, Info, Lightbulb, TriangleAlert } from "lucide-react";
 
 import { interactiveComponents } from "@/components/interactive/registry";
+import { AtAGlance } from "@/components/interactive/AtAGlance";
 
 /**
  * Global component map for `@next/mdx` (App Router `useMDXComponents`
@@ -200,6 +201,10 @@ export const components = {
   // Explicit callout — the only way MDX content gets a tinted, iconed box:
   //   <Callout tone="tip" title="Why?">…</Callout>
   Callout,
+
+  // Opt-in "at a glance" stat grid — authors place it explicitly:
+  //   <AtAGlance items={[{ label: "Time", value: "O(log n)" }, ...]} />
+  AtAGlance,
 };
 
 function Callout({

@@ -1,8 +1,11 @@
 import { notFound } from "next/navigation";
 import type { ComponentType } from "react";
 import { getPage, getAllSlugs, type CollectedPage } from "@/lib/content/loader";
-import { getNextPage, slugToHref } from "@/lib/content/meta";
+import { getNextPage, getSidebarTree, slugToHref, type SidebarNode } from "@/lib/content/meta";
 import { PageFooter } from "@/app/_components/page-footer";
+import { Breadcrumbs } from "@/app/_components/breadcrumbs";
+import { ContentsSidebar } from "@/app/_components/contents-sidebar";
+import { TableOfContents } from "@/app/_components/table-of-contents";
 import { JsonLd } from "@/app/_components/json-ld";
 import { SITE_URL } from "@/lib/site";
 import { defaultLocale, locales, type Locale } from "@/lib/i18n/config";
@@ -61,11 +64,13 @@ export default async function SlugPage({
 
   const dict = getDictionary(locale);
   const next = getNextPage(locale, page.slug);
+  const tree = getSidebarTree(locale);
   return (
     <ContentRenderer
       page={page}
       locale={locale}
       next={next}
+      tree={tree}
       // Canonical (English) path, not this locale's — likes/feedback for
       // the same content should consolidate across translations instead of
       // fragmenting per locale. See <PageFooter>/<PageActions> for how the
@@ -73,6 +78,9 @@ export default async function SlugPage({
       pagePath={slugToHref(defaultLocale, page.slug)}
       nextLabel={dict.pageFooter.next}
       pageActionsDict={dict.pageActions}
+      tocHeading={dict.toc.heading}
+      navDict={dict.nav}
+      allTopicsHref={slugToHref(locale, [])}
       interactiveDict={{
         stepFlow: dict.stepFlow,
         requestPlayground: dict.requestPlayground,
@@ -94,17 +102,25 @@ async function ContentRenderer({
   page,
   locale,
   next,
+  tree,
   pagePath,
   nextLabel,
   pageActionsDict,
+  tocHeading,
+  navDict,
+  allTopicsHref,
   interactiveDict,
 }: {
   page: CollectedPage;
   locale: Locale;
   next: ReturnType<typeof getNextPage>;
+  tree: SidebarNode[];
   pagePath: string;
   nextLabel: string;
   pageActionsDict: Dictionary["pageActions"];
+  tocHeading: string;
+  navDict: Dictionary["nav"];
+  allTopicsHref: string;
   interactiveDict: InteractiveDict;
 }) {
   // Dynamic import of the compiled `.mdx` (resolved by @next/mdx's loader).
@@ -112,21 +128,36 @@ async function ContentRenderer({
     default: ComponentType;
   };
   const MDX = mod.default;
+  // Three-column layout (Contents sidebar + article + sticky TOC rail),
+  // scoped to this route only — the homepage and privacy page each supply
+  // their own single-column container now that [locale]/layout.tsx's
+  // <main> is unconstrained.
   return (
-    <article className="mdx-prose w-full max-w-none break-words">
-      {/* The H1 is sourced from frontmatter, not hand-authored in the MDX
-          body — see the SEO plan: a single source of truth keeps <title>,
-          nav, breadcrumbs, and the visible H1 permanently in sync instead
-          of relying on every .mdx file's leading heading matching by hand. */}
-      <h1 className="mdx-h1">
-        <span className="mdx-heading-text">{page.frontmatter.title}</span>
-      </h1>
-      <InteractiveDictProvider value={interactiveDict}>
-        <MDX />
-      </InteractiveDictProvider>
-      <PageFooter next={next} page={pagePath} locale={locale} nextLabel={nextLabel} dict={pageActionsDict} />
-      <JsonLd data={buildBreadcrumbList(locale, page.slug)} />
-      <JsonLd data={buildTechArticle(locale, page, `${SITE_URL}${pagePath}`)} />
-    </article>
+    <div className="mx-auto flex max-w-[1360px] flex-wrap items-start gap-10 px-4 py-10 sm:px-6">
+      <ContentsSidebar
+        tree={tree}
+        dict={navDict}
+        allTopicsLabel={navDict.allTopics}
+        allTopicsHref={allTopicsHref}
+        runnableLabel={navDict.runnableExamples}
+      />
+      <article className="mdx-prose w-full max-w-none min-w-0 flex-1 break-words">
+        <Breadcrumbs locale={locale} slug={page.slug} />
+        {/* The H1 is sourced from frontmatter, not hand-authored in the MDX
+            body — see the SEO plan: a single source of truth keeps <title>,
+            nav, breadcrumbs, and the visible H1 permanently in sync instead
+            of relying on every .mdx file's leading heading matching by hand. */}
+        <h1 className="mdx-h1">
+          <span className="mdx-heading-text">{page.frontmatter.title}</span>
+        </h1>
+        <InteractiveDictProvider value={interactiveDict}>
+          <MDX />
+        </InteractiveDictProvider>
+        <PageFooter next={next} page={pagePath} locale={locale} nextLabel={nextLabel} dict={pageActionsDict} />
+        <JsonLd data={buildBreadcrumbList(locale, page.slug)} />
+        <JsonLd data={buildTechArticle(locale, page, `${SITE_URL}${pagePath}`)} />
+      </article>
+      {page.frontmatter.toc !== false && <TableOfContents heading={tocHeading} />}
+    </div>
   );
 }

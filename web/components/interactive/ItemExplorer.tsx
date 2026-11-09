@@ -152,8 +152,8 @@ function PillsLayout({
                   isShown
                     ? "w-full justify-between px-4 py-3 text-text-primary"
                     : isActive
-                      ? clsx("rounded-xl px-3.5 py-1.5 shadow-[0_4px_0_0_rgba(23,23,26,0.15)]", PILL_SOLID_CLASSES[item.color ?? "default"])
-                      : clsx("rounded-xl border px-3.5 py-1.5 shadow-[0_4px_0_0_rgba(23,23,26,0.08)]", PILL_TINT_CLASSES[item.color ?? "default"]),
+                      ? clsx("rounded-xl px-3.5 py-1.5 shadow-[0_4px_0_0_var(--shadow-ink)]", PILL_SOLID_CLASSES[item.color ?? "default"])
+                      : clsx("rounded-xl border px-3.5 py-1.5 shadow-[0_4px_0_0_var(--shadow-ink-soft)]", PILL_TINT_CLASSES[item.color ?? "default"]),
                 )}
               >
                 {isShown ? <Badge color={item.color ?? "default"}>{item.label}</Badge> : item.label}

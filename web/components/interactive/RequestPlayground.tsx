@@ -362,7 +362,7 @@ export default function RequestPlayground({
 
       {error && (
         <div className="px-4 pb-4 sm:px-5">
-          <code className="block rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+          <code className="block rounded-xl border border-danger/30 bg-danger/5 p-3 text-sm text-danger">
             {error}
           </code>
         </div>

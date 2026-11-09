@@ -33,7 +33,7 @@ export function NotFoundContent({
 
       <Link
         href={homeHref}
-        className="inline-flex items-center gap-2 rounded-xl bg-electric-blue px-4 py-2 text-sm font-medium text-white shadow-[0_4px_0_0_rgba(23,23,26,0.15)] transition-all duration-150 hover:translate-y-[-1px] hover:shadow-[0_6px_0_0_rgba(23,23,26,0.15)] active:translate-y-[1px] active:shadow-[0_2px_0_0_rgba(23,23,26,0.15)] focus-visible:ring-2 focus-visible:ring-electric-blue/40"
+        className="inline-flex items-center gap-2 rounded-xl border-[1.5px] border-text-primary bg-electric-blue px-4 py-2 text-sm font-semibold text-[#0a0a0c] shadow-[4px_4px_0_0_var(--shadow-ink)] transition-all duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_var(--shadow-ink)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none focus-visible:ring-2 focus-visible:ring-electric-blue/40"
       >
         <Home className="h-4 w-4" />
         {t.backToHome}

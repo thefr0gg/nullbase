@@ -10,6 +10,7 @@ import { getDictionary } from "@/lib/i18n/dictionaries";
 import { format, pluralize } from "@/lib/i18n/format";
 import { JsonLd } from "@/app/_components/json-ld";
 import { buildWebSite } from "@/lib/seo/structured-data";
+import { HeroDemoPanel } from "@/app/_components/hero-demo-panel";
 
 export async function generateMetadata({
   params,
@@ -55,11 +56,11 @@ export async function generateMetadata({
   };
 }
 
-const CARD_ACCENTS: { badge: BadgeColor; border: string }[] = [
-  { badge: "blue", border: "border-t-electric-blue" },
-  { badge: "purple", border: "border-t-violet" },
-  { badge: "orange", border: "border-t-tangerine" },
-  { badge: "green", border: "border-t-success" },
+const CARD_ACCENTS: { badge: BadgeColor; shadow: string; hoverText: string }[] = [
+  { badge: "blue", shadow: "shadow-[8px_8px_0_0_var(--color-electric-blue)]", hoverText: "group-hover:text-electric-blue" },
+  { badge: "purple", shadow: "shadow-[8px_8px_0_0_var(--color-violet)]", hoverText: "group-hover:text-violet" },
+  { badge: "orange", shadow: "shadow-[8px_8px_0_0_var(--color-tangerine)]", hoverText: "group-hover:text-tangerine" },
+  { badge: "green", shadow: "shadow-[8px_8px_0_0_var(--color-teal)]", hoverText: "group-hover:text-teal" },
 ];
 
 function countPages(node: SidebarNode): number {
@@ -87,34 +88,39 @@ export default async function HomePage({
   );
 
   return (
-    <div className="flex flex-col gap-16">
+    <div className="mx-auto flex max-w-[1200px] flex-col gap-16 px-4 py-8 sm:px-6 sm:py-10">
       <JsonLd data={buildWebSite(locale)} />
-      <header className="flex flex-col gap-5">
-        <h1 className="flex max-w-2xl flex-wrap items-baseline gap-x-2.5 gap-y-1 text-4xl font-semibold tracking-tight text-text-primary sm:text-5xl">
-          <span>{dict.home.heroLead}</span>
-          <code className="rounded-md bg-[color-mix(in_oklch,var(--color-electric-blue)_14%,var(--surface))] px-2 py-0.5 font-mono text-electric-blue">
-            {dict.home.heroCode}
-          </code>
-        </h1>
-        <p className="max-w-xl text-lg text-text-secondary">{dict.home.heroSubtext}</p>
-        {roots.length > 0 && (
-          <div className="flex flex-wrap items-center gap-3 pt-1">
-            <Link
-              href={roots[0].href}
-              className="inline-flex items-center gap-2 rounded-xl bg-electric-blue px-4 py-2 text-sm font-medium text-white shadow-[0_4px_0_0_rgba(23,23,26,0.15)] transition-all hover:translate-y-[-1px] hover:shadow-[0_6px_0_0_rgba(23,23,26,0.15)] active:translate-y-[1px] active:shadow-[0_2px_0_0_rgba(23,23,26,0.15)]"
-            >
-              {format(dict.home.startWith, { topic: roots[0].title })}
-              <ArrowRight className="h-4 w-4 rtl:rotate-180" />
-            </Link>
-            <span className="text-sm text-text-secondary">
-              {pluralize(
-                locale,
-                roots.reduce((sum, r) => sum + countPages(r), 0),
-                dict.home.pagesAndCounting,
-              )}
-            </span>
-          </div>
-        )}
+      <header className="hero-grid-bg flex flex-wrap items-center gap-12 py-6">
+        <div className="flex min-w-0 flex-1 basis-[32rem] flex-col gap-5">
+          <h1 className="flex max-w-2xl flex-wrap items-baseline gap-x-2.5 gap-y-1 font-heading text-5xl font-extrabold tracking-[-0.04em] text-text-primary sm:text-6xl">
+            <span>{dict.home.heroLead}</span>
+            <code className="rounded-md bg-[color-mix(in_oklch,var(--color-electric-blue)_14%,var(--surface))] px-2 py-0.5 font-mono text-electric-blue">
+              {dict.home.heroCode}
+            </code>
+          </h1>
+          <p className="max-w-xl text-lg text-text-secondary">{dict.home.heroSubtext}</p>
+          {roots.length > 0 && (
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <Link
+                href={roots[0].href}
+                className="inline-flex items-center gap-2 rounded-xl border-[1.5px] border-text-primary bg-electric-blue px-4 py-2 text-sm font-semibold text-[#0a0a0c] shadow-[4px_4px_0_0_var(--shadow-ink)] transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_var(--shadow-ink)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+              >
+                {format(dict.home.startWith, { topic: roots[0].title })}
+                <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+              </Link>
+              <span className="text-sm text-text-secondary">
+                {pluralize(
+                  locale,
+                  roots.reduce((sum, r) => sum + countPages(r), 0),
+                  dict.home.pagesAndCounting,
+                )}
+              </span>
+            </div>
+          )}
+        </div>
+        <div className="flex min-w-0 flex-1 basis-80 justify-center">
+          <HeroDemoPanel dict={dict.heroDemo} />
+        </div>
       </header>
 
       {roots.length > 0 && (
@@ -132,12 +138,13 @@ export default async function HomePage({
               return (
                 <Card
                   key={node.href}
-                  className={`flex flex-col gap-4 border-t-4 ${accent.border}`}
+                  variant="feature"
+                  className={`flex flex-col gap-4 border-text-primary ${accent.shadow}`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <Link href={node.href} className="group">
-                        <h3 className="text-xl font-medium text-text-primary group-hover:text-electric-blue">
+                        <h3 className={`font-heading text-xl font-bold text-text-primary ${accent.hoverText}`}>
                           {node.title}
                         </h3>
                       </Link>
@@ -160,7 +167,7 @@ export default async function HomePage({
                         <Link
                           key={link.href}
                           href={link.href}
-                          className="rounded-lg border border-border bg-background/60 px-2.5 py-1 font-mono text-xs text-text-secondary transition-colors hover:border-electric-blue/40 hover:text-electric-blue"
+                          className="rounded-full border border-border bg-background/60 px-3 py-1 font-mono text-xs text-text-secondary transition-colors hover:border-electric-blue/40 hover:text-electric-blue"
                         >
                           {link.title}
                         </Link>
@@ -191,7 +198,7 @@ export default async function HomePage({
             {upcoming.map((name) => (
               <span
                 key={name}
-                className="rounded-xl border border-dashed border-border px-3.5 py-2 text-sm text-text-secondary"
+                className="rounded-full border border-dashed border-border px-3.5 py-2 text-sm text-text-secondary"
               >
                 {name}
               </span>

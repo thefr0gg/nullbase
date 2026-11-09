@@ -50,8 +50,17 @@ export function SidebarTree({
 }) {
   return (
     <ul className="space-y-1 text-sm">
-      {tree.map((node) => (
-        <SidebarTreeItem key={node.href} node={node} pathname={pathname} dict={dict} onNavigate={onNavigate} />
+      {tree.map((node, i) => (
+        <SidebarTreeItem
+          key={node.href}
+          node={node}
+          pathname={pathname}
+          dict={dict}
+          onNavigate={onNavigate}
+          // Only top-level categories get a leading number, matching the
+          // mockup's "Contents" list — nested pages don't.
+          number={i + 1}
+        />
       ))}
     </ul>
   );
@@ -62,11 +71,13 @@ function SidebarTreeItem({
   pathname,
   dict,
   onNavigate,
+  number,
 }: {
   node: SidebarNode;
   pathname: string;
   dict: NavDict;
   onNavigate?: () => void;
+  number?: number;
 }) {
   const active = isNodeActive(node, pathname);
   const hasChildren = node.children.length > 0;
@@ -82,13 +93,21 @@ function SidebarTreeItem({
           href={node.href}
           onClick={onNavigate}
           className={clsx(
-            "block w-full truncate rounded-xl px-2.5 py-2 text-sm font-medium transition-all duration-150",
+            "flex w-full items-center gap-2.5 truncate rounded-xl px-2.5 py-2 text-sm font-medium transition-all duration-150",
             active
-              ? "bg-electric-blue/12 text-electric-blue shadow-[inset_0_0_0_1px_rgba(59,130,246,0.12)]"
+              ? "bg-electric-blue/12 text-electric-blue shadow-[inset_0_0_0_1px_color-mix(in_oklch,var(--color-electric-blue)_35%,transparent)]"
               : "text-text-secondary hover:bg-background hover:text-text-primary",
           )}
         >
-          {node.title}
+          {number != null && (
+            <span className="w-4 shrink-0 font-mono text-[10px] text-text-secondary">
+              {String(number).padStart(2, "0")}
+            </span>
+          )}
+          <span className="truncate">{node.title}</span>
+          {number == null && node.interactive && (
+            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-electric-blue" aria-hidden="true" />
+          )}
         </Link>
         {hasChildren && (
           <button

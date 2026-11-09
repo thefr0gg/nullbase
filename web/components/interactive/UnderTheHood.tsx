@@ -29,7 +29,7 @@ export default function UnderTheHood({ summary, children }: UnderTheHoodProps) {
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="mt-3 inline-flex items-center gap-1.5 rounded-xl border border-border bg-surface px-3.5 py-1.5 text-sm font-medium text-text-primary shadow-[0_4px_0_0_rgba(23,23,26,0.08)] transition-all duration-150 hover:bg-background"
+        className="mt-3 inline-flex items-center gap-1.5 rounded-xl border border-border bg-surface px-3.5 py-1.5 text-sm font-medium text-text-primary shadow-[0_4px_0_0_var(--shadow-ink-soft)] transition-all duration-150 hover:bg-background"
       >
         <ChevronDown className={clsx("h-4 w-4 transition-transform duration-200", open && "rotate-180")} aria-hidden="true" />
         {open ? dict.showLess : dict.showMore}

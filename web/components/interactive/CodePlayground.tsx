@@ -8,7 +8,15 @@ import { useInteractiveDict } from "@/lib/i18n/step-flow-context";
 import { getExecutionProvider } from "@/lib/execution/providers";
 import { TIMEOUT_ERROR, type ExecutionResult } from "@/lib/execution/types";
 import { CodeEditor } from "./CodeEditor";
-import { DetailPanel, EyebrowLabel, Ltr, PlaygroundSection, PlaygroundShell, SimulatedTag } from "./_shared";
+import {
+  DetailPanel,
+  EyebrowLabel,
+  Ltr,
+  PlaygroundSection,
+  PlaygroundShell,
+  SimulatedTag,
+  WidgetBadge,
+} from "./_shared";
 
 /**
  * A runnable code editor. The editing surface is the site's existing
@@ -112,11 +120,14 @@ export default function CodePlayground({
   const errorMessage = result?.error === TIMEOUT_ERROR ? dict.timeoutError : result?.error;
 
   return (
-    <PlaygroundShell>
+    <PlaygroundShell accent="teal">
       <PlaygroundSection tone="muted" divider="bottom" className="flex flex-wrap items-center justify-between gap-2">
-        <EyebrowLabel as="span" className="mb-0">
-          {title ?? dict.languageLabel}
-        </EyebrowLabel>
+        <div className="flex items-center gap-2.5">
+          <WidgetBadge n="03" accent="teal" />
+          <EyebrowLabel as="span" className="mb-0">
+            {title ?? dict.languageLabel}
+          </EyebrowLabel>
+        </div>
         <div className="flex items-center gap-2">
           {allLanguages.length > 1 && (
             <select
@@ -170,7 +181,7 @@ export default function CodePlayground({
 
       {result && status !== "running" && (
         <PlaygroundSection divider="top">
-          <EyebrowLabel>{dict.outputLabel}</EyebrowLabel>
+          <EyebrowLabel className="text-teal">{dict.outputLabel}</EyebrowLabel>
           <DetailPanel className="mt-2 overflow-x-auto bg-background p-3">
             <Ltr
               as="pre"

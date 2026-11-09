@@ -12,24 +12,67 @@ import { Badge } from "@/app/_components/ui";
  * "use client") — the primitives that use these add their own interactivity.
  */
 
+export type WidgetAccent = "lime" | "violet" | "teal" | "coral";
+
+const ACCENT_SHADOW: Record<WidgetAccent, string> = {
+  lime: "shadow-[10px_10px_0_0_var(--color-electric-blue)]",
+  violet: "shadow-[10px_10px_0_0_var(--color-violet)]",
+  teal: "shadow-[10px_10px_0_0_var(--color-teal)]",
+  coral: "shadow-[10px_10px_0_0_var(--color-tangerine)]",
+};
+
+const ACCENT_BG: Record<WidgetAccent, string> = {
+  lime: "bg-electric-blue",
+  violet: "bg-violet",
+  teal: "bg-teal",
+  coral: "bg-tangerine",
+};
+
 /** The outer "big interactive playground" shell — rounded-3xl is reserved
- *  site-wide for this one shape (see mdx.css / ui.tsx conventions). */
+ *  site-wide for this one shape (see mdx.css / ui.tsx conventions).
+ *
+ *  `accent`, when given, swaps the default soft border/shadow for the
+ *  mockup's neo-brutalist treatment: a thick ink border plus a colored
+ *  10px hard offset shadow — one accent per widget type (see WidgetBadge
+ *  below for the matching numbered header badge). Widgets with no mockup
+ *  counterpart (RequestPlayground, ItemExplorer, StateMachine,
+ *  InteractiveTerminal, ...) simply omit `accent` and keep today's look. */
 export function PlaygroundShell({
   children,
   className,
+  accent,
 }: {
   children?: ReactNode;
   className?: string;
+  accent?: WidgetAccent;
 }) {
   return (
     <div
       className={clsx(
-        "my-8 overflow-hidden rounded-3xl border border-border bg-surface shadow-card",
+        "my-8 overflow-hidden rounded-3xl glass-panel",
+        accent
+          ? clsx("border-2 border-text-primary", ACCENT_SHADOW[accent])
+          : "border-[1.5px] border-border-strong shadow-card",
         className,
       )}
     >
       {children}
     </div>
+  );
+}
+
+/** The numbered header-strip badge every accented widget carries, e.g.
+ *  <WidgetBadge n="01" accent="lime" /> before its EyebrowLabel text. */
+export function WidgetBadge({ n, accent }: { n: string; accent: WidgetAccent }) {
+  return (
+    <span
+      className={clsx(
+        "shrink-0 rounded-md px-[7px] py-[2px] text-xs font-semibold text-[#0a0a0c]",
+        ACCENT_BG[accent],
+      )}
+    >
+      {n}
+    </span>
   );
 }
 

@@ -15,6 +15,7 @@
   color: var(--text-primary);
   font-size: 1rem;
   line-height: 1.75;
+  counter-reset: mdx-h2;
 }
 
 /* ------------------------------------------------------------------ */
@@ -85,6 +86,16 @@
   font-weight: 700;
   line-height: 1.25;
   letter-spacing: -0.015em;
+  counter-increment: mdx-h2;
+}
+
+.mdx-h2 .mdx-heading-text::before {
+  content: counter(mdx-h2, decimal-leading-zero);
+  margin-inline-end: 0.6em;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.75em;
+  font-weight: 500;
+  color: var(--color-electric-blue);
 }
 
 /* A manually-authored `---` already reads as a section break; don't
@@ -633,7 +644,7 @@
   border: 1px solid var(--border);
   border-bottom-width: 2px;
   background: var(--surface);
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+  box-shadow: var(--mdx-kbd-shadow);
 }
 
 .mdx-mark {

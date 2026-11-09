@@ -1,4 +1,4 @@
-import { getAllPages } from "./loader";
+import { getAllPages, getPage } from "./loader";
 import type { Locale } from "@/lib/i18n/config";
 
 /** A node in the document sidebar, derived purely from the content tree. */
@@ -14,6 +14,28 @@ export interface SidebarNode {
 
 export function slugToHref(locale: Locale, slug: string[]): string {
   return slug.length === 0 ? `/${locale}` : `/${locale}/${slug.join("/")}`;
+}
+
+export interface BreadcrumbEntry {
+  title: string;
+  href: string;
+}
+
+/**
+ * Walk `slug`'s ancestors (not including Home) to the page itself, each
+ * resolved to its real title + href — shared by the visible <Breadcrumbs>
+ * component and `lib/seo/structured-data.ts`'s JSON-LD `BreadcrumbList`, so
+ * the two never drift apart.
+ */
+export function resolveBreadcrumbTrail(locale: Locale, slug: string[]): BreadcrumbEntry[] {
+  const trail: BreadcrumbEntry[] = [];
+  for (let i = 1; i <= slug.length; i++) {
+    const ancestorSlug = slug.slice(0, i);
+    const page = getPage(locale, ancestorSlug);
+    if (!page) continue;
+    trail.push({ title: page.frontmatter.title, href: slugToHref(locale, ancestorSlug) });
+  }
+  return trail;
 }
 
 /**

@@ -6,7 +6,7 @@ import clsx from "clsx";
 import { Button } from "@/app/_components/ui";
 import { useInteractiveDict } from "@/lib/i18n/step-flow-context";
 import { highlightJs } from "./CodePlayground";
-import { DetailPanel, EyebrowLabel, Ltr, PlaygroundSection, PlaygroundShell } from "./_shared";
+import { DetailPanel, EyebrowLabel, Ltr, PlaygroundSection, PlaygroundShell, WidgetBadge } from "./_shared";
 
 /**
  * A "what does this log?" quiz: a fixed code snippet, multiple-choice
@@ -43,14 +43,13 @@ export default function PredictOutput({
   }
 
   return (
-    <PlaygroundShell>
-      {title && (
-        <PlaygroundSection tone="muted" divider="bottom">
-          <EyebrowLabel as="span" className="mb-0">
-            {title}
-          </EyebrowLabel>
-        </PlaygroundSection>
-      )}
+    <PlaygroundShell accent="lime">
+      <PlaygroundSection tone="muted" divider="bottom" className="flex items-center gap-2.5">
+        <WidgetBadge n="06" accent="lime" />
+        <EyebrowLabel as="span" className="mb-0">
+          {title ?? dict.defaultTitle}
+        </EyebrowLabel>
+      </PlaygroundSection>
       <PlaygroundSection>
         <DetailPanel className="flex overflow-x-auto bg-background p-3">
           <div

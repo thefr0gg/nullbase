@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import { Button } from "@/app/_components/ui";
 import { useInteractiveDict } from "@/lib/i18n/step-flow-context";
 import { format } from "@/lib/i18n/format";
-import { DetailPanel, EyebrowLabel, Ltr, PlaygroundSection, PlaygroundShell } from "./_shared";
+import { DetailPanel, EyebrowLabel, Ltr, PlaygroundSection, PlaygroundShell, WidgetBadge } from "./_shared";
 
 const AUTOPLAY_INTERVAL_MS = 2600;
 
@@ -118,12 +118,15 @@ export default function StepFlow({ steps, title, autoPlay = false }: StepFlowPro
   if (!step) return null;
 
   return (
-    <PlaygroundShell>
+    <PlaygroundShell accent="lime">
       <PlaygroundSection divider="bottom" tone="muted">
         <div className="flex items-center justify-between gap-2">
-          <EyebrowLabel as="span" className="mb-0">
-            {title ?? dict.defaultTitle}
-          </EyebrowLabel>
+          <div className="flex items-center gap-2.5">
+            <WidgetBadge n="01" accent="lime" />
+            <EyebrowLabel as="span" className="mb-0">
+              {title ?? dict.defaultTitle}
+            </EyebrowLabel>
+          </div>
           <span className="text-xs font-medium text-text-secondary">
             {format(dict.stepOf, { current: index + 1, total })}
           </span>

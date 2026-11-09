@@ -6,6 +6,9 @@ export const ar: Dictionary = {
     closeNavigation: "إغلاق التصفح",
     collapseNode: "طي {title}",
     expandNode: "توسيع {title}",
+    contents: "المحتويات",
+    allTopics: "جميع المواضيع",
+    runnableExamples: "أمثلة قابلة للتشغيل",
   },
   search: {
     placeholderTopic: "ابحث في {topic}…",
@@ -28,6 +31,9 @@ export const ar: Dictionary = {
   },
   pageFooter: {
     next: "التالي",
+  },
+  toc: {
+    heading: "في هذه الصفحة",
   },
   stepFlow: {
     previous: "السابق",
@@ -117,6 +123,7 @@ export const ar: Dictionary = {
     emptyAnswer: "اضغط أو اسحب القطع أدناه لبناء الكود.",
   },
   predictOutput: {
+    defaultTitle: "توقّع الناتج",
     submit: "تحقّق من الإجابة",
     retry: "أعد المحاولة",
     correct: "إجابة صحيحة!",
@@ -254,6 +261,12 @@ export const ar: Dictionary = {
       "أنظمة التشغيل",
       "علوم الحاسوب",
     ],
+  },
+  heroDemo: {
+    eyebrow: "جرّبه · حالة HTTP",
+    live: "مباشر",
+    name: "طلبات كثيرة جدًا",
+    description: "لقد تجاوزت حد المعدل. انتظر حتى Retry-After قبل إعادة الإرسال.",
   },
   privacy: {
     badge: "الخصوصية",

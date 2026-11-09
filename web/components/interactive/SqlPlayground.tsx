@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Database, QueryExecResult, SqlJsStatic } from "sql.js";
 import { Badge, Button } from "@/app/_components/ui";
-import { DetailPanel, EyebrowLabel, PlaygroundSection, PlaygroundShell } from "./_shared";
+import { DetailPanel, EyebrowLabel, PlaygroundSection, PlaygroundShell, WidgetBadge } from "./_shared";
 import { CodeEditor } from "./CodeEditor";
 
 const SQL_KEYWORDS = [
@@ -65,11 +65,21 @@ export interface SqlPlaygroundProps {
   /** Turns on SQLite's foreign_keys pragma (off by default in SQLite
    *  itself) — needed for the Foreign Keys page's constraint-violation demo. */
   enforceForeignKeys?: boolean;
+  /** Optional canned-query pill buttons shown below the controls — clicking
+   *  one fills the editor with its query (does not auto-run it). Omit to
+   *  render no suggestions, same as before this prop existed. */
+  suggestions?: { label: string; query: string }[];
 }
 
 type Status = "loading" | "ready" | "error";
 
-export default function SqlPlayground({ title, schema, defaultQuery = "", enforceForeignKeys = false }: SqlPlaygroundProps) {
+export default function SqlPlayground({
+  title,
+  schema,
+  defaultQuery = "",
+  enforceForeignKeys = false,
+  suggestions = [],
+}: SqlPlaygroundProps) {
   const dbRef = useRef<Database | null>(null);
   const sqlRef = useRef<SqlJsStatic | null>(null);
   const [status, setStatus] = useState<Status>("loading");
@@ -141,12 +151,15 @@ export default function SqlPlayground({ title, schema, defaultQuery = "", enforc
   }
 
   return (
-    <PlaygroundShell>
+    <PlaygroundShell accent="violet">
       <PlaygroundSection divider="bottom" tone="muted">
         <div className="mb-2 flex items-center justify-between gap-2">
-          <EyebrowLabel as="span" className="mb-0">
-            {title ?? "SQL"}
-          </EyebrowLabel>
+          <div className="flex items-center gap-2.5">
+            <WidgetBadge n="05" accent="violet" />
+            <EyebrowLabel as="span" className="mb-0">
+              {title ?? "SQL"}
+            </EyebrowLabel>
+          </div>
           <Badge color="green" className="shrink-0">
             Real SQLite — runs in your browser
           </Badge>
@@ -154,7 +167,7 @@ export default function SqlPlayground({ title, schema, defaultQuery = "", enforc
 
         {status === "loading" && <p className="text-sm text-text-secondary">Loading SQLite…</p>}
         {status === "error" && (
-          <code className="block rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+          <code className="block rounded-xl border border-danger/30 bg-danger/5 p-3 text-sm text-danger">
             {initError}
           </code>
         )}
@@ -177,6 +190,21 @@ export default function SqlPlayground({ title, schema, defaultQuery = "", enforc
                 Reset data
               </Button>
             </div>
+            {suggestions.length > 0 && (
+              <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                <span className="font-mono text-[11px] text-text-secondary">try →</span>
+                {suggestions.map((s) => (
+                  <button
+                    key={s.label}
+                    type="button"
+                    onClick={() => setQuery(s.query)}
+                    className="rounded-full border border-border-strong px-2.5 py-1 font-mono text-[11.5px] text-text-primary transition-all duration-150 hover:-translate-y-0.5 hover:border-violet"
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </>
         )}
       </PlaygroundSection>
@@ -184,7 +212,7 @@ export default function SqlPlayground({ title, schema, defaultQuery = "", enforc
       {status === "ready" && (runError || results || rowsModified !== null) && (
         <PlaygroundSection>
           {runError ? (
-            <code className="block rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+            <code className="block rounded-xl border border-danger/30 bg-danger/5 p-3 text-sm text-danger">
               {runError}
             </code>
           ) : results && results.length > 0 ? (

@@ -192,7 +192,7 @@ export function SearchBar({ index, locale, dict }: Props) {
           aria-activedescendant={
             showDropdown && results[safeActiveIndex] ? `search-result-${safeActiveIndex}` : undefined
           }
-          className="w-full rounded-full border border-border bg-background/80 py-2.5 ps-9 pe-3 text-sm text-text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] transition-colors placeholder:text-text-secondary focus:border-electric-blue/60 focus:bg-surface focus:outline-none focus:ring-3 focus:ring-electric-blue/12 disabled:cursor-not-allowed disabled:opacity-50"
+          className="w-full rounded-full border-[1.5px] border-border bg-background/80 py-2.5 ps-9 pe-3 text-sm text-text-primary transition-colors placeholder:text-text-secondary focus:border-electric-blue/60 focus:bg-surface focus:outline-none focus:ring-3 focus:ring-electric-blue/12 disabled:cursor-not-allowed disabled:opacity-50"
         />
       </div>
 
@@ -200,7 +200,7 @@ export function SearchBar({ index, locale, dict }: Props) {
         <ul
           id="search-results"
           role="listbox"
-          className="absolute left-0 right-0 top-full z-50 mt-2 max-h-80 overflow-y-auto rounded-2xl border border-border bg-surface p-1.5 shadow-card"
+          className="absolute left-0 right-0 top-full z-50 mt-2 max-h-80 overflow-y-auto rounded-2xl border-[1.5px] border-border-strong glass-panel p-1.5 shadow-card"
         >
           {results.length === 0 ? (
             <li className="px-3 py-6 text-center text-sm text-text-secondary">
